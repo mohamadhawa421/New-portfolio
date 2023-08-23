@@ -10,7 +10,8 @@ const config: Config = {
     extend: {
       colors: {
         Grey : "rgba(255, 255, 255, 0.60)",
-        gold : "#9D845A"
+        gold : "#9D845A",
+        darkblue : "071224"
       },
     },
   },

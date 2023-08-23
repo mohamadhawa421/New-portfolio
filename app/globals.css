@@ -18,7 +18,7 @@
 
 html,body {
   background: linear-gradient(138deg, #071224 22.62%, #2B5A62 100%);
-  scroll-behavior: smooth;
+  scroll-behavior: smooth !important;
 
 }
 
@@ -67,6 +67,8 @@ h1,h2,h3,h4,h4,li,span{
   opacity: 1;
   transform: translateX(-50%) translateY(5px);
 }
+
+
 
 
 

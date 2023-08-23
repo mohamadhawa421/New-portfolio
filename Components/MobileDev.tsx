@@ -1,9 +1,15 @@
 import React from 'react'
 import Skill from './Skill'
+import WorkShowcase from './WorkShowcase'
+import image1 from "../public/Images/1.png"
+import image2 from "../public/Images/2.png"
+import image3 from "../public/Images/3.png"
 
 function MobileDev() {
   return (
+
     <div className='flex flex-col gap-2 text-white'>
+      <div className='flex flex-col gap-4 h-[25rem]'>
 <span className='text-Grey font-light text-sm'>- Mobile Development</span>
 
 
@@ -18,7 +24,14 @@ function MobileDev() {
   <div className='flex gap-14  mt-[3rem]'>
   <Skill skillName = "React Native"/>
   </div>
+  </div>
     
+
+    <WorkShowcase 
+    image1={image1}
+    image2={image2}
+    image3={image3}
+    />
     </div>
   )
 }

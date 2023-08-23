@@ -9,9 +9,9 @@ import Work from '@/Components/Work'
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center gap-6 px-24 py-8">
+    <main className="flex min-h-screen flex-col items-center gap-6 px-24">
       <Navbar/>
-      <div className='flex justify-between w-full py-12'>
+      <div className='flex justify-between w-full py-32'>
         <div className='flex flex-col justify-between h-full gap-6'>
           <h1 className='text-8xl text-white w-[30rem] font-bold pt-4'>Mohamad Hawa</h1>
           <p className='text-white font-light text-xl w-[15rem]'>Web <span className='font-medium text-gold'>developer</span> and des<span className='font-medium text-gold'>ig</span>ner Based in Lebanon<span className='font-medium text-gold'>.</span></p>

@@ -1,9 +1,16 @@
 import React from 'react'
 import Skill from './Skill'
+import WorkShowcase from './WorkShowcase'
+import image1 from "../public/Images/1.png"
+import image2 from "../public/Images/2.png"
+import image3 from "../public/Images/3.png"
 
 function Skills() {
   return (
-    <div className='flex flex-col gap-2 text-white'>
+
+
+    <div className='flex flex-col gap-12 text-white'>
+      <div className='flex flex-col gap-4 h-[25rem]'>
 <span className='text-Grey font-light text-sm'>- About me</span>
 <p className='text-white font-light text-2xl w-[15rem]'>
 <span className='font-regular text-gold'>3 Years </span>
@@ -21,7 +28,13 @@ function Skills() {
   <Skill skillName = "Figma"/>
   <Skill skillName = "Adobe XD"/>
   </div>
+  </div>
     
+    <WorkShowcase 
+    image1={image1}
+    image2={image2}
+    image3={image3}
+    />
     </div>
   )
 }
