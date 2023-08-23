@@ -1,113 +1,110 @@
+import Navbar from '@/Components/Navbar'
 import Image from 'next/image'
+import Bulb from "../public/Images/bulb.png"
+import Facebook from "../public/Images/fb.svg"
+import Instagram from "../public/Images/instagram.svg"
+import Github from "../public/Images/github.svg"
+import LinkedIn from "../public/Images/linkedin.svg"
+import Work from '@/Components/Work'
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
+    <main className="flex min-h-screen flex-col items-center gap-6 px-24 py-8">
+      <Navbar/>
+      <div className='flex justify-between w-full py-12'>
+        <div className='flex flex-col justify-between h-full gap-6'>
+          <h1 className='text-8xl text-white w-[30rem] font-bold pt-4'>Mohamad Hawa</h1>
+          <p className='text-white font-light text-xl w-[15rem]'>Web <span className='font-medium text-gold'>developer</span> and des<span className='font-medium text-gold'>ig</span>ner Based in Lebanon<span className='font-medium text-gold'>.</span></p>
+          <p className='text-Grey font-light w-[18rem]'>Create and <span className='text-gold'>adorn</span> your online presence, user <span className='text-white'>interface</span> and <span className='text-white'>experience</span>.</p>
+          <button className='hireme mt-4'>Hire me!</button>
+          <div className='flex justify-between w-[10rem] mt-[1.5rem]'>
             <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+            src={Facebook}
+            alt='facebook'
+            quality={100}
+            width={32}/>
+            
+            <Image
+            src={Instagram}
+            alt='instagram'
+            quality={100}
+            width={32}/>
+            <Image
+            src={LinkedIn}
+            alt='Linkedin'
+            quality={100}
+            width={32}/>
+            <Image
+            src={Github}
+            alt='Github'
+            quality={100}
+            width={32}/>
+          </div>
+          
+        </div>
+
+      <div className=' relative flex items-center justify-center w-[500px] h-[500px]'>
+        <div className='blob w-[500px] h-[500px] absolute'>
+        <svg width="500" height="500" viewBox="0 0 562 435" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill="url(#paint0_linear_435_4)">
+
+<animate attributeName='d'
+dur="10000ms"
+repeatCount="indefinite"
+values='
+M303.333 3.92758C371.506 5.83445 446.362 0.338922 495.524 36.8003C545.238 73.6715 549.204 131.802 547.43 184.967C545.714 236.415 521.393 282.122 485.885 325.703C435.144 387.981 398.434 478.784 303.333 484.565C207.928 490.365 148.314 408.015 89.5246 349.798C40.2471 301.001 -0.575993 246.8 0.787082 184.967C2.12855 124.114 34.3066 62.9616 96.6704 25.644C153.765 -8.52067 231.105 1.9073 303.333 3.92758Z;
+M284.979 0.0060308C332.205 0.64552 358.267 51.7975 396.084 80.7272C446.309 119.149 520.978 132.894 538.995 194.326C560.069 266.181 540.238 349.382 491.259 405.236C440.322 463.321 361.279 483.565 284.979 483.993C208.209 484.424 130.246 463.536 76.4225 407.563C22.9784 351.985 -14.9874 269.127 6.43329 194.326C25.923 126.268 113.599 117.647 170.892 77.6779C210.125 50.3076 237.487 -0.637056 284.979 0.0060308Z;
+M260.267 1.3276C331.725 -5.78655 386.341 53.3489 437.351 99.2451C488.618 145.373 546.829 194.233 547.419 259.695C548.011 325.463 497.112 381.885 440.266 422.786C389.711 459.16 324.487 460.343 260.267 466.301C184.022 473.376 95.1968 507.414 39.1963 460.001C-17.0775 412.356 -0.144343 327.881 16.2399 259.695C29.1298 206.051 78.8504 172.726 118.247 131.014C163.677 82.9153 190.815 8.24216 260.267 1.3276Z;
+M303.333 3.92758C371.506 5.83445 446.362 0.338922 495.524 36.8003C545.238 73.6715 549.204 131.802 547.43 184.967C545.714 236.415 521.393 282.122 485.885 325.703C435.144 387.981 398.434 478.784 303.333 484.565C207.928 490.365 148.314 408.015 89.5246 349.798C40.2471 301.001 -0.575993 246.8 0.787082 184.967C2.12855 124.114 34.3066 62.9616 96.6704 25.644C153.765 -8.52067 231.105 1.9073 303.333 3.92758Z;'>
+</animate>
+
+</path>
+<defs>
+<linearGradient id="paint0_linear_435_4" x1="141.118" y1="15.4118" x2="551.554" y2="230.022" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FC2D80"/>
+<stop offset="1" stop-color="#021750"/>
+</linearGradient>
+</defs>
+</svg>
+
+
+
+        </div>
+
+        <div className='blob w-[500px] h-[500px] absolute blur-2xl'>
+        <svg width="500" height="500" viewBox="0 0 562 435" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill="url(#paint0_linear_435_4)">
+
+<animate attributeName='d'
+dur="10000ms"
+repeatCount="indefinite"
+values='
+M303.333 3.92758C371.506 5.83445 446.362 0.338922 495.524 36.8003C545.238 73.6715 549.204 131.802 547.43 184.967C545.714 236.415 521.393 282.122 485.885 325.703C435.144 387.981 398.434 478.784 303.333 484.565C207.928 490.365 148.314 408.015 89.5246 349.798C40.2471 301.001 -0.575993 246.8 0.787082 184.967C2.12855 124.114 34.3066 62.9616 96.6704 25.644C153.765 -8.52067 231.105 1.9073 303.333 3.92758Z;
+M284.979 0.0060308C332.205 0.64552 358.267 51.7975 396.084 80.7272C446.309 119.149 520.978 132.894 538.995 194.326C560.069 266.181 540.238 349.382 491.259 405.236C440.322 463.321 361.279 483.565 284.979 483.993C208.209 484.424 130.246 463.536 76.4225 407.563C22.9784 351.985 -14.9874 269.127 6.43329 194.326C25.923 126.268 113.599 117.647 170.892 77.6779C210.125 50.3076 237.487 -0.637056 284.979 0.0060308Z;
+M260.267 1.3276C331.725 -5.78655 386.341 53.3489 437.351 99.2451C488.618 145.373 546.829 194.233 547.419 259.695C548.011 325.463 497.112 381.885 440.266 422.786C389.711 459.16 324.487 460.343 260.267 466.301C184.022 473.376 95.1968 507.414 39.1963 460.001C-17.0775 412.356 -0.144343 327.881 16.2399 259.695C29.1298 206.051 78.8504 172.726 118.247 131.014C163.677 82.9153 190.815 8.24216 260.267 1.3276Z;
+M303.333 3.92758C371.506 5.83445 446.362 0.338922 495.524 36.8003C545.238 73.6715 549.204 131.802 547.43 184.967C545.714 236.415 521.393 282.122 485.885 325.703C435.144 387.981 398.434 478.784 303.333 484.565C207.928 490.365 148.314 408.015 89.5246 349.798C40.2471 301.001 -0.575993 246.8 0.787082 184.967C2.12855 124.114 34.3066 62.9616 96.6704 25.644C153.765 -8.52067 231.105 1.9073 303.333 3.92758Z;'>
+</animate>
+
+</path>
+<defs>
+<linearGradient id="paint0_linear_435_4" x1="141.118" y1="15.4118" x2="551.554" y2="230.022" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FC2D80"/>
+<stop offset="1" stop-color="#021750"/>
+</linearGradient>
+</defs>
+</svg>
+
+
+
         </div>
       </div>
+        
+              </div>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+      <Work/>
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore the Next.js 13 playground.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
     </main>
   )
 }
