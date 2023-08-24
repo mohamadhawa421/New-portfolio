@@ -9,7 +9,7 @@ function MobileDev() {
   return (
 
     <div className='flex flex-col gap-2 text-white'>
-      <div className='flex flex-col gap-4 h-[25rem]'>
+      <div className='flex flex-col gap-4'>
 <span className='text-Grey font-light text-sm'>- Mobile Development</span>
 
 

@@ -10,7 +10,7 @@ function Skills() {
 
 
     <div className='flex flex-col gap-12 text-white'>
-      <div className='flex flex-col gap-4 h-[25rem]'>
+      <div className='flex flex-col gap-4'>
 <span className='text-Grey font-light text-sm'>- About me</span>
 <p className='text-white font-light text-2xl w-[15rem]'>
 <span className='font-regular text-gold'>3 Years </span>

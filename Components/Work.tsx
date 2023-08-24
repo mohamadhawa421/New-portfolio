@@ -19,10 +19,10 @@ function Work() {
         <Filter activeLink = {activeLink} handleLinkClick = {handleLinkClick}/>
         <ActiveComponent activeLink={activeLink} />
         <Image
-        className='absolute top-20 right-0 z-0'
+        className='absolute top-30 right-10 z-0'
         src={waves}
         alt='waves'
-        height={600}/>
+        height={400}/>
         
     </div>
   )
