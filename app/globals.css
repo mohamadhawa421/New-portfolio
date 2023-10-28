@@ -1,7 +1,7 @@
-
 @import "tailwindcss/base";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
+
 
 :root {
   --foreground-rgb: 0, 0, 0;
@@ -17,59 +17,29 @@
   }
 }
 
-html,body {
-  background: linear-gradient(138deg, #071224 22.62%, #2B5A62 100%);
-  scroll-behavior: smooth !important;
-
+body {
+  background-image: url("../public/Images/rose-shape.png"),url("../public/Images/bottom-shape.png");
+  background-position: right top, bottom center;
+  background-repeat: no-repeat;
+  background-size: 50%,100%;
 }
 
-h1,h2,h3,h4,h4,li,span{
-  font-family: var(--font-poppins);
-}
-
-.hireme{
-  width: 12rem;
-  padding: 1rem 0;
-  color: white;
-  border-radius: 0px 30px;
-  background: linear-gradient(138deg, #FC2D80 0%, #021750 100%);
-  transition: all .2s linear;
-}
-
-.hireme:hover{
-  transform: translateY(-.7rem);
-  transition: all .2s linear;
-}
-
-.filter ul li{
+.projects {
   position: relative;
+  display: inline-block;
+  padding-bottom: 10px;
 }
 
-.active{
-  color: #9D845A ;
-}
-
-.filter ul li::after {
+.projects::after {
   content: '';
-  display: block;
-  width: 8px;
-  height: 8px;
-  background-color: #9D845A;
-  border-radius: 50%;
   position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0;
-  transition: opacity 0.3s, transform 0.3s;
+  width: 50%;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  height: 5px;
+  background-color: #176B87; 
+  border-radius: 4px;
 }
-
-.filter ul li.active::after {
-  opacity: 1;
-  transform: translateX(-50%) translateY(5px);
-}
-
-
-
-
 

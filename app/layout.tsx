@@ -1,13 +1,21 @@
+import 'tailwindcss/tailwind.css'
 import './globals.css'
 import type { Metadata } from 'next'
-import { Poppins } from 'next/font/google';
+import localFont from '@next/font/local'
 
-const poppins = Poppins({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-poppins',
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900']
-});
+const Poppins = localFont({
+  src: [
+    {
+      path: '../public/Fonts/Poppins-Regular.ttf',
+      weight: '400'
+    },
+    {
+      path: '../public/Fonts/Poppins-Bold.ttf',
+      weight: '700'
+    }
+  ],
+  variable: '--font-poppins'
+})
 
 export const metadata: Metadata = {
   title: 'Mohamad Hawa',
@@ -21,7 +29,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${poppins.variable}`}>{children}</body>
+      <body className={`${Poppins.variable} font-sans`}>{children}</body>
     </html>
   )
 }

@@ -8,11 +8,22 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      colors: {
-        Grey : "rgba(255, 255, 255, 0.60)",
-        gold : "#9D845A",
-        darkblue : "071224"
+      fontFamily:{
+        sans : ['var(--font-poppins)']
       },
+      colors: {
+        smokeWhite : "#FFFAFF",
+        pink:"#176B87",
+        lightblack : "#25282B",
+        grey : "#828282",
+        lightpink : "#FFD8E7",
+        lightyellow : "#FFE9C0",
+        lightorange : "#FDEEEA",
+        lightbeij : "#F5F0E6",
+        lightgreen : "#9CC6C3",
+        lightbrown :"#FCE3CF",
+      },
+      
     },
   },
   plugins: [],
