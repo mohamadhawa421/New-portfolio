@@ -1,35 +1,31 @@
-import 'tailwindcss/tailwind.css'
-import './globals.css'
-import type { Metadata } from 'next'
-import localFont from '@next/font/local'
+import type React from "react"
+import { Inter } from "next/font/google"
+import "./globals.css"
+import ClientLayout from "./ClientLayout"
 
-const Poppins = localFont({
-  src: [
-    {
-      path: '../public/Fonts/Poppins-Regular.ttf',
-      weight: '400'
-    },
-    {
-      path: '../public/Fonts/Poppins-Bold.ttf',
-      weight: '700'
-    }
-  ],
-  variable: '--font-poppins'
-})
-
-export const metadata: Metadata = {
-  title: 'Mohamad Hawa',
-  description: 'My portfolio',
-}
+const inter = Inter({ subsets: ["latin"] })
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
     <html lang="en">
-      <body className={`${Poppins.variable} font-sans`}>{children}</body>
+      <head>
+        <title>Mohammad Hawa - UI/UX Designer Portfolio</title>
+        <meta name="description" content="Professional UI/UX Designer specializing in web and mobile applications" />
+      </head>
+      <body className={inter.className}>
+        <ClientLayout>{children}</ClientLayout>
+      </body>
     </html>
   )
 }
+
+
+import './globals.css'
+
+export const metadata = {
+      generator: 'v0.dev'
+    };

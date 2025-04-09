@@ -1,87 +1,132 @@
-"use client";
-import { getScreenWidth } from "../Components/getScreenWidth";
-import { useState,useEffect } from 'react';
-import Flexbox from '@/Components/Flexbox'
-import Image from "next/image";
-import Card from "../Components/Card"
-import Devices from "../public/Images/devices.webp"
-import Comic from "../public/Images/Frame 280299.png"
-import Shater from "../public/Images/Homepage.png"
-import LIU from "../public/Images/LIU redesign.png"
-import Caffe from "../public/Images/Frame 280300.png"
-import Store from "../public/Images/Frame 280301.png"
-import Create from "../public/Images/Frame 280305.png"
+"use client"
 
+import { useEffect, useRef } from "react"
+import Link from "next/link"
+import { motion } from "framer-motion"
+import WavesAnimation from "@/components/waves-animation"
 
-export default function Home() {
-
-  const [screenWidth, setScreenWidth] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
-
+export default function HomePage() {
+  const particlesRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const handleResize = () => {
-      setScreenWidth(getScreenWidth());
-    };
+    // Create random particles - increased number
+    const createParticles = () => {
+      if (!particlesRef.current) return
 
-    handleResize();
-    window.addEventListener('resize', handleResize);
+      particlesRef.current.innerHTML = ""
+      const count = 50 // Increased from 20 to 50
+
+      for (let i = 0; i < count; i++) {
+        const particle = document.createElement("div")
+        const size = Math.random() * 4 + 1
+        const x = Math.random() * 100
+        const y = Math.random() * 100
+        const duration = Math.random() * 20 + 10
+        const delay = Math.random() * 5
+
+        particle.className = "absolute rounded-full"
+        particle.style.width = `${size}px`
+        particle.style.height = `${size}px`
+        particle.style.left = `${x}%`
+        particle.style.top = `${y}%`
+        particle.style.opacity = "0"
+        particle.style.backgroundColor = Math.random() > 0.5 ? "#90dda9" : "#fbb03b"
+        particle.style.animation = `float ${duration}s ${delay}s infinite ease-in-out`
+
+        particlesRef.current.appendChild(particle)
+      }
+    }
+
+    createParticles()
+
+    // Add keyframes for floating animation
+    const style = document.createElement("style")
+    style.textContent = `
+      @keyframes float {
+        0%, 100% {
+          transform: translateY(0) translateX(0);
+          opacity: 0;
+        }
+        25% {
+          opacity: 0.5;
+        }
+        50% {
+          transform: translateY(-100px) translateX(50px);
+          opacity: 0.8;
+        }
+        75% {
+          opacity: 0.5;
+        }
+      }
+    `
+    document.head.appendChild(style)
 
     return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  
-  useEffect(() => {
-    const handleMobile = () => {
-      (screenWidth < 768) ? setIsMobile(true) : setIsMobile(false);
-    };
-    handleMobile();
-  }, [screenWidth]);
-
+      document.head.removeChild(style)
+    }
+  }, [])
 
   return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="min-h-screen bg-black text-white relative overflow-hidden"
+    >
+      {/* Particles */}
+      <div ref={particlesRef} className="absolute inset-0 pointer-events-none z-0"></div>
 
+      {/* Header */}
+      <header className="flex justify-between items-center px-6 py-5 relative z-10">
+        <Link href="/" className="text-2xl font-medium text-[#90dda9] font-handwriting">
+          Mohamad
+        </Link>
+        <nav className="hidden md:flex space-x-6">
+          <Link href="/about" className="text-sm hover:text-[#90dda9] transition-colors">
+            About Me
+          </Link>
+          <Link href="/about#services" className="text-sm hover:text-[#90dda9] transition-colors">
+            Services
+          </Link>
+          <Link href="/about#craft" className="text-sm hover:text-[#90dda9] transition-colors">
+            My Craft
+          </Link>
+          <Link href="/about#cost" className="text-sm hover:text-[#90dda9] transition-colors">
+            The Cost Of Creativity
+          </Link>
+        </nav>
+      </header>
 
-
-    <main className={`flex min-h-screen flex-col items-start font-sans ${isMobile ? "px-4 gap-4" : "px-24 gap-6"} overflow-visible`}>
-      <Flexbox align='center' justify='between' className='w-full py-7'>
-        <span className='font-bold'>Portfolio</span>
-        <button className={`bg-transparent rounded-xl border-solid border-smokeWhite text-smokeWhite font-bold border-2 p-2 ${isMobile ? "text-xs" : "text-sm"}`}><a href="CV_Mohamad Hawa.docx" download={true}>Download My CV!</a></button>
-        </Flexbox>
-
-<Flexbox justify="between" className="w-full">
-      <Flexbox column align='start' className={`gap-4 ${isMobile ? "w-full" : "w-[40%]"} `}>
-        <span className='text-pink'>UI/UX Designer</span>
-        <h1 className={`font-bold text-lightblack ${isMobile ? "text-[3rem] leading-[3.5rem] " : "text-[4rem] leading-[4.5rem]" }`}>Hello, my<br/> name is <span className='text-pink'>Mohamad Hawa</span></h1>
-        <p className={`text-grey ${isMobile ? "w-[20rem]" : "w-[27rem]"}`}>
-        I am passionate about crafting intuitive and visually engaging user interfaces and user experiences, earn more knowledge & sharpen my skills.
+      {/* Main Content */}
+      <main className="flex flex-col items-center justify-center px-6 pt-20 pb-32 relative z-10">
+        <p className="text-center text-lg mb-4">
+          I'm Mohamad Hawa, and I'm passionate about designing intuitive experiences.
         </p>
-      </Flexbox>
-      {!isMobile ?<Image src={Devices} alt="devices" height={400} quality={100}/> : "" }
-</Flexbox>
 
+        <h1 className="text-4xl md:text-6xl font-bold text-center max-w-4xl">
+          Let's Make Some <span className="text-[#fbb03b]">Pixel-Perfect</span> Magic —
+          <br />
+          No Magic <span className="text-[#90dda9]">Wand</span> Required.
+        </h1>
 
-      <Flexbox column align='center' className='w-full'>
-        <Flexbox justify='center' className={`w-full ${isMobile ? "mt-6 py-4" : "mt-12 py-7"}`}><span className='justify-center font-bold text-lightblack text-[2rem] projects'>Projects</span></Flexbox>
-        <Flexbox justify='center' className='flex-wrap gap-4 py-10'>
-          <Card color = {"bg-lightpink"} image={Comic} isMobile = {isMobile}/>
-          <Card color = {"bg-lightyellow"} image={LIU} isMobile = {isMobile}/>
-          <Card color = {"bg-lightorange"} image={Shater} isMobile = {isMobile}/>
-          <Card color = {"bg-lightbeij"} image={Caffe} isMobile = {isMobile}/>
-          <Card color = {"bg-lightgreen"} image={Store} isMobile = {isMobile}/>
-          <Card color = {"bg-lightbrown"} image={Create} isMobile = {isMobile}/>
-        </Flexbox>
-      </Flexbox>
-      <Flexbox column justify="center" align="center" className="w-full gap-8 mt-4 py-10">
-        <h1 className="text-4xl font-bold text-center text-lightblack">Hello again!, Intrested?</h1>
-        <button className={`bg-transparent rounded-xl border-solid border-lightblack text-lightblack font-bold border-2 p-2 ${isMobile ? "text-xs" : "text-sm"}`}>
-          <a href="mailto:mohamadhawa421@gmail.com">Send me an email!</a>
-          </button>
-          
-          </Flexbox>
-      
-    </main>
+        <p className="text-center max-w-3xl mt-8 text-gray-300">
+          As a UI/UX designer, I specialize in crafting visually engaging and user-centered designs that blend
+          creativity with functionality. My mission is to transform complex challenges into seamless experiences that
+          empower users and drive impact. Let's create something remarkable together.
+        </p>
+
+        <Link
+          href="/about"
+          className="mt-12 px-8 py-3 bg-white text-black rounded-full font-medium hover:bg-opacity-90 transition-all transform hover:scale-105"
+        >
+          Check me out!
+        </Link>
+      </main>
+
+      {/* Animated Waves */}
+      <div className="absolute bottom-0 left-0 right-0 h-[300px] z-0">
+        <WavesAnimation speed={0.5} />
+      </div>
+    </motion.div>
   )
 }

@@ -1,45 +1,64 @@
-@import "tailwindcss/base";
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
-
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+  --background: 0 0% 2%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 7%;
+  --card-foreground: 0 0% 100%;
+  --popover: 0 0% 7%;
+  --popover-foreground: 0 0% 100%;
+  --primary: 39 97% 58%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 142 55% 71%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 0 0% 16%;
+  --muted-foreground: 215 5% 56%;
+  --accent: 142 88% 41%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 16%;
+  --input: 0 0% 16%;
+  --ring: 39 97% 58%;
+  --radius: 0.5rem;
 }
 
 body {
-  background-image: url("../public/Images/rose-shape.png"),url("../public/Images/bottom-shape.png");
-  background-position: right top, bottom center;
-  background-repeat: no-repeat;
-  background-size: 50%,100%;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
-.projects {
-  position: relative;
-  display: inline-block;
-  padding-bottom: 10px;
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
 }
 
-.projects::after {
-  content: '';
-  position: absolute;
-  width: 50%;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  margin: 0 auto;
-  height: 5px;
-  background-color: #176B87; 
-  border-radius: 4px;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
+@font-face {
+  font-family: "Handwriting";
+  src: url("/fonts/handwriting.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-handwriting {
+  font-family: "Handwriting", cursive;
+}
+
+/* For page transitions */
+html,
+body {
+  overflow-x: hidden;
+}
