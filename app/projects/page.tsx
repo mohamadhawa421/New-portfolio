@@ -4,7 +4,6 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import { motion } from "framer-motion"
 
 // Project type definition
 type ProjectType = "all" | "mobile" | "web" | "showcase" | "redesign"
@@ -28,34 +27,34 @@ const projects: Project[] = [
       "WISE Academy a high standard school based in the US promoting academic excellence in a faith based and safe environment for our students.",
     image: "/placeholder.svg?height=200&width=300",
     type: ["web"],
-    link: "/projects/wise-academy",
+    link: "/projects/wise-academy?from=projects",
   },
   {
     id: "project-2",
-    title: "Project Name",
+    title: "Mobile Banking App",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis.",
+      "A modern banking application with intuitive UI and secure transaction features for a seamless financial experience.",
     image: "/placeholder.svg?height=200&width=300",
     type: ["mobile"],
-    link: "#",
+    link: "/projects/mobile-banking?from=projects",
   },
   {
     id: "project-3",
-    title: "Project Name",
+    title: "E-commerce Platform",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis.",
+      "A comprehensive online shopping platform with advanced filtering, cart management, and payment processing.",
     image: "/placeholder.svg?height=200&width=300",
     type: ["showcase"],
-    link: "#",
+    link: "/projects/ecommerce?from=projects",
   },
   {
     id: "project-4",
-    title: "Project Name",
+    title: "Health App Redesign",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis.",
+      "A complete redesign of a health tracking application to improve user engagement and simplify the tracking process.",
     image: "/placeholder.svg?height=200&width=300",
     type: ["redesign"],
-    link: "#",
+    link: "/projects/health-app?from=projects",
   },
   {
     id: "wise-academy-2",
@@ -64,34 +63,34 @@ const projects: Project[] = [
       "WISE Academy a high standard school based in the US promoting academic excellence in a faith based and safe environment for our students.",
     image: "/placeholder.svg?height=200&width=300",
     type: ["web"],
-    link: "/projects/wise-academy",
+    link: "/projects/wise-academy?from=projects",
   },
   {
     id: "project-6",
-    title: "Project Name",
+    title: "Travel Companion App",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis.",
+      "A mobile app that helps travelers plan their trips, discover local attractions, and navigate unfamiliar cities.",
     image: "/placeholder.svg?height=200&width=300",
     type: ["mobile"],
-    link: "#",
+    link: "/projects/travel-app?from=projects",
   },
   {
     id: "project-7",
-    title: "Project Name",
+    title: "Corporate Website",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis.",
+      "A professional website for a corporate client featuring modern design elements and seamless user experience.",
     image: "/placeholder.svg?height=200&width=300",
     type: ["showcase"],
-    link: "#",
+    link: "/projects/corporate-site?from=projects",
   },
   {
     id: "project-8",
-    title: "Project Name",
+    title: "News Portal Redesign",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis.",
+      "A complete overhaul of a news portal to improve readability, content discovery, and overall user experience.",
     image: "/placeholder.svg?height=200&width=300",
     type: ["redesign"],
-    link: "#",
+    link: "/projects/news-portal?from=projects",
   },
   {
     id: "wise-academy-3",
@@ -100,34 +99,34 @@ const projects: Project[] = [
       "WISE Academy a high standard school based in the US promoting academic excellence in a faith based and safe environment for our students.",
     image: "/placeholder.svg?height=200&width=300",
     type: ["web"],
-    link: "/projects/wise-academy",
+    link: "/projects/wise-academy?from=projects",
   },
   {
     id: "project-10",
-    title: "Project Name",
+    title: "Fitness Tracker",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis.",
+      "A mobile application designed to help users track their fitness goals, workouts, and nutrition in one place.",
     image: "/placeholder.svg?height=200&width=300",
     type: ["mobile"],
-    link: "#",
+    link: "/projects/fitness-tracker?from=projects",
   },
   {
     id: "project-11",
-    title: "Project Name",
+    title: "Restaurant Website",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis.",
+      "An elegant website for a high-end restaurant featuring online reservations, menu browsing, and location information.",
     image: "/placeholder.svg?height=200&width=300",
     type: ["showcase"],
-    link: "#",
+    link: "/projects/restaurant?from=projects",
   },
   {
     id: "project-12",
-    title: "Project Name",
+    title: "Social Media App Redesign",
     description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate libero et velit interdum, ac aliquet odio mattis.",
+      "A redesign of a popular social media platform to improve engagement, reduce clutter, and enhance user experience.",
     image: "/placeholder.svg?height=200&width=300",
     type: ["redesign"],
-    link: "#",
+    link: "/projects/social-media?from=projects",
   },
 ]
 
@@ -166,13 +165,7 @@ export default function ProjectsPage() {
   }
 
   return (
-    <motion.div
-      initial={{ y: "100%", opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: "100%", opacity: 0 }}
-      transition={{ type: "tween", ease: "easeInOut", duration: 0.5 }}
-      className="min-h-screen bg-black text-white p-5 md:p-7"
-    >
+    <div className="page-content min-h-screen bg-black text-white p-5 md:p-7">
       {/* Back Button */}
       <Link href="/about" className="inline-flex items-center text-white hover:text-[#0acf83] mb-8 transition-colors">
         <ArrowLeft className="w-4 h-4 mr-2" />
@@ -232,6 +225,7 @@ export default function ProjectsPage() {
         {filteredProjects.map((project) => (
           <Link href={project.link} key={project.id} className="block">
             <div className="bg-[#121212] rounded-lg overflow-hidden hover:border hover:border-[#0acf83] transition-all">
+              <div  className="rounded-lg overflow-hidden hover:border hover:border-[#0acf83] transition-all">
               <div className="h-48 bg-[#1e293b] relative">
                 <Image
                   src={project.image || "/placeholder.svg"}
@@ -262,6 +256,6 @@ export default function ProjectsPage() {
           Contact Me
         </Link>
       </div>
-    </motion.div>
+  </div>
   )
 }

@@ -1,12 +1,15 @@
 "use client"
 
+import type React from "react"
+
 import { useEffect, useRef } from "react"
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
 import WavesAnimation from "@/components/waves-animation"
 
 export default function HomePage() {
   const particlesRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
   useEffect(() => {
     // Create random particles - increased number
@@ -66,13 +69,14 @@ export default function HomePage() {
     }
   }, [])
 
+  // Function to navigate to about page sections
+  const navigateToSection = (sectionId: string) => (e: React.MouseEvent) => {
+    e.preventDefault()
+    router.push(`/about#${sectionId}`)
+  }
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="min-h-screen bg-black text-white relative overflow-hidden"
-    >
+    <div className="page-content min-h-screen bg-black text-white relative">
       {/* Particles */}
       <div ref={particlesRef} className="absolute inset-0 pointer-events-none z-0"></div>
 
@@ -82,23 +86,39 @@ export default function HomePage() {
           Mohamad
         </Link>
         <nav className="hidden md:flex space-x-6">
-          <Link href="/about" className="text-sm hover:text-[#90dda9] transition-colors">
+          <a
+            href="/about"
+            onClick={navigateToSection("about")}
+            className="text-sm hover:text-[#90dda9] transition-colors"
+          >
             About Me
-          </Link>
-          <Link href="/about#services" className="text-sm hover:text-[#90dda9] transition-colors">
+          </a>
+          <a
+            href="/about#services"
+            onClick={navigateToSection("services")}
+            className="text-sm hover:text-[#90dda9] transition-colors"
+          >
             Services
-          </Link>
-          <Link href="/about#craft" className="text-sm hover:text-[#90dda9] transition-colors">
+          </a>
+          <a
+            href="/about#craft"
+            onClick={navigateToSection("craft")}
+            className="text-sm hover:text-[#90dda9] transition-colors"
+          >
             My Craft
-          </Link>
-          <Link href="/about#cost" className="text-sm hover:text-[#90dda9] transition-colors">
+          </a>
+          <a
+            href="/about#cost"
+            onClick={navigateToSection("cost")}
+            className="text-sm hover:text-[#90dda9] transition-colors"
+          >
             The Cost Of Creativity
-          </Link>
+          </a>
         </nav>
       </header>
 
       {/* Main Content */}
-      <main className="flex flex-col items-center justify-center px-6 pt-20 pb-32 relative z-10">
+      <main className="flex flex-col items-center justify-center px-6 pt-20 pb-32 relative z-10 w-4xl m-auto">
         <p className="text-center text-lg mb-4">
           I'm Mohamad Hawa, and I'm passionate about designing intuitive experiences.
         </p>
@@ -124,9 +144,9 @@ export default function HomePage() {
       </main>
 
       {/* Animated Waves */}
-      <div className="absolute bottom-0 left-0 right-0 h-[300px] z-0">
+      <div className="absolute bottom-0 left-0 right-0 h-[300px] z-0 w-full overflow-hidden">
         <WavesAnimation speed={0.5} />
       </div>
-    </motion.div>
+    </div>
   )
 }

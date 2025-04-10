@@ -3,29 +3,32 @@
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import { motion } from "framer-motion"
+import { useSearchParams } from "next/navigation"
 
 export default function WiseAcademyProject() {
+  const searchParams = useSearchParams()
+  const from = searchParams.get("from") || "about"
+
+  const backLink = from === "projects" ? "/projects" : "/about"
+  const backText = from === "projects" ? "All Projects" : "Bring Me Back"
+
   return (
-    <motion.div
-      initial={{ y: "100%", opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: "100%", opacity: 0 }}
-      transition={{ type: "tween", ease: "easeInOut", duration: 0.5 }}
-      className="min-h-screen bg-black text-white p-5 md:p-7"
-    >
+    <div className="page-content min-h-screen bg-black text-white p-5 md:p-7">
       {/* Back Button */}
-      <Link href="/about" className="inline-flex items-center text-white hover:text-[#0acf83] mb-8 transition-colors">
+      <Link href={backLink} className="inline-flex items-center text-white hover:text-[#0acf83] mb-8 transition-colors">
         <ArrowLeft className="w-4 h-4 mr-2" />
-        <span>Bring Me Back</span>
+        <span>{backText}</span>
       </Link>
 
       {/* Top Section - About & Problem */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {/* About The Project */}
         <div className="bg-[#121212] rounded-[20px] p-5">
-          <h2 className="text-xl font-bold mb-1">About The</h2>
-          <h2 className="text-xl font-bold text-[#0acf83] mb-4">Project</h2>
+          <h2 className="text-[34px] font-bold mb-1">
+            <span className="text-white">About</span> <span className="text-[#90DDA9]">The</span>
+          </h2>
+          <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">Project</h2>
+          <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
 
           <p className="text-sm text-[#8c8e93] mb-4 leading-relaxed">
             WISE Academy a high standard school based in the US promoting academic excellence in a faith based and safe
@@ -34,31 +37,15 @@ export default function WiseAcademyProject() {
             needed a modern, scalable, and user-friendly back-office solution to streamline student enrollment, track
             records, and manage communication effectively.
           </p>
-
-          <div className="flex flex-col gap-4 mt-6">
-            <div className="bg-[#1A1A1A] rounded-lg p-3">
-              <p className="text-xs text-[#8c8e93]">Client</p>
-              <p className="text-sm font-medium">Wise Academy</p>
-            </div>
-            <div className="bg-[#1A1A1A] rounded-lg p-3">
-              <p className="text-xs text-[#8c8e93]">Project</p>
-              <p className="text-sm font-medium">Back-Office System</p>
-            </div>
-            <div className="bg-[#1A1A1A] rounded-lg p-3">
-              <p className="text-xs text-[#8c8e93]">Timeline</p>
-              <p className="text-sm font-medium">One Week</p>
-            </div>
-            <div className="bg-[#1A1A1A] rounded-lg p-3">
-              <p className="text-xs text-[#8c8e93]">Screens</p>
-              <p className="text-sm font-medium">44+ Screens</p>
-            </div>
-          </div>
         </div>
 
         {/* Problem Statement */}
         <div className="bg-[#121212] rounded-[20px] p-5">
-          <h2 className="text-xl font-bold mb-1">Problem</h2>
-          <h2 className="text-xl font-bold text-[#0acf83] mb-4">Statement</h2>
+          <h2 className="text-[34px] font-bold mb-1">
+            <span className="text-white">Problem</span>
+          </h2>
+          <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">Statement</h2>
+          <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
 
           <p className="text-sm text-[#8c8e93] leading-relaxed">
             Wise Academy faced challenges with their existing student management system, which was outdated,
@@ -69,11 +56,33 @@ export default function WiseAcademyProject() {
         </div>
       </div>
 
+      {/* Project Details Bar */}
+      <div className="bg-[#121212] rounded-[20px] p-5 mb-6 grid grid-cols-4 gap-4">
+        <div>
+          <p className="text-sm text-[#8c8e93]">Client</p>
+          <p className="text-base font-medium">Wise Academy</p>
+        </div>
+        <div>
+          <p className="text-sm text-[#8c8e93]">Project</p>
+          <p className="text-base font-medium">Back-Office System</p>
+        </div>
+        <div>
+          <p className="text-sm text-[#8c8e93]">Timeline</p>
+          <p className="text-base font-medium">One Week</p>
+        </div>
+        <div>
+          <p className="text-sm text-[#8c8e93]">Results</p>
+          <p className="text-base font-medium">44+ Screens</p>
+        </div>
+      </div>
+
       {/* Research & Insights */}
       <div className="bg-[#121212] rounded-[20px] p-5 mb-6">
-        <h2 className="text-[22px] font-semibold mb-2">Research</h2>
-        <h2 className="text-[22px] font-semibold mb-4">& Insights</h2>
-        <div className="w-1/2 h-[3px] bg-[#90DDA9] rounded-full mb-5"></div>
+        <h2 className="text-[34px] font-bold mb-1">
+          <span className="text-white">Research</span>
+        </h2>
+        <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">& Insights</h2>
+        <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
 
         <p className="text-sm mb-4">To understand the client's needs, I conducted:</p>
 
@@ -110,9 +119,11 @@ export default function WiseAcademyProject() {
 
       {/* Design Process */}
       <div className="bg-[#121212] rounded-[20px] p-5 mb-6">
-        <h2 className="text-[22px] font-semibold mb-2">Design</h2>
-        <h2 className="text-[22px] font-semibold mb-2">Process</h2>
-        <div className="w-1/2 h-[3px] bg-[#90DDA9] rounded-full mb-5"></div>
+        <h2 className="text-[34px] font-bold mb-1">
+          <span className="text-white">Design</span>
+        </h2>
+        <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">Process</h2>
+        <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Wireframes */}
@@ -179,9 +190,11 @@ export default function WiseAcademyProject() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {/* Final Solutions */}
         <div className="bg-[#121212] rounded-[20px] p-5">
-          <h2 className="text-[22px] font-semibold mb-2">Final</h2>
-          <h2 className="text-[22px] font-semibold mb-2">Solutions</h2>
-          <div className="w-1/2 h-[3px] bg-[#90DDA9] rounded-full mb-5"></div>
+          <h2 className="text-[34px] font-bold mb-1">
+            <span className="text-white">Final</span>
+          </h2>
+          <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">Solutions</h2>
+          <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
 
           <p className="text-sm mb-3">The Design Focused On Solving Wise Academy's Challenges By:</p>
 
@@ -202,9 +215,11 @@ export default function WiseAcademyProject() {
 
         {/* End Results */}
         <div className="bg-[#121212] rounded-[20px] p-5">
-          <h2 className="text-[22px] font-semibold mb-2">End</h2>
-          <h2 className="text-[22px] font-semibold mb-2">Results</h2>
-          <div className="w-1/2 h-[3px] bg-[#90DDA9] rounded-full mb-5"></div>
+          <h2 className="text-[34px] font-bold mb-1">
+            <span className="text-white">End</span>
+          </h2>
+          <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">Results</h2>
+          <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
 
           <ul className="space-y-3 pl-1">
             <li>
@@ -230,9 +245,11 @@ export default function WiseAcademyProject() {
 
       {/* Visuals & Screenshots */}
       <div className="bg-[#121212] rounded-[20px] p-5 mb-6">
-        <h2 className="text-[22px] font-semibold mb-2">Visuals</h2>
-        <h2 className="text-[22px] font-semibold mb-2">& Screenshots</h2>
-        <div className="w-1/2 h-[3px] bg-[#90DDA9] rounded-full mb-5"></div>
+        <h2 className="text-[34px] font-bold mb-1">
+          <span className="text-white">Visuals</span>
+        </h2>
+        <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">& Screenshots</h2>
+        <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Dashboard & Insights */}
@@ -297,6 +314,6 @@ export default function WiseAcademyProject() {
           Contact Me
         </Link>
       </div>
-    </motion.div>
+    </div>
   )
 }

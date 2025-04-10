@@ -1,37 +1,109 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import type React from "react"
+
+import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Download } from "lucide-react"
-import { motion } from "framer-motion"
+import { useSearchParams, useRouter } from "next/navigation"
 
 export default function AboutPage() {
-  // Scroll to section when clicking on navigation links
-  useEffect(() => {
-    const handleNavClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      if (target.tagName === "A" && target.getAttribute("href")?.startsWith("#")) {
-        e.preventDefault()
-        const id = target.getAttribute("href")?.substring(1)
-        const element = document.getElementById(id || "")
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth" })
-        }
-      }
-    }
+  const [activeSection, setActiveSection] = useState<string>("about")
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const mainContentRef = useRef<HTMLDivElement>(null)
 
-    document.addEventListener("click", handleNavClick)
-    return () => document.removeEventListener("click", handleNavClick)
+  // Create refs for each section
+  const sectionRefs = {
+    about: useRef<HTMLElement>(null),
+    services: useRef<HTMLElement>(null),
+    craft: useRef<HTMLElement>(null),
+    cost: useRef<HTMLElement>(null),
+  }
+
+  // Function to scroll to a section
+  const scrollToSection = (sectionId: string) => {
+    const section = sectionRefs[sectionId as keyof typeof sectionRefs]?.current
+
+    if (section && mainContentRef.current) {
+      // Calculate position to scroll to (element's top position minus header height)
+      const headerHeight = 70 // Approximate height of the header
+      const sectionTop = section.offsetTop
+      const offsetPosition = sectionTop - headerHeight
+
+      // Scroll the main content div
+      mainContentRef.current.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      })
+
+      // Update active section and URL
+      setActiveSection(sectionId)
+      window.history.replaceState({}, "", `#${sectionId}`)
+    }
+  }
+
+  // Handle navigation link clicks
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    const href = e.currentTarget.getAttribute("href")
+
+    if (href && href.startsWith("#")) {
+      const sectionId = href.substring(1)
+      scrollToSection(sectionId)
+    }
+  }
+
+  // Check for hash in URL on initial load
+  useEffect(() => {
+    // Get the section ID from the URL hash
+    const hash = window.location.hash.substring(1)
+
+    if (hash && sectionRefs[hash as keyof typeof sectionRefs]?.current) {
+      // Small delay to ensure the page is fully loaded
+      setTimeout(() => {
+        scrollToSection(hash)
+      }, 100)
+    }
   }, [])
 
-  // Refs for section titles to measure their width
-  const workExpRef = useRef<HTMLHeadingElement>(null)
-  const stackRef = useRef<HTMLHeadingElement>(null)
-  const servicesRef = useRef<HTMLHeadingElement>(null)
-  const processRef = useRef<HTMLHeadingElement>(null)
-  const craftsRef = useRef<HTMLHeadingElement>(null)
-  const costRef = useRef<HTMLHeadingElement>(null)
+  // Set up intersection observer to update active section on scroll
+  useEffect(() => {
+    if (!mainContentRef.current) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id)
+            // Update URL without reloading the page
+            window.history.replaceState({}, "", `#${entry.target.id}`)
+          }
+        })
+      },
+      {
+        root: mainContentRef.current,
+        threshold: 0.2, // Trigger when 20% of the element is visible
+        rootMargin: "-70px 0px 0px 0px", // Adjust for header height
+      },
+    )
+
+    // Observe all sections
+    Object.values(sectionRefs).forEach((ref) => {
+      if (ref.current) {
+        observer.observe(ref.current)
+      }
+    })
+
+    return () => {
+      Object.values(sectionRefs).forEach((ref) => {
+        if (ref.current) {
+          observer.unobserve(ref.current)
+        }
+      })
+    }
+  }, [mainContentRef])
 
   // Effect to set all underlines to 58px width
   useEffect(() => {
@@ -46,43 +118,87 @@ export default function AboutPage() {
 
     // Initial setup
     setUnderlineWidths()
-
-    return () => {}
   }, [])
 
+  // Sample projects data for My Crafts section
+  const projects = [
+    {
+      id: "wise-academy",
+      title: "Wise Academy",
+      description:
+        "WISE Academy, a high standard school based in Beirut, providing quality education in a fun, relaxed and safe environment for our students.",
+      image: "/placeholder.svg?height=200&width=400",
+      link: "/projects/wise-academy?from=about",
+    },
+    {
+      id: "project-2",
+      title: "Mobile Banking App",
+      description:
+        "A modern banking application with intuitive UI and secure transaction features for a seamless financial experience.",
+      image: "/placeholder.svg?height=200&width=400",
+      link: "/projects/mobile-banking?from=about",
+    },
+    {
+      id: "project-3",
+      title: "E-commerce Platform",
+      description:
+        "A comprehensive online shopping platform with advanced filtering, cart management, and payment processing.",
+      image: "/placeholder.svg?height=200&width=400",
+      link: "/projects/ecommerce?from=about",
+    },
+  ]
+
   return (
-    <motion.div
-      initial={{ y: "100%", opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: "100%", opacity: 0 }}
-      transition={{ type: "tween", ease: "easeInOut", duration: 0.5 }}
-      className="flex flex-col min-h-screen bg-[#040404] text-white"
-    >
+    <div className="page-content about-page-content flex flex-col min-h-screen bg-[#040404] text-white">
       {/* Header */}
       <header className="flex justify-between items-center px-5 py-5 bg-[#040404] sticky top-0 z-10 backdrop-blur-md bg-opacity-80">
         <Link href="/" className="text-xl font-medium text-[#fbb03b]">
           Mohammad
         </Link>
         <nav className="hidden md:flex space-x-6">
-          <Link href="#about" className="text-sm hover:text-[#fbb03b] transition-colors">
+          <a
+            href="#about"
+            onClick={handleNavClick}
+            className={`text-sm hover:text-[#90DDA9] transition-colors ${
+              activeSection === "about" ? "text-[#90DDA9]" : ""
+            }`}
+          >
             About Me
-          </Link>
-          <Link href="#services" className="text-sm hover:text-[#fbb03b] transition-colors">
+          </a>
+          <a
+            href="#services"
+            onClick={handleNavClick}
+            className={`text-sm hover:text-[#90DDA9] transition-colors ${
+              activeSection === "services" ? "text-[#90DDA9]" : ""
+            }`}
+          >
             Services
-          </Link>
-          <Link href="#craft" className="text-sm hover:text-[#fbb03b] transition-colors">
+          </a>
+          <a
+            href="#craft"
+            onClick={handleNavClick}
+            className={`text-sm hover:text-[#90DDA9] transition-colors ${
+              activeSection === "craft" ? "text-[#90DDA9]" : ""
+            }`}
+          >
             My Craft
-          </Link>
-          <Link href="#cost" className="text-sm hover:text-[#fbb03b] transition-colors">
+          </a>
+          <a
+            href="#cost"
+            onClick={handleNavClick}
+            className={`text-sm hover:text-[#90DDA9] transition-colors ${
+              activeSection === "cost" ? "text-[#90DDA9]" : ""
+            }`}
+          >
             The Cost Of Creativity
-          </Link>
+          </a>
         </nav>
       </header>
 
       <main className="flex-grow">
         <div className="flex flex-col md:flex-row">
           {/* Sidebar - Fixed when scrolling - 1/3 width */}
-          <aside className="w-full md:w-1/3 bg-[#040404] p-5 md:fixed md:h-screen md:overflow-y-auto">
+          <aside className="sidebar w-full md:w-1/3 bg-[#040404] p-5 md:fixed md:h-screen">
             <div className="mb-6">
               <div className="relative w-full h-[220px] mb-4 overflow-hidden rounded-lg">
                 <Image
@@ -140,12 +256,14 @@ export default function AboutPage() {
           </aside>
 
           {/* Main Content - Scrollable with offset for fixed sidebar - 2/3 width */}
-          <div className="w-full md:w-2/3 md:ml-[33.333%] p-5">
+          <div
+            ref={mainContentRef}
+            className="main-content w-full md:w-2/3 md:ml-[33.333%] p-5 overflow-y-auto"
+            style={{ height: "calc(100vh - 70px)" }} // Subtract header height
+          >
             {/* About Me Section */}
-            <section id="about" className="mb-2 bg-[#121212] p-6 rounded-[20px]">
-              <h2 ref={workExpRef} className="text-[22px] font-semibold mb-2">
-                Work Experience
-              </h2>
+            <section id="about" ref={sectionRefs.about} className="mb-2 bg-[#121212] p-6 rounded-[20px]">
+              <h2 className="text-[22px] font-semibold mb-2">Work Experience</h2>
               <div className="h-[3px] bg-[#90DDA9] rounded-full mb-5 underline-bar"></div>
 
               <div className="mb-6">
@@ -180,9 +298,7 @@ export default function AboutPage() {
 
             {/* Stack */}
             <section className="mb-2 bg-[#121212] p-6 rounded-[20px]">
-              <h2 ref={stackRef} className="text-[22px] font-semibold mb-2">
-                Stack
-              </h2>
+              <h2 className="text-[22px] font-semibold mb-2">Stack</h2>
               <div className="h-[3px] bg-[#90DDA9] rounded-full mb-5 underline-bar"></div>
 
               <div className="flex flex-wrap gap-3">
@@ -214,10 +330,8 @@ export default function AboutPage() {
             </section>
 
             {/* Services */}
-            <section id="services" className="mb-2 bg-[#121212] p-6 rounded-[20px]">
-              <h2 ref={servicesRef} className="text-[22px] font-semibold mb-2">
-                Services
-              </h2>
+            <section id="services" ref={sectionRefs.services} className="mb-2 bg-[#121212] p-6 rounded-[20px]">
+              <h2 className="text-[22px] font-semibold mb-2">Services</h2>
               <div className="h-[3px] bg-[#90DDA9] rounded-full mb-5 underline-bar"></div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -299,9 +413,7 @@ export default function AboutPage() {
 
             {/* Process */}
             <section className="mb-2 bg-[#121212] p-6 rounded-[20px]">
-              <h2 ref={processRef} className="text-[22px] font-semibold mb-2">
-                Process For You
-              </h2>
+              <h2 className="text-[22px] font-semibold mb-2">Process For You</h2>
               <div className="h-[3px] bg-[#90DDA9] rounded-full mb-5 underline-bar"></div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -383,12 +495,10 @@ export default function AboutPage() {
             </section>
 
             {/* My Crafts */}
-            <section id="craft" className="mb-2 bg-[#121212] p-6 rounded-[20px]">
+            <section id="craft" ref={sectionRefs.craft} className="mb-2 bg-[#121212] p-6 rounded-[20px]">
               <div className="flex justify-between items-center mb-5">
                 <div>
-                  <h2 ref={craftsRef} className="text-[22px] font-semibold mb-2">
-                    My Crafts
-                  </h2>
+                  <h2 className="text-[22px] font-semibold mb-2">My Crafts</h2>
                   <div className="h-[3px] bg-[#90DDA9] rounded-full underline-bar"></div>
                 </div>
                 <Link
@@ -400,34 +510,31 @@ export default function AboutPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Link href="/projects/wise-academy" className="block">
-                  <div className="bg-[#1A1A1A] rounded-lg overflow-hidden hover:border hover:border-[#0acf83] transition-all">
-                    <div className="h-40 bg-[#1e293b] relative">
-                      <Image
-                        src="/placeholder.svg?height=200&width=400"
-                        alt="Wise Academy"
-                        width={400}
-                        height={200}
-                        className="object-cover w-full h-full"
-                      />
+                {projects.map((project) => (
+                  <Link href={project.link} key={project.id} className="block">
+                    <div className="bg-[#1A1A1A] rounded-lg overflow-hidden hover:border hover:border-[#0acf83] transition-all">
+                      <div className="h-40 bg-[#1e293b] relative">
+                        <Image
+                          src={project.image || "/placeholder.svg"}
+                          alt={project.title}
+                          width={400}
+                          height={200}
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <h3 className="text-sm font-medium mb-1">{project.title}</h3>
+                        <p className="text-xs text-[#8c8e93]">{project.description}</p>
+                      </div>
                     </div>
-                    <div className="p-4">
-                      <h3 className="text-sm font-medium mb-1">Wise Academy</h3>
-                      <p className="text-xs text-[#8c8e93]">
-                        WISE Academy, a high standard school based in Beirut, providing quality education in a fun,
-                        relaxed and safe environment for our students.
-                      </p>
-                    </div>
-                  </div>
-                </Link>
+                  </Link>
+                ))}
               </div>
             </section>
 
             {/* Pricing */}
-            <section id="cost" className="mb-2 bg-[#121212] p-6 rounded-[20px]">
-              <h2 ref={costRef} className="text-[22px] font-semibold mb-2">
-                The Cost Of Creativity
-              </h2>
+            <section id="cost" ref={sectionRefs.cost} className="mb-2 bg-[#121212] p-6 rounded-[20px]">
+              <h2 className="text-[22px] font-semibold mb-2">The Cost Of Creativity</h2>
               <div className="h-[3px] bg-[#90DDA9] rounded-full mb-5 underline-bar"></div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -550,39 +657,15 @@ export default function AboutPage() {
                 *Lower prices for custom packages and redesigning are available for unique project needs. Contact me for
                 a tailored quote.*
               </p>
-
-              <div className="bg-[#1A1A1A] p-4 rounded-lg mt-6">
-                <h3 className="text-sm font-medium mb-3">Additional Notes</h3>
-                <div className="mb-3">
-                  <h4 className="text-xs font-medium mb-1">Why Choose Me?</h4>
-                  <p className="text-xs text-[#8c8e93]">
-                    With 4 years of experience—2 years at a French company and 2 years of freelancing—I bring a wealth
-                    of expertise in creating intuitive and visually appealing user interfaces and experiences. My
-                    attention to detail and commitment to understanding client needs ensure that the end product aligns
-                    perfectly with your vision.
-                  </p>
-                </div>
-
-                <div className="mb-3">
-                  <h4 className="text-xs font-medium mb-1">Hourly Rate</h4>
-                  <p className="text-xs text-[#8c8e93]">
-                    $35 - $50 per hour (depending on the project scope and complexity)
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="text-xs font-medium mb-1">Payment</h4>
-                  <p className="text-xs text-[#8c8e93]">
-                    Payment Terms: 50% upfront, 50% upon completion
-                    <br />
-                    Price is quoted in USD. LBP equivalent can be discussed based on the current exchange rate.
-                  </p>
-                </div>
-              </div>
             </section>
           </div>
         </div>
       </main>
-    </motion.div>
+
+      {/* Footer */}
+      <footer className="bg-[#040404] p-5 text-center text-xs text-[#8c8e93]">
+        © 2024 Mohammad Hawa. All rights reserved.
+      </footer>
+    </div>
   )
 }
