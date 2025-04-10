@@ -222,27 +222,27 @@ export default function ProjectsPage() {
 
       {/* Projects Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-        {filteredProjects.map((project) => (
-          <Link href={project.link} key={project.id} className="block">
-            <div className="bg-[#121212] rounded-lg overflow-hidden hover:border hover:border-[#0acf83] transition-all">
-              <div  className="rounded-lg overflow-hidden hover:border hover:border-[#0acf83] transition-all">
-              <div className="h-48 bg-[#1e293b] relative">
-                <Image
-                  src={project.image || "/placeholder.svg"}
-                  alt={project.title}
-                  width={400}
-                  height={200}
-                  className="object-cover w-full h-full"
-                />
-              </div>
-              <div className="p-4">
-                <h3 className="text-sm font-medium mb-1">{project.title}</h3>
-                <p className="text-xs text-[#8c8e93] mb-3">{project.description}</p>
-                <div className="mt-2">{getProjectTypeBadge(project.type)}</div>
-              </div>
-            </div>
-          </Link>
-        ))}
+      {filteredProjects.map((project) => (
+  <Link href={project.link} key={project.id} className="block">
+    <div className="bg-[#121212] rounded-lg overflow-hidden hover:border hover:border-[#0acf83] transition-all">
+      <div className="h-48 bg-[#1e293b] relative">
+        <Image
+          src={project.image || "/placeholder.svg"}
+          alt={project.title}
+          width={400}
+          height={200}
+          className="object-cover w-full h-full"
+        />
+      </div>
+      <div className="p-4">
+        <h3 className="text-sm font-medium mb-1">{project.title}</h3>
+        <p className="text-xs text-[#8c8e93] mb-3">{project.description}</p>
+        <div className="mt-2">{getProjectTypeBadge(project.type)}</div>
+      </div>
+    </div>
+  </Link>
+))}
+
       </div>
 
       {/* Call to Action */}
