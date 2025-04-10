@@ -17,14 +17,12 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
 
   // Track navigation direction
   useEffect(() => {
-    // Skip effect on first render but set isInitialRender to false
     if (isInitialRender) {
       setIsInitialRender(false)
       return
     }
 
     if (previousPathname !== pathname) {
-      // If we have a previous pathname, we can determine direction
       const isGoingBack = window.history.state?.idx < window.history.state?.oldIdx
       setDirection(isGoingBack ? "backward" : "forward")
       setPreviousPathname(pathname)
@@ -61,16 +59,16 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   }
 
   return (
-    <div className="transition-container">
+    <div className="transition-container page"> {/* Apply 'page' class here */}
       <AnimatePresence mode="wait" initial={true} custom={direction}>
         <motion.div
           key={pathname}
-          className="page"
           custom={direction}
           variants={variants}
           initial="initial"
           animate="animate"
           exit="exit"
+          style={{ position: 'absolute', width: '100%', height: '100%' }} // Ensure proper layering
         >
           {children}
         </motion.div>
