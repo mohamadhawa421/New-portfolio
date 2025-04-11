@@ -12,58 +12,47 @@ export default function AboutPage() {
     <div className="page-content about-page-content min-h-screen bg-[#040404] text-white">
       <div className="flex flex-col md:flex-row">
         {/* Fixed Sidebar */}
-        <aside className="w-full md:w-1/3 bg-[#040404] p-5 md:fixed md:left-0 md:top-0 md:h-screen md:overflow-y-auto">
-          <div className="mb-8">
-            <div className="relative w-full h-48 mb-4 overflow-hidden rounded-lg">
+        <aside className="w-full md:w-1/3 bg-[#040404] p-5 pt-9 md:fixed md:left-0 md:top-0 md:h-screen md:overflow-y-auto">
+            <div className="relative w-full h-96 min-h-80 mb-4 overflow-hidden rounded-lg">
               <Image
                 src="/profile-image.jpg"
                 alt="Mohamad Hawa"
+                quality={100}
                 width={300}
                 height={400}
                 className="object-cover w-full h-full"
               />
-            </div>
-            <h1 className="text-2xl font-bold mb-1">Mohamad Hawa</h1>
-            <p className="text-[#8c8e93]">UI/UX Designer @ Poyesis</p>
           </div>
 
-          <div className="space-y-3 mb-8">
-            <div className="flex justify-between items-center">
-              <span className="text-[#8c8e93]">Website</span>
-              <span>mohamadahawa.world</span>
+          <div className="flex flex-col gap-6 mb-8 p-8 bg-[#121212] rounded-2xl">
+            <div>
+            <h1 className="text-3xl font-bold mb-1">Mohamad Hawa</h1>
+            <p className="text-[#8c8e93] font-light">UI/UX Designer @ Poyesis</p>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-[#8c8e93]">Blog</span>
-              <span>mohamadahawa.blog</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-[#8c8e93]">Email</span>
-              <span>Mohamadahawa421@gmail.com</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-[#8c8e93]">Phone</span>
-              <span>+961 76 824 793</span>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <Link href="#" className="block w-full p-3 text-center border border-[#0acf83] text-[#0acf83] rounded-lg hover:bg-[#0acf83]/10 transition-colors">
-              LinkedIn
+            <div className="flex flex-col gap-3">
+            <Link href="#" className="block w-full p-3 text-center border rounded-full hover:bg-[#f2f2f2]/10 transition-colors">
+              Whatsapp
             </Link>
-            <Link href="#" className="block w-full p-3 text-center border border-[#25D366] text-[#25D366] rounded-lg hover:bg-[#25D366]/10 transition-colors">
-              WhatsApp
+            <Link href="#" className="block w-full p-3 text-center border rounded-full hover:bg-[#f2f2f2]/10 transition-colors">
+              Linkedin
             </Link>
-            <Link href="#" className="block w-full p-3 text-center border border-white rounded-lg hover:bg-white/10 transition-colors flex items-center justify-center">
+            <Link href="#" className="block w-full p-3 text-center border rounded-full hover:bg-[#f2f2f2]/10 transition-colors">
+              E-mail
+            </Link>
+            <Link href="#" className="block w-full p-3 text-center border rounded-full hover:bg-[#f2f2f2]/10 transition-colors flex items-center justify-center">
               <Download className="w-4 h-4 mr-2" />
               Download My CV
             </Link>
           </div>
+          </div>
+
+          
         </aside>
 
         {/* Scrollable Main Content */}
         <div 
           ref={mainContentRef}
-          className="w-full md:w-2/3 md:ml-[33.333%] p-5 overflow-y-auto"
+          className="w-full md:w-2/3 md:ml-[33.333%] mr-4 overflow-y-auto"
           style={{ 
             height: '100vh',
             overflowY: 'auto',

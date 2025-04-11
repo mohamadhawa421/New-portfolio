@@ -70,10 +70,7 @@ export default function HomePage() {
   }, [])
 
   return (
-    <div 
-      className="fixed inset-0 bg-black text-white z-0"
-      style={{ pointerEvents: 'none' }}
-    >
+    <div className="page-content min-h-screen bg-black text-white relative">
       {/* Particles */}
       <div ref={particlesRef} className="absolute inset-0 pointer-events-none z-0"></div>
 
