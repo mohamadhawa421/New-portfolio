@@ -137,19 +137,6 @@ body {
   font-family: "Handwriting", cursive;
 }
 
-[vaul-drawer] {
-  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1) !important;
-  transform: translateY(100%);
-  will-change: transform;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  touch-action: pan-y; /* Enable vertical scrolling */
-}
-
-[vaul-drawer][vaul-drawer-visible="true"] {
-  transform: translateY(0);
-}
-
 [vaul-drawer][vaul-drawer-visible="false"] {
   transform: translateY(100%) scale(0.98);
   opacity: 0.5;
@@ -228,25 +215,6 @@ body {
   }
 }
 
-/* Homepage Scale Effect */
-.home-base {
-  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s ease, filter 0.4s ease;
-  transform-origin: center;
-  transform: scale(1) translateZ(0);
-  opacity: 1;
-  filter: blur(0);
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-}
-
-.home-base.scaled {
-  transform: scale(0.96) translateY(20px) translateZ(-20px);
-  opacity: 0.9;
-  filter: blur(2px);
-  pointer-events: none;
-
-}
-
 /* Reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -258,9 +226,123 @@ body {
     scroll-behavior: auto !important;
   }
 
-  /* .home-base.scaled {
-    transform: scale(0.98);
-    opacity: 0.9;
-    filter: blur(1px);
-  } */
+}
+
+
+/* Add these to your globals.css
+
+/* Improve GPU acceleration for all animations */
+/* .gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform, opacity;
+}  */
+
+/* Optimize drawer transitions */
+/* [vaul-drawer] {
+  transform: translate3d(0, 100%, 0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+[vaul-drawer][vaul-drawer-visible="true"] {
+  transform: translate3d(0, 0, 0);
+} */
+
+/* Optimize home scaling effect */
+/* .home-base {
+  transform: translate3d(0, 0, 0) scale(1);
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s ease, filter 0.4s ease;
+}
+
+.home-base.scaled {
+  transform: translate3d(0, 20px, -20px) scale(0.96);
+  opacity: 0.9;
+  filter: blur(2px);
+  pointer-events: none;
+} */
+
+/* Optimize particle animations */
+@keyframes float {
+  0%, 100% { transform: translate3d(0, 0, 0); opacity: 0; }
+  25% { opacity: 0.5; }
+  50% { transform: translate3d(50px, -100px, 0); opacity: 0.8; }
+  75% { opacity: 0.5; }
+}
+
+
+/* Better GPU acceleration for animations */
+.gpu-accelerated {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+  contain: paint layout;
+}
+
+/* Optimize drawer transitions - use transform exclusively */
+[vaul-drawer] {
+  transform: translate3d(0, 100%, 0);
+  will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+[vaul-drawer][vaul-drawer-visible="true"] {
+  transform: translate3d(0, 0, 0);
+}
+
+/* Optimize home scaling effect - better compositing */
+.home-base {
+  transform: translate3d(0, 0, 0) scale(1);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.35s ease;
+  contain: paint layout;
+}
+
+.home-base.scaled {
+  transform: translate3d(0, 20px, 0) scale(0.96);
+  opacity: 0.9;
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+/* Better particle animation with composited properties */
+@keyframes float {
+  0%, 100% { 
+    transform: translate3d(0, 0, 0); 
+    opacity: 0; 
+  }
+  25% { 
+    opacity: 0.5; 
+  }
+  50% { 
+    transform: translate3d(50px, -100px, 0); 
+    opacity: 0.8; 
+  }
+  75% { 
+    opacity: 0.5; 
+  }
+}
+
+/* Optimize page transitions */
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out forwards;
+  will-change: opacity;
+}
+
+/* Quick interaction class for better touch response */
+.touch-optimized {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }

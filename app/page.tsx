@@ -26,54 +26,54 @@ export default function HomePage() {
     }
   }, [router])
 
-  // Particle animation setup - optimized for mobile
-  useEffect(() => {
-    const createParticles = () => {
-      if (!particlesRef.current) return
-
-      particlesRef.current.innerHTML = ""
-      // Reduce particle count on mobile
-      const count = isMobile ? 20 : 50
-
-      for (let i = 0; i < count; i++) {
-        const particle = document.createElement("div")
-        const size = Math.random() * 4 + 1
-        const x = Math.random() * 100
-        const y = Math.random() * 100
-        // Increase duration on mobile for better performance
-        const duration = Math.random() * (isMobile ? 30 : 20) + (isMobile ? 15 : 10)
-        const delay = Math.random() * 5
-
-        particle.className = "absolute rounded-full"
-        particle.style.width = `${size}px`
-        particle.style.height = `${size}px`
-        particle.style.left = `${x}%`
-        particle.style.top = `${y}%`
-        particle.style.opacity = "0"
-        particle.style.backgroundColor = Math.random() > 0.5 ? "#90dda9" : "#fbb03b"
-        particle.style.animation = `float ${duration}s ${delay}s infinite ease-in-out`
-
-        particlesRef.current.appendChild(particle)
-      }
-    }
-
-    createParticles()
-
-    const style = document.createElement("style")
-    style.textContent = `
-      @keyframes float {
-        0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
-        25% { opacity: 0.5; }
-        50% { transform: translateY(${isMobile ? "-50px" : "-100px"}) translateX(${isMobile ? "25px" : "50px"}); opacity: 0.8; }
-        75% { opacity: 0.5; }
-      }
+// Substantially optimized particle animation
+useEffect(() => {
+  if (!particlesRef.current) return
+  
+  // Clean up any existing particles and remove event listeners
+  particlesRef.current.innerHTML = ""
+  
+  // Use hardware-accelerated properties only
+  const count = isMobile ? 10 : 25 // Reduced particle count
+  const fragment = document.createDocumentFragment()
+  
+  // Create particles with composite properties
+  for (let i = 0; i < count; i++) {
+    const particle = document.createElement("div")
+    const size = Math.random() * 4 + 1
+    const x = Math.random() * 100
+    const y = Math.random() * 100
+    
+    // Longer animation duration with staggered starts - better for performance
+    const duration = Math.random() * (isMobile ? 45 : 35) + (isMobile ? 25 : 20)
+    const delay = Math.random() * 8
+    
+    // Use transform instead of left/top for animation
+    particle.className = "absolute rounded-full gpu-accelerated"
+    particle.style.cssText = `
+      width: ${size}px;
+      height: ${size}px;
+      left: ${x}%;
+      top: ${y}%;
+      opacity: 0;
+      background-color: ${Math.random() > 0.5 ? "#90dda9" : "#fbb03b"};
+      will-change: transform, opacity;
+      animation: float ${duration}s ${delay}s infinite ease-in-out;
     `
-    document.head.appendChild(style)
-
-    return () => {
-      document.head.removeChild(style)
+    
+    fragment.appendChild(particle)
+  }
+  
+  // Single DOM update
+  particlesRef.current.appendChild(fragment)
+  
+  return () => {
+    if (particlesRef.current) {
+      particlesRef.current.innerHTML = ""
     }
-  }, [isMobile])
+  }
+}, [isMobile])
+
 
   // Toggle mobile menu
   const toggleMobileMenu = () => {
@@ -177,7 +177,7 @@ export default function HomePage() {
       <div
         className={`absolute bottom-0 left-0 right-0 ${isIOS ? "h-[200px] sm:h-[300px]" : "h-[300px]"} z-0 w-full overflow-hidden`}
       >
-        <WavesAnimation speed={isMobile ? 0.3 : 0.5} />
+        <WavesAnimation speed={isMobile ? 0.1 : 0.3} />
       </div>
     </div>
   )

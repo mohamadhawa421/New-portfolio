@@ -41,7 +41,7 @@ const projects: Project[] = [
     link: "/projects/ecommerce"
   },
   {
-    id: "mobile-banking",
+    id: "mobile-banking4",
     title: "Mobile Banking App",
     description: "Secure financial transactions with intuitive interface",
     image: "/projects/banking-app.jpg",
@@ -49,7 +49,7 @@ const projects: Project[] = [
     link: "/projects/mobile-banking"
   },
   {
-    id: "wise-academy",
+    id: "wise-academy2",
     title: "Wise Academy",
     description: "School management system design for academic excellence",
     image: "/projects/wise.png",
@@ -57,7 +57,7 @@ const projects: Project[] = [
     link: "/projects/wise-academy"
   },
   {
-    id: "mobile-banking",
+    id: "mobile-banking2",
     title: "Mobile Banking App",
     description: "Secure financial transactions with intuitive interface",
     image: "/projects/banking-app.jpg",
@@ -65,7 +65,7 @@ const projects: Project[] = [
     link: "/projects/mobile-banking"
   },
   {
-    id: "ecommerce-platform",
+    id: "ecommerce-platform2",
     title: "E-commerce Platform",
     description: "Complete online shopping solution",
     image: "/projects/ecommerce.jpg",
@@ -73,7 +73,7 @@ const projects: Project[] = [
     link: "/projects/ecommerce"
   },
   {
-    id: "mobile-banking",
+    id: "mobile-banking3",
     title: "Mobile Banking App",
     description: "Secure financial transactions with intuitive interface",
     image: "/projects/banking-app.jpg",
@@ -114,7 +114,7 @@ export default function ProjectsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
         {filteredProjects.map((project) => (
           <Link href={project.link} key={project.id} className="block">
-            <div className="bg-[#292929] rounded-xl p-3 overflow-hidden hover:border hover:border-white transition-all">
+            <div className=" bg-[#292929] rounded-xl p-3 overflow-hidden hover:border hover:border-white transition-all">
               <div className="h-52 bg-[#1e293b] rounded-2xl relative overflow-hidden">
                 <Image
                   src={project.image}
@@ -127,7 +127,7 @@ export default function ProjectsPage() {
               </div>
               <div className="p-4">
                 <h3 className="text-sm font-semibold mb-1">{project.title}</h3>
-                <p className="text-xs text-[#8C8E93] mb-3">{project.description}</p>
+                <p className="min-h-8 text-xs text-[#8C8E93] mb-3">{project.description}</p>
                 <div className="mt-2">{getProjectTypeBadge(project.type)}</div>
               </div>
             </div>

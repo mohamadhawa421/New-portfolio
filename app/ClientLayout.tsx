@@ -1,57 +1,53 @@
+// Optimize re-renders and improve drawer transitions
 "use client"
 
 import type React from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, memo, useMemo } from "react"
 import { Drawer } from "vaul"
-import HomePage from "../app/page" // Import the HomePage component directly
+import HomePage from "../app/page"
 import { useMobileDetect } from "@/hooks/use-mobile"
 
 const VisuallyHidden = ({ children }: { children: React.ReactNode }) => <div className="sr-only">{children}</div>
 
+// Memo-ize HomePage with correct dependencies check
+const MemoizedHomePage = memo(HomePage)
+
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [currentPage, setCurrentPage] = useState<{ path: string; key: string } | null>(null)
   const { isMobile, isIOS } = useMobileDetect()
-
+  
+  // Use useMemo for derived state instead of useState + useEffect
+  const currentPage = useMemo(() => {
+    const isHomePage = pathname === "/"
+    return isHomePage ? null : {
+      path: pathname,
+      key: `${pathname}-${Date.now()}`,
+    }
+  }, [pathname])
+  
   // Is this the home page?
   const isHomePage = pathname === "/"
-
-  // Handle navigation state
-  useEffect(() => {
-    if (isHomePage) {
-      setCurrentPage(null)
-    } else {
-      setCurrentPage({
-        path: pathname,
-        key: `${pathname}-${Date.now()}`,
-      })
-    }
-  }, [pathname, isHomePage])
 
   const handleClose = useCallback(() => {
     router.back()
   }, [router])
 
-  // Calculate safe drawer height for iOS
-  const drawerHeight = isIOS ? "92%" : "95%"
+  // Calculate safe drawer height for iOS - using useMemo for performance
+  const drawerHeight = useMemo(() => isIOS ? "92%" : "95%", [isIOS])
 
   return (
     <div className="stack-container">
-      {/* Base Layer - Always shows home page component */}
+      {/* Base Layer - Always shows home page component with better GPU acceleration */}
       <div
-        className={`home-base ${currentPage ? "scaled" : ""}`}
-        style={{
-          willChange: "transform, opacity, filter",
-          contain: "paint",
-        }}
+        className={`home-base gpu-accelerated ${currentPage ? "scaled" : ""}`}
+        style={{ contain: "paint layout" }}
       >
-        {/* Always render the HomePage component in the background */}
-        <HomePage />
+        <MemoizedHomePage />
       </div>
 
-      {/* Overlay Page - Only for non-home pages */}
+      {/* Overlay Page - Only render when needed */}
       {!isHomePage && currentPage && (
         <Drawer.Root
           key={currentPage.key}
@@ -60,16 +56,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           shouldScaleBackground={false}
         >
           <Drawer.Portal>
-            <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" style={{ willChange: "opacity" }} />
+            <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40 gpu-accelerated" />
             <Drawer.Content
-              className={`fixed bottom-0 left-0 right-0 rounded-t-[10px] bg-[#1d1d1d] focus:outline-none z-50 transform-gpu overflow-hidden`}
+              className="fixed bottom-0 left-0 right-0 rounded-t-[10px] bg-[#1d1d1d] focus:outline-none z-50 overflow-hidden gpu-accelerated"
               style={{
                 height: drawerHeight,
-                transition: "transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)",
-                willChange: "transform",
-                contain: "content",
-                backfaceVisibility: "hidden",
-                WebkitOverflowScrolling: "touch", // For iOS momentum scrolling
+                containIntrinsicSize: "auto 100%",
+                contain: "paint layout",
               }}
             >
               <VisuallyHidden>
@@ -77,12 +70,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               </VisuallyHidden>
 
               <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-zinc-300/50 mb-4 mt-3" />
-              <div
-                className="h-[calc(100%-30px)] overflow-y-auto pb-safe overscroll-contain"
-                style={{
-                  WebkitOverflowScrolling: "touch", // For iOS momentum scrolling
-                }}
-              >
+              <div className="h-[calc(100%-30px)] overflow-y-auto pb-safe overscroll-contain">
                 {children}
               </div>
             </Drawer.Content>
@@ -90,8 +78,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         </Drawer.Root>
       )}
 
-      {/* Render home page content directly when on home page */}
-      {isHomePage && children}
+      {/* Don't render children when showing HomePage */}
+      {isHomePage && <div aria-hidden="true" style={{ display: "none" }}>{children}</div>}
     </div>
   )
 }
