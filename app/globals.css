@@ -288,13 +288,25 @@ body {
 }
 
 /* Optimize drawer transitions - use transform exclusively */
+/* [vaul-drawer] {
+  transform: translate3d(0, 100%, 0);
+  will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1) !important;
+} */
+
+
 [vaul-drawer] {
   transform: translate3d(0, 100%, 0);
   will-change: transform;
   backface-visibility: hidden;
   transform-style: preserve-3d;
   transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1) !important;
+  touch-action: none; /* Add this line */
 }
+
+
 
 [vaul-drawer][vaul-drawer-visible="true"] {
   transform: translate3d(0, 0, 0);

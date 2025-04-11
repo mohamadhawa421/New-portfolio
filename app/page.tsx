@@ -26,66 +26,52 @@ export default function HomePage() {
     }
   }, [router])
 
-// Substantially optimized particle animation
-useEffect(() => {
-  if (!particlesRef.current) return
-  
-  // Clean up any existing particles and remove event listeners
-  particlesRef.current.innerHTML = ""
-  
-  // Use hardware-accelerated properties only
-  const count = isMobile ? 10 : 25 // Reduced particle count
-  const fragment = document.createDocumentFragment()
-  
-  // Create particles with composite properties
-  for (let i = 0; i < count; i++) {
-    const particle = document.createElement("div")
-    const size = Math.random() * 4 + 1
-    const x = Math.random() * 100
-    const y = Math.random() * 100
+  useEffect(() => {
+    if (!particlesRef.current) return
     
-    // Longer animation duration with staggered starts - better for performance
-    const duration = Math.random() * (isMobile ? 45 : 35) + (isMobile ? 25 : 20)
-    const delay = Math.random() * 8
+    particlesRef.current.innerHTML = ""
+    const count = isMobile ? 10 : 25
+    const fragment = document.createDocumentFragment()
     
-    // Use transform instead of left/top for animation
-    particle.className = "absolute rounded-full gpu-accelerated"
-    particle.style.cssText = `
-      width: ${size}px;
-      height: ${size}px;
-      left: ${x}%;
-      top: ${y}%;
-      opacity: 0;
-      background-color: ${Math.random() > 0.5 ? "#90dda9" : "#fbb03b"};
-      will-change: transform, opacity;
-      animation: float ${duration}s ${delay}s infinite ease-in-out;
-    `
-    
-    fragment.appendChild(particle)
-  }
-  
-  // Single DOM update
-  particlesRef.current.appendChild(fragment)
-  
-  return () => {
-    if (particlesRef.current) {
-      particlesRef.current.innerHTML = ""
+    for (let i = 0; i < count; i++) {
+      const particle = document.createElement("div")
+      const size = Math.random() * 4 + 1
+      const x = Math.random() * 100
+      const y = Math.random() * 100
+      const duration = Math.random() * (isMobile ? 45 : 35) + (isMobile ? 25 : 20)
+      const delay = Math.random() * 8
+      
+      particle.className = "absolute rounded-full gpu-accelerated"
+      particle.style.cssText = `
+        width: ${size}px;
+        height: ${size}px;
+        left: ${x}%;
+        top: ${y}%;
+        opacity: 0;
+        background-color: ${Math.random() > 0.5 ? "#90dda9" : "#fbb03b"};
+        will-change: transform, opacity;
+        animation: float ${duration}s ${delay}s infinite ease-in-out;
+      `
+      fragment.appendChild(particle)
     }
-  }
-}, [isMobile])
+    
+    particlesRef.current.appendChild(fragment)
+    
+    return () => {
+      if (particlesRef.current) {
+        particlesRef.current.innerHTML = ""
+      }
+    }
+  }, [isMobile])
 
-
-  // Toggle mobile menu
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen)
   }
 
   return (
     <div className="page-content min-h-screen bg-black text-white relative">
-      {/* Particles */}
       <div ref={particlesRef} className="absolute inset-0 pointer-events-none z-0"></div>
 
-      {/* Interactive Header */}
       <header
         className="flex justify-between items-center px-4 sm:px-6 py-4 sm:py-5 relative z-20"
         style={{ pointerEvents: "auto" }}
@@ -94,7 +80,6 @@ useEffect(() => {
           Mohamad
         </Link>
 
-        {/* Desktop Navigation */}
         <nav className="hidden md:flex space-x-6">
           <Link href="/about" className="text-sm hover:text-[#90dda9] transition-colors">
             About Me
@@ -107,7 +92,6 @@ useEffect(() => {
           </Link>
         </nav>
 
-        {/* Mobile Menu Button */}
         <button
           className="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-[#1a1a1a] text-white"
           onClick={toggleMobileMenu}
@@ -117,7 +101,6 @@ useEffect(() => {
         </button>
       </header>
 
-      {/* Mobile Navigation Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 bg-black bg-opacity-95 z-10 flex flex-col items-center justify-center space-y-8 animate-fadeIn">
           <Link
@@ -144,10 +127,9 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Main Content */}
       <main
-        className="flex flex-col items-center justify-center px-4 sm:px-6 pt-10 sm:pt-20 pb-32 relative z-5 w-full max-w-4xl mx-auto"
-        style={{ pointerEvents: "auto" }}
+        className="flex flex-col items-center justify-center px-4 sm:px-6 pt-8 sm:pt-20 pb-20 relative z-5 w-full max-w-4xl mx-auto"
+        style={{ pointerEvents: "auto", minHeight: "calc(100vh - 400px)" }}
       >
         <p className="text-center text-base sm:text-lg mb-3 sm:mb-4 px-2">
           I'm Mohamad Hawa, and I'm passionate about designing intuitive experiences.
@@ -171,14 +153,19 @@ useEffect(() => {
         >
           Check me out!
         </Link>
+
+        {/* Mobile Waves */}
+        <div className="md:hidden w-full relative z-0">
+          <WavesAnimation speed={isMobile ? 0.1 : 0.3} />
+        </div>
       </main>
 
-      {/* Animated Waves */}
-      <div
-        className={`absolute bottom-0 left-0 right-0 ${isIOS ? "h-[200px] sm:h-[300px]" : "h-[300px]"} z-0 w-full overflow-hidden`}
-      >
-        <WavesAnimation speed={isMobile ? 0.1 : 0.3} />
-      </div>
+      {/* Desktop Waves */}
+      {!isMobile && (
+        <div className={`absolute bottom-0 left-0 right-0 ${isIOS ? "h-[200px] sm:h-[300px]" : "h-[300px]"} z-0 w-full overflow-hidden`}>
+          <WavesAnimation speed={0.3} />
+        </div>
+      )}
     </div>
   )
 }

@@ -50,10 +50,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       {/* Overlay Page - Only render when needed */}
       {!isHomePage && currentPage && (
         <Drawer.Root
-          key={currentPage.key}
-          open={true}
-          onOpenChange={(open) => !open && handleClose()}
-          shouldScaleBackground={false}
+  key={currentPage.key}
+  open={true}
+  onOpenChange={(open) => !open && handleClose()}
+  shouldScaleBackground={true} // Changed from false to true
+  dismissible={true} // Add this prop
         >
           <Drawer.Portal>
             <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40 gpu-accelerated" />
