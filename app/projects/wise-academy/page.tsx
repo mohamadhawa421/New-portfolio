@@ -13,7 +13,7 @@ export default function ProjectDetails() {
   }
 
   return (
-    <div className="page-content min-h-screen bg-black text-white p-5 md:p-7">
+    <div className="page-content min-h-screen bg-[#1d1d1d] text-white p-5 md:p-7">
       {/* Back Button */}
       <button 
         onClick={handleBack}
@@ -24,7 +24,7 @@ export default function ProjectDetails() {
       </button>
 
       {/* Top Section - About & Problem */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
         {/* About The Project */}
         <div className="bg-[#121212] rounded-[20px] p-5">
           <h2 className="text-[34px] font-bold mb-1">
@@ -33,7 +33,7 @@ export default function ProjectDetails() {
           <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">Project</h2>
           <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
 
-          <p className="text-sm text-[#8c8e93] mb-4 leading-relaxed">
+          <p className="text-sm text-[#8c8e93] mb-2 leading-relaxed">
             WISE Academy a high standard school based in the US promoting academic excellence in a faith based and safe
             environment for our students. Wise Academy faced challenges with their existing student management system,
             which was outdated, unintuitive, and lacked features to handle the increasing number of students. They
@@ -60,7 +60,7 @@ export default function ProjectDetails() {
       </div>
 
       {/* Project Details Bar */}
-      <div className="bg-[#121212] rounded-[20px] p-5 mb-6 grid grid-cols-4 gap-4">
+      <div className="bg-[#121212] rounded-[20px] p-5 mb-2 grid grid-cols-4 gap-2">
         <div>
           <p className="text-sm text-[#8c8e93]">Client</p>
           <p className="text-base font-medium">Wise Academy</p>
@@ -80,7 +80,7 @@ export default function ProjectDetails() {
       </div>
 
       {/* Research & Insights */}
-      <div className="bg-[#121212] rounded-[20px] p-5 mb-6">
+      <div className="bg-[#121212] rounded-[20px] p-5 mb-2">
         <h2 className="text-[34px] font-bold mb-1">
           <span className="text-white">Research</span>
         </h2>
@@ -121,14 +121,14 @@ export default function ProjectDetails() {
       </div>
 
       {/* Design Process */}
-      <div className="bg-[#121212] rounded-[20px] p-5 mb-6">
+      <div className="bg-[#121212] rounded-[20px] p-5 mb-2">
         <h2 className="text-[34px] font-bold mb-1">
           <span className="text-white">Design</span>
         </h2>
         <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">Process</h2>
         <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           {/* Wireframes */}
           <div className="bg-[#1A1A1A] rounded-lg p-4">
             <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center mb-3">
@@ -190,7 +190,7 @@ export default function ProjectDetails() {
       </div>
 
       {/* Final Solutions & End Results */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
         {/* Final Solutions */}
         <div className="bg-[#121212] rounded-[20px] p-5">
           <h2 className="text-[34px] font-bold mb-1">
@@ -247,14 +247,14 @@ export default function ProjectDetails() {
       </div>
 
       {/* Visuals & Screenshots */}
-      <div className="bg-[#121212] rounded-[20px] p-5 mb-6">
+      <div className="bg-[#121212] rounded-[20px] p-5 mb-4">
         <h2 className="text-[34px] font-bold mb-1">
           <span className="text-white">Visuals</span>
         </h2>
         <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">& Screenshots</h2>
         <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {/* Dashboard & Insights */}
           <div className="relative bg-[#1e3a8a] rounded-lg overflow-hidden h-[300px]">
             <Image
@@ -287,7 +287,7 @@ export default function ProjectDetails() {
             </div>
 
             {/* Interview Calendar */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2">
               <div className="bg-[#f59e0b] rounded-lg p-4 flex flex-col justify-end h-[140px]">
                 <h3 className="text-lg font-medium text-white">Interview</h3>
                 <h3 className="text-lg font-medium text-white">Calendar</h3>

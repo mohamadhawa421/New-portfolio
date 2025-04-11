@@ -40,6 +40,46 @@ const projects: Project[] = [
     type: ["web", "showcase"],
     link: "/projects/ecommerce"
   },
+  {
+    id: "mobile-banking",
+    title: "Mobile Banking App",
+    description: "Secure financial transactions with intuitive interface",
+    image: "/projects/banking-app.jpg",
+    type: ["mobile"],
+    link: "/projects/mobile-banking"
+  },
+  {
+    id: "wise-academy",
+    title: "Wise Academy",
+    description: "School management system design for academic excellence",
+    image: "/projects/wise.png",
+    type: ["web"],
+    link: "/projects/wise-academy"
+  },
+  {
+    id: "mobile-banking",
+    title: "Mobile Banking App",
+    description: "Secure financial transactions with intuitive interface",
+    image: "/projects/banking-app.jpg",
+    type: ["mobile"],
+    link: "/projects/mobile-banking"
+  },
+  {
+    id: "ecommerce-platform",
+    title: "E-commerce Platform",
+    description: "Complete online shopping solution",
+    image: "/projects/ecommerce.jpg",
+    type: ["web", "showcase"],
+    link: "/projects/ecommerce"
+  },
+  {
+    id: "mobile-banking",
+    title: "Mobile Banking App",
+    description: "Secure financial transactions with intuitive interface",
+    image: "/projects/banking-app.jpg",
+    type: ["mobile"],
+    link: "/projects/mobile-banking"
+  }
   // Add more projects as needed
 ]
 
@@ -57,8 +97,8 @@ export default function ProjectsPage() {
   const getProjectTypeBadge = (type: ProjectType | ProjectType[]) => {
     const projectType = Array.isArray(type) ? type[0] : type
     switch (projectType) {
-      case "web": return <span className="px-2 py-1 text-xs bg-[#121212] text-white rounded-md">Web App</span>
-      case "mobile": return <span className="px-2 py-1 text-xs bg-[#121212] text-white rounded-md">Mobile App</span>
+      case "web": return <span className="px-2 py-1 text-xs bg-[#333B36] text-[#90DDA9] rounded-md">Web App</span>
+      case "mobile": return <span className="px-2 py-1 text-xs bg-[#1755944a] text-[#027df8] rounded-md">Mobile App</span>
       case "showcase": return <span className="px-2 py-1 text-xs bg-[#121212] text-[#0acf83] rounded-md">Showcase</span>
       case "redesign": return <span className="px-2 py-1 text-xs bg-[#121212] text-[#fbb03b] rounded-md">Redesign</span>
       default: return null
@@ -66,27 +106,28 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="page-content min-h-screen bg-black text-white p-5 md:p-7">
+    <div className="page-content min-h-screen bg-[1d1d1d]] text-white p-5 md:p-7">
       <div className="flex flex-wrap gap-6 border-b border-[#1A1A1A] pb-2">
         {/* Filter buttons... (keep existing filter buttons) */}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
         {filteredProjects.map((project) => (
           <Link href={project.link} key={project.id} className="block">
-            <div className="bg-[#121212] rounded-lg overflow-hidden hover:border hover:border-[#0acf83] transition-all">
-              <div className="h-48 bg-[#1e293b] relative">
+            <div className="bg-[#292929] rounded-xl p-3 overflow-hidden hover:border hover:border-white transition-all">
+              <div className="h-52 bg-[#1e293b] rounded-2xl relative overflow-hidden">
                 <Image
                   src={project.image}
                   alt={project.title}
-                  width={400}
-                  height={300}
+                  width={300}
+                  height={200}
+                  quality={100}
                   className="object-cover w-full h-full"
                 />
               </div>
               <div className="p-4">
-                <h3 className="text-sm font-medium mb-1">{project.title}</h3>
-                <p className="text-xs text-[#8c8e93] mb-3">{project.description}</p>
+                <h3 className="text-sm font-semibold mb-1">{project.title}</h3>
+                <p className="text-xs text-[#8C8E93] mb-3">{project.description}</p>
                 <div className="mt-2">{getProjectTypeBadge(project.type)}</div>
               </div>
             </div>

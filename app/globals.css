@@ -23,6 +23,8 @@
   --input: 0 0% 16%;
   --ring: 39 97% 58%;
   --radius: 0.5rem;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
 }
 
 @theme inline {
@@ -32,18 +34,27 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  scroll-behavior: smooth;
+  overflow: auto;
+  height: -webkit-fill-available; /* iOS Safari */
+}
+
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  min-height: -webkit-fill-available; /* iOS Safari */
   font-family: Arial, Helvetica, sans-serif;
+  -webkit-tap-highlight-color: transparent; /* Remove tap highlight on iOS */
+  touch-action: manipulation; /* Disable double-tap to zoom */
 }
 
-html {
-  scroll-behavior: smooth;
-  overflow: auto;
+/* Improve scrolling on iOS */
+* {
+  -webkit-overflow-scrolling: touch;
 }
 
 ::-webkit-scrollbar {
@@ -60,11 +71,57 @@ html {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Safe area utilities */
+  .pb-safe {
+    padding-bottom: var(--safe-bottom);
+  }
+
+  .pt-safe {
+    padding-top: var(--safe-top);
+  }
+
+  .h-screen-safe {
+    height: calc(100vh - var(--safe-bottom));
+  }
+
+  /* Animation utilities */
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-in-out forwards;
+  }
+
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @layer base {
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Improve touch targets on mobile */
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    @apply min-h-[44px] sm:min-h-0;
+  }
+
+  /* Fix iOS input styling */
+  input,
+  textarea {
+    @apply appearance-none;
   }
 }
 
@@ -86,6 +143,7 @@ html {
   will-change: transform;
   transform-style: preserve-3d;
   backface-visibility: hidden;
+  touch-action: pan-y; /* Enable vertical scrolling */
 }
 
 [vaul-drawer][vaul-drawer-visible="true"] {
@@ -162,6 +220,12 @@ html {
   .stack-container > [vaul-drawer-wrapper]:not(:last-child) [vaul-drawer-content] {
     transform: scale(0.98) translateY(10px) translateZ(-5px);
   }
+
+  /* Improve touch targets on mobile */
+  button,
+  a {
+    @apply min-h-[44px];
+  }
 }
 
 /* Homepage Scale Effect */
@@ -180,4 +244,23 @@ html {
   opacity: 0.9;
   filter: blur(2px);
   pointer-events: none;
+
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* .home-base.scaled {
+    transform: scale(0.98);
+    opacity: 0.9;
+    filter: blur(1px);
+  } */
 }
