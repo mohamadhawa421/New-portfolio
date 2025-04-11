@@ -1,24 +1,27 @@
 "use client"
 
-import Image from "next/image"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
-import { useSearchParams } from "next/navigation"
+import Link from "next/link"
+import Image from "next/image"
 
-export default function WiseAcademyProject() {
-  const searchParams = useSearchParams()
-  const from = searchParams.get("from") || "about"
+export default function ProjectDetails() {
+  const router = useRouter()
 
-  const backLink = from === "projects" ? "/projects" : "/about"
-  const backText = from === "projects" ? "All Projects" : "Bring Me Back"
+  const handleBack = () => {
+    router.back()
+  }
 
   return (
     <div className="page-content min-h-screen bg-black text-white p-5 md:p-7">
       {/* Back Button */}
-      <Link href={backLink} className="inline-flex items-center text-white hover:text-[#0acf83] mb-8 transition-colors">
+      <button 
+        onClick={handleBack}
+        className="inline-flex items-center text-white hover:text-[#0acf83] mb-8 transition-colors"
+      >
         <ArrowLeft className="w-4 h-4 mr-2" />
-        <span>{backText}</span>
-      </Link>
+        <span>Bring Me Back</span>
+      </button>
 
       {/* Top Section - About & Problem */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

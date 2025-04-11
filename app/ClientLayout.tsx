@@ -1,78 +1,78 @@
 "use client"
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { AnimatePresence, motion } from "framer-motion"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { Drawer } from "vaul"
 
-interface ClientLayoutProps {
-  children: React.ReactNode
-}
+const VisuallyHidden = ({ children }: { children: React.ReactNode }) => (
+  <div className="sr-only">{children}</div>
+)
 
-export default function ClientLayout({ children }: ClientLayoutProps) {
+export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const [previousPathname, setPreviousPathname] = useState<string>(pathname)
-  const [direction, setDirection] = useState<"forward" | "backward">("forward")
-  const [isInitialRender, setIsInitialRender] = useState(true)
+  const router = useRouter()
+  const [stack, setStack] = useState<Array<{ path: string; key: string }>>([])
 
-  // Track navigation direction
   useEffect(() => {
-    if (isInitialRender) {
-      setIsInitialRender(false)
+    if (pathname === "/") {
+      setStack([])
       return
     }
+    
+    setStack(prev => {
+      const existing = prev.find(item => item.path === pathname)
+      if (existing) return prev
+      
+      return [...prev, { 
+        path: pathname, 
+        key: `${pathname}-${Date.now()}` 
+      }]
+    })
+  }, [pathname])
 
-    if (previousPathname !== pathname) {
-      const isGoingBack = window.history.state?.idx < window.history.state?.oldIdx
-      setDirection(isGoingBack ? "backward" : "forward")
-      setPreviousPathname(pathname)
-    }
-  }, [pathname, previousPathname, isInitialRender])
-
-  // Variants for the page transitions
-  const variants = {
-    initial: (direction: string) => ({
-      opacity: 0,
-      scale: 0.95,
-      filter: "blur(8px)",
-    }),
-    animate: {
-      opacity: 1,
-      scale: 1,
-      filter: "blur(0px)",
-      transition: {
-        opacity: { duration: 0.4 },
-        scale: { duration: 0.4 },
-        filter: { duration: 0.3 },
-      },
-    },
-    exit: (direction: string) => ({
-      opacity: 0,
-      scale: 0.95,
-      filter: "blur(8px)",
-      transition: {
-        opacity: { duration: 0.3 },
-        scale: { duration: 0.3 },
-        filter: { duration: 0.2 },
-      },
-    }),
+  const handleClose = (index: number) => {
+    setStack(prev => prev.slice(0, index))
+    if (index === 0) router.push("/")
   }
 
   return (
-    <div className="transition-container page"> {/* Apply 'page' class here */}
-      <AnimatePresence mode="wait" initial={true} custom={direction}>
-        <motion.div
-          key={pathname}
-          custom={direction}
-          variants={variants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          style={{ position: 'absolute', width: '100%', height: '100%' }} // Ensure proper layering
+    <div className="stack-container">
+      {/* Homepage Base Layer */}
+      <div className={`home-base ${stack.length > 0 ? 'scaled' : ''}`}>
+        {children}
+      </div>
+
+      {/* Overlay Pages */}
+      {stack.map(({ path, key }, index) => (
+        <Drawer.Root
+          key={key}
+          open={true}
+          onOpenChange={(open) => !open && handleClose(index)}
+          shouldScaleBackground={false}
+          nested
         >
-          {children}
-        </motion.div>
-      </AnimatePresence>
+          <Drawer.Portal>
+            <Drawer.Overlay className="fixed inset-0 bg-black/40" style={{ zIndex: 40 + index }} />
+            <Drawer.Content 
+              className="fixed bottom-0 left-0 right-0 h-[95%] rounded-t-[10px] bg-[#040404] focus:outline-none"
+              style={{ 
+                zIndex: 50 + index,
+                transform: `translateY(${index * 20}px) scale(${1 - index * 0.02})`,
+                transition: 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)'
+              }}
+            >
+              <VisuallyHidden>
+                <Drawer.Title>Navigation Drawer</Drawer.Title>
+              </VisuallyHidden>
+              
+              <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-zinc-300/50 mb-4 mt-3" />
+              <div className="h-full overflow-y-auto pb-8">
+                {children}
+              </div>
+            </Drawer.Content>
+          </Drawer.Portal>
+        </Drawer.Root>
+      ))}
     </div>
   )
 }

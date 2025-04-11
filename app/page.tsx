@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useEffect, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -11,13 +9,26 @@ export default function HomePage() {
   const particlesRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
+  // Prevent direct navigation away from homepage
   useEffect(() => {
-    // Create random particles - increased number
+    const handleRouteChange = (url: string) => {
+      if (url !== "/") {
+        router.push(url)
+      }
+    }
+    
+    if (typeof window !== "undefined" && window.location.pathname !== "/") {
+      router.replace("/")
+    }
+  }, [router])
+
+  // Particle animation setup
+  useEffect(() => {
     const createParticles = () => {
       if (!particlesRef.current) return
 
       particlesRef.current.innerHTML = ""
-      const count = 50 // Increased from 20 to 50
+      const count = 50
 
       for (let i = 0; i < count; i++) {
         const particle = document.createElement("div")
@@ -42,24 +53,13 @@ export default function HomePage() {
 
     createParticles()
 
-    // Add keyframes for floating animation
     const style = document.createElement("style")
     style.textContent = `
       @keyframes float {
-        0%, 100% {
-          transform: translateY(0) translateX(0);
-          opacity: 0;
-        }
-        25% {
-          opacity: 0.5;
-        }
-        50% {
-          transform: translateY(-100px) translateX(50px);
-          opacity: 0.8;
-        }
-        75% {
-          opacity: 0.5;
-        }
+        0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+        25% { opacity: 0.5; }
+        50% { transform: translateY(-100px) translateX(50px); opacity: 0.8; }
+        75% { opacity: 0.5; }
       }
     `
     document.head.appendChild(style)
@@ -69,56 +69,49 @@ export default function HomePage() {
     }
   }, [])
 
-  // Function to navigate to about page sections
-  const navigateToSection = (sectionId: string) => (e: React.MouseEvent) => {
-    e.preventDefault()
-    router.push(`/about#${sectionId}`)
-  }
-
   return (
-    <div className="page-content min-h-screen bg-black text-white relative">
+    <div 
+      className="fixed inset-0 bg-black text-white z-0"
+      style={{ pointerEvents: 'none' }}
+    >
       {/* Particles */}
       <div ref={particlesRef} className="absolute inset-0 pointer-events-none z-0"></div>
 
-      {/* Header */}
-      <header className="flex justify-between items-center px-6 py-5 relative z-10">
+      {/* Interactive Header */}
+      <header 
+        className="flex justify-between items-center px-6 py-5 relative z-10"
+        style={{ pointerEvents: 'auto' }}
+      >
         <Link href="/" className="text-2xl font-medium text-[#90dda9] font-handwriting">
           Mohamad
         </Link>
         <nav className="hidden md:flex space-x-6">
-          <a
+          <Link
             href="/about"
-            onClick={navigateToSection("about")}
             className="text-sm hover:text-[#90dda9] transition-colors"
           >
             About Me
-          </a>
-          <a
-            href="/about#services"
-            onClick={navigateToSection("services")}
+          </Link>
+          <Link
+            href="/projects"
+            className=" home-interactive text-sm hover:text-[#90dda9] transition-colors"
+          >
+            Projects
+          </Link>
+          <Link
+            href="/contact"
             className="text-sm hover:text-[#90dda9] transition-colors"
           >
-            Services
-          </a>
-          <a
-            href="/about#craft"
-            onClick={navigateToSection("craft")}
-            className="text-sm hover:text-[#90dda9] transition-colors"
-          >
-            My Craft
-          </a>
-          <a
-            href="/about#cost"
-            onClick={navigateToSection("cost")}
-            className="text-sm hover:text-[#90dda9] transition-colors"
-          >
-            The Cost Of Creativity
-          </a>
+            Contact
+          </Link>
         </nav>
       </header>
 
       {/* Main Content */}
-      <main className="flex flex-col items-center justify-center px-6 pt-20 pb-32 relative z-10 w-4xl m-auto">
+      <main 
+        className="flex flex-col items-center justify-center px-6 pt-20 pb-32 relative z-10 w-4xl m-auto"
+        style={{ pointerEvents: 'auto' }}
+      >
         <p className="text-center text-lg mb-4">
           I'm Mohamad Hawa, and I'm passionate about designing intuitive experiences.
         </p>
@@ -137,7 +130,7 @@ export default function HomePage() {
 
         <Link
           href="/about"
-          className="mt-12 px-8 py-3 bg-white text-black rounded-full font-medium hover:bg-opacity-90 transition-all transform hover:scale-105"
+          className=" home-interactive mt-12 px-8 py-3 bg-white text-black rounded-full font-medium hover:bg-opacity-90 transition-all transform hover:scale-105"
         >
           Check me out!
         </Link>
