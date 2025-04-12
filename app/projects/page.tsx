@@ -80,8 +80,9 @@ const projects: Project[] = [
     type: ["mobile"],
     link: "/projects/mobile-banking"
   }
-  // Add more projects as needed
 ]
+
+const projectTypes: ProjectType[] = ["all", "web", "mobile", "showcase", "redesign"];
 
 export default function ProjectsPage() {
   const [activeFilter, setActiveFilter] = useState<ProjectType>("all")
@@ -107,14 +108,27 @@ export default function ProjectsPage() {
 
   return (
     <div className="page-content min-h-screen bg-[1d1d1d]] text-white p-5 md:p-7">
-      <div className="flex flex-wrap gap-6 border-b border-[#1A1A1A] pb-2">
-        {/* Filter buttons... (keep existing filter buttons) */}
+      {/* Filter Tabs */}
+      <div className="flex flex-wrap gap-2 mb-8 border-b border-[#1A1A1A] pb-6">
+        {projectTypes.map((type) => (
+          <button
+            key={type}
+            onClick={() => setActiveFilter(type)}
+            className={`px-4 py-2 rounded-full text-sm font-medium capitalize transition-colors ${
+              activeFilter === type
+                ? "bg-[#0acf83] text-black"
+                : "bg-[#292929] hover:bg-[#3a3a3a]"
+            }`}
+          >
+            {type === "all" ? "All Projects" : type}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
         {filteredProjects.map((project) => (
           <Link href={project.link} key={project.id} className="block">
-            <div className=" bg-[#292929] rounded-xl p-3 overflow-hidden hover:border hover:border-white transition-all">
+            <div className="bg-[#292929] rounded-xl p-3 overflow-hidden hover:border hover:border-white transition-all">
               <div className="h-52 bg-[#1e293b] rounded-2xl relative overflow-hidden">
                 <Image
                   src={project.image}

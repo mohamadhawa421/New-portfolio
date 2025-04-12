@@ -3,15 +3,18 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import WavesAnimation from "@/components/waves-animation"
 import { Menu, X } from "lucide-react"
 import { useMobileDetect } from "@/hooks/use-mobile"
+import CatchTheCatGame from "@/components/CatchTheCatGame"
 
 export default function HomePage() {
   const particlesRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { isMobile, isIOS } = useMobileDetect()
+  const [showGame, setShowGame] = useState(false);
 
   // Prevent direct navigation away from homepage
   useEffect(() => {
@@ -75,10 +78,13 @@ export default function HomePage() {
       <header
         className="flex justify-between items-center px-4 sm:px-6 py-4 sm:py-5 relative z-20"
         style={{ pointerEvents: "auto" }}
-      >
-        <Link href="/" className="text-xl sm:text-2xl font-medium text-[#90dda9] font-handwriting">
-          Mohamad
-        </Link>
+      ><Image
+                     src={"/Logo.svg"}
+                     alt={"Logo"}
+                     width={110}
+                     height={33}
+                     quality={100}
+                   />
 
         <nav className="hidden md:flex space-x-6">
           <Link href="/about" className="text-sm hover:text-[#90dda9] transition-colors">
@@ -86,9 +92,6 @@ export default function HomePage() {
           </Link>
           <Link href="/projects" className="home-interactive text-sm hover:text-[#90dda9] transition-colors">
             Projects
-          </Link>
-          <Link href="/contact" className="text-sm hover:text-[#90dda9] transition-colors">
-            Contact
           </Link>
         </nav>
 
@@ -147,12 +150,19 @@ export default function HomePage() {
           empower users and drive impact. Let's create something remarkable together.
         </p>
 
+        <div className=" mt-12 sm:mt-4 gap-2 flex flex-col items-center">
         <Link
           href="/about"
-          className="home-interactive mt-8 sm:mt-12 px-6 sm:px-8 py-3 bg-white text-black rounded-full font-medium hover:bg-opacity-90 transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
+          className="home-interactive sm:mt-12 px-6 sm:px-8 py-3 bg-white text-black rounded-full font-medium hover:bg-opacity-90 transition-all transform hover:scale-105 active:scale-95 touch-manipulation"
         >
           Check me out!
         </Link>
+        <button
+  onClick={() => setShowGame(true)}
+  className=" sm:mt-2 mt-2 px-6 sm:px-8 py-3 bg-[#fbb03b] text-black rounded-full font-medium hover:bg-opacity-90 transition-all transform hover:scale-105 active:scale-95"
+>
+  Play Cat Chase Game!
+</button></div>
 
         {/* Mobile Waves */}
         <div className="md:hidden w-full relative z-0">
@@ -166,6 +176,7 @@ export default function HomePage() {
           <WavesAnimation speed={0.3} />
         </div>
       )}
+      {showGame && <CatchTheCatGame onClose={() => setShowGame(false)} />}
     </div>
   )
 }
