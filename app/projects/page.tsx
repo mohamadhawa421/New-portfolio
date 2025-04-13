@@ -19,66 +19,50 @@ const projects: Project[] = [
   {
     id: "wise-academy",
     title: "Wise Academy",
-    description: "School management system design for academic excellence",
-    image: "/projects/Wise/wise.png",
+    description: "School management system design for academic excellence.",
+    image: "/projects/wise/wise.png",
     type: ["web"],
     link: "/projects/wise-academy"
   },
   {
-    id: "mobile-banking",
-    title: "Mobile Banking App",
-    description: "Secure financial transactions with intuitive interface",
-    image: "/projects/banking-app.jpg",
+    id: "Kabbara Office",
+    title: "Kabbara Office",
+    description: "Digital solution built to help Deputy Karim Kabbara manage and respond to public service.",
+    image: "/projects/Kabbara/kabbara-thumb.png",
     type: ["mobile"],
-    link: "/projects/mobile-banking"
+    link: "/projects/kabbara"
   },
   {
-    id: "ecommerce-platform",
-    title: "E-commerce Platform",
-    description: "Complete online shopping solution",
-    image: "/projects/ecommerce.jpg",
-    type: ["web", "showcase"],
-    link: "/projects/ecommerce"
+    id: "codingclebanon",
+    title: "CodingClebanon",
+    description: "a platform that empowers individuals to learn coding through personalized online mentorship.",
+    image: "/projects/codingclebanon/thumb.png",
+    type: ["redesign"],
+    link: "/projects/coding-clebanon"
   },
   {
-    id: "mobile-banking4",
-    title: "Mobile Banking App",
-    description: "Secure financial transactions with intuitive interface",
-    image: "/projects/banking-app.jpg",
-    type: ["mobile"],
-    link: "/projects/mobile-banking"
-  },
-  {
-    id: "wise-academy2",
-    title: "Wise Academy",
-    description: "School management system design for academic excellence",
-    image: "/projects/wise.png",
+    id: "wfk",
+    title: "WFK Law Firm",
+    description: "a professional legal firm that needed an internal tool to streamline employee task tracking.",
+    image: "/projects/wfk/thumb.png",
     type: ["web"],
-    link: "/projects/wise-academy"
+    link: "/projects/wfk-law-firm"
   },
   {
-    id: "mobile-banking2",
-    title: "Mobile Banking App",
-    description: "Secure financial transactions with intuitive interface",
-    image: "/projects/banking-app.jpg",
+    id: "shipment-share",
+    title: "Shipment Share",
+    description: "a smart delivery platform that connects people who need to send packages with travelers.",
+    image: "/projects/shipment-share/thumb.png",
     type: ["mobile"],
-    link: "/projects/mobile-banking"
+    link: "/projects/shipment-share"
   },
   {
-    id: "ecommerce-platform2",
-    title: "E-commerce Platform",
-    description: "Complete online shopping solution",
-    image: "/projects/ecommerce.jpg",
-    type: ["web", "showcase"],
-    link: "/projects/ecommerce"
-  },
-  {
-    id: "mobile-banking3",
-    title: "Mobile Banking App",
-    description: "Secure financial transactions with intuitive interface",
-    image: "/projects/banking-app.jpg",
+    id: "shareb",
+    title: "Shareb",
+    description: "a promotional lottery app designed to boost brand engagement through interactive weekly draws.",
+    image: "/projects/shareb/thumb.png",
     type: ["mobile"],
-    link: "/projects/mobile-banking"
+    link: "/projects/shareb"
   }
 ]
 
@@ -100,8 +84,8 @@ export default function ProjectsPage() {
     switch (projectType) {
       case "web": return <span className="px-2 py-1 text-xs bg-[#333B36] text-[#90DDA9] rounded-md">Web App</span>
       case "mobile": return <span className="px-2 py-1 text-xs bg-[#1755944a] text-[#027df8] rounded-md">Mobile App</span>
-      case "showcase": return <span className="px-2 py-1 text-xs bg-[#121212] text-[#0acf83] rounded-md">Showcase</span>
-      case "redesign": return <span className="px-2 py-1 text-xs bg-[#121212] text-[#fbb03b] rounded-md">Redesign</span>
+      case "showcase": return <span className="px-2 py-1 text-xs bg-[#a2067857] text-[#a20678] rounded-md">Showcase</span>
+      case "redesign": return <span className="px-2 py-1 text-xs bg-[#f9d29361] text-[#fbb03b] rounded-md">Redesign</span>
       default: return null
     }
   }

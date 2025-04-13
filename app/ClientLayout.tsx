@@ -23,7 +23,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     const isHomePage = pathname === "/"
     return isHomePage ? null : {
       path: pathname,
-      key: `${pathname}-${Date.now()}`,
+      key: pathname // Use pathname as the sole key
     }
   }, [pathname])
   
@@ -34,8 +34,18 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     router.back()
   }, [router])
 
+  // Add this effect to reset Vaul's internal state
+useEffect(() => {
+  if (!isHomePage) {
+    const timer = setTimeout(() => {
+      document.documentElement.style.setProperty('--vaul-scale-drawer', '1');
+    }, 50);
+    return () => clearTimeout(timer);
+  }
+}, [isHomePage]);
+
   // Calculate safe drawer height for iOS - using useMemo for performance
-  const drawerHeight = useMemo(() => isIOS ? "92%" : "95%", [isIOS])
+  const drawerHeight = useMemo(() => isIOS ? "92dvh" : "95dvh", [isIOS])
 
   return (
     <div className="stack-container">
@@ -50,12 +60,17 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       {/* Overlay Page - Only render when needed */}
       {!isHomePage && currentPage && (
         <Drawer.Root
-  key={currentPage.key}
-  open={true}
-  onOpenChange={(open) => !open && handleClose()}
-  shouldScaleBackground={true} // Changed from false to true
-  dismissible={true} // Add this prop
-        >
+        key={currentPage.key}
+        open={true}
+        onOpenChange={(open) => {
+          if (!open) {
+            router.back()
+          }
+        }}
+        shouldScaleBackground={true}
+        preventScrollRestoration={false} // Add this
+        nested={true} // Add this for better stack handling
+      >
           <Drawer.Portal>
             <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40 gpu-accelerated" />
             <Drawer.Content

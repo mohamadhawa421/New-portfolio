@@ -303,7 +303,23 @@ body {
   backface-visibility: hidden;
   transform-style: preserve-3d;
   transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1) !important;
-  touch-action: none; /* Add this line */
+  /* REMOVE touch-action: none */
+}
+
+[vaul-drawer-content] {
+  z-index: 50 !important;
+  position: relative !important; /* Add this */
+}
+
+[vaul-overlay] {
+  z-index: 40 !important;
+  position: fixed !important; /* Ensure overlay positioning */
+}
+
+/* Add this new rule */
+[vaul-drawer-wrapper] {
+  contain: strict !important;
+  isolation: isolate !important;
 }
 
 

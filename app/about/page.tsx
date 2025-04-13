@@ -243,7 +243,7 @@ export default function AboutPage() {
         { src: "./icons/chatgpt.svg", alt: "ChatGPT" },
         { src: "./icons/slack.svg", alt: "Slack" },
         { src: "./icons/trello.svg", alt: "Trello" },
-        { src: "./icons/Ai.svg", alt: "Adobe Illustrator" },
+        { src: "./icons/ai.svg", alt: "Adobe Illustrator" },
         { src: "./icons/ps.svg", alt: "Photoshop" }
       ].map((icon, index) => (
         <div key={index} className="flex-shrink-0">
