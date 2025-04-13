@@ -20,7 +20,7 @@ const projects: Project[] = [
     id: "wise-academy",
     title: "Wise Academy",
     description: "School management system design for academic excellence",
-    image: "/projects/wise.png",
+    image: "/projects/Wise/wise.png",
     type: ["web"],
     link: "/projects/wise-academy"
   },
@@ -125,10 +125,10 @@ export default function ProjectsPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-12">
         {filteredProjects.map((project) => (
           <Link href={project.link} key={project.id} className="block">
-            <div className="bg-[#292929] rounded-xl p-3 overflow-hidden hover:border hover:border-white transition-all">
+            <div className="bg-[#121212] rounded-2xl p-4 overflow-hidden border-1 border-[#292929] hover:border-[#0acf83] transition-all">
               <div className="h-52 bg-[#1e293b] rounded-2xl relative overflow-hidden">
                 <Image
                   src={project.image}
@@ -149,12 +149,13 @@ export default function ProjectsPage() {
         ))}
       </div>
 
+      {/* Call to Action */}
       <div className="text-center py-10">
-        <h2 className="text-xl font-medium mb-2">Have a project in mind?</h2>
-        <p className="text-sm text-[#8c8e93] mb-6">Let's create a user-friendly solution together.</p>
+        <h2 className="text-3xl font-black text-[#0acf83] mb-2">Have a similar project in mind?</h2>
+        <p className="text-sm mb-6">Let's create a user-friendly solution together.</p>
         <Link
-          href="/contact"
-          className="inline-block px-6 py-3 border border-[#0acf83] text-[#0acf83] rounded-full hover:bg-[#0acf83] hover:bg-opacity-10 transition-colors"
+          href="https://wa.link/mlum9h"
+          className="inline-block px-6 py-3 border rounded-full hover:text-[#0acf83] hover:border-[#0acf83] hover:bg-opacity-10 transition-colors"
         >
           Contact Me
         </Link>

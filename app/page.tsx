@@ -7,7 +7,7 @@ import Image from "next/image"
 import WavesAnimation from "@/components/waves-animation"
 import { Menu, X } from "lucide-react"
 import { useMobileDetect } from "@/hooks/use-mobile"
-import CatchTheCatGame from "@/components/CatchTheCatGame"
+// import CatchTheCatGame from "@/components/CatchTheCatGame"
 
 export default function HomePage() {
   const particlesRef = useRef<HTMLDivElement>(null)
@@ -120,13 +120,13 @@ export default function HomePage() {
           >
             Projects
           </Link>
-          <Link
+          {/* <Link
             href="/contact"
             className="text-xl font-medium hover:text-[#90dda9] transition-colors"
             onClick={() => setMobileMenuOpen(false)}
           >
             Contact
-          </Link>
+          </Link> */}
         </div>
       )}
 
@@ -157,12 +157,14 @@ export default function HomePage() {
         >
           Check me out!
         </Link>
-        <button
+        {/* <button
   onClick={() => setShowGame(true)}
   className=" sm:mt-2 mt-2 px-6 sm:px-8 py-3 bg-[#fbb03b] text-black rounded-full font-medium hover:bg-opacity-90 transition-all transform hover:scale-105 active:scale-95"
 >
   Play Cat Chase Game!
-</button></div>
+</button> */}
+
+</div>
 
         {/* Mobile Waves */}
         <div className="md:hidden w-full relative z-0">
@@ -176,7 +178,7 @@ export default function HomePage() {
           <WavesAnimation speed={0.3} />
         </div>
       )}
-      {showGame && <CatchTheCatGame onClose={() => setShowGame(false)} />}
+      {/* {showGame && <CatchTheCatGame onClose={() => setShowGame(false)} />} */}
     </div>
   )
 }

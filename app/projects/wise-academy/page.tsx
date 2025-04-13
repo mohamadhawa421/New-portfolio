@@ -26,14 +26,14 @@ export default function ProjectDetails() {
       {/* Top Section - About & Problem */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
         {/* About The Project */}
-        <div className="bg-[#121212] rounded-[20px] p-5">
-          <h2 className="text-[34px] font-bold mb-1">
-            <span className="text-white">About</span> <span className="text-[#90DDA9]">The</span>
-          </h2>
-          <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">Project</h2>
-          <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
+        <div className="flex flex-col bg-[#121212] rounded-3xl gap-6 p-5">
 
-          <p className="text-sm text-[#8c8e93] mb-2 leading-relaxed">
+          <div><h2 className="text-4xl/tight font-black mb-1">About The</h2>
+          <h2 className="text-4xl/tight font-black text-[#90DDA9]">Project</h2></div>
+          
+          <div className="h-[1px] w-full rounded-full" style={{background: 'linear-gradient(90deg, rgba(235, 235, 235, 0) 0%, #90DDA9 50%, rgba(235, 235, 235, 0) 100%)'}} />
+
+          <p className="text-sm text-[#8C8E93] mb-2 leading-relaxed">
             WISE Academy a high standard school based in the US promoting academic excellence in a faith based and safe
             environment for our students. Wise Academy faced challenges with their existing student management system,
             which was outdated, unintuitive, and lacked features to handle the increasing number of students. They
@@ -43,12 +43,12 @@ export default function ProjectDetails() {
         </div>
 
         {/* Problem Statement */}
-        <div className="bg-[#121212] rounded-[20px] p-5">
-          <h2 className="text-[34px] font-bold mb-1">
-            <span className="text-white">Problem</span>
-          </h2>
-          <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">Statement</h2>
-          <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
+        <div className="flex flex-col bg-[#121212] rounded-3xl gap-6 p-5">
+
+          <div><h2 className="text-4xl/tight font-black mb-1">Problem</h2>
+          <h2 className="text-4xl/tight font-black text-[#90DDA9]">Statement</h2></div>
+
+          <div className="h-[1px] w-full rounded-full" style={{background: 'linear-gradient(90deg, rgba(235, 235, 235, 0) 0%, #90DDA9 50%, rgba(235, 235, 235, 0) 100%)'}} />
 
           <p className="text-sm text-[#8c8e93] leading-relaxed">
             Wise Academy faced challenges with their existing student management system, which was outdated,
@@ -80,12 +80,12 @@ export default function ProjectDetails() {
       </div>
 
       {/* Research & Insights */}
-      <div className="bg-[#121212] rounded-[20px] p-5 mb-2">
-        <h2 className="text-[34px] font-bold mb-1">
-          <span className="text-white">Research</span>
-        </h2>
-        <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">& Insights</h2>
-        <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
+      <div className="flex flex-col bg-[#121212] rounded-3xl gap-6 p-5 mb-2">
+
+        <div><h2 className="text-4xl/tight font-black mb-1">Research</h2>
+        <h2 className="text-4xl/tight font-black text-[#90DDA9]">& Insights</h2></div>
+
+        <div className="h-[1px] w-full rounded-full" style={{background: 'linear-gradient(90deg, rgba(235, 235, 235, 0) 0%, #90DDA9 50%, rgba(235, 235, 235, 0) 100%)'}} />
 
         <p className="text-sm mb-4">To understand the client's needs, I conducted:</p>
 
@@ -121,67 +121,70 @@ export default function ProjectDetails() {
       </div>
 
       {/* Design Process */}
-      <div className="bg-[#121212] rounded-[20px] p-5 mb-2">
-        <h2 className="text-[34px] font-bold mb-1">
-          <span className="text-white">Design</span>
-        </h2>
-        <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">Process</h2>
-        <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
+      <div className="flex flex-col bg-[#121212] rounded-3xl gap-6 p-5 mb-2">
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <div><h2 className="text-4xl/tight font-black mb-1">Design</h2>
+        <h2 className="text-4xl/tight font-black text-[#90DDA9]">Process</h2></div>
+
+        <div className="h-[1px] w-full rounded-full" style={{background: 'linear-gradient(90deg, rgba(235, 235, 235, 0) 0%, #90DDA9 50%, rgba(235, 235, 235, 0) 100%)'}} />
+
+        <div className="flex flex-col items-center md:flex-row gap-2">
+
           {/* Wireframes */}
-          <div className="bg-[#1A1A1A] rounded-lg p-4">
-            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center mb-3">
-              <span className="text-xs font-bold text-black">1</span>
+          <div className="bg-[#292929] h-[350px] rounded-lg p-4">
+            <div className="w-6 h-6 bg-black rounded-sm p-4 flex items-center justify-center mb-3">
+              <span className="text-sm font-bold text-[#90DDA9]">1</span>
             </div>
-            <h3 className="text-base font-medium mb-2">Wireframes</h3>
-            <p className="text-xs text-[#8c8e93] mb-3">
+            <h3 className="text-base font-semibold mb-2">Wireframes</h3>
+            <p className="text-sm font-medium text-[#8c8e93] mb-3">
               Created low-fidelity wireframes to map out the core functionality, including:
             </p>
             <ul className="list-disc list-inside space-y-2 pl-1">
-              <li className="text-xs text-[#8c8e93]">A dashboard with overview of active and pending enrollments.</li>
-              <li className="text-xs text-[#8c8e93]">
+              <li className="text-sm text-[#8c8e93]">A dashboard with overview of active and pending enrollments.</li>
+              <li className="text-sm text-[#8c8e93]">
                 A student database with advanced filters and search functionality.
               </li>
-              <li className="text-xs text-[#8c8e93]">
+              <li className="text-sm text-[#8c8e93]">
                 A students/parents database with advanced filters and search functionality.
               </li>
-              <li className="text-xs text-[#8c8e93]">A calendar tool for managing interviews.</li>
+              <li className="text-sm text-[#8c8e93]">A calendar tool for managing interviews.</li>
             </ul>
           </div>
+          <div className="h-[1px] w-8 rounded-full" style={{background: 'linear-gradient(90deg, rgba(235, 235, 235, 0) 0%, #90DDA9 50%, rgba(235, 235, 235, 0) 100%)'}} />
 
           {/* Prototypes */}
-          <div className="bg-[#1A1A1A] rounded-lg p-4">
-            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center mb-3">
-              <span className="text-xs font-bold text-black">2</span>
+          <div className="bg-[#292929] h-[350px] rounded-lg p-4">
+          <div className="w-6 h-6 bg-black rounded-sm p-4 flex items-center justify-center mb-3">
+              <span className="text-sm font-bold text-[#90DDA9]">2</span>
             </div>
-            <h3 className="text-base font-medium mb-2">Prototypes</h3>
-            <p className="text-xs text-[#8c8e93] mb-3">Built interactive prototypes to test key workflows:</p>
+            <h3 className="text-base font-semibold mb-2">Prototypes</h3>
+            <p className="text-sm font-medium text-[#8c8e93] mb-3">Built interactive prototypes to test key workflows:</p>
             <ul className="list-disc list-inside space-y-2 pl-1">
-              <li className="text-xs text-[#8c8e93]">Adding and updating student data.</li>
-              <li className="text-xs text-[#8c8e93]">Filtering old and new students by batch, grades, or status.</li>
-              <li className="text-xs text-[#8c8e93]">
+              <li className="text-sm text-[#8c8e93]">Adding and updating student data.</li>
+              <li className="text-sm text-[#8c8e93]">Filtering old and new students by batch, grades, or status.</li>
+              <li className="text-sm text-[#8c8e93]">
                 Managing communication (e.g., sending emails or notifications, interviews).
               </li>
             </ul>
           </div>
+          <div className="h-[1px] w-8 rounded-full" style={{background: 'linear-gradient(90deg, rgba(235, 235, 235, 0) 0%, #90DDA9 50%, rgba(235, 235, 235, 0) 100%)'}} />
 
           {/* Final UI Design */}
-          <div className="bg-[#1A1A1A] rounded-lg p-4">
-            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center mb-3">
-              <span className="text-xs font-bold text-black">3</span>
+          <div className="bg-[#292929] h-[350px] rounded-lg p-4">
+          <div className="w-6 h-6 bg-black rounded-sm p-4 flex items-center justify-center mb-3">
+              <span className="text-sm font-bold text-[#90DDA9]">3</span>
             </div>
-            <h3 className="text-base font-medium mb-2">Final UI Design</h3>
-            <p className="text-xs text-[#8c8e93] mb-3">
+            <h3 className="text-base font-semibold mb-2">Final UI Design</h3>
+            <p className="text-sm font-medium text-[#8c8e93] mb-3">
               The final designs were clean, professional, and aligned with Wise Academy's branding. Key features
               included:
             </p>
             <ul className="list-disc list-inside space-y-2 pl-1">
-              <li className="text-xs text-[#8c8e93]">Dashboard Analytics: Visualized enrollment trends.</li>
-              <li className="text-xs text-[#8c8e93]">
+              <li className="text-sm text-[#8c8e93]">Dashboard Analytics: Visualized enrollment trends.</li>
+              <li className="text-sm text-[#8c8e93]">
                 Student Management Module: Easy-to-use interface for adding, editing, and searching student records.
               </li>
-              <li className="text-xs text-[#8c8e93]">
+              <li className="text-sm text-[#8c8e93]">
                 Automated notification system to remind parents for upcoming payments, deadlines and interviews.
               </li>
             </ul>
@@ -192,14 +195,14 @@ export default function ProjectDetails() {
       {/* Final Solutions & End Results */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
         {/* Final Solutions */}
-        <div className="bg-[#121212] rounded-[20px] p-5">
-          <h2 className="text-[34px] font-bold mb-1">
-            <span className="text-white">Final</span>
-          </h2>
-          <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">Solutions</h2>
-          <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
+        <div className="flex flex-col bg-[#121212] rounded-3xl gap-6 p-5">
 
-          <p className="text-sm mb-3">The Design Focused On Solving Wise Academy's Challenges By:</p>
+          <div><h2 className="text-4xl/tight font-black mb-1">Final</h2>
+          <h2 className="text-4xl/tight font-black text-[#90DDA9]">Solutions</h2></div>
+
+          <div className="h-[1px] w-full rounded-full" style={{background: 'linear-gradient(90deg, rgba(235, 235, 235, 0) 0%, #90DDA9 50%, rgba(235, 235, 235, 0) 100%)'}} />
+
+          <div><p className="text-sm mb-3">The Design Focused On Solving Wise Academy's Challenges By:</p>
 
           <ul className="list-disc list-inside space-y-2 pl-1">
             <li className="text-sm text-[#8c8e93]">
@@ -213,16 +216,16 @@ export default function ProjectDetails() {
               <span className="font-medium">Enhanced Usability:</span> A clean layout with intuitive navigation ensured
               ease of use for all staff levels.
             </li>
-          </ul>
+          </ul></div>
         </div>
 
         {/* End Results */}
-        <div className="bg-[#121212] rounded-[20px] p-5">
-          <h2 className="text-[34px] font-bold mb-1">
-            <span className="text-white">End</span>
-          </h2>
-          <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">Results</h2>
-          <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
+        <div className="flex flex-col bg-[#121212] rounded-3xl gap-6 p-5">
+
+        <div><h2 className="text-4xl/tight font-black mb-1">End</h2>
+        <h2 className="text-4xl/tight font-black text-[#90DDA9]">Results</h2></div>
+
+        <div className="h-[1px] w-full rounded-full" style={{background: 'linear-gradient(90deg, rgba(235, 235, 235, 0) 0%, #90DDA9 50%, rgba(235, 235, 235, 0) 100%)'}} />
 
           <ul className="space-y-3 pl-1">
             <li>
@@ -247,72 +250,59 @@ export default function ProjectDetails() {
       </div>
 
       {/* Visuals & Screenshots */}
-      <div className="bg-[#121212] rounded-[20px] p-5 mb-4">
-        <h2 className="text-[34px] font-bold mb-1">
-          <span className="text-white">Visuals</span>
-        </h2>
-        <h2 className="text-[34px] font-bold mb-4 text-[#90DDA9]">& Screenshots</h2>
-        <div className="w-full h-[3px] bg-gradient-to-r from-[#90DDA9] to-transparent mb-5"></div>
+      <div className="flex flex-col bg-[#121212] rounded-3xl gap-6 p-5">
+
+        <div><h2 className="text-4xl/tight font-black mb-1">Visuals</h2>
+        <h2 className="text-4xl/tight font-black text-[#90DDA9]">& Screenshots</h2></div>
+
+        <div className="h-[1px] w-full rounded-full" style={{background: 'linear-gradient(90deg, rgba(235, 235, 235, 0) 0%, #90DDA9 50%, rgba(235, 235, 235, 0) 100%)'}} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {/* Dashboard & Insights */}
-          <div className="relative bg-[#1e3a8a] rounded-lg overflow-hidden h-[300px]">
+          <div className="rounded-xl overflow-hidden">
             <Image
-              src="/placeholder.svg?height=300&width=500"
+              src="/projects/Wise/Insights.jpg"
               alt="Dashboard & Insights"
-              width={500}
-              height={300}
+              width={750}
+              height={412}
+              quality={100}
               className="object-cover w-full h-full"
-            />
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#000000] to-transparent">
-              <h3 className="text-lg font-medium">Dashboard &</h3>
-              <h3 className="text-lg font-medium">Insights</h3>
-            </div>
-          </div>
+            /></div>
 
           {/* Right Column */}
           <div className="space-y-4">
             {/* Database Management */}
-            <div className="relative bg-white rounded-lg overflow-hidden h-[140px]">
+            <div className="rounded-xl overflow-hidden">
               <Image
-                src="/placeholder.svg?height=140&width=500"
+                src="/projects/Wise/database.png"
                 alt="Database Management"
-                width={500}
-                height={140}
+                width={538}
+                height={202}
+                quality={100}
                 className="object-cover w-full h-full"
-              />
-              <div className="absolute top-0 left-0 right-0 p-4">
-                <h3 className="text-lg font-medium text-[#121212]">Database Management</h3>
-              </div>
-            </div>
+              /></div>
 
             {/* Interview Calendar */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-[#f59e0b] rounded-lg p-4 flex flex-col justify-end h-[140px]">
-                <h3 className="text-lg font-medium text-white">Interview</h3>
-                <h3 className="text-lg font-medium text-white">Calendar</h3>
-              </div>
-              <div className="relative bg-white rounded-lg overflow-hidden h-[140px]">
+              <div className="rounded-xl overflow-hidden">
                 <Image
-                  src="/placeholder.svg?height=140&width=240"
+                  src="/projects/Wise/interview.png"
                   alt="Calendar View"
-                  width={240}
-                  height={140}
+                  width={538}
+                  height={202}
+                  quality={100}
                   className="object-cover w-full h-full"
-                />
-              </div>
-            </div>
+                /></div>
           </div>
         </div>
       </div>
 
       {/* Call to Action */}
       <div className="text-center py-10">
-        <h2 className="text-xl font-medium mb-2">Have a similar project in mind?</h2>
-        <p className="text-sm text-[#8c8e93] mb-6">Let's create a user-friendly solution together.</p>
+        <h2 className="text-3xl font-black text-[#0acf83] mb-2">Have a similar project in mind?</h2>
+        <p className="text-sm mb-6">Let's create a user-friendly solution together.</p>
         <Link
-          href="/contact"
-          className="inline-block px-6 py-3 border border-[#0acf83] text-[#0acf83] rounded-full hover:bg-[#0acf83] hover:bg-opacity-10 transition-colors"
+          href="https://wa.link/mlum9h"
+          className="inline-block px-6 py-3 border rounded-full hover:text-[#0acf83] hover:border-[#0acf83] hover:bg-opacity-10 transition-colors"
         >
           Contact Me
         </Link>

@@ -160,7 +160,7 @@ export default function AboutPage() {
             <div className="flex flex-col items-start gap-4 w-full">
   {/* LinkedIn Button */}
   <a 
-    href="www.linkedin.com/in/mohamad-hawa-45aa09246" // Replace with your actual LinkedIn URL
+    href="https://www.linkedin.com/in/mohamad-hawa-45aa09246" // Replace with your actual LinkedIn URL
     className="flex justify-center items-center gap-1 w-full h-[3.3125rem] rounded-full border border-white text-white font-['Inter'] text-sm font-semibold capitalize transition-all duration-300 hover:bg-white/10 hover:border-white/80 hover:no-underline"
   >
     LinkedIn
@@ -204,7 +204,7 @@ export default function AboutPage() {
                       <div className="text-[#8c8e93] font-['Inter'] text-xs">
                         Collaborated with cross-functional teams to design innovative user experiences for web and mobile applications, including projects in French for local clients. Worked on high-profile projects for global brands like LVMH and Total Energies. Conducted user research, developed prototypes, and ensured designs aligned with client objectives. Focused on creating accessible, aesthetically pleasing, and user-centric solutions that enhanced brand identity and user engagement, while adapting designs for the French-speaking audience.
                       </div>
-                      <div className="text-[#90dda9] font-['Inter'] text-xs">2020 - Present</div>
+                      <div className="text-[#90dda9] font-['Inter'] text-xs">2022 - Present</div>
                     </div>
                   </div>
                 </div>
@@ -274,9 +274,9 @@ export default function AboutPage() {
           <section className="relative flex flex-col gap-8 p-6 rounded-[1.25rem] bg-[#121212]">
             <h2 className="text-white font-['Inter'] text-[1.375rem] font-semibold capitalize">Services</h2>
             <div className="absolute top-[4rem] left-6 w-14 h-[0.1875rem] rounded-full bg-[#90dda9]" />
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="flex flex-col gap-6">
               {SERVICES.map((service, idx) => (
-                <div key={idx} className="space-y-2">
+                <div key={idx} className="flex flex-col gap-6">
                   <div className="flex items-start gap-3">
                   <Image
                   src={service.image}
