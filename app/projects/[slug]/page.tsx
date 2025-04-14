@@ -4,7 +4,6 @@
 import { useRouter, useParams } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image"
 import { getProjectBySlug } from "..//../../lib/project-data"
 import { useEffect, useState } from "react"
 import { ProjectDetail } from "..//../../lib/project-data"
@@ -115,7 +114,7 @@ export default function ProjectDetails() {
           <li className="text-sm">
             <span className="font-medium">Stakeholder Interviews:</span>{" "}
             <span className="text-[#8c8e93]">
-              Discussions with {project.details.client}'s staff to identify pain points and must-have features.
+              Discussions with {project.details.client}s staff to identify pain points and must-have features.
             </span>
           </li>
           <li className="text-sm">
@@ -196,7 +195,7 @@ export default function ProjectDetails() {
 
           <div className="h-[1px] w-full rounded-full" style={{background: 'linear-gradient(90deg, rgba(235, 235, 235, 0) 0%, #90DDA9 50%, rgba(235, 235, 235, 0) 100%)'}} />
 
-          <div><p className="text-sm mb-3">The Design Focused On Solving {project.details.client}'s Challenges By:</p>
+          <div><p className="text-sm mb-3">The Design Focused On Solving {project.details.client}s Challenges By:</p>
 
           <ul className="list-disc list-inside space-y-2 pl-1">
             {project.finalSolutions.map((solution, index) => (
@@ -252,7 +251,7 @@ export default function ProjectDetails() {
       {/* Call to Action */}
       <div className="text-center py-10">
         <h2 className="text-3xl font-black text-[#0acf83] mb-2">Have a similar project in mind?</h2>
-        <p className="text-sm mb-6">Let's create a user-friendly solution together.</p>
+        <p className="text-sm mb-6">Lets create a user-friendly solution together.</p>
         <Link
           href="https://wa.link/mlum9h"
           className="inline-block px-6 py-3 border rounded-full hover:text-[#0acf83] hover:border-[#0acf83] hover:bg-opacity-10 transition-colors"

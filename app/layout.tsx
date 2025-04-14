@@ -16,6 +16,8 @@ export default function RootLayout({
         <title>Mohammad Hawa - UI/UX Designer Portfolio</title>
         <meta name="description" content="Professional UI/UX Designer specializing in web and mobile applications" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        {/* Favicon */}
+    <link rel="icon" href="/favicon.png" type="image/png" />
       </head>
       <body className={`${inter.className} h-full`}>
         <ClientLayout>{children}</ClientLayout>

@@ -3,7 +3,7 @@
 
 import type React from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useState, useCallback, memo, useMemo } from "react"
+import { useEffect, memo, useMemo } from "react"
 import { Drawer } from "vaul"
 import HomePage from "../app/page"
 import { useMobileDetect } from "@/hooks/use-mobile"
@@ -16,7 +16,7 @@ const MemoizedHomePage = memo(HomePage)
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const { isMobile, isIOS } = useMobileDetect()
+  const { isIOS } = useMobileDetect()
   
   // Use useMemo for derived state instead of useState + useEffect
   const currentPage = useMemo(() => {
@@ -29,10 +29,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   
   // Is this the home page?
   const isHomePage = pathname === "/"
-
-  const handleClose = useCallback(() => {
-    router.back()
-  }, [router])
 
   // Add this effect to reset Vaul's internal state
 useEffect(() => {

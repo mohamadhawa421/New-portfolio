@@ -136,7 +136,7 @@ export default function ProjectsPage() {
       {/* Call to Action */}
       <div className="text-center py-10">
         <h2 className="text-3xl font-black text-[#0acf83] mb-2">Have a similar project in mind?</h2>
-        <p className="text-sm mb-6">Let's create a user-friendly solution together.</p>
+        <p className="text-sm mb-6">Lets create a user-friendly solution together.</p>
         <Link
           href="https://wa.link/mlum9h"
           className="inline-block px-6 py-3 border rounded-full hover:text-[#0acf83] hover:border-[#0acf83] hover:bg-opacity-10 transition-colors"

@@ -14,15 +14,9 @@ export default function HomePage() {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { isMobile, isIOS } = useMobileDetect()
-  const [showGame, setShowGame] = useState(false);
 
   // Prevent direct navigation away from homepage
   useEffect(() => {
-    const handleRouteChange = (url: string) => {
-      if (url !== "/") {
-        router.push(url)
-      }
-    }
 
     if (typeof window !== "undefined" && window.location.pathname !== "/") {
       router.replace("/")
@@ -135,11 +129,11 @@ export default function HomePage() {
         style={{ pointerEvents: "auto", minHeight: "calc(100vh - 400px)" }}
       >
         <p className="text-center text-base sm:text-lg mb-3 sm:mb-4 px-2">
-          I'm Mohamad Hawa, and I'm passionate about designing intuitive experiences.
+          I am Mohamad Hawa, and I am passionate about designing intuitive experiences.
         </p>
 
         <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-center max-w-4xl leading-tight">
-          Let's Make Some <span className="text-[#fbb03b]">Pixel-Perfect</span> Magic —
+          Lets Make Some <span className="text-[#fbb03b]">Pixel-Perfect</span> Magic —
           <br className="hidden sm:block" />
           No Magic <span className="text-[#90dda9]">Wand</span> Required.
         </h1>
@@ -147,7 +141,7 @@ export default function HomePage() {
         <p className="text-center max-w-3xl mt-6 sm:mt-8 text-sm sm:text-base text-gray-300 px-2">
           As a UI/UX designer, I specialize in crafting visually engaging and user-centered designs that blend
           creativity with functionality. My mission is to transform complex challenges into seamless experiences that
-          empower users and drive impact. Let's create something remarkable together.
+          empower users and drive impact. Lets create something remarkable together.
         </p>
 
         <div className=" mt-12 sm:mt-4 gap-2 flex flex-col items-center">

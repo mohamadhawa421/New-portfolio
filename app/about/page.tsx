@@ -71,51 +71,8 @@ const PROCESS_STEPS = [
   }
 ]
 
-const PRICING_TIERS = [
-  {
-    title: "Starter Bundle",
-    price: "$700",
-    tagline: "Start Small",
-    features: [
-      "Up to 5 pages/screens (web or mobile)",
-      "Basic user research",
-      "Wireframes and high-fidelity designs",
-      "Responsive design",
-      "2 design revisions"
-    ]
-  },
-  {
-    title: "Professional Bundle",
-    price: "$1500",
-    tagline: "Level Up",
-    popular: true,
-    features: [
-      "Up to 10 pages/screens (web or mobile)",
-      "In-depth user research",
-      "Wireframes, prototypes, and high-fidelity designs",
-      "Design system (basic components)",
-      "Responsive design",
-      "4 design revisions"
-    ]
-  },
-  {
-    title: "Premium Bundle",
-    price: "$2,500+",
-    tagline: "Own It All",
-    features: [
-      "Unlimited pages/screens (web or mobile)",
-      "Full-scale user research",
-      "Detailed wireframes, interactive prototypes, and final designs",
-      "Complete design system",
-      "Collaboration with developers during implementation",
-      "Usability testing post-launch",
-      "6 design revisions"
-    ]
-  }
-]
-
 export default function AboutPage() {
-  const { isMobile } = useMobileDetect()
+  const {} = useMobileDetect()
 
   return (
     <div className="bg-[#1d1d1d] text-white pb-safe">
@@ -442,7 +399,7 @@ export default function AboutPage() {
   
   {/* Rest of the content remains the same */}
   <div className=" text-white text-xs leading-[normal]">
-    "Lower prices for custom packages and redesigning are available for unique project needs. Contact me for a tailored quote."
+    Lower prices for custom packages and redesigning are available for unique project needs. Contact me for a tailored quote.
   </div>
   
   <div className="flex flex-col items-start self-stretch p-3 gap-3.5 rounded-xl bg-[#292929]">
