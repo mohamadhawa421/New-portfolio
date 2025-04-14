@@ -68,9 +68,9 @@ export interface ProjectDetail {
       },
       // Changed from object to array
       images: [
-        "/projects/Wise/Insights.png",
-        "/projects/Wise/database.png",
-        "/projects/Wise/Interview.png"
+        "/projects/wise/Insights.png",
+        "/projects/wise/database.png",
+        "/projects/wise/Interview.png"
       ]
     },
     {
@@ -146,7 +146,7 @@ export interface ProjectDetail {
           clientSatisfaction: "CodingCLebanon praised the redesign and reported increased engagement across the platform."
         },
         images: [
-          "/projects/Codingclebanon/showcase.png"
+          "/projects/codingclebanon/showcase.png"
         ]
       },
       {
