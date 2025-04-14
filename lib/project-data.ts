@@ -70,7 +70,7 @@ export interface ProjectDetail {
       images: [
         "/projects/Wise/Insights.png",
         "/projects/Wise/database.png",
-        "/projects/Wise/interview.png"
+        "/projects/Wise/Interview.png"
       ]
     },
     {
@@ -108,7 +108,7 @@ export interface ProjectDetail {
           clientSatisfaction: "The Deputy expressed interest in expanding the system to manage more public-facing initiatives."
         },
         images: [
-          "/projects/Kabbara/showcase.png"
+          "/projects/kabbara/showcase.png"
         ]
       },
       {
