@@ -13,29 +13,29 @@ const tips = [
   "Good UX is invisible—users should just flow.",
   "Test with users, not with your assumptions.",
   "Hierarchy guides the eye. Prioritize visually.",
-  "Accessibility isn’t optional—it’s essential.",
+  "Accessibility isn't optional—it's essential.",
 
   // Funny + insightful extras:
   "If your user needs a manual, your UI needs a therapist.",
   "Buttons should look like buttons. Not like abstract art.",
   "Loading spinners are not Netflix cliffhangers. Keep it short.",
-  "Don’t make users solve a puzzle to find the ‘Submit’ button.",
+  "Don't make users solve a puzzle to find the 'Submit' button.",
   "Color is not a mood ring—use it with purpose.",
   "Tooltips: great for hints, not for hiding the entire UI manual.",
   "UX without testing is like cooking without tasting. Might be poison.",
-  "Mobile-first doesn’t mean ‘Desktop-last’. Respect both.",
+  "Mobile-first doesn't mean 'Desktop-last'. Respect both.",
   "Never let your form error messages ghost your users.",
   "A slow interface is just a fast way to lose users.",
   "If your navigation feels like a maze, users will rage-quit.",
-  "Design like your grandma’s using it. Because someday, she will.",
-  "Placeholders aren’t labels. Don't make them do all the work.",
-  "Autoplay videos? Bold move. Hope your user’s boss doesn’t mind.",
-  "Dark mode isn’t just cool—it’s eye-friendly. And slightly emo.",
+  "Design like your grandma's using it. Because someday, she will.",
+  "Placeholders aren't labels. Don't make them do all the work.",
+  "Autoplay videos? Bold move. Hope your user's boss doesn't mind.",
+  "Dark mode isn't just cool—it's eye-friendly. And slightly emo.",
   "Microinteractions: tiny, delightful, and often ignored. Like a good pun.",
   "If you need a FAQ to explain your UI, go back to the drawing board.",
-  "Don’t make your users click 5 times to feel one emotion.",
+  "Don't make your users click 5 times to feel one emotion.",
   "Hover states are not real on touchscreens. Sorry, designers.",
-  "Your form shouldn’t feel like a government application.",
+  "Your form shouldn't feel like a government application.",
   "If users say 'What just happened?', you've got UX ghosts.",
   "Animations should enhance, not hypnotize. You're not Disney.",
   "Error 404 pages are a cry for help—make them charming.",
@@ -46,13 +46,11 @@ const tips = [
   "Don't hide key features like they're Easter eggs."
 ];
 
-
 // Welcome message
 const welcomeMessage = "I came from a galaxy of bad UI and learned how to make great UX on Earth.";
 
 export default function AlienAvatar() {
   const [showTip, setShowTip] = useState(false);
-  const [tip, setTip] = useState(welcomeMessage);
   const [displayedText, setDisplayedText] = useState('');
   const [muted, setMuted] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -94,7 +92,6 @@ export default function AlienAvatar() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     
     const randomTip = tips[Math.floor(Math.random() * tips.length)];
-    setTip(randomTip);
     setShowTip(true);
     
     if (!muted) play();
