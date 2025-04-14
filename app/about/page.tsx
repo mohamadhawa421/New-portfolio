@@ -143,10 +143,6 @@ export default function AboutPage() {
                 </div>
               </div>
               <div className="flex flex-col items-start self-stretch gap-4">
-                {/* <div className="flex justify-between items-center self-stretch">
-                  <div className="text-white font-['Inter'] text-sm font-semibold capitalize">Blog</div>
-                  <div className="flex items-center gap-3 text-[#8c8e93] font-['Inter'] text-sm">mohamadhawa.vercel.app/blog</div>
-                </div> */}
                 <div className="flex justify-between items-center self-stretch">
                   <div className="text-white font-['Inter'] text-sm font-semibold capitalize">Email</div>
                   <div className="flex items-center gap-3 text-[#8c8e93] font-['Inter'] text-sm">Mohamadhawa421@gmail.com</div>
@@ -173,14 +169,6 @@ export default function AboutPage() {
   >
     WhatsApp
   </a>
-
-  {/* Download CV Button */}
-  {/* <a 
-    href="#cv-download-link" // Replace with your actual CV download URL
-    className="flex justify-center items-center gap-1 w-full h-[3.3125rem] rounded-full border border-white text-white font-['Inter'] text-sm font-semibold capitalize transition-all duration-300 hover:bg-white/10 hover:border-white/80 hover:no-underline"
-  >
-    Download my CV
-  </a> */}
 </div>
           </div>
         </div>
@@ -237,14 +225,14 @@ export default function AboutPage() {
   <div className="flex-1 overflow-x-auto pb-2 hide-scrollbar">
     <div className="flex gap-2 sm:gap-2 w-max sm:w-full">
       {[
-        { src: "./icons/figma.svg", alt: "Figma" },
-        { src: "./icons/xd.svg", alt: "Adobe XD" },
-        { src: "./icons/notion.svg", alt: "Notion" },
-        { src: "./icons/chatgpt.svg", alt: "ChatGPT" },
-        { src: "./icons/slack.svg", alt: "Slack" },
-        { src: "./icons/trello.svg", alt: "Trello" },
-        { src: "./icons/ai.svg", alt: "Adobe Illustrator" },
-        { src: "./icons/ps.svg", alt: "Photoshop" }
+        { src: "./icons/figma.svg", alt:"Figma" },
+        { src: "./icons/xd.svg", alt:"Adobe XD" },
+        { src: "./icons/notion.svg", alt:"Notion" },
+        { src: "./icons/chatgpt.svg", alt:"ChatGPT" },
+        { src: "./icons/slack.svg", alt:"Slack" },
+        { src: "./icons/trello.svg", alt:"Trello" },
+        { src: "./icons/ai.svg", alt:"Adobe Illustrator" },
+        { src: "./icons/ps.svg", alt:"Photoshop" }
       ].map((icon, index) => (
         <div key={index} className="flex-shrink-0">
           <Image

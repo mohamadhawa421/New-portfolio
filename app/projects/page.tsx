@@ -28,7 +28,7 @@ const projects: Project[] = [
     id: "Kabbara Office",
     title: "Kabbara Office",
     description: "Digital solution built to help Deputy Karim Kabbara manage and respond to public service.",
-    image: "/projects/Kabbara/kabbara-thumb.png",
+    image: "/projects/kabbara/kabbara-thumb.png",
     type: ["mobile"],
     link: "/projects/kabbara"
   },
