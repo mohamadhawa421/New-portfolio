@@ -70,7 +70,7 @@ export interface ProjectDetail {
       images: [
         "/projects/Wise/Insights.png",
         "/projects/Wise/database.png",
-        "/projects/Wise/interview.png"
+        "/projects/Wise/Interview.png"
       ]
     },
     {
