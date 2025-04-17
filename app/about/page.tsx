@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import { useMobileDetect } from "../../hooks/use-mobile"
+import PresenceBubble from "@/components/PresenceBubble"
 
 
 const SERVICES = [
@@ -430,6 +431,8 @@ export default function AboutPage() {
           </div>
         </main>
       </div>
+       <PresenceBubble /> {/* 🛸 Shows random presence bubble */}
     </div>
+    
   )
 }
