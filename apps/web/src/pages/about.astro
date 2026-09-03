@@ -1,0 +1,226 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getAboutPage, getSiteSettings } from '../lib/content';
+
+const [about, settings] = await Promise.all([getAboutPage(), getSiteSettings()]);
+---
+
+<BaseLayout seo={about.seo}>
+  <main id="main" data-shell="1">
+    <section class="section section--light about-hero" data-tile="light">
+      <div class="shell">
+        <div class="eyebrow about-hero__eyebrow" data-reveal="0">{about.eyebrow}</div>
+        <h1 class="about-hero__heading" data-reveal="1">{about.heading}</h1>
+      </div>
+    </section>
+
+    <section class="section section--parchment about-body" data-tile="parchment">
+      <div class="shell about-body__inner">
+        <div class="about-body__aside" data-reveal="0">
+          <div class="about-body__portrait">
+            {
+              settings.portrait && (
+                <img
+                  src={settings.portrait.url}
+                  alt={settings.portrait.alt}
+                  loading="eager"
+                  decoding="async"
+                  style={`object-position:${settings.portraitTallFocus}`}
+                />
+              )
+            }
+          </div>
+
+          <div class="about-body__stats">
+            {
+              about.stats.map((stat) => (
+                <div>
+                  <div class="stat__value" data-num={stat.animate ? '1' : undefined}>
+                    {stat.value}
+                  </div>
+                  <div class="stat__label">{stat.label}</div>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+
+        <div class="about-body__copy" data-reveal="1">
+          <p class="about-body__lead">{about.lead}</p>
+          <p class="about-body__primary">{about.bodyPrimary}</p>
+          <p class="about-body__secondary">{about.bodySecondary}</p>
+
+          <div class="experience">
+            {
+              about.experience.map((entry) => (
+                <div class="experience__row">
+                  <div>
+                    <div class="experience__role">{entry.role}</div>
+                    <div class="experience__org">{entry.organisation}</div>
+                  </div>
+                  <div class="experience__period">{entry.period}</div>
+                </div>
+              ))
+            }
+          </div>
+
+          <div class="skills">
+            {about.skills.map((skill) => <span class="skill">{skill}</span>)}
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .about-hero {
+    padding-top: clamp(132px, 17vh, 196px);
+    padding-bottom: clamp(44px, 6.5vh, 80px);
+  }
+
+  .about-hero__eyebrow {
+    margin-bottom: 18px;
+  }
+
+  .about-hero__heading {
+    max-width: 18ch;
+    font-size: clamp(33px, 5.6vw, 80px);
+    line-height: 1.04;
+    letter-spacing: -0.019em;
+    font-weight: 600;
+  }
+
+  .about-body {
+    padding-block: clamp(56px, 9vh, 100px);
+  }
+
+  .about-body__inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(30px, 5vw, 80px);
+  }
+
+  .about-body__aside {
+    flex: 1 1 320px;
+    min-width: 240px;
+    max-width: 400px;
+  }
+
+  .about-body__portrait {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    border-radius: var(--r-xl);
+    overflow: hidden;
+    background: var(--surface-placeholder);
+  }
+
+  .about-body__portrait img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .about-body__stats {
+    display: flex;
+    gap: 36px;
+    margin-top: 24px;
+  }
+
+  .stat__value {
+    font-size: clamp(26px, 3vw, 34px);
+    font-weight: 600;
+    letter-spacing: -0.024em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat__label {
+    font-size: 14px;
+    color: var(--ink-muted);
+    margin-top: 6px;
+  }
+
+  .about-body__copy {
+    flex: 1 1 420px;
+    min-width: 0;
+  }
+
+  .about-body__lead {
+    font-size: clamp(20px, 2.1vw, 28px);
+    font-weight: 300;
+    line-height: 1.38;
+    max-width: 34ch;
+  }
+
+  .about-body__primary {
+    margin-top: 22px;
+    font-size: 17px;
+    line-height: 1.5;
+    letter-spacing: -0.022em;
+    max-width: 56ch;
+  }
+
+  .about-body__secondary {
+    margin-top: 18px;
+    font-size: 17px;
+    line-height: 1.5;
+    letter-spacing: -0.022em;
+    color: var(--ink-muted);
+    max-width: 56ch;
+  }
+
+  .experience {
+    margin-top: clamp(36px, 6vh, 60px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .experience__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 0;
+    border-top: 1px solid var(--line-parchment);
+  }
+
+  .experience__row:last-child {
+    border-bottom: 1px solid var(--line-parchment);
+  }
+
+  .experience__role {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.022em;
+  }
+
+  .experience__org {
+    font-size: 14px;
+    color: var(--ink-muted);
+    margin-top: 6px;
+  }
+
+  .experience__period {
+    font-size: 14px;
+    color: var(--ink-muted);
+    white-space: nowrap;
+  }
+
+  .skills {
+    margin-top: clamp(30px, 5vh, 48px);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .skill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 14px;
+    padding: 0 18px;
+    border-radius: var(--r-pill);
+    background: var(--surface);
+    color: var(--ink);
+  }
+</style>

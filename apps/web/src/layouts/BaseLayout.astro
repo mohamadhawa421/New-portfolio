@@ -1,0 +1,139 @@
+---
+import '../styles/tokens.css';
+import '../styles/global.css';
+
+import SiteNav from '../components/SiteNav.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import IntroCurtain from '../components/IntroCurtain.astro';
+import { getSiteSettings } from '../lib/content';
+import type { Seo } from '../lib/types';
+
+interface Props {
+  seo?: Seo;
+  /** Falls back to the site SEO defaults when a page has none of its own. */
+  title?: string;
+  description?: string;
+}
+
+const { seo, title, description } = Astro.props;
+
+const settings = await getSiteSettings();
+
+const pageTitle =
+  title ?? seo?.metaTitle ?? settings.seo.metaTitle ?? `${settings.siteName} — ${settings.roleTitle}`;
+const pageDescription =
+  description ?? seo?.metaDescription ?? settings.seo.metaDescription ?? '';
+const shareImage = seo?.shareImage ?? settings.seo.shareImage ?? settings.portrait;
+
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
+const shareImageUrl = shareImage ? new URL(shareImage.url, canonical).href : undefined;
+const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    <link rel="canonical" href={canonical.href} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:url" content={canonical.href} />
+    {shareImageUrl && <meta property="og:image" content={shareImageUrl} />}
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" type="image/svg+xml" href={faviconHref} />
+    <link rel="apple-touch-icon" href={faviconHref} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    {/* Marks the document as scripted before first paint, so reveal-on-scroll
+        elements start hidden only when something is going to reveal them. */}
+    <script is:inline>
+      document.documentElement.classList.add('js');
+    </script>
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    {settings.showIntro && <IntroCurtain logo={settings.logoFull} />}
+
+    <a
+      class="site-logo"
+      data-logo="1"
+      href="/"
+      aria-label={`${settings.siteName} — home`}
+    >
+      {
+        settings.logoMark && (
+          <img src={settings.logoMark.url} alt={settings.siteName} width="34" height="34" />
+        )
+      }
+    </a>
+
+    <SiteNav pathname={Astro.url.pathname} settings={settings} />
+
+    <slot />
+
+    <SiteFooter settings={settings} />
+
+    <script>
+      import '../scripts/chrome.ts';
+    </script>
+
+    <style>
+      .skip-link {
+        position: fixed;
+        left: -9999px;
+        top: 12px;
+        z-index: 500;
+        background: var(--blue);
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 18px;
+        border-radius: var(--r-pill);
+        font-size: 14px;
+      }
+
+      .skip-link:focus-visible {
+        left: 12px;
+      }
+
+      .site-logo {
+        position: fixed;
+        top: 18px;
+        left: clamp(20px, 4vw, 56px);
+        z-index: 201;
+        display: flex;
+        align-items: center;
+        min-height: 44px;
+        opacity: var(--logo-op, 1);
+        transform: translateY(var(--logo-y, 0px));
+        pointer-events: var(--logo-pe, auto);
+        transition:
+          opacity 480ms var(--ease-out),
+          transform 520ms var(--ease-out);
+      }
+
+      .site-logo img {
+        height: 34px;
+        width: auto;
+        display: block;
+      }
+    </style>
+  </body>
+</html>

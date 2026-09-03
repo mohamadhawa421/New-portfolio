@@ -1,0 +1,13 @@
+{
+  "collectionName": "components_shared_constraints",
+  "info": {
+    "displayName": "Constraint",
+    "description": "One of the numbered constraints in a case study's \"The problem\" section.",
+    "icon": "exclamationMarkCircle"
+  },
+  "options": {},
+  "attributes": {
+    "title": { "type": "string", "required": true },
+    "body": { "type": "text", "required": true }
+  }
+}

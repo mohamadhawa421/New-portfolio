@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_shared_stats",
+  "info": {
+    "displayName": "Stat",
+    "description": "A headline figure with a caption, e.g. \"20+ / projects shipped\".",
+    "icon": "chartBubble"
+  },
+  "options": {},
+  "attributes": {
+    "value": { "type": "string", "required": true },
+    "label": { "type": "string", "required": true },
+    "animate": {
+      "type": "boolean",
+      "default": true,
+      "description": "Count the number up when it scrolls into view."
+    }
+  }
+}

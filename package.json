@@ -1,36 +1,28 @@
 {
-  "name": "portfolioanimated",
-  "version": "0.1.0",
+  "name": "mohamad-hawa-portfolio",
   "private": true,
+  "version": "1.0.0",
+  "description": "Showcase site for Mohamad Hawa \u2014 Astro front end, Strapi CMS.",
+  "workspaces": [
+    "apps/web",
+    "apps/cms"
+  ],
+  "engines": {
+    "node": ">=20.0.0 <=22.x.x"
+  },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "critters": "^0.0.23",
-    "file-loader": "^6.2.0",
-    "framer-motion": "^12.6.5",
-    "lucide-react": "^0.487.0",
-    "next": "15.3.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-icons": "^5.5.0",
-    "url-loader": "^4.1.1",
-    "use-sound": "^5.0.0",
-    "vaul": "^1.1.2"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "autoprefixer": "^10.4.21",
-    "eslint": "9.24.0",
-    "eslint-config-next": "15.3.0",
-    "postcss": "^8.5.3",
-    "tailwindcss": "^4.1.3",
-    "typescript": "^5"
+    "dev": "npm run dev --workspace=apps/web",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:cms": "npm run dev --workspace=apps/cms",
+    "export": "npm run export --workspace=apps/cms",
+    "refresh": "npm run export && npm run dev:web",
+    "build:site": "npm run export --workspace=apps/cms && npm run build --workspace=apps/web",
+    "build": "npm run build:site",
+    "build:web": "npm run build --workspace=apps/web",
+    "build:cms": "npm run build --workspace=apps/cms",
+    "seed": "npm run seed --workspace=apps/cms",
+    "preview": "npm run preview --workspace=apps/web",
+    "deploy": "node scripts/publish.js",
+    "edit": "npm run dev --workspace=apps/cms"
   }
 }

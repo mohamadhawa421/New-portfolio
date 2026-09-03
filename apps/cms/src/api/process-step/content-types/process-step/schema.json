@@ -1,0 +1,19 @@
+{
+  "kind": "collectionType",
+  "collectionName": "process_steps",
+  "info": {
+    "singularName": "process-step",
+    "pluralName": "process-steps",
+    "displayName": "Process step",
+    "description": "The \"How I work\" list on the home page."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": { "type": "string", "required": true },
+    "description": { "type": "text", "required": true },
+    "order": { "type": "integer", "default": 0 }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "kind": "singleType",
+  "collectionName": "site_settings",
+  "info": {
+    "singularName": "site-setting",
+    "pluralName": "site-settings",
+    "displayName": "Site settings",
+    "description": "Identity, contact details and availability. Used on every page."
+  },
+  "options": { "draftAndPublish": false },
+  "pluginOptions": {},
+  "attributes": {
+    "siteName": { "type": "string", "required": true, "default": "Mohamad Hawa" },
+    "roleTitle": { "type": "string", "default": "UI/UX Designer" },
+    "location": { "type": "string", "default": "Beirut, Lebanon" },
+    "email": { "type": "email", "required": true },
+    "whatsappNumber": {
+      "type": "string",
+      "required": true,
+      "description": "Digits only, including country code — e.g. 96176824793."
+    },
+    "phoneLabel": {
+      "type": "string",
+      "description": "How the number is shown to visitors, e.g. +961 76 824 793."
+    },
+    "available": {
+      "type": "boolean",
+      "default": true,
+      "description": "Drives the pulsing dot and the label on the contact page."
+    },
+    "availableLabel": { "type": "string", "default": "Available for new projects" },
+    "bookedLabel": { "type": "string", "default": "Booked — enquiries still welcome" },
+    "contactMode": {
+      "type": "enumeration",
+      "enum": ["WhatsApp", "Email", "Both"],
+      "default": "Both",
+      "description": "Which send buttons the enquiry form offers."
+    },
+    "portrait": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "portraitFocus": {
+      "type": "string",
+      "default": "58% 30%",
+      "description": "CSS object-position for the square hero portrait."
+    },
+    "portraitTallFocus": {
+      "type": "string",
+      "default": "50% 38%",
+      "description": "CSS object-position for the 4:5 portrait on the about sections."
+    },
+    "logoMark": { "type": "media", "multiple": false, "required": false, "allowedTypes": ["images", "files"] },
+    "logoFull": { "type": "media", "multiple": false, "required": false, "allowedTypes": ["images", "files"] },
+    "showIntro": {
+      "type": "boolean",
+      "default": true,
+      "description": "Play the full-screen logo intro on a visitor's first arrival in a session."
+    },
+    "seo": { "type": "component", "repeatable": false, "component": "shared.seo" }
+  }
+}

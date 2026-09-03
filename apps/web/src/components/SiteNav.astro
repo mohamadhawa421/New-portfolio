@@ -1,0 +1,437 @@
+---
+import type { SiteSettings } from '../lib/types';
+
+interface Props {
+  pathname: string;
+  settings: SiteSettings;
+}
+
+const { pathname, settings } = Astro.props;
+
+const links = [
+  { label: 'Home', href: '/', match: (p: string) => p === '/' },
+  { label: 'Work', href: '/work', match: (p: string) => p.startsWith('/work') },
+  { label: 'About', href: '/about', match: (p: string) => p.startsWith('/about') },
+  { label: 'Contact', href: '/contact', match: (p: string) => p.startsWith('/contact') },
+];
+
+// Trailing slashes vary between dev and the built output.
+const current = pathname.length > 1 ? pathname.replace(/\/+$/, '') || '/' : '/';
+const items = links.map((link) => ({ ...link, active: link.match(current) }));
+---
+
+{/* Desktop: the centred pill from the design. Hidden below 768px, where it
+    would collide with the fixed logo mark. */}
+<nav class="nav" data-nav="1" aria-label="Primary">
+  {
+    items.map((item) => (
+      <a
+        class="nav__link"
+        class:list={[{ 'nav__link--active': item.active }]}
+        href={item.href}
+        aria-current={item.active ? 'page' : undefined}
+      >
+        {item.label}
+      </a>
+    ))
+  }
+</nav>
+
+{/* Mobile: burger → slide-in sidebar. */}
+<button
+  type="button"
+  class="burger"
+  data-burger
+  aria-label="Open menu"
+  aria-expanded="false"
+  aria-controls="mobile-menu"
+>
+  <span class="burger__box" aria-hidden="true">
+    <span class="burger__line burger__line--top"></span>
+    <span class="burger__line burger__line--bottom"></span>
+  </span>
+</button>
+
+<div class="scrim" data-scrim hidden></div>
+
+<aside id="mobile-menu" class="panel" data-panel aria-label="Menu" inert>
+  <nav class="panel__links" aria-label="Mobile">
+    {
+      items.map((item) => (
+        <a
+          class="panel__link"
+          class:list={[{ 'panel__link--active': item.active }]}
+          href={item.href}
+          aria-current={item.active ? 'page' : undefined}
+        >
+          {item.label}
+        </a>
+      ))
+    }
+  </nav>
+
+  <div class="panel__foot">
+    <a class="panel__contact" href={settings.waHref} target="_blank" rel="noopener">
+      <span>WhatsApp</span>
+      <span class="panel__arrow" aria-hidden="true">↗</span>
+    </a>
+    <a class="panel__contact" href={settings.mailHref}>
+      <span>Email</span>
+      <span class="panel__arrow" aria-hidden="true">↗</span>
+    </a>
+    <p class="panel__location">{settings.location}</p>
+  </div>
+</aside>
+
+<script>
+  const burger = document.querySelector<HTMLButtonElement>('[data-burger]');
+  const panel = document.querySelector<HTMLElement>('[data-panel]');
+  const scrim = document.querySelector<HTMLElement>('[data-scrim]');
+
+  if (burger && panel && scrim) {
+    const focusable = () =>
+      Array.from(panel.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'));
+
+    let open = false;
+    let scrollY = 0;
+
+    function setOpen(next: boolean) {
+      if (next === open) return;
+      open = next;
+
+      burger!.setAttribute('aria-expanded', String(open));
+      burger!.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      document.documentElement.classList.toggle('menu-open', open);
+
+      if (open) {
+        scrim!.hidden = false;
+        panel!.removeAttribute('inert');
+        // Lock the page behind the panel without losing the scroll position.
+        scrollY = window.scrollY;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollY}px`;
+        document.body.style.width = '100%';
+        focusable()[0]?.focus();
+      } else {
+        panel!.setAttribute('inert', '');
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        // Must be instant: the page sets `scroll-behavior: smooth`, which would
+        // otherwise animate the restore and look like the page jumped away.
+        window.scrollTo({ top: scrollY, behavior: 'instant' });
+        burger!.focus();
+        // Keep the scrim in the DOM until its fade-out finishes.
+        window.setTimeout(() => {
+          if (!open) scrim!.hidden = true;
+        }, 400);
+      }
+    }
+
+    burger.addEventListener('click', () => setOpen(!open));
+    scrim.addEventListener('click', () => setOpen(false));
+
+    // Navigating away closes it, so the panel is never left open behind a
+    // back-button restore.
+    panel.querySelectorAll('a[href]').forEach((link) => {
+      link.addEventListener('click', () => setOpen(false));
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (!open) return;
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setOpen(false);
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      // Keep focus inside the panel while it is open.
+      const items = focusable();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && (active === first || !panel.contains(active))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+
+    // Crossing the breakpoint while the menu is open — rotating a phone to
+    // landscape is enough — hides the panel by CSS but would leave the body
+    // scroll-locked with nothing left to close, trapping the page. Watch both
+    // resize and the media query: resize always fires, the media query is the
+    // cheaper signal when it does.
+    const closeIfDesktop = () => {
+      if (window.innerWidth >= 768) setOpen(false);
+    };
+
+    window.addEventListener('resize', closeIfDesktop, { passive: true });
+    window.addEventListener('orientationchange', closeIfDesktop);
+    window.matchMedia('(min-width: 768px)').addEventListener('change', closeIfDesktop);
+  }
+</script>
+
+<style>
+  /* ------------------------------------------------------------------ */
+  /* Desktop pill                                                        */
+  /* ------------------------------------------------------------------ */
+  .nav {
+    position: fixed;
+    top: var(--nav-top, 18px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: var(--nav-gap, clamp(16px, 4.6vw, 56px));
+    padding: var(--nav-pad, 2px 12px);
+    border-radius: var(--r-pill);
+    background: var(--nav-bg, rgba(255, 255, 255, 0));
+    backdrop-filter: var(--nav-blur, saturate(180%) blur(0px));
+    -webkit-backdrop-filter: var(--nav-blur, saturate(180%) blur(0px));
+    box-shadow: var(--nav-shadow, 0 1px 8px rgba(0, 0, 0, 0));
+    max-width: calc(100vw - 20px);
+    transition:
+      top 620ms var(--ease-out),
+      gap 620ms var(--ease-out),
+      padding 620ms var(--ease-out),
+      background 520ms ease,
+      box-shadow 520ms ease,
+      backdrop-filter 520ms ease;
+  }
+
+  .nav__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: var(--nav-link-pad, 0 6px);
+    border-radius: var(--r-pill);
+    font-size: 15px;
+    letter-spacing: -0.014em;
+    font-weight: 400;
+    color: var(--nav-ink, #1d1d1f);
+    white-space: nowrap;
+    transition:
+      padding 620ms var(--ease-out),
+      color 420ms ease,
+      font-weight 200ms ease,
+      opacity 0.25s ease;
+  }
+
+  .nav__link:hover {
+    opacity: 0.7;
+    color: var(--nav-ink, #1d1d1f);
+  }
+
+  .nav__link--active,
+  .nav__link--active:hover {
+    color: var(--blue);
+    font-weight: 600;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Burger                                                              */
+  /* ------------------------------------------------------------------ */
+  .burger {
+    display: none;
+    position: fixed;
+    top: 18px;
+    right: clamp(20px, 4vw, 56px);
+    z-index: 402;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .burger__box {
+    position: relative;
+    display: block;
+    width: 24px;
+    height: 14px;
+  }
+
+  .burger__line {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 1.5px;
+    border-radius: 2px;
+    background: var(--nav-ink, #1d1d1f);
+    transition:
+      transform 420ms var(--ease-out),
+      background 420ms ease;
+  }
+
+  .burger__line--top {
+    top: 0;
+  }
+
+  .burger__line--bottom {
+    bottom: 0;
+  }
+
+  /* Open: the two rules cross into an X, and the panel behind them is
+     always light, so the ink stops following the section underneath. */
+  :global(html.menu-open) .burger__line {
+    background: var(--ink);
+  }
+
+  :global(html.menu-open) .burger__line--top {
+    transform: translateY(6.25px) rotate(45deg);
+  }
+
+  :global(html.menu-open) .burger__line--bottom {
+    transform: translateY(-6.25px) rotate(-45deg);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Scrim + panel                                                       */
+  /* ------------------------------------------------------------------ */
+  .scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    background: rgba(0, 0, 0, 0.38);
+    opacity: 0;
+    transition: opacity 420ms var(--ease-smooth);
+  }
+
+  .scrim[hidden] {
+    display: none;
+  }
+
+  :global(html.menu-open) .scrim {
+    opacity: 1;
+  }
+
+  .panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 401;
+    width: min(340px, 80vw);
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 32px;
+    padding: 96px clamp(24px, 7vw, 36px) clamp(28px, 5vh, 44px);
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    box-shadow: -1px 0 24px rgba(0, 0, 0, 0.08);
+    visibility: hidden;
+    transform: translateX(100%);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    transition:
+      transform 520ms var(--ease-out),
+      visibility 0s linear 520ms;
+  }
+
+  :global(html.menu-open) .panel {
+    visibility: visible;
+    transform: none;
+    transition:
+      transform 520ms var(--ease-out),
+      visibility 0s;
+  }
+
+  .panel__links {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel__link {
+    display: flex;
+    align-items: center;
+    min-height: 56px;
+    font-size: clamp(24px, 7vw, 30px);
+    line-height: 1.2;
+    letter-spacing: -0.018em;
+    font-weight: 600;
+    color: var(--ink);
+    border-bottom: 1px solid var(--line);
+    transition: color 0.25s ease;
+  }
+
+  .panel__link:hover {
+    color: var(--blue);
+  }
+
+  .panel__link--active,
+  .panel__link--active:hover {
+    color: var(--blue);
+  }
+
+  .panel__foot {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel__contact {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    min-height: 48px;
+    font-size: 17px;
+    letter-spacing: -0.022em;
+    color: var(--ink-muted);
+    border-top: 1px solid var(--line);
+    transition: color 0.25s ease;
+  }
+
+  .panel__contact:hover {
+    color: var(--blue);
+  }
+
+  .panel__arrow {
+    color: var(--blue);
+  }
+
+  .panel__location {
+    margin-top: 18px;
+    font-size: 13px;
+    letter-spacing: -0.01em;
+    color: var(--ink-softer);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Breakpoint                                                          */
+  /* ------------------------------------------------------------------ */
+  @media (max-width: 767px) {
+    .nav {
+      display: none;
+    }
+
+    .burger {
+      display: inline-flex;
+    }
+
+    .panel {
+      display: flex;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .panel,
+    .scrim,
+    .burger__line {
+      transition-duration: 0.001ms !important;
+    }
+  }
+</style>

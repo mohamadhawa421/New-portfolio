@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_shared_seos",
+  "info": {
+    "displayName": "SEO",
+    "description": "Per-page search and social metadata. Leave blank to fall back to the site defaults.",
+    "icon": "search"
+  },
+  "options": {},
+  "attributes": {
+    "metaTitle": { "type": "string", "maxLength": 70 },
+    "metaDescription": { "type": "text", "maxLength": 200 },
+    "shareImage": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    }
+  }
+}

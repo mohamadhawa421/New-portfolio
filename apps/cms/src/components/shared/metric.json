@@ -1,0 +1,14 @@
+{
+  "collectionName": "components_shared_metrics",
+  "info": {
+    "displayName": "Metric",
+    "description": "An outcome figure in the case study's \"What shipped\" section.",
+    "icon": "chartPie"
+  },
+  "options": {},
+  "attributes": {
+    "value": { "type": "string", "required": true },
+    "label": { "type": "text", "required": true },
+    "animate": { "type": "boolean", "default": true }
+  }
+}

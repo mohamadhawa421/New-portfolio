@@ -1,41 +1,28 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
+node_modules/
 .DS_Store
-*.pem
-
-# debug
+*.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Astro
+apps/web/dist/
+apps/web/.astro/
+# Copied out of the CMS by `npm run export`
+apps/web/public/media/
 
-# vercel
-.vercel
+# Strapi build artefacts. The *sanitised* database (apps/cms/data/portfolio.public.db)
+# and the uploads in apps/cms/public/uploads are content — committed on purpose.
+# The working database is not: it holds the admin account and API tokens.
+apps/cms/data/portfolio.db
+apps/cms/.tmp/
+apps/cms/build/
+apps/cms/dist/
+apps/cms/.strapi/
+apps/cms/.strapi-updater.json
+apps/cms/.cache/
+apps/cms/exports/
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Env
+.env
+.env.local
+.env.*.local
+!.env.example

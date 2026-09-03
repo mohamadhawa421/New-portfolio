@@ -1,0 +1,252 @@
+/*
+ * Base styles and the handful of patterns that repeat across every page.
+ * Component-specific rules live in the component's own scoped <style> block.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--blue);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--blue);
+}
+
+::selection {
+  background: var(--blue);
+  color: #fff;
+}
+
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+h1,
+h2,
+h3,
+p,
+figure {
+  margin: 0;
+}
+
+@keyframes mh-breathe {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.84);
+  }
+}
+
+/* --------------------------------------------------------------------- */
+/* Layout primitives                                                      */
+/* --------------------------------------------------------------------- */
+
+.shell {
+  max-width: var(--shell);
+  margin: 0 auto;
+}
+
+.shell--narrow {
+  max-width: var(--shell-narrow);
+  margin: 0 auto;
+}
+
+.section {
+  padding-inline: var(--gutter);
+}
+
+.section--light {
+  background: var(--surface);
+}
+
+.section--parchment {
+  background: var(--surface-parchment);
+}
+
+.section--dark {
+  background: var(--surface-dark);
+  color: var(--ink-on-dark);
+}
+
+/* --------------------------------------------------------------------- */
+/* Type                                                                   */
+/* --------------------------------------------------------------------- */
+
+.eyebrow {
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.eyebrow--small {
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.h2 {
+  font-size: clamp(27px, 4.2vw, 54px);
+  line-height: 1.06;
+  letter-spacing: -0.016em;
+  font-weight: 600;
+}
+
+.body {
+  font-size: 17px;
+  line-height: 1.5;
+  letter-spacing: -0.022em;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+
+.lead {
+  font-size: clamp(19px, 2vw, 24px);
+  font-weight: 300;
+  line-height: 1.4;
+  color: var(--ink-muted);
+}
+
+/* --------------------------------------------------------------------- */
+/* Controls                                                               */
+/* --------------------------------------------------------------------- */
+
+.btn {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 26px;
+  border: none;
+  border-radius: var(--r-pill);
+  font-size: 17px;
+  letter-spacing: -0.022em;
+  transition: transform 300ms var(--spring), background 0.25s;
+}
+
+.btn:active {
+  transform: scale(0.95);
+}
+
+.btn--primary {
+  background: var(--blue);
+  color: #fff;
+}
+
+.btn--primary:hover {
+  color: #fff;
+}
+
+.btn--secondary {
+  background: var(--surface-chip);
+  color: var(--ink);
+}
+
+.btn--secondary:hover {
+  background: var(--surface-chip-hover);
+  color: var(--ink);
+}
+
+/* Inline "More about me ›" style link */
+.text-link {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 17px;
+  letter-spacing: -0.022em;
+  color: var(--blue);
+  transition: transform 300ms var(--spring);
+}
+
+.text-link:active {
+  transform: scale(0.95);
+}
+
+/* --------------------------------------------------------------------- */
+/* Reveal-on-scroll                                                       */
+/*                                                                        */
+/* The .js class is set by a tiny blocking script in <head>, so elements   */
+/* only start hidden when JavaScript is actually going to reveal them.     */
+/* --------------------------------------------------------------------- */
+
+.js [data-reveal]:not([data-shown]) {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.js [data-rise]:not([data-shown]) {
+  display: block;
+  transform: translateY(112%);
+}
+
+[data-reveal] {
+  transition: opacity 520ms var(--ease-smooth), transform 520ms var(--ease-smooth);
+}
+
+[data-rise] {
+  display: block;
+  transition: transform 880ms var(--ease-out);
+}
+
+[data-shown] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .js [data-reveal]:not([data-shown]),
+  .js [data-rise]:not([data-shown]) {
+    opacity: 1;
+    transform: none;
+  }
+}

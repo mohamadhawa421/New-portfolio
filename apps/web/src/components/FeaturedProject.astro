@@ -1,0 +1,132 @@
+---
+import type { Project } from '../lib/types';
+
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+---
+
+<a class="featured" href={`/work/${project.slug}`} data-reveal="0">
+  <div class="featured__tile" style={`background:${project.chipBg}`}>
+    {
+      project.cover ? (
+        <img src={project.cover.url} alt={project.cover.alt} loading="lazy" decoding="async" />
+      ) : (
+        <span class="featured__initials" style={`color:${project.chipInk}`}>
+          {project.initials}
+        </span>
+      )
+    }
+  </div>
+
+  <div class="featured__meta">
+    <div class="featured__num">{project.num}</div>
+    <div class="featured__text">
+      <h3 class="featured__title">{project.title}</h3>
+      <p class="featured__summary">{project.summary}</p>
+    </div>
+    <div class="featured__cta">
+      <span>View project</span>
+      <span class="featured__chevron" aria-hidden="true">›</span>
+    </div>
+  </div>
+</a>
+
+<style>
+  .featured {
+    display: block;
+    color: inherit;
+    margin-bottom: clamp(40px, 6vh, 68px);
+  }
+
+  .featured:hover {
+    color: inherit;
+  }
+
+  .featured__tile {
+    position: relative;
+    border-radius: var(--r-xl);
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 900ms var(--ease-out);
+  }
+
+  .featured:hover .featured__tile {
+    transform: scale(1.02);
+  }
+
+  .featured__tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .featured__initials {
+    font-size: clamp(48px, 8vw, 120px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .featured__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: clamp(14px, 2.6vw, 40px);
+    padding-top: clamp(20px, 2.6vh, 28px);
+  }
+
+  .featured__num {
+    flex: none;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.6;
+  }
+
+  .featured__text {
+    flex: 1 1 300px;
+    min-width: 0;
+  }
+
+  .featured__title {
+    font-size: clamp(26px, 3.6vw, 46px);
+    line-height: 1.06;
+    letter-spacing: -0.019em;
+    font-weight: 600;
+  }
+
+  .featured__summary {
+    margin-top: 10px;
+    max-width: 50ch;
+    font-size: 17px;
+    line-height: 1.5;
+    letter-spacing: -0.022em;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+  }
+
+  .featured__cta {
+    flex: none;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--blue);
+    padding-top: 2px;
+    font-size: 17px;
+    letter-spacing: -0.022em;
+  }
+
+  .featured__chevron {
+    font-size: 19px;
+    line-height: 1;
+  }
+</style>
