@@ -1,0 +1,11 @@
+# The CMS database is content, but it is binary — never try to diff or merge it.
+apps/cms/data/*.db binary diff=none merge=binary
+
+# Media
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+
+# Keep line endings sane across machines
+* text=auto eol=lf

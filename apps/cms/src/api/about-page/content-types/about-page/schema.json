@@ -1,0 +1,23 @@
+{
+  "kind": "singleType",
+  "collectionName": "about_pages",
+  "info": {
+    "singularName": "about-page",
+    "pluralName": "about-pages",
+    "displayName": "About page",
+    "description": "Bio, work history, and skills."
+  },
+  "options": { "draftAndPublish": true },
+  "pluginOptions": {},
+  "attributes": {
+    "eyebrow": { "type": "string", "default": "About" },
+    "heading": { "type": "string", "default": "I am Mohamad Hawa, and I design things people understand." },
+    "lead": { "type": "text", "description": "The large opening line beside the portrait." },
+    "bodyPrimary": { "type": "text" },
+    "bodySecondary": { "type": "text" },
+    "stats": { "type": "component", "repeatable": true, "component": "shared.stat" },
+    "experience": { "type": "component", "repeatable": true, "component": "shared.experience" },
+    "skills": { "type": "component", "repeatable": true, "component": "shared.option" },
+    "seo": { "type": "component", "repeatable": false, "component": "shared.seo" }
+  }
+}

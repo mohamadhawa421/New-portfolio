@@ -1,0 +1,15 @@
+{
+  "collectionName": "components_shared_experiences",
+  "info": {
+    "displayName": "Experience",
+    "description": "A role in the About page's work history.",
+    "icon": "briefcase"
+  },
+  "options": {},
+  "attributes": {
+    "role": { "type": "string", "required": true },
+    "organisation": { "type": "string" },
+    "period": { "type": "string" },
+    "order": { "type": "integer", "default": 0 }
+  }
+}

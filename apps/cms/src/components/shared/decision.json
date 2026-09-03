@@ -1,0 +1,14 @@
+{
+  "collectionName": "components_shared_decisions",
+  "info": {
+    "displayName": "Decision",
+    "description": "A design decision card in the case study's \"The approach\" section.",
+    "icon": "bulletList"
+  },
+  "options": {},
+  "attributes": {
+    "eyebrow": { "type": "string", "default": "Decision" },
+    "title": { "type": "string", "required": true },
+    "body": { "type": "text", "required": true }
+  }
+}

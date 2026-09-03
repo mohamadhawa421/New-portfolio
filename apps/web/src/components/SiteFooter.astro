@@ -1,0 +1,94 @@
+---
+import type { SiteSettings } from '../lib/types';
+
+interface Props {
+  settings: SiteSettings;
+}
+
+const { settings } = Astro.props;
+---
+
+<footer class="footer">
+  <div class="footer__inner shell">
+    <a class="footer__logo" href="/" aria-label={`${settings.siteName} — home`}>
+      {
+        settings.logoFull ? (
+          <img
+            src={settings.logoFull.url}
+            alt={`${settings.siteName} — ${settings.roleTitle}`}
+            height="26"
+          />
+        ) : (
+          <span>{settings.siteName}</span>
+        )
+      }
+    </a>
+
+    <div class="footer__links">
+      <a href={settings.waHref} target="_blank" rel="noopener">WhatsApp</a>
+      <a href={settings.mailHref}>Email</a>
+      <a href="/work">Work</a>
+      <a href="/about">About</a>
+    </div>
+
+    <span class="footer__location">{settings.location}</span>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    background: var(--surface-parchment);
+    padding: clamp(40px, 6vh, 60px) var(--gutter);
+  }
+
+  .footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    letter-spacing: -0.01em;
+    color: var(--ink-muted);
+  }
+
+  .footer__logo {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--ink-muted);
+    transition: opacity 0.25s ease;
+  }
+
+  .footer__logo:hover {
+    opacity: 0.6;
+  }
+
+  .footer__logo img {
+    height: 26px;
+    width: auto;
+    display: block;
+  }
+
+  .footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    align-items: center;
+  }
+
+  .footer__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--ink-muted);
+  }
+
+  .footer__links a:hover {
+    color: var(--blue);
+  }
+
+  .footer__location {
+    color: var(--ink-softer);
+  }
+</style>

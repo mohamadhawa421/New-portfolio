@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="icon" type="image/svg+xml" href="./assets/logo-mark.svg"/>
+<link rel="apple-touch-icon" href="./assets/logo-mark.svg"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<style>
+body{margin:0;background:#ffffff;-webkit-font-smoothing:antialiased}
+a{color:#0066cc;text-decoration:none}
+a:hover{color:#0066cc}
+::selection{background:#0066cc;color:#fff}
+input,select,textarea,button{font-family:inherit}
+:focus-visible{outline:2px solid #0066cc;outline-offset:3px;border-radius:4px}
+@keyframes mh-breathe{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.84)}}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.001ms !important;transition-duration:.001ms !important}}
+</style>
+</helmet>
+<div style="font-family:'SF Pro Display','SF Pro Text',system-ui,-apple-system,BlinkMacSystemFont,Inter,sans-serif;color:#1d1d1f;background:#ffffff;overflow-x:hidden">
+<div data-top="1" aria-hidden="true" style="position:absolute;top:0;left:0;width:1px;height:92px;pointer-events:none"></div>
+
+<sc-if value="{{ intro }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ skipIntro }}" role="button" aria-label="Skip intro" style="position:fixed;inset:0;z-index:400;background:#ffffff;display:flex;align-items:center;justify-content:center;padding:clamp(28px,7vw,80px);cursor:pointer;opacity:{{ curtainOp }};transition:opacity 620ms cubic-bezier(0.32,0.72,0,1)">
+  <div style="width:min(560px,72vw);opacity:{{ p1op }};transform:{{ p1y }};transition:opacity 680ms cubic-bezier(0.32,0.72,0,1),transform 800ms cubic-bezier(0.32,0.72,0,1)">{{ logoFullBig }}</div>
+</div>
+</sc-if>
+
+<a href="#main" style="position:fixed;left:-9999px;top:12px;z-index:500;background:#0066cc;color:#fff;display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:9999px;font-size:14px" style-focus="left:12px">Skip to content</a>
+
+<div data-logo="1" onClick="{{ goHome }}" role="link" tabindex="0" onKeyDown="{{ keyHome }}" aria-label="Mohamad Hawa — home" style="position:fixed;top:18px;left:clamp(20px,4vw,56px);z-index:201;cursor:pointer;display:flex;align-items:center;min-height:44px;opacity:var(--logo-op,1);transform:translateY(var(--logo-y,0px));pointer-events:var(--logo-pe,auto);transition:opacity 480ms cubic-bezier(0.22,1,0.36,1),transform 520ms cubic-bezier(0.22,1,0.36,1)">{{ logoEl }}</div>
+<nav data-nav="1" aria-label="Primary" style="position:fixed;top:var(--nav-top,18px);left:50%;transform:translateX(-50%);z-index:200;display:flex;align-items:center;gap:var(--nav-gap,clamp(16px,4.6vw,56px));padding:var(--nav-pad,2px 12px);border-radius:9999px;background:var(--nav-bg,rgba(255,255,255,0));backdrop-filter:var(--nav-blur,saturate(180%) blur(0px));-webkit-backdrop-filter:var(--nav-blur,saturate(180%) blur(0px));box-shadow:var(--nav-shadow,0 1px 8px rgba(0,0,0,0));max-width:calc(100vw - 20px);transition:top 620ms cubic-bezier(0.22,1,0.36,1),gap 620ms cubic-bezier(0.22,1,0.36,1),padding 620ms cubic-bezier(0.22,1,0.36,1),background 520ms ease,box-shadow 520ms ease,backdrop-filter 520ms ease">
+  <span onClick="{{ goHome }}" role="link" tabindex="0" onKeyDown="{{ keyHome }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:44px;font-size:15px;letter-spacing:-0.014em;font-weight:{{ wHome }};padding:var(--nav-link-pad,0 6px);border-radius:9999px;color:{{ inkHome }};white-space:nowrap;transition:padding 620ms cubic-bezier(0.22,1,0.36,1),color 420ms ease,font-weight 200ms ease,opacity .25s ease" style-hover="opacity:0.7">Home</span>
+  <span onClick="{{ goWork }}" role="link" tabindex="0" onKeyDown="{{ keyWork }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:44px;font-size:15px;letter-spacing:-0.014em;font-weight:{{ wWork }};padding:var(--nav-link-pad,0 6px);border-radius:9999px;color:{{ inkWork }};white-space:nowrap;transition:padding 620ms cubic-bezier(0.22,1,0.36,1),color 420ms ease,font-weight 200ms ease,opacity .25s ease" style-hover="opacity:0.7">Work</span>
+  <span onClick="{{ goAbout }}" role="link" tabindex="0" onKeyDown="{{ keyAbout }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:44px;font-size:15px;letter-spacing:-0.014em;font-weight:{{ wAbout }};padding:var(--nav-link-pad,0 6px);border-radius:9999px;color:{{ inkAbout }};white-space:nowrap;transition:padding 620ms cubic-bezier(0.22,1,0.36,1),color 420ms ease,font-weight 200ms ease,opacity .25s ease" style-hover="opacity:0.7">About</span>
+  <span onClick="{{ goContact }}" role="link" tabindex="0" onKeyDown="{{ keyContact }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:44px;font-size:15px;letter-spacing:-0.014em;font-weight:{{ wContact }};padding:var(--nav-link-pad,0 6px);border-radius:9999px;color:{{ inkContact }};white-space:nowrap;transition:padding 620ms cubic-bezier(0.22,1,0.36,1),color 420ms ease,font-weight 200ms ease,opacity .25s ease" style-hover="opacity:0.7">Contact</span>
+</nav>
+
+<sc-if value="{{ isHome }}">
+<main id="main" data-shell="1">
+
+  <section data-tile="light" style="background:#ffffff;padding:clamp(132px,17vh,196px) clamp(20px,5.5vw,90px) clamp(56px,8vh,104px)">
+    <div style="max-width:1240px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:clamp(30px,4.4vw,72px)">
+      <div style="flex:1 1 340px;min-width:0">
+        <h1 style="margin:0;font-size:clamp(40px,6.6vw,92px);line-height:1.02;letter-spacing:-0.021em;font-weight:600;overflow:hidden;padding-bottom:0.04em"><span data-rise="0">Mohamad Hawa</span></h1>
+        <div style="margin:clamp(10px,1.6vh,16px) 0 0;max-width:18ch;font-size:clamp(22px,3.1vw,40px);font-weight:300;line-height:1.14;letter-spacing:-0.004em;color:#1d1d1f;overflow:hidden;padding-bottom:0.06em"><span data-rise="1">Designing intuitive experiences.</span></div>
+        <p data-reveal="3" style="margin:clamp(20px,3.4vh,30px) 0 0;max-width:46ch;font-size:17px;line-height:1.52;letter-spacing:-0.022em;color:#6e6e73;text-wrap:pretty">UI/UX designer working on web and mobile products — turning complex challenges into interfaces people understand without being taught. Freelance since 2020, at Poyesis since 2022.</p>
+        <div data-reveal="4" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:clamp(26px,4vh,38px)">
+          <span onClick="{{ goWork }}" role="button" tabindex="0" onKeyDown="{{ keyWork }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:48px;padding:0 26px;border-radius:9999px;background:#0066cc;color:#fff;font-size:17px;letter-spacing:-0.022em;transition:transform 300ms linear(0,0.09,0.28,0.52,0.74,0.89,0.98,1.02,1.03,1.02,1.01,1)" style-active="transform:scale(0.95)">See the work</span>
+          <span onClick="{{ goContact }}" role="button" tabindex="0" onKeyDown="{{ keyContact }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:48px;padding:0 26px;border-radius:9999px;background:#f5f5f7;color:#1d1d1f;font-size:17px;letter-spacing:-0.022em;transition:transform 300ms linear(0,0.09,0.28,0.52,0.74,0.89,0.98,1.02,1.03,1.02,1.01,1),background .25s" style-active="transform:scale(0.95)" style-hover="background:#ebebed">Start a project</span>
+        </div>
+      </div>
+      <div data-reveal="1" style="flex:1 1 300px;min-width:230px;max-width:420px;margin-inline:auto">
+        <div style="position:relative;width:100%;aspect-ratio:1/1;border-radius:22px;overflow:hidden;background:#f5f5f7">
+          <img src="./assets/mohamad-avatar.jpg" alt="Portrait of Mohamad Hawa" loading="eager" decoding="async" style="width:100%;height:100%;object-fit:cover;object-position:58% 30%;display:block"/>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section data-tile="light" style="background:#ffffff;padding:0 clamp(20px,5.5vw,90px) clamp(74px,11vh,124px)" data-comment-anchor="8a56aad3a7-section">
+    <div style="max-width:1240px;margin:0 auto">
+      <div data-reveal="0" style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:20px;padding-bottom:clamp(24px,3.6vh,34px)">
+        <div>
+          <div style="font-size:14px;letter-spacing:0.1em;text-transform:uppercase;color:#6e6e73">Selected work</div>
+          <h2 style="margin:12px 0 0;font-size:clamp(27px,4.2vw,54px);line-height:1.06;letter-spacing:-0.016em;font-weight:600">{{ projectCount }} projects.</h2>
+        </div>
+        <span onClick="{{ goWork }}" role="link" tabindex="0" onKeyDown="{{ keyWork }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:44px;font-size:17px;letter-spacing:-0.022em;color:#0066cc;transition:transform 300ms linear(0,0.09,0.28,0.52,0.74,0.89,0.98,1.02,1.03,1.02,1.01,1)" style-active="transform:scale(0.95)">Open the index&nbsp;›</span>
+      </div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ lead }}" as="p" hint-placeholder-count="1">
+          <div onClick="{{ p.open }}" role="link" tabindex="0" onKeyDown="{{ p.key }}" data-reveal="0" style="cursor:pointer;margin-bottom:clamp(40px,6vh,68px)">
+            <div style="border-radius:22px;overflow:hidden;background:{{ p.chipBg }};aspect-ratio:16/9;transition:transform 900ms cubic-bezier(0.22,1,0.36,1)" style-hover="transform:scale(1.02)">
+              <sc-if value="{{ p.hasImg }}" hint-placeholder-val="{{ false }}">{{ p.imgEl }}</sc-if>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:clamp(14px,2.6vw,40px);padding-top:clamp(20px,2.6vh,28px)">
+              <div style="flex:none;font-size:13px;letter-spacing:0.14em;color:#a1a1a6;font-variant-numeric:tabular-nums;line-height:1.6">{{ p.num }}</div>
+              <div style="flex:1 1 300px;min-width:0">
+                <h3 style="margin:0;font-size:clamp(26px,3.6vw,46px);line-height:1.06;letter-spacing:-0.019em;font-weight:600">{{ p.name }}</h3>
+                <p style="margin:10px 0 0;max-width:50ch;font-size:17px;line-height:1.5;letter-spacing:-0.022em;color:#6e6e73;text-wrap:pretty">{{ p.desc }}</p>
+              </div>
+              <div style="flex:none;margin-left:auto;display:flex;align-items:center;gap:10px;color:#0066cc;padding-top:2px;font-size:17px;letter-spacing:-0.022em"><span>View project</span><span style="font-size:19px;line-height:1">›</span></div>
+            </div>
+          </div>
+        </sc-for>
+        <sc-for list="{{ rest }}" as="p" hint-placeholder-count="5">
+          <div onClick="{{ p.open }}" role="link" tabindex="0" onKeyDown="{{ p.key }}" data-reveal="0" style="cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:clamp(12px,2.4vw,30px);padding:clamp(20px,2.8vh,30px) clamp(10px,1.4vw,18px);margin:0 calc(-1 * clamp(10px,1.4vw,18px));border-top:1px solid #ededef;border-radius:14px;will-change:transform;transition:background 420ms cubic-bezier(0.22,1,0.36,1),transform 520ms cubic-bezier(0.22,1,0.36,1)" style-hover="background:#f7f7f8;transform:translateX(10px)">
+            <div style="flex:none;width:clamp(84px,10vw,120px);aspect-ratio:16/10;border-radius:11px;background:{{ p.chipBg }};color:{{ p.chipInk }};display:flex;align-items:center;justify-content:center;font-size:clamp(15px,1.5vw,18px);font-weight:600;letter-spacing:-0.01em;overflow:hidden">
+              <sc-if value="{{ p.hasImg }}" hint-placeholder-val="{{ false }}">{{ p.imgEl }}</sc-if>
+              <sc-if value="{{ p.noImg }}" hint-placeholder-val="{{ true }}"><span>{{ p.mono }}</span></sc-if>
+            </div>
+            <div style="flex:1 1 200px;min-width:0">
+              <h3 style="margin:0;font-size:clamp(20px,2.2vw,28px);line-height:1.14;letter-spacing:-0.017em;font-weight:600;text-wrap:pretty">{{ p.name }}</h3>
+              <p style="margin:6px 0 0;max-width:52ch;font-size:16px;line-height:1.45;letter-spacing:-0.022em;color:#6e6e73;text-wrap:pretty">{{ p.desc }}</p>
+            </div>
+            <div style="flex:none;margin-left:auto;display:flex;align-items:center;gap:clamp(12px,2vw,24px)">
+              <span style="font-size:14px;letter-spacing:-0.016em;color:#8e8e93;white-space:nowrap">{{ p.tag }}</span>
+              <span style="font-size:19px;color:#0066cc">›</span>
+            </div>
+          </div>
+        </sc-for>
+        <div style="border-top:1px solid #ededef"></div>
+      </div>
+    </div>
+  </section>
+
+  <section data-tile="parchment" style="background:#f5f5f7;padding:clamp(84px,12vh,140px) clamp(20px,5.5vw,90px)" data-comment-anchor="9c38f655e1-section">
+    <div style="max-width:1240px;margin:0 auto">
+      <div data-reveal="0" style="font-size:14px;letter-spacing:0.1em;text-transform:uppercase;color:#6e6e73">What I do</div>
+      <h2 data-reveal="1" style="margin:12px 0 clamp(30px,4.4vh,46px);font-size:clamp(27px,4.2vw,54px);line-height:1.06;letter-spacing:-0.016em;font-weight:600;max-width:20ch">Four ways to work together.</h2>
+      <p data-reveal="2" style="margin:-14px 0 clamp(26px,4vh,40px);max-width:46ch;font-size:17px;line-height:1.5;letter-spacing:-0.022em;color:#6e6e73">Pick the one that sounds like your project — it opens the brief with that already filled in.</p>
+      <div style="display:flex;flex-direction:column">
+        <div onClick="{{ svc0 }}" role="link" tabindex="0" onKeyDown="{{ ksvc0 }}" data-reveal="0" style="cursor:pointer;display:flex;flex-wrap:wrap;align-items:baseline;gap:clamp(10px,2.6vw,40px);padding:clamp(20px,2.8vh,28px) clamp(10px,1.4vw,18px);margin:0 calc(-1 * clamp(10px,1.4vw,18px));border-top:1px solid #dedee1;border-radius:14px;will-change:transform;transition:background 420ms cubic-bezier(0.22,1,0.36,1),transform 520ms cubic-bezier(0.22,1,0.36,1)" style-hover="background:#efeff1;transform:translateX(10px)">
+          <div style="flex:none;font-size:12px;letter-spacing:0.1em;color:#8e8e93;font-variant-numeric:tabular-nums">01</div>
+          <div style="flex:1 1 220px;min-width:0;font-size:clamp(20px,2vw,26px);font-weight:600;letter-spacing:-0.014em;line-height:1.2">Web app design</div>
+          <div style="flex:1 1 300px;min-width:0;font-size:17px;line-height:1.47;letter-spacing:-0.022em;color:#6e6e73;text-wrap:pretty">Dashboards, portals, and tools where the workflow matters more than the wallpaper.</div>
+          <div style="flex:none;margin-left:auto;display:flex;align-items:center;gap:8px;font-size:17px;letter-spacing:-0.022em;color:#0066cc;white-space:nowrap"><span>Start here</span><span style="font-size:19px;line-height:1">›</span></div>
+        </div>
+        <div onClick="{{ svc1 }}" role="link" tabindex="0" onKeyDown="{{ ksvc1 }}" data-reveal="1" style="cursor:pointer;display:flex;flex-wrap:wrap;align-items:baseline;gap:clamp(10px,2.6vw,40px);padding:clamp(20px,2.8vh,28px) clamp(10px,1.4vw,18px);margin:0 calc(-1 * clamp(10px,1.4vw,18px));border-top:1px solid #dedee1;border-radius:14px;will-change:transform;transition:background 420ms cubic-bezier(0.22,1,0.36,1),transform 520ms cubic-bezier(0.22,1,0.36,1)" style-hover="background:#efeff1;transform:translateX(10px)">
+          <div style="flex:none;font-size:12px;letter-spacing:0.1em;color:#8e8e93;font-variant-numeric:tabular-nums">02</div>
+          <div style="flex:1 1 220px;min-width:0;font-size:clamp(20px,2vw,26px);font-weight:600;letter-spacing:-0.014em;line-height:1.2">Mobile app design</div>
+          <div style="flex:1 1 300px;min-width:0;font-size:17px;line-height:1.47;letter-spacing:-0.022em;color:#6e6e73;text-wrap:pretty">iOS and Android flows built around one thumb, one hand, and short attention.</div>
+          <div style="flex:none;margin-left:auto;display:flex;align-items:center;gap:8px;font-size:17px;letter-spacing:-0.022em;color:#0066cc;white-space:nowrap"><span>Start here</span><span style="font-size:19px;line-height:1">›</span></div>
+        </div>
+        <div onClick="{{ svc2 }}" role="link" tabindex="0" onKeyDown="{{ ksvc2 }}" data-reveal="2" style="cursor:pointer;display:flex;flex-wrap:wrap;align-items:baseline;gap:clamp(10px,2.6vw,40px);padding:clamp(20px,2.8vh,28px) clamp(10px,1.4vw,18px);margin:0 calc(-1 * clamp(10px,1.4vw,18px));border-top:1px solid #dedee1;border-radius:14px;will-change:transform;transition:background 420ms cubic-bezier(0.22,1,0.36,1),transform 520ms cubic-bezier(0.22,1,0.36,1)" style-hover="background:#efeff1;transform:translateX(10px)">
+          <div style="flex:none;font-size:12px;letter-spacing:0.1em;color:#8e8e93;font-variant-numeric:tabular-nums">03</div>
+          <div style="flex:1 1 220px;min-width:0;font-size:clamp(20px,2vw,26px);font-weight:600;letter-spacing:-0.014em;line-height:1.2">Landing page</div>
+          <div style="flex:1 1 300px;min-width:0;font-size:17px;line-height:1.47;letter-spacing:-0.022em;color:#6e6e73;text-wrap:pretty">One page that says the right thing in the right order and asks for one action.</div>
+          <div style="flex:none;margin-left:auto;display:flex;align-items:center;gap:8px;font-size:17px;letter-spacing:-0.022em;color:#0066cc;white-space:nowrap"><span>Start here</span><span style="font-size:19px;line-height:1">›</span></div>
+        </div>
+        <div onClick="{{ svc3 }}" role="link" tabindex="0" onKeyDown="{{ ksvc3 }}" data-reveal="3" style="cursor:pointer;display:flex;flex-wrap:wrap;align-items:baseline;gap:clamp(10px,2.6vw,40px);padding:clamp(20px,2.8vh,28px) clamp(10px,1.4vw,18px);margin:0 calc(-1 * clamp(10px,1.4vw,18px));border-top:1px solid #dedee1;border-radius:14px;will-change:transform;transition:background 420ms cubic-bezier(0.22,1,0.36,1),transform 520ms cubic-bezier(0.22,1,0.36,1)" style-hover="background:#efeff1;transform:translateX(10px)">
+          <div style="flex:none;font-size:12px;letter-spacing:0.1em;color:#8e8e93;font-variant-numeric:tabular-nums">04</div>
+          <div style="flex:1 1 220px;min-width:0;font-size:clamp(20px,2vw,26px);font-weight:600;letter-spacing:-0.014em;line-height:1.2">Design system</div>
+          <div style="flex:1 1 300px;min-width:0;font-size:17px;line-height:1.47;letter-spacing:-0.022em;color:#6e6e73;text-wrap:pretty">Components, tokens, and rules so the tenth screen looks like the first.</div>
+          <div style="flex:none;margin-left:auto;display:flex;align-items:center;gap:8px;font-size:17px;letter-spacing:-0.022em;color:#0066cc;white-space:nowrap"><span>Start here</span><span style="font-size:19px;line-height:1">›</span></div>
+        </div>
+        <div style="border-top:1px solid #dedee1"></div>
+      </div>
+    </div>
+  </section>
+
+  <section data-tile="dark" style="background:#1d1d1f;color:#ffffff;padding:clamp(104px,16vh,180px) clamp(20px,5.5vw,90px)">
+    <div style="max-width:1240px;margin:0 auto">
+      <h2 style="margin:0;font-size:clamp(29px,5.2vw,72px);line-height:1.07;letter-spacing:-0.017em;font-weight:600;max-width:22ch"><span data-reveal="0" style="display:inline-block;color:inherit">Complexity</span> <span data-reveal="1" style="display:inline-block;color:inherit">isn’t</span> <span data-reveal="2" style="display:inline-block;color:inherit">the</span> <span data-reveal="3" style="display:inline-block;color:inherit">problem.</span> <span data-reveal="4" style="display:inline-block;color:#c7c7cc">Confusion</span> <span data-reveal="5" style="display:inline-block;color:#c7c7cc">is.</span></h2>
+      <p style="margin:clamp(28px,5vh,48px) 0 0;max-width:52ch;font-size:clamp(19px,2vw,24px);font-weight:300;line-height:1.5;color:#c7c7cc">Complicated things are allowed to be complicated. My job is making sure the person in front of the screen still knows what to do next.</p>
+    </div>
+  </section>
+
+  <section data-tile="light" style="background:#ffffff;padding:clamp(84px,12vh,140px) clamp(20px,5.5vw,90px)">
+    <div style="max-width:1240px;margin:0 auto;display:flex;flex-wrap:wrap;gap:clamp(26px,4vw,80px)">
+      <div data-reveal="0" style="flex:0 1 260px;min-width:200px">
+        <div style="font-size:14px;letter-spacing:0.1em;text-transform:uppercase;color:#6e6e73">How I work</div>
+      </div>
+      <div data-reveal="1" style="flex:1 1 460px;min-width:0;display:flex;flex-direction:column">
+        <div style="display:flex;flex-wrap:wrap;gap:clamp(10px,3vw,44px);align-items:baseline;padding:clamp(18px,2.8vh,26px) 0;border-top:1px solid #e8e8ea">
+          <div style="flex:1 1 240px;min-width:0;font-size:clamp(22px,2.5vw,32px);font-weight:600;letter-spacing:-0.016em;line-height:1.18">Understand the mess.</div>
+          <div style="flex:1 1 240px;min-width:0;font-size:17px;line-height:1.47;letter-spacing:-0.022em;color:#6e6e73">The problem, the people, and the process nobody has questioned in years.</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:clamp(10px,3vw,44px);align-items:baseline;padding:clamp(18px,2.8vh,26px) 0;border-top:1px solid #e8e8ea">
+          <div style="flex:1 1 240px;min-width:0;font-size:clamp(22px,2.5vw,32px);font-weight:600;letter-spacing:-0.016em;line-height:1.18">Find the signal.</div>
+          <div style="flex:1 1 240px;min-width:0;font-size:17px;line-height:1.47;letter-spacing:-0.022em;color:#6e6e73">Turn everything we learned into one opportunity actually worth building.</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:clamp(10px,3vw,44px);align-items:baseline;padding:clamp(18px,2.8vh,26px) 0;border-top:1px solid #e8e8ea">
+          <div style="flex:1 1 240px;min-width:0;font-size:clamp(22px,2.5vw,32px);font-weight:600;letter-spacing:-0.016em;line-height:1.18">Design the system.</div>
+          <div style="flex:1 1 240px;min-width:0;font-size:17px;line-height:1.47;letter-spacing:-0.022em;color:#6e6e73">Not just screens — the model underneath that keeps the screens honest.</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:clamp(10px,3vw,44px);align-items:baseline;padding:clamp(18px,2.8vh,26px) 0;border-top:1px solid #e8e8ea">
+          <div style="flex:1 1 240px;min-width:0;font-size:clamp(22px,2.5vw,32px);font-weight:600;letter-spacing:-0.016em;line-height:1.18">Test the idea.</div>
+          <div style="flex:1 1 240px;min-width:0;font-size:17px;line-height:1.47;letter-spacing:-0.022em;color:#6e6e73">With the people who will use it on a Tuesday, not with the people who signed off.</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:clamp(10px,3vw,44px);align-items:baseline;padding:clamp(18px,2.8vh,26px) 0;border-top:1px solid #e8e8ea;border-bottom:1px solid #e8e8ea">
+          <div style="flex:1 1 240px;min-width:0;font-size:clamp(22px,2.5vw,32px);font-weight:600;letter-spacing:-0.016em;line-height:1.18">Ship the thing.</div>
+          <div style="flex:1 1 240px;min-width:0;font-size:17px;line-height:1.47;letter-spacing:-0.022em;color:#6e6e73">Sit with the developers until it is real, then look at what changed.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section data-tile="parchment" style="background:#f5f5f7;padding:clamp(84px,12vh,140px) clamp(20px,5.5vw,90px)">
+    <div style="max-width:1240px;margin:0 auto;display:flex;flex-wrap:wrap;gap:clamp(30px,5vw,80px);align-items:center">
+      <div data-reveal="0" style="flex:1 1 320px;min-width:240px;max-width:400px">
+        <div style="width:100%;aspect-ratio:4/5;border-radius:22px;overflow:hidden;background:#e8e8ea">
+          {{ portraitTall }}
+        </div>
+      </div>
+      <div data-reveal="1" style="flex:1 1 420px;min-width:0">
+        <div style="font-size:14px;letter-spacing:0.1em;text-transform:uppercase;color:#6e6e73;margin-bottom:16px">About</div>
+        <h2 style="margin:0;font-size:clamp(26px,3.4vw,42px);line-height:1.1;letter-spacing:-0.016em;font-weight:600;max-width:20ch">Six years of shipping other people's ideas.</h2>
+        <p style="margin:20px 0 0;font-size:17px;line-height:1.5;letter-spacing:-0.022em;max-width:54ch">I started freelancing in 2020 and joined Poyesis in 2022. Since then the work has ranged from learning platforms and law firms to logistics products — different industries, same question every time: what is this person actually trying to do?</p>
+        <div style="display:flex;flex-wrap:wrap;gap:clamp(28px,5vw,56px);margin-top:clamp(24px,4vh,36px);padding-top:22px;border-top:1px solid #dedee1">
+          <div><div data-num="1" style="font-size:clamp(26px,3vw,34px);font-weight:600;letter-spacing:-0.024em;font-variant-numeric:tabular-nums">20+</div><div style="font-size:14px;color:#6e6e73;margin-top:6px">projects shipped</div></div>
+          <div><div style="font-size:clamp(26px,3vw,34px);font-weight:600;letter-spacing:-0.024em;font-variant-numeric:tabular-nums">2020</div><div style="font-size:14px;color:#6e6e73;margin-top:6px">designing since</div></div>
+          <div><div style="font-size:clamp(26px,3vw,34px);font-weight:600;letter-spacing:-0.024em">Poyesis</div><div style="font-size:14px;color:#6e6e73;margin-top:6px">2022 — now</div></div>
+        </div>
+        <span onClick="{{ goAbout }}" role="link" tabindex="0" onKeyDown="{{ keyAbout }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:44px;margin-top:18px;font-size:17px;letter-spacing:-0.022em;color:#0066cc;transition:transform 300ms linear(0,0.09,0.28,0.52,0.74,0.89,0.98,1.02,1.03,1.02,1.01,1)" style-active="transform:scale(0.95)">More about me&nbsp;›</span>
+      </div>
+    </div>
+  </section>
+
+  <section data-tile="dark" style="background:#1d1d1f;color:#ffffff;padding:clamp(90px,14vh,160px) clamp(20px,5.5vw,90px)">
+    <div style="max-width:1240px;margin:0 auto;display:flex;flex-wrap:wrap;gap:clamp(34px,5vw,80px)">
+      <div style="flex:1 1 360px;min-width:0">
+        <h2 style="margin:0;font-size:clamp(29px,4.6vw,64px);line-height:1.05;letter-spacing:-0.018em;font-weight:600;max-width:14ch">Tell me what you're building.</h2>
+        <p style="margin:20px 0 0;max-width:44ch;font-size:17px;line-height:1.5;letter-spacing:-0.022em;color:#c7c7cc">Three fields. It opens a message with everything already written — you just press send.</p>
+        <div style="margin-top:clamp(30px,5vh,48px);display:flex;flex-direction:column;gap:2px">
+          <a href="{{ waHref }}" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 0;border-top:1px solid #3a3a3c;color:#fff;font-size:17px;letter-spacing:-0.022em;transition:padding-left 400ms cubic-bezier(0.32,0.72,0,1)" style-hover="color:#2997ff;padding-left:8px"><span>{{ waLabel }}</span><span style="color:#2997ff">↗</span></a>
+          <a href="{{ mailHref }}" style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 0;border-top:1px solid #3a3a3c;border-bottom:1px solid #3a3a3c;color:#fff;font-size:17px;letter-spacing:-0.022em;word-break:break-all;transition:padding-left 400ms cubic-bezier(0.32,0.72,0,1)" style-hover="color:#2997ff;padding-left:8px"><span>{{ mailLabel }}</span><span style="color:#2997ff">↗</span></a>
+        </div>
+      </div>
+      <div style="flex:1 1 380px;min-width:0">
+        <dc-import name="Enquiry Form" contact-mode="{{ contactMode }}" preset-service="{{ presetService }}" wa-number="{{ prWhats }}" email="{{ prEmail }}" hint-size="100%,520px"></dc-import>
+      </div>
+    </div>
+  </section>
+</main>
+</sc-if>
+
+<sc-if value="{{ isWork }}">
+<main id="main" data-shell="1">
+  <section data-tile="light" style="background:#ffffff;padding:clamp(132px,17vh,196px) clamp(20px,5.5vw,90px) clamp(38px,5.5vh,70px)">
+    <div style="max-width:1240px;margin:0 auto">
+      <div data-reveal="0" style="font-size:14px;letter-spacing:0.1em;text-transform:uppercase;color:#6e6e73;margin-bottom:18px">Work</div>
+      <h1 data-reveal="1" style="margin:0;max-width:16ch;font-size:clamp(36px,6.2vw,84px);line-height:1.03;letter-spacing:-0.019em;font-weight:600">Every project starts the same way.</h1>
+      <p data-reveal="2" style="margin:20px 0 0;max-width:48ch;font-size:clamp(19px,2vw,24px);font-weight:300;line-height:1.4;color:#6e6e73">With a question about the person who has to use it. Filter by sector, or read straight through.</p>
+    </div>
+  </section>
+
+  <section data-tile="light" style="background:#ffffff;padding:0 clamp(20px,5.5vw,90px) clamp(80px,12vh,130px)">
+    <div data-reveal="0" style="max-width:1240px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-bottom:clamp(24px,3.4vh,34px)">
+      <sc-for list="{{ filters }}" as="ft" hint-placeholder-count="5">
+        <span onClick="{{ ft.pick }}" role="button" tabindex="0" style="cursor:pointer;display:inline-flex;align-items:center;min-height:44px;font-size:14px;letter-spacing:-0.016em;padding:0 18px;border-radius:9999px;background:{{ ft.bg }};color:{{ ft.ink }};white-space:nowrap;transition:background 340ms cubic-bezier(0.22,1,0.36,1),color 340ms ease,transform 300ms cubic-bezier(0.22,1,0.36,1)" style-active="transform:scale(0.96)">{{ ft.label }}</span>
+      </sc-for>
+      <span style="margin-left:auto;font-size:14px;color:#86868b;white-space:nowrap;font-variant-numeric:tabular-nums">{{ filterCount }} shown</span>
+    </div>
+    <div style="max-width:1240px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:clamp(16px,2vw,26px)">
+      <sc-for list="{{ filtered }}" as="p" hint-placeholder-count="6">
+        <div onClick="{{ p.open }}" role="link" tabindex="0" onKeyDown="{{ p.key }}" data-reveal="0" style="cursor:pointer;display:flex;flex-direction:column;background:#fafafa;border-radius:22px;overflow:hidden;will-change:transform;transition:transform 520ms cubic-bezier(0.22,1,0.36,1),background 420ms cubic-bezier(0.22,1,0.36,1)" style-hover="transform:translateY(-6px);background:#f5f5f7">
+          <div style="aspect-ratio:16/10;background:{{ p.chipBg }};color:{{ p.chipInk }};display:flex;align-items:flex-end;padding:clamp(18px,2vw,26px);overflow:hidden;transition:transform 900ms cubic-bezier(0.22,1,0.36,1)" style-hover="transform:scale(1.03)">
+            <sc-if value="{{ p.hasImg }}" hint-placeholder-val="{{ false }}">{{ p.imgEl }}</sc-if>
+            <sc-if value="{{ p.noImg }}" hint-placeholder-val="{{ true }}"><span style="font-size:clamp(34px,4.4vw,58px);font-weight:600;letter-spacing:-0.02em;line-height:1">{{ p.mono }}</span></sc-if>
+          </div>
+          <div style="padding:clamp(20px,2.2vw,28px);display:flex;flex-direction:column;gap:7px;flex:1">
+            <div style="font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:#a1a1a6">{{ p.num }} — {{ p.category }}</div>
+            <h2 style="margin:0;font-size:clamp(21px,2.2vw,28px);line-height:1.14;letter-spacing:-0.016em;font-weight:600">{{ p.name }}</h2>
+            <p style="margin:0;font-size:17px;line-height:1.47;letter-spacing:-0.022em;color:#6e6e73">{{ p.desc }}</p>
+            <span style="margin-top:auto;padding-top:14px;font-size:17px;letter-spacing:-0.022em;color:#0066cc">View project&nbsp;›</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+</main>
+</sc-if>
+
+<sc-if value="{{ isCase }}">
+<main id="main" data-shell="1">
+  <section data-tile="light" style="background:#ffffff;padding:clamp(126px,16vh,188px) clamp(20px,5.5vw,90px) clamp(34px,5vh,60px)">
+    <div style="max-width:1080px;margin:0 auto">
+      <span onClick="{{ goWork }}" role="link" tabindex="0" onKeyDown="{{ keyWork }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:44px;font-size:17px;letter-spacing:-0.022em;color:#0066cc;transition:transform 300ms linear(0,0.09,0.28,0.52,0.74,0.89,0.98,1.02,1.03,1.02,1.01,1)" style-active="transform:scale(0.95)">‹&nbsp;All work</span>
+      <div data-reveal="0" style="font-size:14px;letter-spacing:0.1em;text-transform:uppercase;color:#6e6e73;margin:clamp(26px,4vh,44px) 0 16px">{{ cur.num }} — {{ cur.category }}</div>
+      <h1 data-reveal="1" style="margin:0;max-width:16ch;font-size:clamp(33px,5.6vw,76px);line-height:1.04;letter-spacing:-0.019em;font-weight:600">{{ cur.name }}</h1>
+      <p data-reveal="2" style="margin:20px 0 0;max-width:46ch;font-size:clamp(19px,2vw,24px);font-weight:300;line-height:1.4;color:#6e6e73">{{ cur.desc }}</p>
+      <div data-reveal="3" style="display:flex;flex-wrap:wrap;gap:clamp(24px,5vw,64px);margin-top:clamp(32px,5vh,56px);padding-top:22px;border-top:1px solid #e8e8ea;font-size:17px;letter-spacing:-0.022em">
+        <div><div style="font-size:14px;color:#6e6e73;margin-bottom:8px">Discipline</div>{{ cur.tag }}</div>
+        <div><div style="font-size:14px;color:#6e6e73;margin-bottom:8px">Sector</div>{{ cur.category }}</div>
+        <div><div style="font-size:14px;color:#6e6e73;margin-bottom:8px">Role</div>UI / UX Design</div>
+      </div>
+    </div>
+  </section>
+
+  <section data-tile="parchment" style="background:#f5f5f7;padding:clamp(40px,6vh,70px) clamp(20px,5.5vw,90px) clamp(78px,12vh,130px)">
+    <div style="max-width:1080px;margin:0 auto">
+      <div style="border-radius:22px;overflow:hidden;background:{{ cur.chipBg }};color:{{ cur.chipInk }};aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;transition:transform 1000ms cubic-bezier(0.22,1,0.36,1)" style-hover="transform:scale(1.014)">
+        <sc-if value="{{ cur.hasImg }}" hint-placeholder-val="{{ false }}">{{ cur.imgEl }}</sc-if>
+        <sc-if value="{{ cur.noImg }}" hint-placeholder-val="{{ true }}"><span style="font-size:clamp(48px,8vw,120px);font-weight:600;letter-spacing:-0.02em">{{ cur.mono }}</span></sc-if>
+      </div>
+
+      <div data-reveal="0" style="margin-top:clamp(48px,7vh,84px);display:flex;flex-wrap:wrap;gap:clamp(26px,5vw,72px)">
+        <div style="flex:0 1 220px;min-width:180px;font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:#a1a1a6">The brief</div>
+        <div style="flex:1 1 420px;min-width:0">
+          <p style="margin:0;font-size:clamp(20px,2.1vw,27px);font-weight:300;line-height:1.42;letter-spacing:-0.008em;max-width:40ch;text-wrap:pretty">{{ cur.longA }}</p>
+          <p style="margin:22px 0 0;font-size:17px;line-height:1.55;letter-spacing:-0.022em;color:#6e6e73;max-width:58ch;text-wrap:pretty">{{ cur.longB }}</p>
+        </div>
+      </div>
+
+      <div data-reveal="0" style="margin-top:clamp(48px,7vh,84px);display:flex;flex-wrap:wrap;gap:clamp(26px,5vw,72px)">
+        <div style="flex:0 1 220px;min-width:180px;font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:#a1a1a6">The problem</div>
+        <div style="flex:1 1 420px;min-width:0">
+          <p style="margin:0;font-size:clamp(20px,2.1vw,27px);font-weight:300;line-height:1.42;letter-spacing:-0.008em;max-width:40ch;text-wrap:pretty">Three things were true at once, and each one made the others worse.</p>
+          <div style="margin-top:26px;display:flex;flex-direction:column">
+            <div style="display:flex;gap:20px;padding:18px 0;border-top:1px solid #dedee1"><span style="flex:none;font-size:14px;color:#a1a1a6;font-variant-numeric:tabular-nums;padding-top:2px">01</span><div><div style="font-size:17px;font-weight:600;letter-spacing:-0.022em">The first constraint</div><p style="margin:6px 0 0;font-size:17px;line-height:1.55;letter-spacing:-0.022em;color:#6e6e73;max-width:58ch;text-wrap:pretty">Placeholder — what the existing product or process did to the person using it, in one or two sentences.</p></div></div>
+            <div style="display:flex;gap:20px;padding:18px 0;border-top:1px solid #dedee1"><span style="flex:none;font-size:14px;color:#a1a1a6;font-variant-numeric:tabular-nums;padding-top:2px">02</span><div><div style="font-size:17px;font-weight:600;letter-spacing:-0.022em">The second constraint</div><p style="margin:6px 0 0;font-size:17px;line-height:1.55;letter-spacing:-0.022em;color:#6e6e73;max-width:58ch;text-wrap:pretty">Placeholder — the business or technical limit that ruled out the obvious answer.</p></div></div>
+            <div style="display:flex;gap:20px;padding:18px 0;border-top:1px solid #dedee1;border-bottom:1px solid #dedee1"><span style="flex:none;font-size:14px;color:#a1a1a6;font-variant-numeric:tabular-nums;padding-top:2px">03</span><div><div style="font-size:17px;font-weight:600;letter-spacing:-0.022em">The third constraint</div><p style="margin:6px 0 0;font-size:17px;line-height:1.55;letter-spacing:-0.022em;color:#6e6e73;max-width:58ch;text-wrap:pretty">Placeholder — the thing everyone had stopped questioning because it had always been that way.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section data-tile="light" style="background:#ffffff;padding:clamp(78px,12vh,132px) clamp(20px,5.5vw,90px)">
+    <div style="max-width:1080px;margin:0 auto">
+      <div data-reveal="0" style="display:flex;flex-wrap:wrap;gap:clamp(26px,5vw,72px)">
+        <div style="flex:0 1 220px;min-width:180px;font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:#a1a1a6">The approach</div>
+        <div style="flex:1 1 420px;min-width:0">
+          <p style="margin:0;font-size:clamp(20px,2.1vw,27px);font-weight:300;line-height:1.42;letter-spacing:-0.008em;max-width:40ch;text-wrap:pretty">Before any screens, a model: what the objects are, and what a person is allowed to do with them.</p>
+          <p style="margin:22px 0 0;font-size:17px;line-height:1.55;letter-spacing:-0.022em;color:#6e6e73;max-width:58ch;text-wrap:pretty">Placeholder — the reframing that unlocked the work, and why it was the right bet. Two or three sentences is the right length here; the images below carry the rest.</p>
+        </div>
+      </div>
+      <div data-reveal="0" style="margin-top:clamp(40px,6vh,64px);border-radius:20px;overflow:hidden;background:#f5f5f7">{{ cur.shotEl }}</div>
+      <div style="margin-top:14px;font-size:14px;color:#a1a1a6">Placeholder caption — what this screen is and what to notice in it.</div>
+
+      <div data-reveal="0" style="margin-top:clamp(56px,8vh,96px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:clamp(20px,3vw,40px)">
+        <div><div style="font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:#a1a1a6">Decision</div><div style="margin-top:14px;font-size:clamp(19px,2vw,23px);font-weight:600;letter-spacing:-0.016em;line-height:1.2">One route, not four</div><p style="margin:9px 0 0;font-size:17px;line-height:1.55;letter-spacing:-0.022em;color:#6e6e73;max-width:58ch;text-wrap:pretty;max-width:34ch">Placeholder — a decision you made and the alternative you rejected.</p></div>
+        <div><div style="font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:#a1a1a6">Decision</div><div style="margin-top:14px;font-size:clamp(19px,2vw,23px);font-weight:600;letter-spacing:-0.016em;line-height:1.2">Progressive disclosure</div><p style="margin:9px 0 0;font-size:17px;line-height:1.55;letter-spacing:-0.022em;color:#6e6e73;max-width:58ch;text-wrap:pretty;max-width:34ch">Placeholder — how complexity was staged rather than hidden.</p></div>
+        <div><div style="font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:#a1a1a6">Decision</div><div style="margin-top:14px;font-size:clamp(19px,2vw,23px);font-weight:600;letter-spacing:-0.016em;line-height:1.2">Plain language</div><p style="margin:9px 0 0;font-size:17px;line-height:1.55;letter-spacing:-0.022em;color:#6e6e73;max-width:58ch;text-wrap:pretty;max-width:34ch">Placeholder — a copy or labelling change that removed a support question.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section data-tile="parchment" style="background:#f5f5f7;padding:clamp(78px,12vh,132px) clamp(20px,5.5vw,90px)">
+    <div style="max-width:1080px;margin:0 auto">
+      <div data-reveal="0" style="font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:#a1a1a6">What shipped</div>
+      <h2 data-reveal="0" style="margin:14px 0 clamp(34px,5vh,52px);font-size:clamp(26px,3.6vw,46px);line-height:1.06;letter-spacing:-0.019em;font-weight:600;max-width:22ch">The screens that carry the work.</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:clamp(18px,2.4vw,30px)">
+        <div data-reveal="0" style="border-radius:18px;overflow:hidden;background:#ffffff">{{ cur.imgEl2 }}</div>
+        <div data-reveal="1" style="border-radius:18px;overflow:hidden;background:#ffffff">{{ cur.shotEl2 }}</div>
+      </div>
+      <div data-reveal="0" style="margin-top:clamp(48px,7vh,84px);display:flex;flex-wrap:wrap;gap:clamp(28px,5vw,72px);padding-top:26px;border-top:1px solid #dedee1">
+        <div><div data-num="1" style="font-size:clamp(30px,3.4vw,42px);font-weight:600;letter-spacing:-0.024em;font-variant-numeric:tabular-nums">3</div><div style="font-size:14px;color:#6e6e73;margin-top:7px;max-width:22ch">Placeholder metric — e.g. steps removed from the core flow</div></div>
+        <div><div data-num="1" style="font-size:clamp(30px,3.4vw,42px);font-weight:600;letter-spacing:-0.024em;font-variant-numeric:tabular-nums">40%</div><div style="font-size:14px;color:#6e6e73;margin-top:7px;max-width:22ch">Placeholder metric — e.g. faster to complete</div></div>
+        <div><div style="font-size:clamp(30px,3.4vw,42px);font-weight:600;letter-spacing:-0.024em">Shipped</div><div style="font-size:14px;color:#6e6e73;margin-top:7px;max-width:22ch">Placeholder — when it went live and what happened next</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section data-tile="light" style="background:#ffffff;padding:clamp(70px,11vh,120px) clamp(20px,5.5vw,90px)">
+    <div style="max-width:1080px;margin:0 auto;display:flex;flex-wrap:wrap;gap:clamp(26px,5vw,72px)">
+      <div style="flex:0 1 220px;min-width:180px;font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:#a1a1a6">Looking back</div>
+      <div style="flex:1 1 420px;min-width:0">
+        <p style="margin:0;font-size:clamp(20px,2.1vw,27px);font-weight:300;line-height:1.42;letter-spacing:-0.008em;max-width:40ch;text-wrap:pretty">What I would do differently, and what I would keep.</p>
+        <p style="margin:22px 0 0;font-size:17px;line-height:1.55;letter-spacing:-0.022em;color:#6e6e73;max-width:58ch;text-wrap:pretty">Placeholder — the honest reflection. What the constraints taught you, what you would test earlier next time, and what part of the system you are still proud of.</p>
+      </div>
+    </div>
+  </section>
+
+  <section data-tile="light" style="background:#ffffff;padding:clamp(60px,10vh,110px) clamp(20px,5.5vw,90px);text-align:center">
+    <div style="max-width:1080px;margin:0 auto">
+      <div style="font-size:14px;color:#6e6e73;margin-bottom:12px">Next project</div>
+      <h2 onClick="{{ goNext }}" role="link" tabindex="0" onKeyDown="{{ keyNext }}" style="cursor:pointer;margin:0;font-size:clamp(26px,3.6vw,44px);line-height:1.08;letter-spacing:-0.016em;font-weight:600;transition:color .25s" style-hover="color:#0066cc">{{ nextName }}</h2>
+      <div style="margin-top:18px"><span onClick="{{ goNext }}" role="link" tabindex="0" onKeyDown="{{ keyNext }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:44px;font-size:17px;letter-spacing:-0.022em;color:#0066cc;transition:transform 300ms linear(0,0.09,0.28,0.52,0.74,0.89,0.98,1.02,1.03,1.02,1.01,1)" style-active="transform:scale(0.95)">View project&nbsp;›</span></div>
+    </div>
+  </section>
+</main>
+</sc-if>
+
+<sc-if value="{{ isAbout }}">
+<main id="main" data-shell="1">
+  <section data-tile="light" style="background:#ffffff;padding:clamp(132px,17vh,196px) clamp(20px,5.5vw,90px) clamp(44px,6.5vh,80px)">
+    <div style="max-width:1240px;margin:0 auto">
+      <div data-reveal="0" style="font-size:14px;letter-spacing:0.1em;text-transform:uppercase;color:#6e6e73;margin-bottom:18px">About</div>
+      <h1 data-reveal="1" style="margin:0;max-width:18ch;font-size:clamp(33px,5.6vw,80px);line-height:1.04;letter-spacing:-0.019em;font-weight:600">I am Mohamad Hawa, and I design things people understand.</h1>
+    </div>
+  </section>
+
+  <section data-tile="parchment" style="background:#f5f5f7;padding:clamp(56px,9vh,100px) clamp(20px,5.5vw,90px)">
+    <div style="max-width:1240px;margin:0 auto;display:flex;flex-wrap:wrap;gap:clamp(30px,5vw,80px)">
+      <div data-reveal="0" style="flex:1 1 320px;min-width:240px;max-width:400px">
+        <div style="width:100%;aspect-ratio:4/5;border-radius:22px;overflow:hidden;background:#e8e8ea">
+          {{ portraitTall }}
+        </div>
+        <div style="display:flex;gap:36px;margin-top:24px">
+          <div><div data-num="1" style="font-size:clamp(26px,3vw,34px);font-weight:600;letter-spacing:-0.024em;font-variant-numeric:tabular-nums">20+</div><div style="font-size:14px;color:#6e6e73;margin-top:6px">projects shipped</div></div>
+          <div><div style="font-size:clamp(26px,3vw,34px);font-weight:600;letter-spacing:-0.024em;font-variant-numeric:tabular-nums">2020</div><div style="font-size:14px;color:#6e6e73;margin-top:6px">designing since</div></div>
+        </div>
+      </div>
+      <div data-reveal="1" style="flex:1 1 420px;min-width:0">
+        <p style="margin:0;font-size:clamp(20px,2.1vw,28px);font-weight:300;line-height:1.38;max-width:34ch">I am passionate about designing intuitive experiences.</p>
+        <p style="margin:22px 0 0;font-size:17px;line-height:1.5;letter-spacing:-0.022em;max-width:56ch">As a UI/UX designer I work on visually engaging, user-centred products across web and mobile — the kind where creativity has to survive contact with a real workflow. My mission is turning complex challenges into experiences that feel obvious.</p>
+        <p style="margin:18px 0 0;font-size:17px;line-height:1.5;letter-spacing:-0.022em;color:#6e6e73;max-width:56ch">I started out freelancing in 2020, working directly with small teams and founders who needed a designer who could also explain the decision. In 2022 I joined Poyesis, where the projects got bigger and the systems behind them got more interesting.</p>
+        <div style="margin-top:clamp(36px,6vh,60px);display:flex;flex-direction:column">
+          <div style="display:flex;justify-content:space-between;gap:20px;padding:20px 0;border-top:1px solid #dedee1"><div><div style="font-size:17px;font-weight:600;letter-spacing:-0.022em">UI / UX Designer</div><div style="font-size:14px;color:#6e6e73;margin-top:6px">Poyesis</div></div><div style="font-size:14px;color:#6e6e73;white-space:nowrap">2022 — now</div></div>
+          <div style="display:flex;justify-content:space-between;gap:20px;padding:20px 0;border-top:1px solid #dedee1;border-bottom:1px solid #dedee1"><div><div style="font-size:17px;font-weight:600;letter-spacing:-0.022em">Freelance UI / UX Designer</div><div style="font-size:14px;color:#6e6e73;margin-top:6px">Independent clients across Lebanon</div></div><div style="font-size:14px;color:#6e6e73;white-space:nowrap">2020 — 2022</div></div>
+        </div>
+        <div style="margin-top:clamp(30px,5vh,48px);display:flex;flex-wrap:wrap;gap:10px">
+          <span style="display:inline-flex;align-items:center;min-height:44px;font-size:14px;padding:0 18px;border-radius:9999px;background:#ffffff;color:#1d1d1f">Figma</span>
+          <span style="display:inline-flex;align-items:center;min-height:44px;font-size:14px;padding:0 18px;border-radius:9999px;background:#ffffff;color:#1d1d1f">Design systems</span>
+          <span style="display:inline-flex;align-items:center;min-height:44px;font-size:14px;padding:0 18px;border-radius:9999px;background:#ffffff;color:#1d1d1f">Prototyping</span>
+          <span style="display:inline-flex;align-items:center;min-height:44px;font-size:14px;padding:0 18px;border-radius:9999px;background:#ffffff;color:#1d1d1f">User research</span>
+          <span style="display:inline-flex;align-items:center;min-height:44px;font-size:14px;padding:0 18px;border-radius:9999px;background:#ffffff;color:#1d1d1f">Responsive web</span>
+          <span style="display:inline-flex;align-items:center;min-height:44px;font-size:14px;padding:0 18px;border-radius:9999px;background:#ffffff;color:#1d1d1f">iOS &amp; Android</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+</sc-if>
+
+<sc-if value="{{ isContact }}">
+<main id="main" data-shell="1">
+  <section data-tile="dark" style="background:#1d1d1f;color:#ffffff;padding:clamp(132px,18vh,204px) clamp(20px,5.5vw,90px) clamp(72px,11vh,140px)">
+    <div style="max-width:1240px;margin:0 auto;display:flex;flex-wrap:wrap;gap:clamp(34px,5vw,80px)">
+      <div style="flex:1 1 360px;min-width:0">
+        <div style="display:inline-flex;align-items:center;gap:9px;font-size:14px;letter-spacing:-0.016em;color:#c7c7cc;margin-bottom:24px"><span style="width:6px;height:6px;border-radius:50%;background:#2997ff;animation:mh-breathe 3s cubic-bezier(0.32,0.72,0,1) infinite"></span>{{ availLabel }}</div>
+        <h1 style="margin:0;font-size:clamp(33px,5.4vw,76px);line-height:1.04;letter-spacing:-0.019em;font-weight:600;max-width:14ch">Tell me what you're building.</h1>
+        <p style="margin:20px 0 0;max-width:44ch;font-size:17px;line-height:1.5;letter-spacing:-0.022em;color:#c7c7cc">Fill this in and it opens a message with everything already written. Or reach me directly — both work.</p>
+        <div style="margin-top:clamp(30px,5vh,48px);display:flex;flex-direction:column">
+          <a href="{{ waHref }}" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 0;border-top:1px solid #3a3a3c;color:#fff;font-size:17px;letter-spacing:-0.022em;transition:padding-left 400ms cubic-bezier(0.32,0.72,0,1)" style-hover="color:#2997ff;padding-left:8px"><span>{{ waLabelLong }}</span><span style="color:#2997ff">↗</span></a>
+          <a href="{{ mailHref }}" style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 0;border-top:1px solid #3a3a3c;border-bottom:1px solid #3a3a3c;color:#fff;font-size:17px;letter-spacing:-0.022em;word-break:break-all;transition:padding-left 400ms cubic-bezier(0.32,0.72,0,1)" style-hover="color:#2997ff;padding-left:8px"><span>{{ mailLabel }}</span><span style="color:#2997ff">↗</span></a>
+        </div>
+      </div>
+      <div style="flex:1 1 380px;min-width:0">
+        <dc-import name="Enquiry Form" contact-mode="{{ contactMode }}" preset-service="{{ presetService }}" wa-number="{{ prWhats }}" email="{{ prEmail }}" hint-size="100%,520px"></dc-import>
+      </div>
+    </div>
+  </section>
+</main>
+</sc-if>
+
+<footer style="background:#f5f5f7;padding:clamp(40px,6vh,60px) clamp(20px,5.5vw,90px)">
+  <div style="max-width:1240px;margin:0 auto;display:flex;flex-wrap:wrap;gap:18px;justify-content:space-between;align-items:center;font-size:13px;letter-spacing:-0.01em;color:#6e6e73">
+    <span onClick="{{ goHome }}" role="link" tabindex="0" onKeyDown="{{ keyHome }}" style="cursor:pointer;display:flex;align-items:center;min-height:44px;transition:opacity .25s" style-hover="opacity:0.6">{{ logoFull }}</span>
+    <div style="display:flex;flex-wrap:wrap;gap:22px;align-items:center">
+      <a href="{{ waHref }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;min-height:44px;color:#6e6e73" style-hover="color:#0066cc">WhatsApp</a>
+      <a href="{{ mailHref }}" style="display:inline-flex;align-items:center;min-height:44px;color:#6e6e73" style-hover="color:#0066cc">Email</a>
+      <span onClick="{{ goWork }}" role="link" tabindex="0" onKeyDown="{{ keyWork }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:44px;color:#6e6e73" style-hover="color:#0066cc">Work</span>
+      <span onClick="{{ goAbout }}" role="link" tabindex="0" onKeyDown="{{ keyAbout }}" style="cursor:pointer;display:inline-flex;align-items:center;min-height:44px;color:#6e6e73" style-hover="color:#0066cc">About</span>
+    </div>
+    <span style="color:#8e8e93">Beirut, Lebanon</span>
+  </div>
+</footer>
+
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;available&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behaviour&quot;},&quot;contactMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;WhatsApp&quot;,&quot;Email&quot;,&quot;Both&quot;],&quot;default&quot;:&quot;WhatsApp&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Behaviour&quot;}}">
+const SPRING = {
+  smooth: { d: 520, e: 'cubic-bezier(0.32,0.72,0,1)' },
+  snappy: { d: 300, e: 'linear(0,0.09,0.28,0.52,0.74,0.89,0.98,1.02,1.03,1.02,1.01,1)' },
+  quick: { d: 160, e: 'cubic-bezier(0.33,1,0.68,1)' }
+};
+const STORE = 'mh-portfolio-projects-v1';
+const PSTORE = 'mh-portfolio-profile-v1';
+const PROFILE = {
+  portrait: './assets/mohamad-avatar.jpg',
+  email: 'mohamadhawa421@gmail.com',
+  whatsapp: '96176824793',
+  phoneLabel: '+961 76 824 793',
+  available: true
+};
+
+const SEED = [
+  { name: 'Wise Academy', category: 'Education', tag: 'Web app design', desc: 'A learning academy’s platform — programmes, enrolment, and student progress in one place.',
+    longA: 'A learning platform where the hardest part was never the visual design — it was the enrolment path.',
+    longB: 'Structure first: what a course is, what a cohort is, and what a student sees at each stage. The interface followed from that model rather than the other way around.', image: './assets/cover-1.png', chipBg: '#efeff1', chipInk: '#86868b' },
+  { name: 'Kabbara Office', category: 'Corporate', tag: 'Landing page', desc: 'A single page built to establish credibility fast and route serious enquiries.',
+    longA: 'One page, one job: make a first-time visitor confident enough to get in touch.',
+    longB: 'Written and laid out in the order a sceptical reader asks questions — who are you, what do you do, why should I believe it, how do I reach you.', image: './assets/cover-2.png', chipBg: '#e9e9ec', chipInk: '#86868b' },
+  { name: 'Coding Lebanon', category: 'Community', tag: 'Web design', desc: 'A learning community’s home for programmes, cohorts, and applications.',
+    longA: 'A community site that had to speak to two audiences at once: learners and the people funding them.',
+    longB: 'The solution was a clear split in the information hierarchy, so neither audience had to read past content aimed at the other.', image: './assets/cover-3.png', chipBg: '#f2f2f4', chipInk: '#86868b' },
+  { name: 'WFK Law Firm', category: 'Legal', tag: 'Landing page', desc: 'Practice areas, people, and enquiries — legible on a phone in thirty seconds.',
+    longA: 'Legal websites tend to hide the one thing a visitor came for: can you help with my specific problem?',
+    longB: 'Practice areas were promoted to the front of the experience, in plain language, with a direct route to contact from every one of them.', image: './assets/cover-4.png', chipBg: '#efeff1', chipInk: '#86868b' },
+  { name: 'Shipment Share', category: 'Logistics', tag: 'Mobile app design', desc: 'Matching senders with travellers — designed thumb-first for mobile.',
+    longA: 'A two-sided marketplace where trust is the product and the interface is the only proof of it.',
+    longB: 'Every screen had to answer an unspoken question about safety, cost, or timing. Progressive disclosure kept the flow short without hiding the things people actually worry about.', image: './assets/cover-5.png', chipBg: '#e9e9ec', chipInk: '#86868b' },
+  { name: 'Shareb', category: 'Product', tag: 'Design system', desc: 'Product interface work carried through into a reusable component language.',
+    longA: 'Started as screens, ended as a system — because the screens kept multiplying.',
+    longB: 'Tokens, components, and rules for spacing and states, documented so the tenth screen someone else builds still looks like the first one I did.', image: './assets/cover-6.png', chipBg: '#f2f2f4', chipInk: '#86868b' }
+];
+
+const SERVICES = ['Web app design', 'Mobile app design', 'Landing page', 'Design system'];
+const BUDGETS = ['$500 – $1k', '$1k – $3k', '$3k – $7k', '$7k+'];
+
+function installChromeDriver() {
+  if (window.__mhChrome) return;
+  window.__mhChrome = true;
+  const R = document.documentElement.style;
+  const reveal = () => {
+    const vh = window.innerHeight || 800;
+    document.querySelectorAll('[data-reveal],[data-rise],[data-num]').forEach(el => {
+      if (el.dataset.shown === '1') return;
+      const r = el.getBoundingClientRect();
+      if (r.height === 0 && r.top === 0) return;
+      if (r.top > vh * 0.94) {
+        if (el.dataset.primed !== '1') {
+          el.dataset.primed = '1';
+          const rise = el.hasAttribute('data-rise');
+          const i = parseInt(el.getAttribute(rise ? 'data-rise' : 'data-reveal') || '0', 10);
+          if (el.hasAttribute('data-num')) return;
+          el.style.transition = rise
+            ? 'transform 880ms cubic-bezier(0.22,1,0.36,1)'
+            : 'opacity 520ms cubic-bezier(0.32,0.72,0,1), transform 520ms cubic-bezier(0.32,0.72,0,1)';
+          el.style.transitionDelay = (i * (rise ? 90 : 70)) + 'ms';
+          if (rise) { el.style.display = 'block'; el.style.transform = 'translateY(112%)'; }
+          else { el.style.opacity = '0'; el.style.transform = 'translateY(16px)'; }
+        }
+        return;
+      }
+      el.dataset.shown = '1';
+      if (el.hasAttribute('data-num')) { rollNumber(el); return; }
+      el.style.opacity = '1';
+      el.style.transform = 'none';
+    });
+  };
+  const rollNumber = (el) => {
+    const final = el.dataset.numFinal || (el.dataset.numFinal = el.textContent);
+    const m = final.match(/[\d.,]+/);
+    if (!m) return;
+    const target = parseFloat(m[0].replace(/,/g, ''));
+    if (!isFinite(target) || target <= 0) { el.textContent = final; return; }
+    const t0 = performance.now(), dur = 800;
+    const step = () => {
+      const k = Math.min(1, (performance.now() - t0) / dur);
+      el.textContent = k < 1
+        ? final.replace(m[0], Math.round(target * (1 - Math.pow(1 - k, 4))).toLocaleString('en-US'))
+        : final;
+      if (k < 1) setTimeout(step, 32);
+    };
+    step();
+  };
+  const apply = () => {
+    reveal();
+    const y = window.pageYOffset || document.documentElement.scrollTop || 0;
+    const on = y > 90;
+    let dark = false;
+    document.querySelectorAll('[data-tile]').forEach(el => {
+      const r = el.getBoundingClientRect();
+      if (r.top <= 34 && r.bottom >= 34) dark = el.getAttribute('data-tile') === 'dark';
+    });
+    R.setProperty('--nav-top', on ? '10px' : '18px');
+    R.setProperty('--nav-gap', on ? '2px' : 'clamp(16px,4.6vw,56px)');
+    R.setProperty('--nav-pad', on ? '2px 6px' : '2px 12px');
+    R.setProperty('--nav-link-pad', on ? '0 15px' : '0 6px');
+    R.setProperty('--nav-bg', on ? (dark ? 'rgba(40,40,42,0.7)' : 'rgba(255,255,255,0.74)') : 'rgba(255,255,255,0)');
+    R.setProperty('--nav-blur', 'saturate(180%) blur(' + (on ? 20 : 0) + 'px)');
+    R.setProperty('--nav-shadow', '0 1px 8px rgba(0,0,0,' + (on ? 0.07 : 0) + ')');
+    R.setProperty('--nav-ink', dark ? '#ffffff' : '#1d1d1f');
+    R.setProperty('--logo-op', on ? '0' : '1');
+    R.setProperty('--logo-y', on ? '-10px' : '0px');
+    R.setProperty('--logo-pe', on ? 'none' : 'auto');
+    const mark = document.querySelector('[data-logo] img');
+    if (mark) mark.style.filter = dark ? 'brightness(0) invert(1)' : 'none';
+  };
+  window.addEventListener('scroll', apply, { passive: true });
+  window.addEventListener('resize', apply, { passive: true });
+  setInterval(apply, 120);
+  apply();
+  window.__mhReveal = apply;
+}
+
+class Component extends DCLogic {
+  state = {
+    page: 'home', current: 0, intro: true, dark: false, phase: 0,
+    projects: SEED, saved: '', dirty: 0, filter: 'All',
+    profile: PROFILE, presetService: '', scrolled: false
+  };
+
+  updateProfile(key, value) {
+    const profile = Object.assign({}, this.state.profile, { [key]: value });
+    this.setState({ profile });
+    clearTimeout(this._psave);
+    this._psave = setTimeout(() => {
+      try { localStorage.setItem(PSTORE, JSON.stringify(profile)); this.setState({ saved: 'Saved ' + new Date().toLocaleTimeString() }); }
+      catch (err) { this.setState({ saved: 'Could not save locally' }); }
+    }, 400);
+  }
+
+  pickService(name) {
+    return () => { this.setState({ presetService: name }); this.navigate('contact'); };
+  }
+
+  componentDidMount() {
+    this.reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    this.hydrate();
+    this.startIntro();
+    installChromeDriver();
+  }
+
+
+
+  componentDidUpdate() {
+    installChromeDriver();
+    if (window.__mhReveal) { window.__mhReveal(); setTimeout(window.__mhReveal, 60); }
+  }
+  componentWillUnmount() {
+    [this._i2, this._x1, this._t, this._sw, this._save, this._psave].forEach(clearTimeout);
+    (this._phaseTimers || []).forEach(clearTimeout);
+    clearInterval(this._poll);
+    if (this._onScroll) { window.removeEventListener('scroll', this._onScroll); window.removeEventListener('resize', this._onScroll); document.removeEventListener('scroll', this._onScroll, true); }
+    this._scrollBound = false;
+  }
+
+  hydrate() {
+    try {
+      const raw = localStorage.getItem(STORE);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length) {
+        this.setState({ projects: parsed.map(p => Object.assign({}, SEED[0], p)) });
+      }
+    } catch (err) { /* corrupt or unavailable storage — fall back to seed */ }
+    try {
+      const rawP = localStorage.getItem(PSTORE);
+      if (rawP) this.setState({ profile: Object.assign({}, PROFILE, JSON.parse(rawP)) });
+    } catch (err) { /* keep defaults */ }
+  }
+  persist(projects) {
+    clearTimeout(this._save);
+    this._save = setTimeout(() => {
+      try {
+        localStorage.setItem(STORE, JSON.stringify(projects));
+        this.setState({ saved: 'Saved ' + new Date().toLocaleTimeString() });
+      } catch (err) { this.setState({ saved: 'Could not save locally' }); }
+    }, 400);
+  }
+  update(i, key, value) {
+    const projects = this.state.projects.slice();
+    projects[i] = Object.assign({}, projects[i], { [key]: value });
+    this.setState({ projects });
+    this.persist(projects);
+  }
+  move(i, dir) {
+    const projects = this.state.projects.slice();
+    const j = i + dir;
+    if (j < 0 || j >= projects.length) return;
+    const t = projects[i]; projects[i] = projects[j]; projects[j] = t;
+    this.setState({ projects });
+    this.persist(projects);
+  }
+  remove(i) {
+    const projects = this.state.projects.slice();
+    projects.splice(i, 1);
+    this.setState({ projects, current: 0 });
+    this.persist(projects);
+  }
+  add() {
+    const tints = [{ chipBg: '#efeff1', chipInk: '#86868b' }, { chipBg: '#e9e9ec', chipInk: '#86868b' }, { chipBg: '#f2f2f4', chipInk: '#86868b' }];
+    const projects = this.state.projects.concat([Object.assign({
+      name: 'New project', category: 'Sector', tag: 'Discipline', desc: 'One line about the project.',
+      longA: '', longB: '', image: ''
+    }, tints[this.state.projects.length % 3])]);
+    this.setState({ projects });
+    this.persist(projects);
+  }
+
+  startIntro() {
+    if (this.reduced) {
+      this.setState({ intro: false }); return;
+    }
+    this._phaseTimers = [0, 200, 760].map((t, i) => setTimeout(() => this.setState({ phase: i }), t));
+    this._x1 = setTimeout(() => this.setState({ phase: 4 }), 1900);
+    this._i2 = setTimeout(() => { this.setState({ intro: false }); this.enter(); }, 2500);
+  }
+  skipIntro() {
+    (this._phaseTimers || []).forEach(clearTimeout);
+    clearTimeout(this._i2); clearTimeout(this._x1);
+    this.setState({ phase: 4 });
+    this._i2 = setTimeout(() => { this.setState({ intro: false }); this.enter(); }, 460);
+  }
+  enter() {
+    const s = document.querySelector('[data-shell]');
+    if (!s || this.reduced || typeof s.animate !== 'function') return;
+    s.animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }],
+      { duration: 760, easing: 'cubic-bezier(0.22,1,0.36,1)', fill: 'none' });
+  }
+
+  navigate(next, index) {
+    const commit = () => {
+      document.querySelectorAll('[data-reveal],[data-rise],[data-num]').forEach(el => {
+        delete el.dataset.shown; delete el.dataset.primed;
+        el.style.opacity = ''; el.style.transform = ''; el.style.transition = ''; el.style.transitionDelay = '';
+      });
+      const patch = { page: next };
+      if (typeof index === 'number') patch.current = index;
+      this.setState(patch);
+      window.scrollTo(0, 0);
+      if (window.__mhReveal) { window.__mhReveal(); setTimeout(window.__mhReveal, 50); setTimeout(window.__mhReveal, 260); }
+      requestAnimationFrame(() => {
+        const s = document.querySelector('[data-shell]');
+        if (!s || this.reduced || typeof s.animate !== 'function') return;
+        s.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }],
+          { duration: 620, easing: 'cubic-bezier(0.22,1,0.36,1)', fill: 'none' });
+      });
+    };
+    const shell = document.querySelector('[data-shell]');
+    if (!shell || this.reduced || typeof shell.animate !== 'function') { commit(); return; }
+    shell.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-6px)' }],
+      { duration: 230, easing: 'cubic-bezier(0.55,0,1,0.45)', fill: 'forwards' });
+    setTimeout(commit, 225);
+  }
+  go(page, index) { return () => this.navigate(page, index); }
+  key(page, index) {
+    return (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.navigate(page, index); } };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const p = s.page, ph = s.phase;
+    const list = s.projects.length ? s.projects : SEED;
+    const pad = (n) => (n < 10 ? '0' + n : String(n));
+    const mono = (name) => String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+
+    const projects = list.map((it, i) => Object.assign({}, it, {
+      num: pad(i + 1),
+      mono: mono(it.name),
+      hasImg: !!it.image,
+      noImg: !it.image,
+      chipBg: it.chipBg || '#efeff1',
+      chipInk: it.chipInk || '#86868b',
+      imgEl: it.image ? React.createElement('img', {
+        src: it.image, alt: it.name || '',
+        style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' }
+      }) : null,
+      imgEl2: React.createElement('img', {
+        src: it.shot || './assets/shot-' + (((i + 1) % 6) + 1) + '.png', alt: '',
+        style: { width: '100%', height: 'auto', display: 'block' }
+      }),
+      shotEl: React.createElement('img', {
+        src: it.shot || './assets/shot-' + ((i % 6) + 1) + '.png', alt: '',
+        style: { width: '100%', height: 'auto', display: 'block' }
+      }),
+      shotEl2: React.createElement('img', {
+        src: it.shot2 || './assets/cover-' + (((i + 3) % 6) + 1) + '.png', alt: '',
+        style: { width: '100%', height: 'auto', display: 'block' }
+      }),
+      open: this.go('case', i),
+      key: this.key('case', i)
+    }));
+
+
+    const lead = projects.length ? [projects[0]] : [];
+    const rest = projects.slice(1);
+    const ci = Math.min(s.current, projects.length - 1);
+    const cur = projects[ci] || projects[0];
+    const ni = (ci + 1) % projects.length;
+
+    const pr = s.profile || PROFILE;
+    const portrait = (pr.portrait || PROFILE.portrait);
+    const portraitEl = (pos, eager) => React.createElement('img', {
+      src: portrait, alt: 'Mohamad Hawa',
+      loading: eager ? 'eager' : 'lazy', decoding: 'async',
+      style: { width: '100%', height: '100%', objectFit: 'cover', objectPosition: pos, display: 'block' }
+    });
+    const waDigits = String(pr.whatsapp || '').replace(/[^\d]/g, '');
+    const available = this.props.available !== false && pr.available !== false;
+
+    return {
+      intro: s.intro,
+      skipIntro: () => this.skipIntro(),
+      curtainOp: ph >= 4 ? 0 : 1,
+      p1op: ph >= 1 ? 1 : 0, p1y: ph >= 1 ? 'none' : 'translateY(12px)',
+      p2op: ph >= 2 ? 1 : 0, p2y: ph >= 2 ? 'none' : 'translateY(12px)',
+      p3op: ph >= 3 ? 0.8 : 0,
+      navInk: s.dark ? '#ffffff' : '#1d1d1f',
+      isHome: p === 'home', isWork: p === 'work', isCase: p === 'case',
+      isAbout: p === 'about', isContact: p === 'contact',
+      inkHome: p === 'home' ? '#0066cc' : 'var(--nav-ink,#1d1d1f)',
+      inkWork: (p === 'work' || p === 'case') ? '#0066cc' : 'var(--nav-ink,#1d1d1f)',
+      inkAbout: p === 'about' ? '#0066cc' : 'var(--nav-ink,#1d1d1f)',
+      inkContact: p === 'contact' ? '#0066cc' : 'var(--nav-ink,#1d1d1f)',
+      wHome: p === 'home' ? '600' : '400',
+      wWork: (p === 'work' || p === 'case') ? '600' : '400',
+      wAbout: p === 'about' ? '600' : '400',
+      wContact: p === 'contact' ? '600' : '400',
+      availLabel: available ? 'Available for new projects' : 'Booked — enquiries still welcome',
+      contactMode: this.props.contactMode || 'Both',
+      portraitTall: portraitEl('50% 38%', false),
+      waHref: 'https://wa.me/' + waDigits,
+      waLabel: pr.phoneLabel || '',
+      waLabelLong: 'WhatsApp · ' + (pr.phoneLabel || ''),
+      mailHref: 'mailto:' + (pr.email || ''),
+      mailLabel: pr.email || '',
+      presetService: s.presetService,
+      svc0: this.pickService('Web app design'), ksvc0: this.key('contact'),
+      svc1: this.pickService('Mobile app design'), ksvc1: this.key('contact'),
+      svc2: this.pickService('Landing page'), ksvc2: this.key('contact'),
+      svc3: this.pickService('Design system'), ksvc3: this.key('contact'),
+      logoEl: React.createElement('img', {
+        src: './assets/logo-mark.svg', alt: 'Mohamad Hawa',
+        style: { height: 34, width: 'auto', display: 'block' }
+      }),
+      logoFullBig: React.createElement('img', {
+        src: './assets/logo-full.svg', alt: 'Mohamad Hawa',
+        style: { width: '100%', height: 'auto', display: 'block' }
+      }),
+      logoFull: React.createElement('img', {
+        src: './assets/logo-full.svg', alt: 'Mohamad Hawa — UI/UX Designer',
+        style: { height: 26, width: 'auto', display: 'block' }
+      }),
+      goHome: this.go('home'), goWork: this.go('work'), goAbout: this.go('about'), goContact: this.go('contact'),
+      keyHome: this.key('home'), keyWork: this.key('work'), keyAbout: this.key('about'), keyContact: this.key('contact'),
+      goNext: this.go('case', ni), keyNext: this.key('case', ni),
+      nextName: projects[ni] ? projects[ni].name : '',
+      projects, cur,
+      prWhats: (this.state.profile || {}).whats || PROFILE.whats,
+      prEmail: (this.state.profile || {}).email || PROFILE.email,
+      lead: projects.length ? [projects[0]] : [],
+      rest: projects.slice(1),
+      filters: ['All'].concat(projects.map(x => x.category).filter((c, i, a) => c && a.indexOf(c) === i))
+        .map(c => ({ label: c, on: s.filter === c,
+          bg: s.filter === c ? '#1d1d1f' : '#f5f5f7', ink: s.filter === c ? '#ffffff' : '#1d1d1f',
+          pick: () => this.setState({ filter: c }) })),
+      filtered: s.filter === 'All' ? projects : projects.filter(x => x.category === s.filter),
+      filterCount: (s.filter === 'All' ? projects : projects.filter(x => x.category === s.filter)).length,
+      projectCount: projects.length,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

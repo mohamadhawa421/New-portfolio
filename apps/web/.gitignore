@@ -1,0 +1,9 @@
+dist/
+.astro/
+node_modules/
+.env
+.env.production
+
+# Copied out of the CMS by `npm run export`; the originals are committed
+# in apps/cms/public/uploads.
+public/media/

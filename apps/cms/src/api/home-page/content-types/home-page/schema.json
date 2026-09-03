@@ -1,0 +1,56 @@
+{
+  "kind": "singleType",
+  "collectionName": "home_pages",
+  "info": {
+    "singularName": "home-page",
+    "pluralName": "home-pages",
+    "displayName": "Home page",
+    "description": "Every piece of copy on the home page."
+  },
+  "options": { "draftAndPublish": true },
+  "pluginOptions": {},
+  "attributes": {
+    "heroTitle": { "type": "string", "required": true, "default": "Mohamad Hawa" },
+    "heroSubtitle": { "type": "string", "default": "Designing intuitive experiences." },
+    "heroIntro": { "type": "text" },
+    "primaryCtaLabel": { "type": "string", "default": "See the work" },
+    "secondaryCtaLabel": { "type": "string", "default": "Start a project" },
+
+    "workEyebrow": { "type": "string", "default": "Selected work" },
+    "workHeadingSuffix": {
+      "type": "string",
+      "default": "projects.",
+      "description": "Follows the live project count, e.g. \"6 projects.\""
+    },
+    "workLinkLabel": { "type": "string", "default": "Open the index" },
+
+    "servicesEyebrow": { "type": "string", "default": "What I do" },
+    "servicesHeading": { "type": "string", "default": "Four ways to work together." },
+    "servicesIntro": { "type": "text" },
+
+    "manifestoLead": {
+      "type": "string",
+      "default": "Complexity isn't the problem.",
+      "description": "Rendered in white."
+    },
+    "manifestoTail": {
+      "type": "string",
+      "default": "Confusion is.",
+      "description": "Rendered in grey, on the same line."
+    },
+    "manifestoBody": { "type": "text" },
+
+    "processEyebrow": { "type": "string", "default": "How I work" },
+
+    "aboutEyebrow": { "type": "string", "default": "About" },
+    "aboutHeading": { "type": "string", "default": "Six years of shipping other people's ideas." },
+    "aboutBody": { "type": "text" },
+    "aboutLinkLabel": { "type": "string", "default": "More about me" },
+    "stats": { "type": "component", "repeatable": true, "component": "shared.stat" },
+
+    "contactHeading": { "type": "string", "default": "Tell me what you're building." },
+    "contactBody": { "type": "text" },
+
+    "seo": { "type": "component", "repeatable": false, "component": "shared.seo" }
+  }
+}

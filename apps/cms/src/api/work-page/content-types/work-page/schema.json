@@ -1,0 +1,24 @@
+{
+  "kind": "singleType",
+  "collectionName": "work_pages",
+  "info": {
+    "singularName": "work-page",
+    "pluralName": "work-pages",
+    "displayName": "Work page",
+    "description": "Header copy for the work index. The projects themselves live in the Project collection."
+  },
+  "options": { "draftAndPublish": true },
+  "pluginOptions": {},
+  "attributes": {
+    "eyebrow": { "type": "string", "default": "Work" },
+    "heading": { "type": "string", "default": "Every project starts the same way." },
+    "intro": { "type": "text" },
+    "allFilterLabel": { "type": "string", "default": "All" },
+    "countLabel": {
+      "type": "string",
+      "default": "shown",
+      "description": "Follows the number of visible projects, e.g. \"6 shown\"."
+    },
+    "seo": { "type": "component", "repeatable": false, "component": "shared.seo" }
+  }
+}

@@ -1,0 +1,163 @@
+---
+import EnquiryForm from './EnquiryForm.astro';
+import type { ContactPage, Service, SiteSettings } from '../lib/types';
+
+interface Props {
+  settings: SiteSettings;
+  contact: ContactPage;
+  services: Service[];
+  /** "contact" is the standalone page (h1, availability dot); "home" is the section. */
+  variant?: 'home' | 'contact';
+  heading: string;
+  body: string;
+  formId?: string;
+}
+
+const {
+  settings,
+  contact,
+  services,
+  variant = 'home',
+  heading,
+  body,
+  formId = 'mh',
+} = Astro.props;
+
+const isContactPage = variant === 'contact';
+const waLabel = isContactPage
+  ? `WhatsApp · ${settings.phoneLabel}`
+  : settings.phoneLabel;
+---
+
+<div class="contact-block shell">
+  <div class="contact-block__copy">
+    {
+      isContactPage && (
+        <p class="contact-block__availability">
+          <span class="contact-block__dot" aria-hidden="true" />
+          {settings.availabilityLabel}
+        </p>
+      )
+    }
+
+    {
+      isContactPage ? (
+        <h1 class="contact-block__heading contact-block__heading--page">{heading}</h1>
+      ) : (
+        <h2 class="contact-block__heading">{heading}</h2>
+      )
+    }
+
+    <p class="contact-block__body">{body}</p>
+
+    <div class="contact-block__links">
+      <a class="contact-block__link" href={settings.waHref} target="_blank" rel="noopener">
+        <span>{waLabel}</span>
+        <span class="contact-block__arrow" aria-hidden="true">↗</span>
+      </a>
+      <a class="contact-block__link contact-block__link--last" href={settings.mailHref}>
+        <span>{settings.email}</span>
+        <span class="contact-block__arrow" aria-hidden="true">↗</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="contact-block__form">
+    <EnquiryForm contact={contact} services={services} settings={settings} id={formId} />
+  </div>
+</div>
+
+<style>
+  .contact-block {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(34px, 5vw, 80px);
+  }
+
+  .contact-block__copy {
+    flex: 1 1 360px;
+    min-width: 0;
+  }
+
+  .contact-block__form {
+    flex: 1 1 380px;
+    min-width: 0;
+  }
+
+  .contact-block__availability {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 14px;
+    letter-spacing: -0.016em;
+    color: var(--ink-on-dark-muted);
+    margin-bottom: 24px;
+  }
+
+  .contact-block__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--blue-on-dark);
+    animation: mh-breathe 3s var(--ease-smooth) infinite;
+  }
+
+  .contact-block__heading {
+    font-size: clamp(29px, 4.6vw, 64px);
+    line-height: 1.05;
+    letter-spacing: -0.018em;
+    font-weight: 600;
+    max-width: 14ch;
+  }
+
+  .contact-block__heading--page {
+    font-size: clamp(33px, 5.4vw, 76px);
+    line-height: 1.04;
+    letter-spacing: -0.019em;
+  }
+
+  .contact-block__body {
+    margin-top: 20px;
+    max-width: 44ch;
+    font-size: 17px;
+    line-height: 1.5;
+    letter-spacing: -0.022em;
+    color: var(--ink-on-dark-muted);
+  }
+
+  .contact-block__links {
+    margin-top: clamp(30px, 5vh, 48px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .contact-block__link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 0;
+    border-top: 1px solid var(--line-dark);
+    color: var(--ink-on-dark);
+    font-size: 17px;
+    letter-spacing: -0.022em;
+    word-break: break-all;
+    transition:
+      padding-left 400ms var(--ease-smooth),
+      color 400ms ease;
+  }
+
+  .contact-block__link--last {
+    border-bottom: 1px solid var(--line-dark);
+  }
+
+  .contact-block__link:hover {
+    color: var(--blue-on-dark);
+    padding-left: 8px;
+  }
+
+  .contact-block__arrow {
+    color: var(--blue-on-dark);
+    flex: none;
+  }
+</style>

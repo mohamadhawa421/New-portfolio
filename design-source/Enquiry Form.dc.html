@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="font-family:'SF Pro Display','SF Pro Text',system-ui,-apple-system,BlinkMacSystemFont,Inter,sans-serif;background:#2a2a2c;border-radius:22px;padding:clamp(20px,2.4vw,30px);display:flex;flex-direction:column;gap:16px;color:#ffffff">
+
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <label for="mh-name" style="font-size:14px;letter-spacing:-0.016em;color:#c7c7cc">Your name</label>
+    <input id="mh-name" type="text" value="{{ name }}" onChange="{{ onName }}" placeholder="Who am I talking to?" autocomplete="name" style="width:100%;box-sizing:border-box;font-size:17px;letter-spacing:-0.022em;padding:14px 16px;min-height:50px;border-radius:12px;border:none;background:#1d1d1f;color:#ffffff"/>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:12px">
+    <div style="flex:1 1 180px;min-width:0;display:flex;flex-direction:column;gap:8px">
+      <label for="mh-service" style="font-size:14px;letter-spacing:-0.016em;color:#c7c7cc">What do you need?</label>
+      <select id="mh-service" value="{{ service }}" onChange="{{ onService }}" style="width:100%;box-sizing:border-box;font-size:17px;letter-spacing:-0.022em;padding:14px 16px;min-height:50px;border-radius:12px;border:none;background:#1d1d1f;color:#ffffff;appearance:none;-webkit-appearance:none;cursor:pointer">
+        <option value="Web app design">Web app design</option>
+        <option value="Mobile app design">Mobile app design</option>
+        <option value="Landing page">Landing page</option>
+        <option value="Design system">Design system</option>
+        <option value="Not sure yet">Not sure yet</option>
+      </select>
+    </div>
+    <div style="flex:1 1 160px;min-width:0;display:flex;flex-direction:column;gap:8px">
+      <label for="mh-budget" style="font-size:14px;letter-spacing:-0.016em;color:#c7c7cc">Budget</label>
+      <select id="mh-budget" value="{{ budget }}" onChange="{{ onBudget }}" style="width:100%;box-sizing:border-box;font-size:17px;letter-spacing:-0.022em;padding:14px 16px;min-height:50px;border-radius:12px;border:none;background:#1d1d1f;color:#ffffff;appearance:none;-webkit-appearance:none;cursor:pointer">
+        <option value="$500 – $1k">$500 – $1k</option>
+        <option value="$1k – $3k">$1k – $3k</option>
+        <option value="$3k – $7k">$3k – $7k</option>
+        <option value="$7k+">$7k+</option>
+        <option value="Not sure yet">Not sure yet</option>
+      </select>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <label for="mh-brief" style="font-size:14px;letter-spacing:-0.016em;color:#c7c7cc">What are you building?</label>
+    <textarea id="mh-brief" rows="4" value="{{ brief }}" onChange="{{ onBrief }}" placeholder="A sentence or two is plenty — what it is, who it's for, and when you'd like to start." style="width:100%;box-sizing:border-box;font-size:17px;letter-spacing:-0.022em;line-height:1.45;padding:14px 16px;border-radius:12px;border:none;background:#1d1d1f;color:#ffffff;resize:vertical"></textarea>
+  </div>
+
+  <sc-if value="{{ hasError }}" hint-placeholder-val="{{ false }}">
+    <div role="alert" style="font-size:14px;line-height:1.45;letter-spacing:-0.016em;color:#ff9f9f">{{ error }}</div>
+  </sc-if>
+
+  <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px">
+    <sc-if value="{{ showWhatsApp }}" hint-placeholder-val="{{ true }}">
+      <span onClick="{{ sendWhatsApp }}" role="button" tabindex="0" onKeyDown="{{ keyWhatsApp }}" style="cursor:pointer;flex:1 1 auto;text-align:center;display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:0 24px;border-radius:12px;background:#0066cc;color:#ffffff;font-size:17px;letter-spacing:-0.022em;transition:transform 300ms linear(0,0.09,0.28,0.52,0.74,0.89,0.98,1.02,1.03,1.02,1.01,1),background .2s" style-active="transform:scale(0.96)" style-hover="background:#0a72d8">Send on WhatsApp</span>
+    </sc-if>
+    <sc-if value="{{ showEmail }}" hint-placeholder-val="{{ true }}">
+      <span onClick="{{ sendEmail }}" role="button" tabindex="0" onKeyDown="{{ keyEmail }}" style="cursor:pointer;flex:1 1 auto;text-align:center;display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:0 24px;border-radius:12px;background:#3a3a3c;color:#ffffff;font-size:17px;letter-spacing:-0.022em;transition:transform 300ms linear(0,0.09,0.28,0.52,0.74,0.89,0.98,1.02,1.03,1.02,1.01,1),background .2s" style-active="transform:scale(0.96)" style-hover="background:#48484a">Send by email</span>
+    </sc-if>
+  </div>
+
+  <div style="font-size:13px;line-height:1.45;letter-spacing:-0.01em;color:#8e8e93">{{ hint }}</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:480,&quot;height&quot;:560},&quot;contactMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;WhatsApp&quot;,&quot;Email&quot;,&quot;Both&quot;],&quot;default&quot;:&quot;Both&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;presetService&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;waNumber&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;96176824793&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;email&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;mohamadhawa421@gmail.com&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const WA = '96176824793';
+const MAIL = 'mohamadhawa421@gmail.com';
+const SERVICES = ['Web app design', 'Mobile app design', 'Landing page', 'Design system', 'Not sure yet'];
+
+class Component extends DCLogic {
+  state = { name: '', service: 'Web app design', budget: '$500 – $1k', brief: '', error: '', sent: '' };
+
+  componentDidMount() { this.syncPreset(); }
+  componentDidUpdate(prev) { if (prev.presetService !== this.props.presetService) this.syncPreset(); }
+  syncPreset() {
+    const p = this.props.presetService;
+    if (p && SERVICES.indexOf(p) >= 0 && p !== this.state.service) this.setState({ service: p, error: '' });
+  }
+
+  set(key) { return (e) => this.setState({ [key]: e.target.value, error: '' }); }
+
+  compose() {
+    const s = this.state;
+    const name = s.name.trim();
+    const brief = s.brief.trim();
+    if (!name) { this.setState({ error: 'Add your name so I know who is writing.' }); return null; }
+    if (brief.length < 10) { this.setState({ error: 'Tell me a little more about the project — a sentence is enough.' }); return null; }
+    return {
+      subject: s.service + ' enquiry — ' + name,
+      body: 'Hi Mohamad, I would like to talk about a project.\n\n'
+        + 'Name: ' + name + '\n'
+        + 'Service: ' + s.service + '\n'
+        + 'Budget: ' + s.budget + '\n\n'
+        + brief
+    };
+  }
+
+  whatsapp() {
+    const m = this.compose();
+    if (!m) return;
+    window.open('https://wa.me/' + (String(this.props.waNumber || WA).replace(/[^\d]/g, '') || WA) + '?text=' + encodeURIComponent(m.body), '_blank', 'noopener');
+    this.setState({ sent: 'WhatsApp opened — press send there to deliver it.' });
+  }
+  email() {
+    const m = this.compose();
+    if (!m) return;
+    window.location.href = 'mailto:' + (this.props.email || MAIL) + '?subject=' + encodeURIComponent(m.subject) + '&body=' + encodeURIComponent(m.body);
+    this.setState({ sent: 'Your mail app should be opening with the message ready.' });
+  }
+  keyRun(fn) {
+    return (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } };
+  }
+
+  renderVals() {
+    const mode = this.props.contactMode || 'Both';
+    return {
+      name: this.state.name, service: this.state.service,
+      budget: this.state.budget, brief: this.state.brief,
+      onName: this.set('name'), onService: this.set('service'),
+      onBudget: this.set('budget'), onBrief: this.set('brief'),
+      error: this.state.error, hasError: !!this.state.error,
+      showWhatsApp: mode !== 'Email',
+      showEmail: mode !== 'WhatsApp',
+      sendWhatsApp: () => this.whatsapp(),
+      sendEmail: () => this.email(),
+      keyWhatsApp: this.keyRun(() => this.whatsapp()),
+      keyEmail: this.keyRun(() => this.email()),
+      hint: this.state.sent || 'Nothing is stored or sent from this page — it opens the message in your own app so you stay in control.'
+    };
+  }
+}
+
+</script>
+</body>
+</html>

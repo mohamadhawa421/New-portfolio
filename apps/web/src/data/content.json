@@ -1,0 +1,997 @@
+{
+  "generatedAt": "2026-09-03T05:35:46.354Z",
+  "siteSetting": {
+    "id": 1,
+    "siteName": "Mohamad Hawa",
+    "roleTitle": "UI/UX Designer",
+    "location": "Beirut, Lebanon",
+    "email": "mohamadhawa421@gmail.com",
+    "whatsappNumber": "96176824793",
+    "phoneLabel": "+961 76 824 793",
+    "available": true,
+    "availableLabel": "Available for new projects",
+    "bookedLabel": "Booked — enquiries still welcome",
+    "contactMode": "Both",
+    "portraitFocus": "58% 30%",
+    "portraitTallFocus": "50% 38%",
+    "showIntro": true,
+    "portrait": {
+      "id": 1,
+      "name": "mohamad-avatar",
+      "alternativeText": "mohamad-avatar",
+      "caption": "",
+      "focalPoint": null,
+      "width": 1024,
+      "height": 1024,
+      "url": "/media/mohamad_avatar_a92d0cc4d7.jpg"
+    },
+    "logoMark": {
+      "id": 2,
+      "name": "logo-mark",
+      "alternativeText": "logo-mark",
+      "caption": "",
+      "focalPoint": null,
+      "width": 600,
+      "height": 600,
+      "url": "/media/logo_mark_ee7e3dfc89.svg"
+    },
+    "logoFull": {
+      "id": 3,
+      "name": "logo-full",
+      "alternativeText": "logo-full",
+      "caption": "",
+      "focalPoint": null,
+      "width": 1695,
+      "height": 285,
+      "url": "/media/logo_full_8da00308cf.svg"
+    },
+    "seo": {
+      "id": 22,
+      "metaTitle": "Mohamad Hawa — UI/UX Designer",
+      "metaDescription": "UI/UX designer working on web and mobile products — turning complex challenges into interfaces people understand without being taught.",
+      "shareImage": null
+    }
+  },
+  "homePage": {
+    "id": 3,
+    "heroTitle": "Mohamad Hawa",
+    "heroSubtitle": "Designing intuitive experiences.",
+    "heroIntro": "UI/UX designer working on web and mobile products — turning complex challenges into interfaces people understand without being taught. Freelance since 2020, at Poyesis since 2022.",
+    "primaryCtaLabel": "See the work",
+    "secondaryCtaLabel": "Start a project",
+    "workEyebrow": "Selected work",
+    "workHeadingSuffix": "projects.",
+    "workLinkLabel": "Open the index",
+    "servicesEyebrow": "What I do",
+    "servicesHeading": "Four ways to work together.",
+    "servicesIntro": "Pick the one that sounds like your project — it opens the brief with that already filled in.",
+    "manifestoLead": "Complexity isn't the problem.",
+    "manifestoTail": "Confusion is.",
+    "manifestoBody": "Complicated things are allowed to be complicated. My job is making sure the person in front of the screen still knows what to do next.",
+    "processEyebrow": "How I work",
+    "aboutEyebrow": "About",
+    "aboutHeading": "Six years of shipping other people's ideas.",
+    "aboutBody": "I started freelancing in 2020 and joined Poyesis in 2022. Since then the work has ranged from learning platforms and law firms to logistics products — different industries, same question every time: what is this person actually trying to do?",
+    "aboutLinkLabel": "More about me",
+    "contactHeading": "Tell me what you're building.",
+    "contactBody": "Three fields. It opens a message with everything already written — you just press send.",
+    "stats": [
+      {
+        "id": 14,
+        "value": "20+",
+        "label": "projects shipped",
+        "animate": true
+      },
+      {
+        "id": 15,
+        "value": "2020",
+        "label": "designing since",
+        "animate": false
+      },
+      {
+        "id": 16,
+        "value": "Poyesis",
+        "label": "2022 — now",
+        "animate": false
+      }
+    ],
+    "seo": {
+      "id": 24,
+      "metaTitle": "Mohamad Hawa — UI/UX Designer",
+      "metaDescription": "Designing intuitive experiences for web and mobile. Selected work, services, and how I work.",
+      "shareImage": null
+    }
+  },
+  "workPage": {
+    "id": 3,
+    "eyebrow": "Work",
+    "heading": "Every project starts the same way.",
+    "intro": "With a question about the person who has to use it. Filter by sector, or read straight through.",
+    "allFilterLabel": "All",
+    "countLabel": "shown",
+    "seo": {
+      "id": 26,
+      "metaTitle": "Work — Mohamad Hawa",
+      "metaDescription": "Selected UI/UX projects across education, legal, logistics, community and corporate products.",
+      "shareImage": null
+    }
+  },
+  "aboutPage": {
+    "id": 3,
+    "eyebrow": "About",
+    "heading": "I am Mohamad Hawa, and I design things people understand.",
+    "lead": "I am passionate about designing intuitive experiences.",
+    "bodyPrimary": "As a UI/UX designer I work on visually engaging, user-centred products across web and mobile — the kind where creativity has to survive contact with a real workflow. My mission is turning complex challenges into experiences that feel obvious.",
+    "bodySecondary": "I started out freelancing in 2020, working directly with small teams and founders who needed a designer who could also explain the decision. In 2022 I joined Poyesis, where the projects got bigger and the systems behind them got more interesting.",
+    "stats": [
+      {
+        "id": 19,
+        "value": "20+",
+        "label": "projects shipped",
+        "animate": true
+      },
+      {
+        "id": 20,
+        "value": "2020",
+        "label": "designing since",
+        "animate": false
+      }
+    ],
+    "experience": [
+      {
+        "order": 0,
+        "id": 7,
+        "role": "UI / UX Designer",
+        "organisation": "Poyesis",
+        "period": "2022 — now"
+      },
+      {
+        "order": 1,
+        "id": 8,
+        "role": "Freelance UI / UX Designer",
+        "organisation": "Independent clients across Lebanon",
+        "period": "2020 — 2022"
+      }
+    ],
+    "skills": [
+      {
+        "id": 27,
+        "label": "Figma"
+      },
+      {
+        "id": 28,
+        "label": "Design systems"
+      },
+      {
+        "id": 29,
+        "label": "Prototyping"
+      },
+      {
+        "id": 30,
+        "label": "User research"
+      },
+      {
+        "id": 31,
+        "label": "Responsive web"
+      },
+      {
+        "id": 32,
+        "label": "iOS & Android"
+      }
+    ],
+    "seo": {
+      "id": 28,
+      "metaTitle": "About — Mohamad Hawa",
+      "metaDescription": "Six years designing web and mobile products. Freelance since 2020, at Poyesis since 2022.",
+      "shareImage": null
+    }
+  },
+  "contactPage": {
+    "id": 3,
+    "heading": "Tell me what you're building.",
+    "body": "Fill this in and it opens a message with everything already written. Or reach me directly — both work.",
+    "homeBody": "Three fields. It opens a message with everything already written — you just press send.",
+    "unsureLabel": "Not sure yet",
+    "formNameLabel": "Your name",
+    "formNamePlaceholder": "Who am I talking to?",
+    "formServiceLabel": "What do you need?",
+    "formBudgetLabel": "Budget",
+    "formBriefLabel": "What are you building?",
+    "formBriefPlaceholder": "A sentence or two is plenty — what it is, who it's for, and when you'd like to start.",
+    "formWhatsappCta": "Send on WhatsApp",
+    "formEmailCta": "Send by email",
+    "formHint": "Nothing is stored or sent from this page — it opens the message in your own app so you stay in control.",
+    "formErrorName": "Add your name so I know who is writing.",
+    "formErrorBrief": "Tell me a little more about the project — a sentence is enough.",
+    "formSentWhatsapp": "WhatsApp opened — press send there to deliver it.",
+    "formSentEmail": "Your mail app should be opening with the message ready.",
+    "formGreeting": "Hi Mohamad, I would like to talk about a project.",
+    "budgetOptions": [
+      {
+        "id": 37,
+        "label": "$500 – $1k"
+      },
+      {
+        "id": 38,
+        "label": "$1k – $3k"
+      },
+      {
+        "id": 39,
+        "label": "$3k – $7k"
+      },
+      {
+        "id": 40,
+        "label": "$7k+"
+      }
+    ],
+    "seo": {
+      "id": 30,
+      "metaTitle": "Contact — Mohamad Hawa",
+      "metaDescription": "Start a project. Three fields and it opens a WhatsApp or email message with everything already written.",
+      "shareImage": null
+    }
+  },
+  "services": [
+    {
+      "id": 9,
+      "title": "Web app design",
+      "description": "Dashboards, portals, and tools where the workflow matters more than the wallpaper.",
+      "ctaLabel": "Start here",
+      "order": 0
+    },
+    {
+      "id": 10,
+      "title": "Mobile app design",
+      "description": "iOS and Android flows built around one thumb, one hand, and short attention.",
+      "ctaLabel": "Start here",
+      "order": 1
+    },
+    {
+      "id": 11,
+      "title": "Landing page",
+      "description": "One page that says the right thing in the right order and asks for one action.",
+      "ctaLabel": "Start here",
+      "order": 2
+    },
+    {
+      "id": 12,
+      "title": "Design system",
+      "description": "Components, tokens, and rules so the tenth screen looks like the first.",
+      "ctaLabel": "Start here",
+      "order": 3
+    }
+  ],
+  "processSteps": [
+    {
+      "id": 11,
+      "title": "Understand the mess.",
+      "description": "The problem, the people, and the process nobody has questioned in years.",
+      "order": 0
+    },
+    {
+      "id": 12,
+      "title": "Find the signal.",
+      "description": "Turn everything we learned into one opportunity actually worth building.",
+      "order": 1
+    },
+    {
+      "id": 13,
+      "title": "Design the system.",
+      "description": "Not just screens — the model underneath that keeps the screens honest.",
+      "order": 2
+    },
+    {
+      "id": 14,
+      "title": "Test the idea.",
+      "description": "With the people who will use it on a Tuesday, not with the people who signed off.",
+      "order": 3
+    },
+    {
+      "id": 15,
+      "title": "Ship the thing.",
+      "description": "Sit with the developers until it is real, then look at what changed.",
+      "order": 4
+    }
+  ],
+  "projects": [
+    {
+      "id": 31,
+      "title": "Wise Academy",
+      "slug": "wise-academy",
+      "category": "Education",
+      "discipline": "Web app design",
+      "summary": "WISE Academy a high standard school based in the US promoting academic excellence in a faith based and safe environment for our students.",
+      "role": "UI / UX Design",
+      "order": 0,
+      "featured": true,
+      "chipBg": "#efeff1",
+      "chipInk": "#86868b",
+      "briefLead": "They needed a modern, scalable, and user-friendly back-office solution to streamline student enrollment, track records, and manage communication effectively.",
+      "briefBody": "",
+      "problemLead": "Wise Academy faced challenges with their existing student management system, which was outdated, unintuitive, and lacked features to handle the increasing number of students.",
+      "approachLead": "Created low-fidelity wireframes to map out the core functionality, including:",
+      "approachBody": "• A dashboard with overview of active and pending enrollments.\n• A student database with advanced filters and search functionality.\n• A students/parents database with advanced filters and search functionality.\n• A calendar tool for managing interviews.\n\nBuilt interactive prototypes to test key workflows:\n• Adding and updating student data.\n• Filtering old and new students by batch, grades, or status.\n• Managing communication (e.g., sending emails or notifications, interviews).\n\nThe final designs were clean, professional, and aligned with Wise Academy's branding. Key features included:\n• Dashboard Analytics: Visualized enrollment trends.\n• Student Management Module: Easy-to-use interface for adding, editing, and searching student records.\n• Automated notification system to remind parents for upcoming payments, deadlines and interviews.",
+      "approachCaption": "",
+      "shippedHeading": "The screens that carry the work.",
+      "reflectionLead": "Staff praised the intuitive design and improved workflows.",
+      "reflectionBody": "Wise Academy expressed interest in extending the platform for managing other aspects of school operations.",
+      "cover": {
+        "id": 16,
+        "name": "wise-wise",
+        "alternativeText": "Wise Academy",
+        "caption": "",
+        "focalPoint": null,
+        "width": 1110,
+        "height": 782,
+        "url": "/media/wise_wise_4cf6b94c07.png"
+      },
+      "approachShot": {
+        "id": 17,
+        "name": "wise-insights",
+        "alternativeText": "Wise Academy screen",
+        "caption": "",
+        "focalPoint": null,
+        "width": 2152,
+        "height": 808,
+        "url": "/media/wise_insights_ee86931028.png"
+      },
+      "gallery": [
+        {
+          "id": 18,
+          "name": "wise-database",
+          "alternativeText": "Wise Academy screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 2152,
+          "height": 808,
+          "url": "/media/wise_database_7ce2cf6110.png"
+        },
+        {
+          "id": 19,
+          "name": "wise-interview",
+          "alternativeText": "Wise Academy screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 2152,
+          "height": 808,
+          "url": "/media/wise_interview_5c7a6cbb93.png"
+        }
+      ],
+      "constraints": [
+        {
+          "id": 148,
+          "title": "Staff struggled with locating and updating student data quickly.",
+          "body": ""
+        },
+        {
+          "id": 149,
+          "title": "New enrollments required multiple manual steps, leading to delays.",
+          "body": ""
+        },
+        {
+          "id": 150,
+          "title": "A lack of filtering options for student records made tracking alumni difficult.",
+          "body": ""
+        }
+      ],
+      "decisions": [
+        {
+          "id": 148,
+          "eyebrow": "Outcome",
+          "title": "Improved Efficiency",
+          "body": "Reduced time spent managing student data by 40%."
+        },
+        {
+          "id": 149,
+          "eyebrow": "Outcome",
+          "title": "Streamlined Enrollment",
+          "body": "Created a path to view and find student records within seconds."
+        },
+        {
+          "id": 150,
+          "eyebrow": "Outcome",
+          "title": "Enhanced Usability",
+          "body": "A clean layout with intuitive navigation ensured ease of use for all staff levels."
+        }
+      ],
+      "metrics": [
+        {
+          "id": 148,
+          "value": "One Week",
+          "label": "Timeline",
+          "animate": false
+        },
+        {
+          "id": 149,
+          "value": "44+ Screens",
+          "label": "Delivered",
+          "animate": false
+        },
+        {
+          "id": 150,
+          "value": "50%",
+          "label": "less time spent managing student data",
+          "animate": true
+        }
+      ],
+      "seo": {
+        "id": 68,
+        "metaTitle": "Wise Academy — Mohamad Hawa",
+        "metaDescription": "WISE Academy a high standard school based in the US promoting academic excellence in a faith based and safe environment for our students.",
+        "shareImage": null
+      }
+    },
+    {
+      "id": 32,
+      "title": "Kabbara Office",
+      "slug": "kabbara-office",
+      "category": "Corporate",
+      "discipline": "Landing page",
+      "summary": "Kabbara Office is a digital solution built to help Deputy Karim Kabbara manage and respond to public service requests efficiently.",
+      "role": "UI / UX Design",
+      "order": 1,
+      "featured": false,
+      "chipBg": "#e9e9ec",
+      "chipInk": "#86868b",
+      "briefLead": "The platform allows users to submit various help requests (legal, financial, employment, etc.) and enables the deputy’s team to track, filter, and manage these cases with clarity and speed.",
+      "briefBody": "",
+      "problemLead": "Deputy Karim Kabbara's office faced growing difficulty managing a high volume of public assistance requests using traditional methods.",
+      "approachLead": "Created low-fidelity wireframes focused on core workflows:",
+      "approachBody": "• Services dashboard showing new and pending requests.\n• Search and filter functionality to quickly locate requests.\n• Request detail view with status updates and user info.\n\nBuilt interactive prototypes to validate workflows:\n• Receiving and tagging new requests by type (legal, financial, etc.).\n• Changing request statuses (new, pending, approved, rejected).\n• Filtering services by type and requester name.\n\nThe final UI reflected an official, clean, and highly readable design. Highlights included:\n• A color-coded system for request status.\n• Easy-to-use filters and categorization tools.\n• Arabic-first design for accessibility to the intended audience.",
+      "approachCaption": "",
+      "shippedHeading": "The screens that carry the work.",
+      "reflectionLead": "Deputy's team appreciated the clarity and ease of use.",
+      "reflectionBody": "The Deputy expressed interest in expanding the system to manage more public-facing initiatives.",
+      "cover": {
+        "id": 20,
+        "name": "kabbara-kabbara-thumb",
+        "alternativeText": "Kabbara Office",
+        "caption": "",
+        "focalPoint": null,
+        "width": 1110,
+        "height": 782,
+        "url": "/media/kabbara_kabbara_thumb_d851b9b668.png"
+      },
+      "approachShot": {
+        "id": 21,
+        "name": "kabbara-showcase",
+        "alternativeText": "Kabbara Office screen",
+        "caption": "",
+        "focalPoint": null,
+        "width": 3200,
+        "height": 1600,
+        "url": "/media/kabbara_showcase_bdac5b2f66.png"
+      },
+      "gallery": [],
+      "constraints": [
+        {
+          "id": 154,
+          "title": "Manual request handling was time-consuming and prone to errors.",
+          "body": ""
+        },
+        {
+          "id": 155,
+          "title": "There was no unified view of pending, approved, or rejected services.",
+          "body": ""
+        },
+        {
+          "id": 156,
+          "title": "Categorizing and prioritizing new requests lacked a clear workflow.",
+          "body": ""
+        }
+      ],
+      "decisions": [
+        {
+          "id": 154,
+          "eyebrow": "Outcome",
+          "title": "Centralized Request Management",
+          "body": "All requests are now logged and easily trackable in one place."
+        },
+        {
+          "id": 155,
+          "eyebrow": "Outcome",
+          "title": "Clear Status Indicators",
+          "body": "Staff can instantly see which requests are new, pending, or completed."
+        },
+        {
+          "id": 156,
+          "eyebrow": "Outcome",
+          "title": "Faster Response Times",
+          "body": "Filtering and search tools significantly reduced the time to locate and act on requests."
+        }
+      ],
+      "metrics": [
+        {
+          "id": 154,
+          "value": "One Week",
+          "label": "Timeline",
+          "animate": false
+        },
+        {
+          "id": 155,
+          "value": "15+ Mobile Screens",
+          "label": "Delivered",
+          "animate": false
+        },
+        {
+          "id": 156,
+          "value": "60%",
+          "label": "less time to process each request",
+          "animate": true
+        }
+      ],
+      "seo": {
+        "id": 70,
+        "metaTitle": "Kabbara Office — Mohamad Hawa",
+        "metaDescription": "Kabbara Office is a digital solution built to help Deputy Karim Kabbara manage and respond to public service requests efficiently.",
+        "shareImage": null
+      }
+    },
+    {
+      "id": 33,
+      "title": "CodingCLebanon",
+      "slug": "coding-lebanon",
+      "category": "Community",
+      "discipline": "Web design",
+      "summary": "CodingCLebanon is an educational platform that empowers individuals to learn programming through personalized one-on-one online mentorship.",
+      "role": "UI / UX Design",
+      "order": 2,
+      "featured": false,
+      "chipBg": "#f2f2f4",
+      "chipInk": "#86868b",
+      "briefLead": "Their mission is to make learning programming accessible and flexible, supporting students at every stage of their journey.",
+      "briefBody": "My mission was to redesign their platform with a stronger UX focus, improving usability, engagement, and conversion.",
+      "problemLead": "Despite offering valuable one-on-one mentorship, CodingCLebanon’s previous platform lacked an intuitive user experience.",
+      "approachLead": "Mapped out low-fidelity wireframes for:",
+      "approachBody": "• A new homepage with a strong CTA and value-driven messaging.\n• A student dashboard to manage sessions, progress, and mentor communication.\n• An improved booking system with real-time mentor availability.\n\nInteractive prototypes were created to test:\n• The onboarding experience for new users.\n• Booking a mentorship session in under 3 clicks.\n• Progress tracking via a redesigned dashboard with milestones and achievements.\n\nThe final interface emphasized simplicity and warmth. Key upgrades included:\n• A welcoming and conversion-focused homepage.\n• Clear user flows for onboarding, session booking, and progress tracking.\n• Mobile-responsive design to support learners on any device.",
+      "approachCaption": "",
+      "shippedHeading": "The screens that carry the work.",
+      "reflectionLead": "Mentors and students appreciated the new dashboard and cleaner navigation.",
+      "reflectionBody": "CodingCLebanon praised the redesign and reported increased engagement across the platform.",
+      "cover": {
+        "id": 22,
+        "name": "codingclebanon-thumb",
+        "alternativeText": "CodingCLebanon",
+        "caption": "",
+        "focalPoint": null,
+        "width": 1110,
+        "height": 782,
+        "url": "/media/codingclebanon_thumb_53e0412a4c.png"
+      },
+      "approachShot": {
+        "id": 23,
+        "name": "codingclebanon-showcase",
+        "alternativeText": "CodingCLebanon screen",
+        "caption": "",
+        "focalPoint": null,
+        "width": 3200,
+        "height": 1600,
+        "url": "/media/codingclebanon_showcase_8183aba4b2.png"
+      },
+      "gallery": [],
+      "constraints": [
+        {
+          "id": 160,
+          "title": "Users were unclear about how to get started or book their first session.",
+          "body": ""
+        },
+        {
+          "id": 161,
+          "title": "The homepage lacked a clear call-to-action and value proposition.",
+          "body": ""
+        },
+        {
+          "id": 162,
+          "title": "There was no centralized dashboard to track progress or session history.",
+          "body": ""
+        }
+      ],
+      "decisions": [
+        {
+          "id": 160,
+          "eyebrow": "Outcome",
+          "title": "Boosted Onboarding",
+          "body": "Clear CTAs and guidance helped new users start their learning journey faster."
+        },
+        {
+          "id": 161,
+          "eyebrow": "Outcome",
+          "title": "Seamless Booking",
+          "body": "Booking sessions was simplified into an intuitive and fast workflow."
+        },
+        {
+          "id": 162,
+          "eyebrow": "Outcome",
+          "title": "Learner Empowerment",
+          "body": "The dashboard gave students more control and visibility over their learning journey."
+        }
+      ],
+      "metrics": [
+        {
+          "id": 160,
+          "value": "3 Days",
+          "label": "Timeline",
+          "animate": false
+        },
+        {
+          "id": 161,
+          "value": "10+ Redesigned Screens",
+          "label": "Delivered",
+          "animate": false
+        },
+        {
+          "id": 162,
+          "value": "35%",
+          "label": "more session bookings after the redesign",
+          "animate": true
+        }
+      ],
+      "seo": {
+        "id": 72,
+        "metaTitle": "CodingCLebanon — Mohamad Hawa",
+        "metaDescription": "CodingCLebanon is an educational platform that empowers individuals to learn programming through personalized one-on-one online mentorship.",
+        "shareImage": null
+      }
+    },
+    {
+      "id": 34,
+      "title": "WFK Law Firm",
+      "slug": "wfk-law-firm",
+      "category": "Legal",
+      "discipline": "Landing page",
+      "summary": "WFK Law Firm is a professional legal firm that needed an internal tool to streamline employee task tracking, scheduling, and performance monitoring.",
+      "role": "UI / UX Design",
+      "order": 3,
+      "featured": false,
+      "chipBg": "#efeff1",
+      "chipInk": "#86868b",
+      "briefLead": "I was brought in to design a robust task management system and a comprehensive dashboard to centralize daily operations and improve internal accountability — all while ensuring compatibility with Microsoft Power Apps.",
+      "briefBody": "",
+      "problemLead": "The firm was using fragmented tools and manual methods to assign, monitor, and manage employee tasks, which led to inefficiencies, miscommunication, and a lack of visibility over day-to-day operations.",
+      "approachLead": "Created wireframes aligned with Power Apps constraints, focusing on:",
+      "approachBody": "• Task creation and assignment flows.\n• A calendar-style scheduler for tasks and deadlines.\n• A dashboard overview with task status, deadlines, and user performance.\n\nDeveloped prototypes that allowed stakeholders to:\n• Simulate task assignment, editing, and completion flows.\n• Navigate a dashboard showing active tasks, overdue actions, and staff activity.\n• Filter and sort tasks by status, assignee, or priority.\n\nThe final UI design maintained a balance between Power Apps compatibility and clean, functional UX. Key UI aspects included:\n• A visually organized task board with clear status indicators.\n• A high-contrast layout for easy readability across legal teams.\n• Seamless integration feel within Microsoft’s ecosystem.",
+      "approachCaption": "",
+      "shippedHeading": "The screens that carry the work.",
+      "reflectionLead": "Both legal staff and managers found the system intuitive and time-saving.",
+      "reflectionBody": "WFK Law Firm was impressed with how the tool improved internal transparency and organization.",
+      "cover": {
+        "id": 24,
+        "name": "wfk-thumb",
+        "alternativeText": "WFK Law Firm",
+        "caption": "",
+        "focalPoint": null,
+        "width": 1110,
+        "height": 782,
+        "url": "/media/wfk_thumb_8fa74b3a51.png"
+      },
+      "approachShot": {
+        "id": 25,
+        "name": "wfk-showcase",
+        "alternativeText": "WFK Law Firm screen",
+        "caption": "",
+        "focalPoint": null,
+        "width": 3200,
+        "height": 1600,
+        "url": "/media/wfk_showcase_073a0a3c02.png"
+      },
+      "gallery": [
+        {
+          "id": 26,
+          "name": "wfk-showcase1",
+          "alternativeText": "WFK Law Firm screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 3200,
+          "height": 1600,
+          "url": "/media/wfk_showcase1_b56cf375e9.png"
+        },
+        {
+          "id": 27,
+          "name": "wfk-showcase2",
+          "alternativeText": "WFK Law Firm screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 3200,
+          "height": 1600,
+          "url": "/media/wfk_showcase2_c6b4dd7c2b.png"
+        },
+        {
+          "id": 28,
+          "name": "wfk-showcase3",
+          "alternativeText": "WFK Law Firm screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 3200,
+          "height": 1600,
+          "url": "/media/wfk_showcase3_6133eee041.png"
+        }
+      ],
+      "constraints": [
+        {
+          "id": 166,
+          "title": "Employees lacked a unified interface to view or manage their assigned tasks.",
+          "body": ""
+        },
+        {
+          "id": 167,
+          "title": "There was no performance tracking mechanism or analytics overview for management.",
+          "body": ""
+        },
+        {
+          "id": 168,
+          "title": "The solution needed to align with Power Apps limitations while maintaining good UX practices.",
+          "body": ""
+        }
+      ],
+      "decisions": [
+        {
+          "id": 166,
+          "eyebrow": "Outcome",
+          "title": "Task Ownership",
+          "body": "Employees can now clearly view and manage their assignments in real time."
+        },
+        {
+          "id": 167,
+          "eyebrow": "Outcome",
+          "title": "Executive Overview",
+          "body": "The dashboard provides management with performance insights and workload balance."
+        },
+        {
+          "id": 168,
+          "eyebrow": "Outcome",
+          "title": "System Integration",
+          "body": "The design was fully Power Apps compatible, ensuring smooth implementation within the existing IT infrastructure."
+        }
+      ],
+      "metrics": [
+        {
+          "id": 166,
+          "value": "10 Days",
+          "label": "Timeline",
+          "animate": false
+        },
+        {
+          "id": 167,
+          "value": "20+ Screens",
+          "label": "Power Apps Compatible",
+          "animate": false
+        },
+        {
+          "id": 168,
+          "value": "40%",
+          "label": "reduction in task handling time",
+          "animate": true
+        }
+      ],
+      "seo": {
+        "id": 74,
+        "metaTitle": "WFK Law Firm — Mohamad Hawa",
+        "metaDescription": "WFK Law Firm is a professional legal firm that needed an internal tool to streamline employee task tracking, scheduling, and performance monitoring.",
+        "shareImage": null
+      }
+    },
+    {
+      "id": 35,
+      "title": "Shipment Share",
+      "slug": "shipment-share",
+      "category": "Logistics",
+      "discipline": "Mobile app design",
+      "summary": "Shipment Share is a smart delivery platform that connects people who need to send packages with travelers already heading to the same destination.",
+      "role": "UI / UX Design",
+      "order": 4,
+      "featured": false,
+      "chipBg": "#e9e9ec",
+      "chipInk": "#86868b",
+      "briefLead": "I designed the app to streamline the peer-to-peer shipment process, offering an affordable and personal alternative to traditional shipping companies.",
+      "briefBody": "Users can browse upcoming trips, track shipments, and communicate directly with couriers — all in a clean, mobile-friendly interface.",
+      "problemLead": "Shipping costs are rising, and traditional courier services can be slow or inaccessible in certain regions.",
+      "approachLead": "Sketched key flows, including:",
+      "approachBody": "• Browsing and filtering trips by date and destination.\n• Viewing shipment details and sending requests.\n• Chat functionality between sender and traveler.\n\nTested interactive flows with users for:\n• Booking a shipment with a traveler.\n• Navigating a shipment summary and communication options.\n• Viewing shipment status and trip details.\n\nThe final UI focused on:\n• A bright, intuitive interface using yellow and navy for contrast.\n• Minimal steps from finding a trip to booking a shipment.\n• A clear shipment breakdown with sender/recipient info, timeline, capacity, and pricing.",
+      "approachCaption": "",
+      "shippedHeading": "The screens that carry the work.",
+      "reflectionLead": "Testers praised the clarity of trip details and the ease of contacting travelers.",
+      "reflectionBody": "Shipment Share’s team appreciated the friendly UI and its appeal to both casual and business users.",
+      "cover": {
+        "id": 29,
+        "name": "shipment-share-thumb",
+        "alternativeText": "Shipment Share",
+        "caption": "",
+        "focalPoint": null,
+        "width": 1110,
+        "height": 782,
+        "url": "/media/shipment_share_thumb_37215018de.png"
+      },
+      "approachShot": {
+        "id": 30,
+        "name": "shipment-share-showcase",
+        "alternativeText": "Shipment Share screen",
+        "caption": "",
+        "focalPoint": null,
+        "width": 3200,
+        "height": 1600,
+        "url": "/media/shipment_share_showcase_5aed64854f.png"
+      },
+      "gallery": [],
+      "constraints": [
+        {
+          "id": 172,
+          "title": "Travelers wanted an easy way to offer extra luggage space for delivery without being overwhelmed.",
+          "body": ""
+        },
+        {
+          "id": 173,
+          "title": "Senders needed to trust the traveler, know the exact route, and have direct communication.",
+          "body": ""
+        },
+        {
+          "id": 174,
+          "title": "A clear visual summary of the trip, shipment capacity, and fees was essential to both parties.",
+          "body": ""
+        }
+      ],
+      "decisions": [
+        {
+          "id": 172,
+          "eyebrow": "Outcome",
+          "title": "Real-Time Matchmaking",
+          "body": "Travelers and senders can easily connect based on route and availability."
+        },
+        {
+          "id": 173,
+          "eyebrow": "Outcome",
+          "title": "Trust-Driven UI",
+          "body": "Clear sender/recipient info, travel timelines, and secure communication features."
+        },
+        {
+          "id": 174,
+          "eyebrow": "Outcome",
+          "title": "Mobile Focus",
+          "body": "Designed with mobile-first principles for everyday accessibility and fast interactions."
+        }
+      ],
+      "metrics": [
+        {
+          "id": 172,
+          "value": "14 Days",
+          "label": "Timeline",
+          "animate": false
+        },
+        {
+          "id": 173,
+          "value": "20+ Screens",
+          "label": "Fully Mobile Responsive",
+          "animate": false
+        },
+        {
+          "id": 174,
+          "value": "2 min",
+          "label": "from choosing a trip to a confirmed shipment",
+          "animate": true
+        }
+      ],
+      "seo": {
+        "id": 76,
+        "metaTitle": "Shipment Share — Mohamad Hawa",
+        "metaDescription": "Shipment Share is a smart delivery platform that connects people who need to send packages with travelers already heading to the same destination.",
+        "shareImage": null
+      }
+    },
+    {
+      "id": 36,
+      "title": "Shareb",
+      "slug": "shareb",
+      "category": "Product",
+      "discipline": "Design system",
+      "summary": "Shareb is a promotional lottery app designed to boost brand engagement through interactive weekly draws.",
+      "role": "UI / UX Design",
+      "order": 5,
+      "featured": false,
+      "chipBg": "#f2f2f4",
+      "chipInk": "#86868b",
+      "briefLead": "Users can sign up by scanning a QR code printed on branded drink cups and instantly join weekly prize draws with just one tap.",
+      "briefBody": "The app connects businesses with customers through playful engagement, making every sip a chance to win.",
+      "problemLead": "Brands needed a fun, cost-effective way to engage customers offline and online, while consumers love winning but are often overwhelmed by complicated sign-up processes.",
+      "approachLead": "Focused on:",
+      "approachBody": "• Fast sign-up via mobile number and QR scan.\n• Clear and fun CTA to 'Join the Draw'.\n• Sections for featured brands, prizes, and winner highlights.\n\nInteractive prototypes tested with users to validate the main flow: scan > tap > wait for the draw. Added social buttons and gamified elements to encourage sharing.\n\nThe final interface is:\n• Bold, playful, and brand-aligned with teal, orange, and animated wheel graphics.\n• Designed for repeat visits, with brand carousel and gift previews.\n• Light and responsive for instant access after QR scanning.",
+      "approachCaption": "",
+      "shippedHeading": "The screens that carry the work.",
+      "reflectionLead": "Users described it as 'super quick' and 'fun to use after grabbing coffee'.",
+      "reflectionBody": "Shareb’s sponsors praised the exposure and engagement, especially during live campaigns.",
+      "cover": {
+        "id": 31,
+        "name": "shareb-thumb",
+        "alternativeText": "Shareb",
+        "caption": "",
+        "focalPoint": null,
+        "width": 1110,
+        "height": 782,
+        "url": "/media/shareb_thumb_3576679a33.png"
+      },
+      "approachShot": {
+        "id": 32,
+        "name": "shareb-showcase",
+        "alternativeText": "Shareb screen",
+        "caption": "",
+        "focalPoint": null,
+        "width": 3200,
+        "height": 1600,
+        "url": "/media/shareb_showcase_39f9c5cdd9.png"
+      },
+      "gallery": [
+        {
+          "id": 33,
+          "name": "shareb-showcase1",
+          "alternativeText": "Shareb screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 3200,
+          "height": 1600,
+          "url": "/media/shareb_showcase1_718a957b68.png"
+        }
+      ],
+      "constraints": [
+        {
+          "id": 178,
+          "title": "QR code scanning had to be seamless and redirect users directly into the app or sign-up screen.",
+          "body": ""
+        },
+        {
+          "id": 179,
+          "title": "The lottery button needed to feel satisfying and responsive — giving a mini dopamine hit.",
+          "body": ""
+        },
+        {
+          "id": 180,
+          "title": "Showcasing past winners and brand sponsors built trust and encouraged participation.",
+          "body": ""
+        }
+      ],
+      "decisions": [
+        {
+          "id": 178,
+          "eyebrow": "Outcome",
+          "title": "Instant Access",
+          "body": "Users can enter the draw in seconds with no complicated forms."
+        },
+        {
+          "id": 179,
+          "eyebrow": "Outcome",
+          "title": "Brand-Driven UI",
+          "body": "Sponsors and partner logos are clearly featured for visibility."
+        },
+        {
+          "id": 180,
+          "eyebrow": "Outcome",
+          "title": "Gamified Interaction",
+          "body": "Tapping to participate adds a game-like layer to simple actions."
+        }
+      ],
+      "metrics": [
+        {
+          "id": 178,
+          "value": "10 Days",
+          "label": "Timeline",
+          "animate": false
+        },
+        {
+          "id": 179,
+          "value": "8+ Screens",
+          "label": "Fully animated & Mobile Responsive",
+          "animate": false
+        },
+        {
+          "id": 180,
+          "value": "5 sec",
+          "label": "to enter the draw after scanning the QR code",
+          "animate": true
+        }
+      ],
+      "seo": {
+        "id": 78,
+        "metaTitle": "Shareb — Mohamad Hawa",
+        "metaDescription": "Shareb is a promotional lottery app designed to boost brand engagement through interactive weekly draws.",
+        "shareImage": null
+      }
+    }
+  ]
+}

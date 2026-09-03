@@ -1,0 +1,317 @@
+---
+import type { ContactPage, Service, SiteSettings } from '../lib/types';
+
+interface Props {
+  contact: ContactPage;
+  services: Service[];
+  settings: SiteSettings;
+  id?: string;
+}
+
+const { contact, services, settings, id = 'mh' } = Astro.props;
+
+const serviceOptions = [...services.map((service) => service.title), contact.unsureLabel];
+const budgetOptions = [...contact.budgetOptions, contact.unsureLabel];
+
+const showWhatsApp = settings.contactMode !== 'Email';
+const showEmail = settings.contactMode !== 'WhatsApp';
+
+const config = {
+  whatsapp: settings.whatsappNumber.replace(/[^\d]/g, ''),
+  email: settings.email,
+  greeting: contact.formGreeting,
+  errorName: contact.formErrorName,
+  errorBrief: contact.formErrorBrief,
+  sentWhatsapp: contact.formSentWhatsapp,
+  sentEmail: contact.formSentEmail,
+  hint: contact.formHint,
+  services: serviceOptions,
+};
+---
+
+<form class="enquiry" data-enquiry data-config={JSON.stringify(config)} novalidate>
+  <div class="enquiry__field">
+    <label for={`${id}-name`}>{contact.formNameLabel}</label>
+    <input
+      id={`${id}-name`}
+      name="name"
+      type="text"
+      placeholder={contact.formNamePlaceholder}
+      autocomplete="name"
+    />
+  </div>
+
+  <div class="enquiry__row">
+    <div class="enquiry__field enquiry__field--service">
+      <label for={`${id}-service`}>{contact.formServiceLabel}</label>
+      <select id={`${id}-service`} name="service">
+        {serviceOptions.map((option) => <option value={option}>{option}</option>)}
+      </select>
+    </div>
+
+    <div class="enquiry__field enquiry__field--budget">
+      <label for={`${id}-budget`}>{contact.formBudgetLabel}</label>
+      <select id={`${id}-budget`} name="budget">
+        {budgetOptions.map((option) => <option value={option}>{option}</option>)}
+      </select>
+    </div>
+  </div>
+
+  <div class="enquiry__field">
+    <label for={`${id}-brief`}>{contact.formBriefLabel}</label>
+    <textarea
+      id={`${id}-brief`}
+      name="brief"
+      rows="4"
+      placeholder={contact.formBriefPlaceholder}></textarea>
+  </div>
+
+  <div class="enquiry__error" role="alert" data-error hidden></div>
+
+  <div class="enquiry__actions">
+    {
+      showWhatsApp && (
+        <button type="button" class="enquiry__send enquiry__send--wa" data-send="whatsapp">
+          {contact.formWhatsappCta}
+        </button>
+      )
+    }
+    {
+      showEmail && (
+        <button type="button" class="enquiry__send enquiry__send--mail" data-send="email">
+          {contact.formEmailCta}
+        </button>
+      )
+    }
+  </div>
+
+  <p class="enquiry__hint" data-hint>{contact.formHint}</p>
+</form>
+
+<script>
+  interface EnquiryConfig {
+    whatsapp: string;
+    email: string;
+    greeting: string;
+    errorName: string;
+    errorBrief: string;
+    sentWhatsapp: string;
+    sentEmail: string;
+    hint: string;
+    services: string[];
+  }
+
+  document.querySelectorAll<HTMLFormElement>('[data-enquiry]').forEach((form) => {
+    const config: EnquiryConfig = JSON.parse(form.dataset.config || '{}');
+
+    const nameInput = form.querySelector<HTMLInputElement>('[name="name"]')!;
+    const serviceInput = form.querySelector<HTMLSelectElement>('[name="service"]')!;
+    const budgetInput = form.querySelector<HTMLSelectElement>('[name="budget"]')!;
+    const briefInput = form.querySelector<HTMLTextAreaElement>('[name="brief"]')!;
+    const errorBox = form.querySelector<HTMLElement>('[data-error]')!;
+    const hintBox = form.querySelector<HTMLElement>('[data-hint]')!;
+
+    // A service card on the home page links here with ?service=… so the right
+    // option is already chosen when the visitor arrives.
+    const preset = new URLSearchParams(window.location.search).get('service');
+    if (preset && config.services.includes(preset)) {
+      serviceInput.value = preset;
+    }
+
+    function showError(message: string) {
+      errorBox.textContent = message;
+      errorBox.hidden = false;
+    }
+
+    function clearError() {
+      errorBox.textContent = '';
+      errorBox.hidden = true;
+    }
+
+    form.addEventListener('input', clearError);
+
+    function compose(): { subject: string; body: string } | null {
+      const name = nameInput.value.trim();
+      const brief = briefInput.value.trim();
+
+      if (!name) {
+        showError(config.errorName);
+        nameInput.focus();
+        return null;
+      }
+
+      if (brief.length < 10) {
+        showError(config.errorBrief);
+        briefInput.focus();
+        return null;
+      }
+
+      clearError();
+
+      return {
+        subject: `${serviceInput.value} enquiry — ${name}`,
+        body:
+          `${config.greeting}\n\n` +
+          `Name: ${name}\n` +
+          `Service: ${serviceInput.value}\n` +
+          `Budget: ${budgetInput.value}\n\n` +
+          brief,
+      };
+    }
+
+    form.querySelectorAll<HTMLButtonElement>('[data-send]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const message = compose();
+        if (!message) return;
+
+        if (button.dataset.send === 'whatsapp') {
+          window.open(
+            `https://wa.me/${config.whatsapp}?text=${encodeURIComponent(message.body)}`,
+            '_blank',
+            'noopener'
+          );
+          hintBox.textContent = config.sentWhatsapp;
+        } else {
+          window.location.href =
+            `mailto:${config.email}` +
+            `?subject=${encodeURIComponent(message.subject)}` +
+            `&body=${encodeURIComponent(message.body)}`;
+          hintBox.textContent = config.sentEmail;
+        }
+      });
+    });
+  });
+</script>
+
+<style>
+  .enquiry {
+    background: var(--surface-form);
+    border-radius: var(--r-xl);
+    padding: clamp(20px, 2.4vw, 30px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    color: var(--ink-on-dark);
+  }
+
+  .enquiry__field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .enquiry__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .enquiry__field--service {
+    flex: 1 1 180px;
+  }
+
+  .enquiry__field--budget {
+    flex: 1 1 160px;
+  }
+
+  .enquiry label {
+    font-size: 14px;
+    letter-spacing: -0.016em;
+    color: var(--ink-on-dark-muted);
+  }
+
+  .enquiry input,
+  .enquiry select,
+  .enquiry textarea {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 17px;
+    letter-spacing: -0.022em;
+    padding: 14px 16px;
+    border-radius: var(--r-xs);
+    border: none;
+    background: var(--surface-input);
+    color: var(--ink-on-dark);
+  }
+
+  .enquiry input,
+  .enquiry select {
+    min-height: 50px;
+  }
+
+  .enquiry select {
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+
+  .enquiry textarea {
+    line-height: 1.45;
+    resize: vertical;
+  }
+
+  .enquiry ::placeholder {
+    color: var(--ink-softer);
+  }
+
+  .enquiry__error {
+    font-size: 14px;
+    line-height: 1.45;
+    letter-spacing: -0.016em;
+    color: var(--error-on-dark);
+  }
+
+  .enquiry__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .enquiry__send {
+    cursor: pointer;
+    flex: 1 1 auto;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+    padding: 0 24px;
+    border: none;
+    border-radius: var(--r-xs);
+    color: var(--ink-on-dark);
+    font-size: 17px;
+    letter-spacing: -0.022em;
+    transition:
+      transform 300ms var(--spring),
+      background 0.2s;
+  }
+
+  .enquiry__send:active {
+    transform: scale(0.96);
+  }
+
+  .enquiry__send--wa {
+    background: var(--blue);
+  }
+
+  .enquiry__send--wa:hover {
+    background: var(--blue-hover);
+  }
+
+  .enquiry__send--mail {
+    background: var(--surface-button-dark);
+  }
+
+  .enquiry__send--mail:hover {
+    background: var(--surface-button-dark-hover);
+  }
+
+  .enquiry__hint {
+    font-size: 13px;
+    line-height: 1.45;
+    letter-spacing: -0.01em;
+    color: var(--ink-softer);
+  }
+</style>

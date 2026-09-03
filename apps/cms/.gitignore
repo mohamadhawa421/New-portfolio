@@ -1,0 +1,12 @@
+.env
+.cache/
+.strapi/
+.strapi-updater.json
+.tmp/
+build/
+dist/
+node_modules/
+exports/
+
+# The SQLite database and its uploads ARE the content — they are committed.
+# Everything Strapi regenerates around them is not.

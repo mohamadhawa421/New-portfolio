@@ -1,0 +1,34 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ContactBlock from '../components/ContactBlock.astro';
+import { getContactPage, getServices, getSiteSettings } from '../lib/content';
+
+const [contact, services, settings] = await Promise.all([
+  getContactPage(),
+  getServices(),
+  getSiteSettings(),
+]);
+---
+
+<BaseLayout seo={contact.seo}>
+  <main id="main" data-shell="1">
+    <section class="section section--dark contact-page" data-tile="dark">
+      <ContactBlock
+        settings={settings}
+        contact={contact}
+        services={services}
+        variant="contact"
+        heading={contact.heading}
+        body={contact.body}
+        formId="contact"
+      />
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .contact-page {
+    padding-top: clamp(132px, 18vh, 204px);
+    padding-bottom: clamp(72px, 11vh, 140px);
+  }
+</style>

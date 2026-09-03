@@ -1,0 +1,176 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import { getProjects, getWorkPage } from '../../lib/content';
+
+const [work, projects] = await Promise.all([getWorkPage(), getProjects()]);
+
+const categories = [
+  work.allFilterLabel,
+  ...Array.from(new Set(projects.map((project) => project.category).filter(Boolean))),
+];
+---
+
+<BaseLayout seo={work.seo}>
+  <main id="main" data-shell="1">
+    <section class="section section--light work-hero" data-tile="light">
+      <div class="shell">
+        <div class="eyebrow work-hero__eyebrow" data-reveal="0">{work.eyebrow}</div>
+        <h1 class="work-hero__heading" data-reveal="1">{work.heading}</h1>
+        <p class="lead work-hero__intro" data-reveal="2">{work.intro}</p>
+      </div>
+    </section>
+
+    <section class="section section--light work-grid" data-tile="light">
+      <div class="shell work-grid__filters" data-reveal="0">
+        {
+          categories.map((category, i) => (
+            <button
+              type="button"
+              class="chip"
+              class:list={[{ 'chip--active': i === 0 }]}
+              data-filter={category}
+              aria-pressed={i === 0 ? 'true' : 'false'}
+            >
+              {category}
+            </button>
+          ))
+        }
+        <span class="work-grid__count">
+          <span data-count>{projects.length}</span>
+          {' '}{work.countLabel}
+        </span>
+      </div>
+
+      <div class="shell work-grid__list" data-grid>
+        {projects.map((project) => <ProjectCard project={project} />)}
+      </div>
+
+      <p class="shell work-grid__empty" data-empty hidden>
+        Nothing in that sector yet.
+      </p>
+    </section>
+  </main>
+</BaseLayout>
+
+<script is:inline define:vars={{ allLabel: work.allFilterLabel }}>
+  (function () {
+    const chips = document.querySelectorAll('[data-filter]');
+    const cards = document.querySelectorAll('[data-grid] [data-category]');
+    const counter = document.querySelector('[data-count]');
+    const empty = document.querySelector('[data-empty]');
+
+    function applyFilter(value) {
+      let shown = 0;
+
+      cards.forEach((card) => {
+        const match = value === allLabel || card.dataset.category === value;
+        card.hidden = !match;
+        if (match) shown += 1;
+      });
+
+      if (counter) counter.textContent = String(shown);
+      if (empty) empty.hidden = shown !== 0;
+
+      // Reveals are handled by IntersectionObserver, which picks the newly
+      // visible cards up on its own. The nav still needs to know the page got
+      // shorter or taller.
+      window.dispatchEvent(new Event('scroll'));
+    }
+
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        chips.forEach((other) => {
+          const active = other === chip;
+          other.classList.toggle('chip--active', active);
+          other.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+        applyFilter(chip.dataset.filter);
+      });
+    });
+  })();
+</script>
+
+<style>
+  .work-hero {
+    padding-top: clamp(132px, 17vh, 196px);
+    padding-bottom: clamp(38px, 5.5vh, 70px);
+  }
+
+  .work-hero__eyebrow {
+    margin-bottom: 18px;
+  }
+
+  .work-hero__heading {
+    max-width: 16ch;
+    font-size: clamp(36px, 6.2vw, 84px);
+    line-height: 1.03;
+    letter-spacing: -0.019em;
+    font-weight: 600;
+  }
+
+  .work-hero__intro {
+    margin-top: 20px;
+    max-width: 48ch;
+  }
+
+  .work-grid {
+    padding-bottom: clamp(80px, 12vh, 130px);
+  }
+
+  .work-grid__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: clamp(24px, 3.4vh, 34px);
+  }
+
+  .chip {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 14px;
+    letter-spacing: -0.016em;
+    padding: 0 18px;
+    border: none;
+    border-radius: var(--r-pill);
+    background: var(--surface-chip);
+    color: var(--ink);
+    white-space: nowrap;
+    transition:
+      background 340ms var(--ease-out),
+      color 340ms ease,
+      transform 300ms var(--ease-out);
+  }
+
+  .chip:active {
+    transform: scale(0.96);
+  }
+
+  .chip--active {
+    background: var(--ink);
+    color: #fff;
+  }
+
+  .work-grid__count {
+    margin-left: auto;
+    font-size: 14px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .work-grid__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    gap: clamp(16px, 2vw, 26px);
+  }
+
+  .work-grid__empty {
+    margin-top: 40px;
+    font-size: 17px;
+    color: var(--ink-muted);
+  }
+</style>

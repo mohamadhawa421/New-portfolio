@@ -1,0 +1,140 @@
+{
+  "kind": "collectionType",
+  "collectionName": "projects",
+  "info": {
+    "singularName": "project",
+    "pluralName": "projects",
+    "displayName": "Project",
+    "description": "A portfolio project. Powers the work index, the home page list, and the full case study page."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true,
+      "maxLength": 80
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "title",
+      "required": true
+    },
+    "category": {
+      "type": "string",
+      "required": true,
+      "description": "Sector, e.g. Education or Logistics. Doubles as the filter chip on the Work page."
+    },
+    "discipline": {
+      "type": "string",
+      "required": true,
+      "description": "The kind of work, e.g. Web app design. Shown as the row tag and the case study's Discipline field."
+    },
+    "summary": {
+      "type": "text",
+      "required": true,
+      "maxLength": 220,
+      "description": "One line about the project, used on every card and list row."
+    },
+    "role": {
+      "type": "string",
+      "default": "UI / UX Design"
+    },
+    "order": {
+      "type": "integer",
+      "default": 0,
+      "description": "Lowest first. Controls the numbering (01, 02, ...) and the Next project link."
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "The featured project gets the large 16:9 treatment at the top of the home page list."
+    },
+    "cover": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "chipBg": {
+      "type": "string",
+      "default": "#efeff1",
+      "regex": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$",
+      "description": "Placeholder tile colour shown behind or instead of the cover image."
+    },
+    "chipInk": {
+      "type": "string",
+      "default": "#86868b",
+      "regex": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$",
+      "description": "Colour of the initials shown when there is no cover image."
+    },
+    "briefLead": {
+      "type": "text",
+      "description": "The large opening line of \"The brief\"."
+    },
+    "briefBody": {
+      "type": "text",
+      "description": "The supporting paragraph under the brief."
+    },
+    "problemLead": {
+      "type": "text",
+      "description": "The large opening line of \"The problem\"."
+    },
+    "constraints": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.constraint",
+      "description": "The numbered constraints. The design shows three."
+    },
+    "approachLead": {
+      "type": "text"
+    },
+    "approachBody": {
+      "type": "text"
+    },
+    "approachShot": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "approachCaption": {
+      "type": "string"
+    },
+    "decisions": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.decision",
+      "description": "The decision cards under the approach. The design shows three across."
+    },
+    "shippedHeading": {
+      "type": "string",
+      "default": "The screens that carry the work."
+    },
+    "gallery": {
+      "type": "media",
+      "multiple": true,
+      "required": false,
+      "allowedTypes": ["images"],
+      "description": "The \"What shipped\" grid. The design lays out two side by side."
+    },
+    "metrics": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.metric"
+    },
+    "reflectionLead": {
+      "type": "text"
+    },
+    "reflectionBody": {
+      "type": "text"
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
+    }
+  }
+}

@@ -1,0 +1,134 @@
+---
+import type { Media } from '../lib/types';
+
+interface Props {
+  logo: Media | null;
+}
+
+const { logo } = Astro.props;
+---
+
+{
+  logo && (
+    <div class="intro" data-intro role="button" tabindex="0" aria-label="Skip intro">
+      <div class="intro__logo">
+        <img src={logo.url} alt={logo.alt} />
+      </div>
+    </div>
+  )
+}
+
+{/* Runs inline, immediately after the markup, so a repeat visit inside the same
+    session removes the curtain before the browser paints it. */}
+<script is:inline>
+  (function () {
+    var curtain = document.querySelector('[data-intro]');
+    if (!curtain) return;
+
+    var KEY = 'mh-intro-seen';
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var seen = false;
+
+    try {
+      seen = sessionStorage.getItem(KEY) === '1';
+    } catch (err) {
+      // Private mode or storage disabled — treat as a first visit.
+    }
+
+    if (seen || reduced) {
+      curtain.remove();
+      return;
+    }
+
+    try {
+      sessionStorage.setItem(KEY, '1');
+    } catch (err) {
+      /* not fatal */
+    }
+
+    var timers = [];
+    var finished = false;
+
+    function finish(delay) {
+      if (finished) return;
+      finished = true;
+      timers.forEach(clearTimeout);
+      curtain.classList.add('intro--out');
+      setTimeout(function () {
+        curtain.remove();
+      }, delay);
+    }
+
+    timers.push(
+      setTimeout(function () {
+        curtain.classList.add('intro--in');
+      }, 200)
+    );
+    timers.push(
+      setTimeout(function () {
+        curtain.classList.add('intro--out');
+      }, 1900)
+    );
+    timers.push(
+      setTimeout(function () {
+        curtain.remove();
+      }, 2500)
+    );
+
+    curtain.addEventListener('click', function () {
+      finish(460);
+    });
+    curtain.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ' || event.key === 'Escape') {
+        event.preventDefault();
+        finish(460);
+      }
+    });
+  })();
+</script>
+
+<style>
+  .intro {
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(28px, 7vw, 80px);
+    cursor: pointer;
+    opacity: 1;
+    transition: opacity 620ms var(--ease-smooth);
+  }
+
+  .intro--out {
+    opacity: 0;
+  }
+
+  .intro__logo {
+    width: min(560px, 72vw);
+    opacity: 0;
+    transform: translateY(12px);
+    transition:
+      opacity 680ms var(--ease-smooth),
+      transform 800ms var(--ease-smooth);
+  }
+
+  .intro--in .intro__logo {
+    opacity: 1;
+    transform: none;
+  }
+
+  .intro__logo img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .intro {
+      display: none;
+    }
+  }
+</style>

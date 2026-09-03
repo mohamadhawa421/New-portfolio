@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "services",
+  "info": {
+    "singularName": "service",
+    "pluralName": "services",
+    "displayName": "Service",
+    "description": "The \"Four ways to work together\" list. Each one preselects itself in the enquiry form."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text",
+      "required": true
+    },
+    "ctaLabel": {
+      "type": "string",
+      "default": "Start here"
+    },
+    "order": {
+      "type": "integer",
+      "default": 0,
+      "description": "Lowest first. Drives the 01 / 02 / 03 numbering."
+    }
+  }
+}
