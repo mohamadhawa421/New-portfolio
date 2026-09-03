@@ -54,31 +54,37 @@ it runs on the free tier.
 
 ## Editing content
 
-```bash
-npm run dev:cms
-```
-
-Open `http://localhost:1337/admin`, make your changes, then:
+Start the admin:
 
 ```bash
-npm run export
+npm run edit
 ```
 
-That rewrites `apps/web/src/data/content.json`, refreshes
-`apps/web/public/media/`, and updates the sanitised `portfolio.public.db`.
-Commit and push — Vercel rebuilds from there:
+Open `http://localhost:1337/admin` and make your changes. **Publish** each entry
+you touch — drafts are not exported.
+
+Then publish to the live site with one command:
 
 ```bash
-git add -A && git commit -m "Update content" && git push
+npm run deploy
 ```
 
-To see changes locally before pushing, `npm run refresh` exports and starts the
-site in one go, or run `npm run dev:web` in a second terminal — Astro reloads
-when the snapshot changes.
+That exports the database, builds the site to check nothing is broken, commits,
+and pushes. Vercel rebuilds automatically. To label the commit:
 
-> The export fails loudly if an image referenced by the database is missing from
-> `apps/cms/public/uploads/`, so a broken deploy is caught locally rather than
-> shipping a page of broken images.
+```bash
+npm run deploy -- "Added the Acme project"
+```
+
+> **Editing in the admin alone changes nothing on the live site.** The site is
+> built from `content.json` and `portfolio.public.db`, and both are only
+> rewritten by the export. `npm run deploy` does that for you; committing by hand
+> without running `npm run export` first will push successfully and change
+> nothing.
+
+To preview locally before publishing, run `npm run refresh` — it exports and
+starts the site at `http://localhost:4321`. Leave it running; after further admin
+edits, run `npm run export` again in a second terminal and the page reloads.
 
 ## Requirements
 
@@ -179,18 +185,24 @@ reveals.
 
 | Command | What it does |
 | --- | --- |
-| `npm run dev` | The site, from the current snapshot |
-| `npm run dev:cms` | Strapi admin at `localhost:1337` |
-| `npm run export` | Read the database → snapshot + media. Run after every content edit |
-| `npm run refresh` | Export, then start the site |
+| `npm run edit` | Strapi admin at `localhost:1337` |
+| `npm run deploy` | Export, build, commit and push — the one to use after editing |
+| `npm run refresh` | Export, then serve the site locally at `localhost:4321` |
+| `npm run export` | Database → snapshot, media and the sanitised database copy |
+| `npm run dev` | Serve the site from the current snapshot, without exporting |
 | `npm run build:site` | Export then build — what Vercel runs |
-| `npm run preview` | Serve the built site |
-| `npm run seed` | Reload the original design content (run with Strapi stopped; `-- --force` overwrites) |
+| `npm run preview` | Serve the already-built site |
+| `npm run seed` | Reload the original design content (Strapi stopped; `-- --force` overwrites) |
 
 ## Deploying
 
 Vercel is configured by [`vercel.json`](vercel.json): build `npm run build:site`,
 output `apps/web/dist`. Push to the default branch and it rebuilds.
 
-Set `SITE_URL` in Vercel's environment variables to the production origin so
-canonical URLs and `sitemap.xml` are right. Nothing else is needed.
+The production origin is set in `apps/web/astro.config.mjs` and is used for
+canonical URLs and `sitemap.xml`. Nothing needs configuring in the Vercel
+dashboard. If a custom domain is added later, change that line — or set
+`SITE_URL` in Vercel's environment variables, which takes precedence.
+
+`netlify.toml` exists only to stop a leftover Netlify connection from failing a
+build on every push. Delete the Netlify site and this file can go with it.

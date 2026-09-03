@@ -21,6 +21,8 @@
     "build:web": "npm run build --workspace=apps/web",
     "build:cms": "npm run build --workspace=apps/cms",
     "seed": "npm run seed --workspace=apps/cms",
-    "preview": "npm run preview --workspace=apps/web"
+    "preview": "npm run preview --workspace=apps/web",
+    "deploy": "node scripts/publish.js",
+    "edit": "npm run dev --workspace=apps/cms"
   }
 }

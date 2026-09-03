@@ -1,0 +1,14 @@
+# This repository deploys to Vercel, not Netlify.
+#
+# A Netlify site is still connected to it from the previous version of this
+# portfolio, and every push makes it attempt — and fail — a build, which shows
+# up as a red cross on pull requests. An `ignore` command that exits 0 tells
+# Netlify there is nothing to rebuild, so it skips the build instead of failing.
+#
+# To remove Netlify properly: Netlify dashboard -> the site -> Site
+# configuration -> General -> Danger zone -> Delete site. Then this file can go.
+
+[build]
+  ignore = "exit 0"
+  publish = "apps/web/dist"
+  command = "echo 'This project deploys via Vercel. See vercel.json.'"
