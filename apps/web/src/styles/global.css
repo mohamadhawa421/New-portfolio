@@ -275,13 +275,17 @@ figure {
 /* Page transitions                                                       */
 /* --------------------------------------------------------------------- */
 
-/* The browser default is a half-second cross-fade of the entire page, which
-   reads as a lag on a site this light. Keep it short enough to feel like the
-   page simply changed. */
+/*
+ * No cross-fade between pages. The sections are full-bleed white, parchment and
+ * near-black, so fading one page into another blends two different backgrounds
+ * and washes through a grey frame — which reads as a flash rather than a
+ * transition. Swapping instantly is the smoother result; the content still
+ * animates in through the reveal system.
+ */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 180ms;
-  animation-timing-function: var(--ease-out);
+  animation: none;
+  mix-blend-mode: normal;
 }
 
 @media (prefers-reduced-motion: reduce) {

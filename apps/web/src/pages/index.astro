@@ -52,7 +52,10 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
                 <img
                   src={settings.portrait.url}
                   alt={settings.portrait.alt}
+                  width={settings.portrait.width}
+                  height={settings.portrait.height}
                   loading="eager"
+                  fetchpriority="high"
                   decoding="async"
                   style={`object-position:${settings.portraitFocus}`}
                 />

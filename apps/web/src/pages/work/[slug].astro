@@ -81,7 +81,14 @@ const compactMetrics = project.metrics.some((metric) => metric.value.length > 14
         <div class="case-cover" style={`background:${project.chipBg};color:${project.chipInk}`}>
           {
             project.cover ? (
-              <img src={project.cover.url} alt={project.cover.alt} decoding="async" />
+              <img
+                src={project.cover.url}
+                alt={project.cover.alt}
+                width={project.cover.width}
+                height={project.cover.height}
+                fetchpriority="high"
+                decoding="async"
+              />
             ) : (
               <span class="case-cover__initials">{project.initials}</span>
             )
@@ -151,6 +158,8 @@ const compactMetrics = project.metrics.some((metric) => metric.value.length > 14
                   <img
                     src={project.approachShot.url}
                     alt={project.approachShot.alt}
+                    width={project.approachShot.width}
+                    height={project.approachShot.height}
                     loading="lazy"
                     decoding="async"
                   />
@@ -191,7 +200,14 @@ const compactMetrics = project.metrics.some((metric) => metric.value.length > 14
               <div class="gallery">
                 {project.gallery.map((image, i) => (
                   <div class="gallery__item" data-reveal={String(i)}>
-                    <img src={image.url} alt={image.alt} loading="lazy" decoding="async" />
+                    <img
+                      src={image.url}
+                      alt={image.alt}
+                      width={image.width}
+                      height={image.height}
+                      loading="lazy"
+                      decoding="async"
+                    />
                   </div>
                 ))}
               </div>

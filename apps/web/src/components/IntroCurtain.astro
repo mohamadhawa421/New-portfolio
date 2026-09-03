@@ -86,9 +86,16 @@ const { logo } = Astro.props;
     });
   }
 
-  // Runs on first load and after each client-side navigation. On a second page
-  // the sessionStorage flag is already set, so the curtain is removed
-  // immediately rather than replaying.
+  // The intro only ever plays on the first arrival, but the markup is part of
+  // every page, so the client router re-inserts it on each navigation. Removing
+  // it on page-load is too late — that fires after paint, so a full-screen
+  // white panel flashes for a frame, which is glaring on the dark contact page.
+  // Strip it from the incoming document instead, before it is ever shown.
+  document.addEventListener('astro:before-swap', function (event) {
+    var incoming = event.newDocument.querySelector('[data-intro]');
+    if (incoming) incoming.remove();
+  });
+
   document.addEventListener('astro:page-load', setupIntro);
 </script>
 

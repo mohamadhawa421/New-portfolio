@@ -131,18 +131,47 @@ function setUpReveals(): void {
   for (const trigger of watched.keys()) observer.observe(trigger);
 }
 
+/**
+ * Section tops in document coordinates, measured once per page and after a
+ * resize rather than on every frame.
+ *
+ * Reading getBoundingClientRect() inside the scroll handler forces the browser
+ * to flush layout on every single frame while scrolling, which is exactly the
+ * kind of work that makes an otherwise cheap page feel sticky.
+ */
+let tiles: { top: number; bottom: number; dark: boolean }[] = [];
+
+function measureTiles(): void {
+  const offset = window.scrollY || root.scrollTop || 0;
+  tiles = Array.from(document.querySelectorAll<HTMLElement>('[data-tile]')).map((tile) => {
+    const rect = tile.getBoundingClientRect();
+    return {
+      top: rect.top + offset,
+      bottom: rect.bottom + offset,
+      dark: tile.dataset.tile === 'dark',
+    };
+  });
+}
+
+/** Remembers the last values written, so the same string is not set twice. */
+let lastCondensed: boolean | null = null;
+let lastOverDark: boolean | null = null;
+
 function chromePass(): void {
   const y = window.scrollY || root.scrollTop || 0;
   const condensed = y > 90;
 
-  // Which tile sits under the nav right now decides the nav's ink colour.
+  // Which tile sits under the nav decides its ink colour. Pure arithmetic now:
+  // no layout is read during the scroll.
+  const probe = y + 34;
   let overDark = false;
-  document.querySelectorAll<HTMLElement>('[data-tile]').forEach((tile) => {
-    const rect = tile.getBoundingClientRect();
-    if (rect.top <= 34 && rect.bottom >= 34) {
-      overDark = tile.dataset.tile === 'dark';
-    }
-  });
+  for (const tile of tiles) {
+    if (probe >= tile.top && probe <= tile.bottom) overDark = tile.dark;
+  }
+
+  if (condensed === lastCondensed && overDark === lastOverDark) return;
+  lastCondensed = condensed;
+  lastOverDark = overDark;
 
   styles.setProperty('--nav-top', condensed ? '10px' : '18px');
   styles.setProperty('--nav-gap', condensed ? '2px' : 'clamp(16px,4.6vw,56px)');
@@ -179,6 +208,14 @@ function scheduleChrome(): void {
   });
 }
 
+function remeasure(): void {
+  measureTiles();
+  // Section positions moved, so the cached decision may no longer hold.
+  lastCondensed = null;
+  lastOverDark = null;
+  chromePass();
+}
+
 function init(): void {
   // The client router swaps the whole page, so the previous page's observer is
   // watching elements that no longer exist. Drop it before building a new one.
@@ -186,15 +223,16 @@ function init(): void {
   observer = null;
 
   setUpReveals();
-  chromePass();
+  remeasure();
 
   // These are on `window`, which survives navigation — bind them once or every
   // page visit would add another copy.
   if (!listenersBound) {
     listenersBound = true;
     window.addEventListener('scroll', scheduleChrome, { passive: true });
-    window.addEventListener('resize', scheduleChrome, { passive: true });
-    window.addEventListener('load', chromePass);
+    window.addEventListener('resize', remeasure, { passive: true });
+    // Images finishing late change section offsets, so measure again.
+    window.addEventListener('load', remeasure);
   }
 }
 

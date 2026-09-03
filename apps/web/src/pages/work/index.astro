@@ -42,7 +42,7 @@ const categories = [
         </span>
       </div>
 
-      <div class="shell work-grid__list" data-grid>
+      <div class="shell work-grid__list" data-grid data-all-label={work.allFilterLabel}>
         {projects.map((project) => <ProjectCard project={project} />)}
       </div>
 
@@ -53,11 +53,14 @@ const categories = [
   </main>
 </BaseLayout>
 
-<script is:inline define:vars={{ allLabel: work.allFilterLabel }}>
+<script is:inline>
   (function () {
     function setupFilters() {
+      const grid = document.querySelector('[data-grid]');
       const chips = document.querySelectorAll('[data-filter]');
       const cards = document.querySelectorAll('[data-grid] [data-category]');
+      // Read from the DOM rather than interpolating CMS text into this script.
+      const allLabel = grid ? grid.dataset.allLabel : 'All';
       const counter = document.querySelector('[data-count]');
       const empty = document.querySelector('[data-empty]');
       if (!chips.length || !cards.length) return;
