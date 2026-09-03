@@ -21,7 +21,7 @@ const { logo } = Astro.props;
 {/* Runs inline, immediately after the markup, so a repeat visit inside the same
     session removes the curtain before the browser paints it. */}
 <script is:inline>
-  (function () {
+  function setupIntro() {
     var curtain = document.querySelector('[data-intro]');
     if (!curtain) return;
 
@@ -84,7 +84,12 @@ const { logo } = Astro.props;
         finish(460);
       }
     });
-  })();
+  }
+
+  // Runs on first load and after each client-side navigation. On a second page
+  // the sessionStorage flag is already set, so the curtain is removed
+  // immediately rather than replaying.
+  document.addEventListener('astro:page-load', setupIntro);
 </script>
 
 <style>

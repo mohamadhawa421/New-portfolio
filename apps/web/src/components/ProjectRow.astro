@@ -40,14 +40,28 @@ const { project, index = 0 } = Astro.props;
     gap: clamp(12px, 2.4vw, 30px);
     padding: clamp(20px, 2.8vh, 30px) clamp(10px, 1.4vw, 18px);
     margin: 0 calc(-1 * clamp(10px, 1.4vw, 18px));
-    border-top: 1px solid var(--line);
     border-radius: var(--r-sm);
     color: inherit;
+    position: relative;
     will-change: transform;
+    /* Fast enough to feel like a response to the pointer rather than an
+       animation that plays afterwards. */
     transition:
-      background 420ms var(--ease-out),
-      transform 520ms var(--ease-out),
+      background 200ms var(--ease-out),
+      transform 260ms var(--ease-out),
       opacity 520ms var(--ease-smooth);
+  }
+
+  /* The divider is drawn as a line rather than a border: a border on a rounded
+     box follows the corner radius and shows two curled ends. */
+  .row::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: clamp(10px, 1.4vw, 18px);
+    right: clamp(10px, 1.4vw, 18px);
+    height: 1px;
+    background: var(--line);
   }
 
   .row:hover {

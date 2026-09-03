@@ -50,13 +50,25 @@ const compactMetrics = project.metrics.some((metric) => metric.value.length > 14
             <dd>{project.discipline}</dd>
           </div>
           <div>
-            <dt>Sector</dt>
-            <dd>{project.category}</dd>
-          </div>
-          <div>
             <dt>Role</dt>
             <dd>{project.role}</dd>
           </div>
+          {
+            project.timeline && (
+              <div>
+                <dt>Timeline</dt>
+                <dd>{project.timeline}</dd>
+              </div>
+            )
+          }
+          {
+            project.scope && (
+              <div>
+                <dt>Scope</dt>
+                <dd>{project.scope}</dd>
+              </div>
+            )
+          }
         </dl>
       </div>
     </section>

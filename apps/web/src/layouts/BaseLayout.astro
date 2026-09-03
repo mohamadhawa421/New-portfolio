@@ -5,6 +5,7 @@ import '../styles/global.css';
 import SiteNav from '../components/SiteNav.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import IntroCurtain from '../components/IntroCurtain.astro';
+import { ClientRouter } from 'astro:transitions';
 import { getSiteSettings } from '../lib/content';
 import type { Seo } from '../lib/types';
 
@@ -23,10 +24,12 @@ const pageTitle =
   title ?? seo?.metaTitle ?? settings.seo.metaTitle ?? `${settings.siteName} — ${settings.roleTitle}`;
 const pageDescription =
   description ?? seo?.metaDescription ?? settings.seo.metaDescription ?? '';
-const shareImage = seo?.shareImage ?? settings.seo.shareImage ?? settings.portrait;
+// A page's own image, then the CMS default, then the generated card. The
+// portrait is deliberately not used: cropped to 1.91:1 it becomes a chin.
+const shareImage = seo?.shareImage ?? settings.seo.shareImage ?? null;
 
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
-const shareImageUrl = shareImage ? new URL(shareImage.url, canonical).href : undefined;
+const shareImageUrl = new URL(shareImage?.url ?? '/og.png', canonical).href;
 const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
 ---
 
@@ -45,8 +48,14 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={pageDescription} />
     <meta property="og:url" content={canonical.href} />
-    {shareImageUrl && <meta property="og:image" content={shareImageUrl} />}
+    <meta property="og:image" content={shareImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content={settings.siteName} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    <meta name="twitter:image" content={shareImageUrl} />
 
     <link rel="icon" type="image/svg+xml" href={faviconHref} />
     <link rel="apple-touch-icon" href={faviconHref} />
@@ -57,6 +66,11 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
+
+    {/* Swaps pages in place instead of a full reload, so the nav, fonts and
+        stylesheets are never re-fetched and navigation keeps its momentum.
+        Every script below re-initialises on `astro:page-load` because of it. */}
+    <ClientRouter />
 
     {/* Marks the document as scripted before first paint, so reveal-on-scroll
         elements start hidden only when something is going to reveal them. */}
@@ -73,6 +87,7 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
     <a
       class="site-logo"
       data-logo="1"
+      transition:persist="site-logo"
       href="/"
       aria-label={`${settings.siteName} — home`}
     >
@@ -133,6 +148,16 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         height: 34px;
         width: auto;
         display: block;
+      }
+
+      /* On desktop the logo fades out as the nav pill condenses. On phones the
+         logo and the burger together are the header, so it has to stay. */
+      @media (max-width: 767px) {
+        .site-logo {
+          opacity: 1;
+          transform: none;
+          pointer-events: auto;
+        }
       }
     </style>
   </body>
