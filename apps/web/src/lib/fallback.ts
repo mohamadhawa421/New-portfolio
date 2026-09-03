@@ -289,17 +289,10 @@ export const fallbackContactPage = {
   formBriefLabel: 'What are you building?',
   formBriefPlaceholder:
     "A sentence or two is plenty — what it is, who it's for, and when you'd like to start.",
-  formEmailLabel: 'Your email',
-  formEmailPlaceholder: 'So I can reply to you',
-  formErrorEmail: 'Add an email address so I can reply.',
-  formSendCta: 'Send message',
-  formSendingLabel: 'Sending…',
-  formSuccess: "Thanks — your message is on its way. I'll reply to the address you left.",
-  formSendError: "That didn't send. Try again, or reach me on WhatsApp.",
   formWhatsappCta: 'Send on WhatsApp',
   formEmailCta: 'Send by email',
   formHint:
-    "Sent straight to my inbox — I'll reply to the address you leave. Prefer WhatsApp? That button opens the message so you can read it before sending.",
+    'Nothing is stored or sent from this page — it opens the message in your own app so you stay in control.',
   formErrorName: 'Add your name so I know who is writing.',
   formErrorBrief: 'Tell me a little more about the project — a sentence is enough.',
   formSentWhatsapp: 'WhatsApp opened — press send there to deliver it.',

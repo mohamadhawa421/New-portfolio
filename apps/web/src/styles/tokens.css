@@ -49,12 +49,22 @@
   --error-on-dark: #ff9f9f;
 
   /* ---- Radii --------------------------------------------------------- */
+  /*
+   * Every rounded corner is a squircle (see global.css). These values scale
+   * with the surface so the corners read as one family: a 400px portrait and a
+   * 120px thumbnail need different numbers to look like the same shape.
+   *
+   * The portrait is the reference — 90px on a ~400px square, which is the
+   * Figma "90px + 100% corner smoothing" setting — and everything else is
+   * stepped down from it in roughly the same proportion.
+   */
+  --r-portrait: 45px;
   --r-xl: 22px;
-  --r-lg: 20px;
-  --r-md: 18px;
-  --r-sm: 14px;
-  --r-xs: 12px;
-  --r-2xs: 11px;
+  --r-lg: 18px;
+  --r-md: 15px;
+  --r-sm: 12px;
+  --r-xs: 10px;
+  --r-2xs: 8px;
   --r-pill: 9999px;
 
   /* ---- Layout -------------------------------------------------------- */

@@ -57,34 +57,6 @@
       "type": "text",
       "default": "A sentence or two is plenty \u2014 what it is, who it's for, and when you'd like to start."
     },
-    "formEmailLabel": {
-      "type": "string",
-      "default": "Your email"
-    },
-    "formEmailPlaceholder": {
-      "type": "string",
-      "default": "So I can reply to you"
-    },
-    "formErrorEmail": {
-      "type": "string",
-      "default": "Add an email address so I can reply."
-    },
-    "formSendCta": {
-      "type": "string",
-      "default": "Send message"
-    },
-    "formSendingLabel": {
-      "type": "string",
-      "default": "Sending\u2026"
-    },
-    "formSuccess": {
-      "type": "text",
-      "default": "Thanks \u2014 your message is on its way. I'll reply to the address you gave."
-    },
-    "formSendError": {
-      "type": "text",
-      "default": "That didn't send. Try again, or reach me on WhatsApp."
-    },
     "formWhatsappCta": {
       "type": "string",
       "default": "Send on WhatsApp"

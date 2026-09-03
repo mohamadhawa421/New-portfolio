@@ -172,13 +172,6 @@ export interface ContactPage {
   formBudgetLabel: string;
   formBriefLabel: string;
   formBriefPlaceholder: string;
-  formEmailLabel: string;
-  formEmailPlaceholder: string;
-  formErrorEmail: string;
-  formSendCta: string;
-  formSendingLabel: string;
-  formSuccess: string;
-  formSendError: string;
   formWhatsappCta: string;
   formEmailCta: string;
   formHint: string;

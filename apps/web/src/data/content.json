@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T12:10:13.618Z",
+  "generatedAt": "2026-09-03T12:46:55.874Z",
   "siteSetting": {
     "id": 1,
     "siteName": "Mohamad Hawa",
@@ -53,10 +53,10 @@
     }
   },
   "homePage": {
-    "id": 4,
+    "id": 5,
     "heroTitle": "Mohamad Hawa",
     "heroSubtitle": "Designing intuitive experiences.",
-    "heroIntro": "UI/UX designer working on web and mobile products — turning complex challenges into interfaces people understand without being taught. Freelance since 2020, at Poyesis since 2022.",
+    "heroIntro": "Product owner working on web and mobile products — turning complex challenges into interfaces people understand without being taught. Freelance since 2020, at Poyesis since 2022.",
     "primaryCtaLabel": "See the work",
     "secondaryCtaLabel": "Start a project",
     "workEyebrow": "Selected work",
@@ -77,26 +77,26 @@
     "contactBody": "Three fields. It opens a message with everything already written — you just press send.",
     "stats": [
       {
-        "id": 21,
+        "id": 24,
         "value": "20+",
         "label": "projects shipped",
         "animate": true
       },
       {
-        "id": 22,
+        "id": 25,
         "value": "2020",
         "label": "designing since",
         "animate": false
       },
       {
-        "id": 23,
+        "id": 26,
         "value": "Poyesis",
         "label": "2022 — now",
         "animate": false
       }
     ],
     "seo": {
-      "id": 132,
+      "id": 140,
       "metaTitle": "Mohamad Hawa — Product Owner",
       "metaDescription": "Product owner and designer working on web and mobile products — turning complex challenges into interfaces people understand without being taught.",
       "shareImage": null
@@ -117,21 +117,21 @@
     }
   },
   "aboutPage": {
-    "id": 3,
+    "id": 4,
     "eyebrow": "About",
     "heading": "I am Mohamad Hawa, and I design things people understand.",
     "lead": "I am passionate about designing intuitive experiences.",
-    "bodyPrimary": "As a UI/UX designer I work on visually engaging, user-centred products across web and mobile — the kind where creativity has to survive contact with a real workflow. My mission is turning complex challenges into experiences that feel obvious.",
+    "bodyPrimary": "As a product owner I work on visually engaging, user-centred products across web and mobile — the kind where creativity has to survive contact with a real workflow. My mission is turning complex challenges into experiences that feel obvious.",
     "bodySecondary": "I started out freelancing in 2020, working directly with small teams and founders who needed a designer who could also explain the decision. In 2022 I joined Poyesis, where the projects got bigger and the systems behind them got more interesting.",
     "stats": [
       {
-        "id": 19,
+        "id": 27,
         "value": "20+",
         "label": "projects shipped",
         "animate": true
       },
       {
-        "id": 20,
+        "id": 28,
         "value": "2020",
         "label": "designing since",
         "animate": false
@@ -140,14 +140,14 @@
     "experience": [
       {
         "order": 0,
-        "id": 7,
-        "role": "UI / UX Designer",
+        "id": 11,
+        "role": "Product Owner",
         "organisation": "Poyesis",
         "period": "2022 — now"
       },
       {
         "order": 1,
-        "id": 8,
+        "id": 12,
         "role": "Freelance UI / UX Designer",
         "organisation": "Independent clients across Lebanon",
         "period": "2020 — 2022"
@@ -155,42 +155,42 @@
     ],
     "skills": [
       {
-        "id": 27,
+        "id": 49,
         "label": "Figma"
       },
       {
-        "id": 28,
+        "id": 50,
         "label": "Design systems"
       },
       {
-        "id": 29,
+        "id": 51,
         "label": "Prototyping"
       },
       {
-        "id": 30,
+        "id": 52,
         "label": "User research"
       },
       {
-        "id": 31,
+        "id": 53,
         "label": "Responsive web"
       },
       {
-        "id": 32,
+        "id": 54,
         "label": "iOS & Android"
       }
     ],
     "seo": {
-      "id": 28,
+      "id": 141,
       "metaTitle": "About — Mohamad Hawa",
       "metaDescription": "Six years designing web and mobile products. Freelance since 2020, at Poyesis since 2022.",
       "shareImage": null
     }
   },
   "contactPage": {
-    "id": 4,
+    "id": 5,
     "heading": "Tell me what you're building.",
-    "body": "Fill this in and I get it straight away. Or reach me on WhatsApp — both work.",
-    "homeBody": "Four fields and it lands in my inbox. I reply to the address you leave.",
+    "body": "Fill this in and it opens a message with everything already written. Or reach me directly — both work.",
+    "homeBody": "Three fields. It opens a message with everything already written — you just press send.",
     "unsureLabel": "Not sure yet",
     "formNameLabel": "Your name",
     "formNamePlaceholder": "Who am I talking to?",
@@ -200,39 +200,32 @@
     "formBriefPlaceholder": "A sentence or two is plenty — what it is, who it's for, and when you'd like to start.",
     "formWhatsappCta": "Send on WhatsApp",
     "formEmailCta": "Send by email",
-    "formHint": "Sent straight to my inbox — I'll reply to the address you leave. Prefer WhatsApp? That button opens the message so you can read it before sending.",
+    "formHint": "Nothing is stored or sent from this page — it opens the message in your own app so you stay in control.",
     "formErrorName": "Add your name so I know who is writing.",
     "formErrorBrief": "Tell me a little more about the project — a sentence is enough.",
     "formSentWhatsapp": "WhatsApp opened — press send there to deliver it.",
     "formSentEmail": "Your mail app should be opening with the message ready.",
     "formGreeting": "Hi Mohamad, I would like to talk about a project.",
-    "formEmailLabel": "Your email",
-    "formEmailPlaceholder": "So I can reply to you",
-    "formErrorEmail": "Add an email address so I can reply.",
-    "formSendCta": "Send message",
-    "formSendingLabel": "Sending…",
-    "formSuccess": "Thanks — your message is on its way. I'll reply to the address you left.",
-    "formSendError": "That didn't send. Try again, or reach me on WhatsApp.",
     "budgetOptions": [
       {
-        "id": 41,
+        "id": 45,
         "label": "$500 – $1k"
       },
       {
-        "id": 42,
+        "id": 46,
         "label": "$1k – $3k"
       },
       {
-        "id": 43,
+        "id": 47,
         "label": "$3k – $7k"
       },
       {
-        "id": 44,
+        "id": 48,
         "label": "$7k+"
       }
     ],
     "seo": {
-      "id": 129,
+      "id": 139,
       "metaTitle": "Contact — Mohamad Hawa",
       "metaDescription": "Start a project. Three fields and it opens a WhatsApp or email message with everything already written.",
       "shareImage": null

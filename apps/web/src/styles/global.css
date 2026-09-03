@@ -237,17 +237,25 @@ figure {
 /* --------------------------------------------------------------------- */
 
 /*
- * iOS-style continuous corners. `border-radius` alone draws a circular arc that
- * meets the straight edge abruptly; a superellipse eases into it, which is what
- * makes Apple's rounding look softer at the same radius.
+ * The squircle — the continuous corner Apple uses throughout iOS. A plain
+ * `border-radius` draws a circular arc that meets the straight edge abruptly;
+ * a squircle blends the two, so the corner reads as softer at the same radius.
+ *
+ * `squircle` is a keyword in the spec and equals `superellipse(2)`. The scale
+ * is easy to get wrong: `round` is `superellipse(1)`, not 2, and the numbers
+ * climb towards `square` at infinity — so anything much above 2 makes corners
+ * harder, not softer. Use the keyword and there is nothing to misjudge.
  *
  * Progressive enhancement: browsers without `corner-shape` keep plain rounding,
- * which is what the site had before. Pills are excluded — at a 9999px radius a
- * superellipse squares the ends off and stops looking like a pill.
+ * which is what the site had before.
+ *
+ * Only pills opt out: at a 9999px radius a squircle flattens the ends and
+ * stops reading as a pill. The contact form's buttons are squircles rather
+ * than pills, so they stay in.
  */
-@supports (corner-shape: superellipse(4)) {
-  body *:not(.pill-corner) {
-    corner-shape: superellipse(4);
+@supports (corner-shape: squircle) {
+  body * {
+    corner-shape: squircle;
   }
 
   .btn,
