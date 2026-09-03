@@ -21,6 +21,12 @@ interface Props {
 }
 
 const { project, next } = Astro.props;
+
+// Metrics are designed for short figures ("50%", "44+ Screens"). Some projects
+// list what shipped by name instead, and a phrase like "Podcasts & Editorial
+// Content" runs 500px wide at that size and breaks the row. Decide once per
+// project so a row never mixes both sizes.
+const compactMetrics = project.metrics.some((metric) => metric.value.length > 14);
 ---
 
 <BaseLayout seo={project.seo}>
@@ -183,7 +189,11 @@ const { project, next } = Astro.props;
               <div class="metrics" data-reveal="0">
                 {project.metrics.map((metric) => (
                   <div>
-                    <div class="metric__value" data-num={metric.animate ? '1' : undefined}>
+                    <div
+                      class="metric__value"
+                      class:list={[{ 'metric__value--text': compactMetrics }]}
+                      data-num={metric.animate ? '1' : undefined}
+                    >
                       {metric.value}
                     </div>
                     <div class="metric__label">{metric.label}</div>
@@ -487,6 +497,15 @@ const { project, next } = Astro.props;
     font-weight: 600;
     letter-spacing: -0.024em;
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Applied to every metric in a project whose values are names rather than
+     figures — see `compactMetrics` above. Sized like the outcome titles. */
+  .metric__value--text {
+    font-size: clamp(19px, 2vw, 23px);
+    letter-spacing: -0.016em;
+    line-height: 1.25;
+    max-width: 16ch;
   }
 
   .metric__label {

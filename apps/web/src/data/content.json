@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T06:01:59.663Z",
+  "generatedAt": "2026-09-03T07:37:34.090Z",
   "siteSetting": {
     "id": 1,
     "siteName": "Mohamad Hawa",
@@ -295,15 +295,523 @@
   ],
   "projects": [
     {
-      "id": 31,
+      "id": 52,
+      "title": "Kanz",
+      "slug": "kanz",
+      "category": "Fintech",
+      "discipline": "Product Design",
+      "summary": "Kanz is a mobile financial platform designed to make everyday money movement simpler, giving users easier access to their salary, transfers, withdrawals, and card payments in one place.",
+      "role": "UI / UX Design",
+      "order": 0,
+      "featured": true,
+      "chipBg": "#efeff1",
+      "chipInk": "#86868b",
+      "briefLead": "They needed a mobile experience that could bring essential financial services together while making everyday actions such as accessing salary, transferring money, withdrawing funds, and managing cards feel simple and accessible.",
+      "briefBody": "",
+      "problemLead": "Everyday financial tasks can become unnecessarily complicated when users need to move between different services, processes, and payment methods.",
+      "approachLead": "Designed Kanz around immediate access and control, bringing salary streaming, transfers, withdrawals, payments, and account management into one consistent mobile system.",
+      "approachBody": "The experience is structured around the actions users perform most frequently.\n\nKanz creates one mobile hub for everyday financial activity, allowing users to access earned salary, transfer money instantly, withdraw funds, manage cards, and control account settings from one place. Task-focused flows keep important actions simple while maintaining visibility and security.",
+      "approachCaption": "",
+      "shippedHeading": "A financial experience built around access and control.",
+      "reflectionLead": "The goal was not simply to add more financial features, but to make access to money feel immediate, understandable, and under the user's control.",
+      "reflectionBody": "Kanz connects the most important financial actions into one mobile journey.",
+      "cover": {
+        "id": 35,
+        "name": "kanz-cover",
+        "alternativeText": "Kanz",
+        "caption": "",
+        "focalPoint": null,
+        "width": 1440,
+        "height": 1024,
+        "url": "/media/kanz_cover_c04c19992e.png"
+      },
+      "approachShot": {
+        "id": 36,
+        "name": "kanz-1",
+        "alternativeText": "Kanz screen",
+        "caption": "",
+        "focalPoint": null,
+        "width": 1440,
+        "height": 1024,
+        "url": "/media/kanz_1_80803c2208.png"
+      },
+      "gallery": [
+        {
+          "id": 37,
+          "name": "kanz-2",
+          "alternativeText": "Kanz screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 1440,
+          "height": 1024,
+          "url": "/media/kanz_2_35c6a241d8.png"
+        },
+        {
+          "id": 38,
+          "name": "kanz-3",
+          "alternativeText": "Kanz screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 1440,
+          "height": 1024,
+          "url": "/media/kanz_3_ed1fa77c5c.png"
+        }
+      ],
+      "constraints": [
+        {
+          "id": 229,
+          "title": "Salary access, transfers, withdrawals, and cards were treated as separate experiences.",
+          "body": ""
+        },
+        {
+          "id": 230,
+          "title": "Essential money movements involved multiple steps and could create unnecessary friction.",
+          "body": ""
+        },
+        {
+          "id": 231,
+          "title": "Users had limited flexibility over when and how they accessed their earned money.",
+          "body": ""
+        }
+      ],
+      "decisions": [
+        {
+          "id": 229,
+          "eyebrow": "Outcome",
+          "title": "Faster Access",
+          "body": "Users can access earned salary without relying solely on traditional payday cycles."
+        },
+        {
+          "id": 230,
+          "eyebrow": "Outcome",
+          "title": "Everyday Flexibility",
+          "body": "Transfers, withdrawals, and payments are connected through one experience."
+        },
+        {
+          "id": 231,
+          "eyebrow": "Outcome",
+          "title": "Greater Control",
+          "body": "Account, card, notification, and security settings are managed in one place."
+        }
+      ],
+      "metrics": [
+        {
+          "id": 229,
+          "value": "Salary Streaming",
+          "label": "Access salary already earned before the regular payday.",
+          "animate": false
+        },
+        {
+          "id": 230,
+          "value": "Instant Transfers",
+          "label": "A streamlined flow for selecting recipients, entering amounts, and sending money.",
+          "animate": false
+        },
+        {
+          "id": 231,
+          "value": "Withdrawals & Cards",
+          "label": "Flexible withdrawal methods and virtual card management for everyday spending.",
+          "animate": false
+        }
+      ],
+      "seo": {
+        "id": 95,
+        "metaTitle": "Kanz — Mohamad Hawa",
+        "metaDescription": "Kanz is a mobile financial platform designed to make everyday money movement simpler, giving users easier access to their salary, transfers, withdrawals, and card payments in one place.",
+        "shareImage": null
+      }
+    },
+    {
+      "id": 53,
+      "title": "Rowad",
+      "slug": "rowad",
+      "category": "Financial Education",
+      "discipline": "Web Experience Design",
+      "summary": "Rowad is a financial education and entrepreneurship platform designed to help entrepreneurs discover the knowledge, tools, and resources they need throughout their journey.",
+      "role": "UI / UX Design",
+      "order": 1,
+      "featured": false,
+      "chipBg": "#e9e9ec",
+      "chipInk": "#86868b",
+      "briefLead": "They needed a more organized digital experience that could bring courses, tools, podcasts, documents, events, and other resources into a clearer ecosystem while helping users discover what matters to them.",
+      "briefBody": "",
+      "problemLead": "Rowad offered a wide range of valuable entrepreneurial content, but the experience made it difficult to understand where to start and what to explore next.",
+      "approachLead": "Restructured the information architecture around clearer content categories and user needs.",
+      "approachBody": "The central idea was the Journey Guide: a short personalized flow that understands the user's stage and goals, then connects them with relevant courses, tools, podcasts, documents, and other Rowad resources.\n\nThe redesigned experience turns Rowad's content ecosystem into a guided journey. The Journey Guide acts as an intelligent starting point, while the rest of the platform provides structured paths for discovering resources, learning content, podcasts, and practical tools.",
+      "approachCaption": "",
+      "shippedHeading": "From a resource library to a guided journey.",
+      "reflectionLead": "The biggest opportunity was not adding more content, but making the existing content easier to understand and act on.",
+      "reflectionBody": "The Journey Guide gives Rowad a way to connect its ecosystem into a clear next step for every user.",
+      "cover": {
+        "id": 39,
+        "name": "rowad-rowad-cover",
+        "alternativeText": "Rowad",
+        "caption": "",
+        "focalPoint": null,
+        "width": 1440,
+        "height": 1024,
+        "url": "/media/rowad_rowad_cover_eaf959aef6.png"
+      },
+      "approachShot": {
+        "id": 40,
+        "name": "rowad-jouney",
+        "alternativeText": "Rowad screen",
+        "caption": "",
+        "focalPoint": null,
+        "width": 1440,
+        "height": 862,
+        "url": "/media/rowad_jouney_2f0fb97f37.png"
+      },
+      "gallery": [
+        {
+          "id": 41,
+          "name": "rowad-freebies",
+          "alternativeText": "Rowad screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 1440,
+          "height": 898,
+          "url": "/media/rowad_freebies_1f8b08faf3.png"
+        },
+        {
+          "id": 42,
+          "name": "rowad-podcasts",
+          "alternativeText": "Rowad screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 1448,
+          "height": 1298,
+          "url": "/media/rowad_podcasts_860dcc95ca.png"
+        }
+      ],
+      "constraints": [
+        {
+          "id": 235,
+          "title": "Resources were spread across different areas, making discovery feel fragmented.",
+          "body": ""
+        },
+        {
+          "id": 236,
+          "title": "Users had little guidance based on their business stage or individual needs.",
+          "body": ""
+        },
+        {
+          "id": 237,
+          "title": "Content existed as separate resources rather than feeling like one connected journey.",
+          "body": ""
+        }
+      ],
+      "decisions": [
+        {
+          "id": 235,
+          "eyebrow": "Outcome",
+          "title": "Guided Discovery",
+          "body": "Users can start from their needs instead of searching through the entire platform."
+        },
+        {
+          "id": 236,
+          "eyebrow": "Outcome",
+          "title": "Personalized Journey",
+          "body": "Recommendations adapt to each entrepreneur's stage, goals, and responses."
+        },
+        {
+          "id": 237,
+          "eyebrow": "Outcome",
+          "title": "Connected Ecosystem",
+          "body": "Courses, tools, podcasts, and resources work together as one experience."
+        }
+      ],
+      "metrics": [
+        {
+          "id": 235,
+          "value": "Journey Guide",
+          "label": "Personalized onboarding and recommendations.",
+          "animate": false
+        },
+        {
+          "id": 236,
+          "value": "Content Discovery",
+          "label": "Structured access to courses, tools, and resources.",
+          "animate": false
+        },
+        {
+          "id": 237,
+          "value": "Podcasts & Editorial Content",
+          "label": "A richer way to explore stories and entrepreneurial insights.",
+          "animate": false
+        }
+      ],
+      "seo": {
+        "id": 97,
+        "metaTitle": "Rowad — Mohamad Hawa",
+        "metaDescription": "Rowad is a financial education and entrepreneurship platform designed to help entrepreneurs discover the knowledge, tools, and resources they need throughout their journey.",
+        "shareImage": null
+      }
+    },
+    {
+      "id": 54,
+      "title": "Lebanese Prime Minister",
+      "slug": "lebanese-prime-minister",
+      "category": "Government & Public Sector",
+      "discipline": "Web Experience Design",
+      "summary": "A redesigned digital home for the Lebanese Prime Minister's Office, bringing government information, legislation, institutional content, and national history into a clearer and more accessible experience.",
+      "role": "UI / UX Design",
+      "order": 2,
+      "featured": false,
+      "chipBg": "#f2f2f4",
+      "chipInk": "#86868b",
+      "briefLead": "The project focused on restructuring the government portal around clearer information hierarchy, simpler navigation, responsive layouts, and better ways to explore complex institutional, legal, and historical content.",
+      "briefBody": "",
+      "problemLead": "The existing website had grown into a large collection of government information, but its structure made important content difficult to understand, scan, and navigate.",
+      "approachLead": "Restructured the information architecture around user needs and introduced a clearer hierarchy across the platform.",
+      "approachBody": "Key experiences were redesigned individually: the Official Gazette around browsing and reading, and the Grand Serail around visual storytelling and chronological exploration.\n\nThe redesigned portal creates a clearer path through government information, institutions, legislation, and history. Responsive layouts support different screen sizes, while focused experiences make the Official Gazette easier to explore and transform the Grand Serail into a narrative historical journey.",
+      "approachCaption": "",
+      "shippedHeading": "A government portal designed around information, not just pages.",
+      "reflectionLead": "The goal was not simply to make a government website look newer.",
+      "reflectionBody": "It was to make a complex institutional system easier to understand by giving different types of information the hierarchy, navigation, and interaction patterns they require.",
+      "cover": {
+        "id": 43,
+        "name": "lebanese-prime-minister-cover",
+        "alternativeText": "Lebanese Prime Minister",
+        "caption": "",
+        "focalPoint": null,
+        "width": 1440,
+        "height": 1024,
+        "url": "/media/lebanese_prime_minister_cover_cfbd31b6da.png"
+      },
+      "approachShot": {
+        "id": 49,
+        "name": "lebanese-prime-minister-02010f69",
+        "alternativeText": "Lebanese Prime Minister screen",
+        "caption": "",
+        "focalPoint": null,
+        "width": 1440,
+        "height": 1348,
+        "url": "/media/lebanese_prime_minister_02010f69_8f85c660a1.png"
+      },
+      "gallery": [
+        {
+          "id": 50,
+          "name": "lebanese-prime-minister-92b259f0",
+          "alternativeText": "Lebanese Prime Minister screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 1440,
+          "height": 1353,
+          "url": "/media/lebanese_prime_minister_92b259f0_82d3c6da87.png"
+        },
+        {
+          "id": 51,
+          "name": "lebanese-prime-minister-f634d54e",
+          "alternativeText": "Lebanese Prime Minister screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 1440,
+          "height": 1348,
+          "url": "/media/lebanese_prime_minister_f634d54e_9b54170eca.png"
+        }
+      ],
+      "constraints": [
+        {
+          "id": 241,
+          "title": "Large volumes of information were presented with weak visual hierarchy.",
+          "body": ""
+        },
+        {
+          "id": 242,
+          "title": "The navigation structure made it difficult to understand how sections and institutions were connected.",
+          "body": ""
+        },
+        {
+          "id": 243,
+          "title": "Content-heavy experiences such as the Official Gazette and Grand Serail relied on static presentation instead of discovery and storytelling.",
+          "body": ""
+        }
+      ],
+      "decisions": [
+        {
+          "id": 241,
+          "eyebrow": "Outcome",
+          "title": "Clearer Navigation",
+          "body": "A simplified structure makes government information easier to reach and understand."
+        },
+        {
+          "id": 242,
+          "eyebrow": "Outcome",
+          "title": "Better Reading",
+          "body": "The Official Gazette is organized around browsing, filtering, and document access."
+        },
+        {
+          "id": 243,
+          "eyebrow": "Outcome",
+          "title": "Narrative History",
+          "body": "The Grand Serail becomes a visual timeline connecting places, moments, and history."
+        }
+      ],
+      "metrics": [
+        {
+          "id": 241,
+          "value": "Government & Institutions",
+          "label": "A clearer structure for ministries, institutions, and government information.",
+          "animate": false
+        },
+        {
+          "id": 242,
+          "value": "Official Gazette",
+          "label": "A redesigned experience for discovering issues, dates, categories, and documents.",
+          "animate": false
+        },
+        {
+          "id": 243,
+          "value": "Grand Serail",
+          "label": "A narrative-driven history experience built around visual moments and chronology.",
+          "animate": false
+        }
+      ],
+      "seo": {
+        "id": 99,
+        "metaTitle": "Lebanese Prime Minister — Mohamad Hawa",
+        "metaDescription": "A redesigned digital home for the Lebanese Prime Minister's Office, bringing government information, legislation, institutional content, and national history into a clearer and more accessible experie",
+        "shareImage": null
+      }
+    },
+    {
+      "id": 55,
+      "title": "Apamea",
+      "slug": "apamea",
+      "category": "Asset Management",
+      "discipline": "Product Design",
+      "summary": "Apamea is a multi-asset management platform designed to give investors a clearer view of their wealth by bringing different investment types into one structured workspace.",
+      "role": "UI / UX Design",
+      "order": 3,
+      "featured": false,
+      "chipBg": "#efeff1",
+      "chipInk": "#86868b",
+      "briefLead": "They needed a unified platform for managing different types of assets, replacing fragmented tracking with a structured workspace for monitoring portfolios, positions, performance, and investment activity.",
+      "briefBody": "",
+      "problemLead": "Managing different investments often means working across different tools and data structures, making it difficult to maintain a clear picture of overall performance.",
+      "approachLead": "Designed Apamea around a centralized asset-management model, creating shared interaction patterns across investment types while preserving the information unique to each asset class.",
+      "approachBody": "The experience connects high-level portfolio visibility with detailed asset views.\n\nApamea brings multiple investment categories into one workspace, with dedicated experiences for stocks, real estate, crypto, private equity, and other assets. Consistent navigation, portfolio controls, performance indicators, and detailed views make a complex financial system easier to understand and manage.",
+      "approachCaption": "",
+      "shippedHeading": "One system. Multiple asset classes.",
+      "reflectionLead": "The challenge was not simply presenting more financial data. It was creating a system where different types of investments could feel coherent.",
+      "reflectionBody": "Apamea connects those experiences through a shared structure while allowing each asset class to surface what matters most.",
+      "cover": {
+        "id": 52,
+        "name": "apamea-cover",
+        "alternativeText": "Apamea",
+        "caption": "",
+        "focalPoint": null,
+        "width": 1440,
+        "height": 1024,
+        "url": "/media/apamea_cover_4947f4dad9.png"
+      },
+      "approachShot": {
+        "id": 53,
+        "name": "apamea-actif-vue-densemble",
+        "alternativeText": "Apamea screen",
+        "caption": "",
+        "focalPoint": null,
+        "width": 1440,
+        "height": 985,
+        "url": "/media/apamea_actif_vue_densemble_dfa0254a9f.png"
+      },
+      "gallery": [
+        {
+          "id": 54,
+          "name": "apamea-mes-positions-switch-portfolio",
+          "alternativeText": "Apamea screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 1440,
+          "height": 1024,
+          "url": "/media/apamea_mes_positions_switch_portfolio_e1d7fb325d.png"
+        },
+        {
+          "id": 48,
+          "name": "apamea-real-estate",
+          "alternativeText": "Apamea screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 1440,
+          "height": 1024,
+          "url": "/media/apamea_real_estate_a7577d088a.png"
+        }
+      ],
+      "constraints": [
+        {
+          "id": 247,
+          "title": "Different asset classes required different ways of tracking value and performance.",
+          "body": ""
+        },
+        {
+          "id": 248,
+          "title": "Large amounts of financial data made important information difficult to scan and compare.",
+          "body": ""
+        },
+        {
+          "id": 249,
+          "title": "Without a unified overview, understanding the bigger portfolio picture became harder.",
+          "body": ""
+        }
+      ],
+      "decisions": [
+        {
+          "id": 247,
+          "eyebrow": "Outcome",
+          "title": "One Portfolio",
+          "body": "A centralized view of assets and investments across different categories."
+        },
+        {
+          "id": 248,
+          "eyebrow": "Outcome",
+          "title": "Deeper Visibility",
+          "body": "Detailed views expose valuation, performance, positions, and asset-specific information."
+        },
+        {
+          "id": 249,
+          "eyebrow": "Outcome",
+          "title": "Structured Management",
+          "body": "Consistent patterns make a complex multi-asset system easier to operate."
+        }
+      ],
+      "metrics": [
+        {
+          "id": 247,
+          "value": "Portfolio Management",
+          "label": "A centralized workspace for switching portfolios and understanding holdings.",
+          "animate": false
+        },
+        {
+          "id": 248,
+          "value": "Stock Market",
+          "label": "Position management, valuation, performance, P/L, and portfolio views.",
+          "animate": false
+        },
+        {
+          "id": 249,
+          "value": "Real Estate",
+          "label": "Project tracking for budgets, margins, stages, and activity.",
+          "animate": false
+        }
+      ],
+      "seo": {
+        "id": 101,
+        "metaTitle": "Apamea — Mohamad Hawa",
+        "metaDescription": "Apamea is a multi-asset management platform designed to give investors a clearer view of their wealth by bringing different investment types into one structured workspace.",
+        "shareImage": null
+      }
+    },
+    {
+      "id": 56,
       "title": "Wise Academy",
       "slug": "wise-academy",
       "category": "Education",
       "discipline": "Web app design",
       "summary": "WISE Academy a high standard school based in the US promoting academic excellence in a faith based and safe environment for our students.",
       "role": "UI / UX Design",
-      "order": 0,
-      "featured": true,
+      "order": 4,
+      "featured": false,
       "chipBg": "#efeff1",
       "chipInk": "#86868b",
       "briefLead": "They needed a modern, scalable, and user-friendly back-office solution to streamline student enrollment, track records, and manage communication effectively.",
@@ -359,36 +867,36 @@
       ],
       "constraints": [
         {
-          "id": 148,
+          "id": 250,
           "title": "Staff struggled with locating and updating student data quickly.",
           "body": ""
         },
         {
-          "id": 149,
+          "id": 251,
           "title": "New enrollments required multiple manual steps, leading to delays.",
           "body": ""
         },
         {
-          "id": 150,
+          "id": 252,
           "title": "A lack of filtering options for student records made tracking alumni difficult.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 148,
+          "id": 250,
           "eyebrow": "Outcome",
           "title": "Improved Efficiency",
           "body": "Reduced time spent managing student data by 40%."
         },
         {
-          "id": 149,
+          "id": 251,
           "eyebrow": "Outcome",
           "title": "Streamlined Enrollment",
           "body": "Created a path to view and find student records within seconds."
         },
         {
-          "id": 150,
+          "id": 252,
           "eyebrow": "Outcome",
           "title": "Enhanced Usability",
           "body": "A clean layout with intuitive navigation ensured ease of use for all staff levels."
@@ -396,40 +904,40 @@
       ],
       "metrics": [
         {
-          "id": 148,
+          "id": 250,
           "value": "One Week",
           "label": "Timeline",
           "animate": false
         },
         {
-          "id": 149,
+          "id": 251,
           "value": "44+ Screens",
           "label": "Delivered",
           "animate": false
         },
         {
-          "id": 150,
+          "id": 252,
           "value": "50%",
           "label": "less time spent managing student data",
           "animate": true
         }
       ],
       "seo": {
-        "id": 68,
+        "id": 102,
         "metaTitle": "Wise Academy — Mohamad Hawa",
         "metaDescription": "WISE Academy a high standard school based in the US promoting academic excellence in a faith based and safe environment for our students.",
         "shareImage": null
       }
     },
     {
-      "id": 32,
+      "id": 57,
       "title": "Kabbara Office",
       "slug": "kabbara-office",
       "category": "Corporate",
       "discipline": "Landing page",
       "summary": "Kabbara Office is a digital solution built to help Deputy Karim Kabbara manage and respond to public service requests efficiently.",
       "role": "UI / UX Design",
-      "order": 1,
+      "order": 5,
       "featured": false,
       "chipBg": "#e9e9ec",
       "chipInk": "#86868b",
@@ -465,36 +973,36 @@
       "gallery": [],
       "constraints": [
         {
-          "id": 154,
+          "id": 253,
           "title": "Manual request handling was time-consuming and prone to errors.",
           "body": ""
         },
         {
-          "id": 155,
+          "id": 254,
           "title": "There was no unified view of pending, approved, or rejected services.",
           "body": ""
         },
         {
-          "id": 156,
+          "id": 255,
           "title": "Categorizing and prioritizing new requests lacked a clear workflow.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 154,
+          "id": 253,
           "eyebrow": "Outcome",
           "title": "Centralized Request Management",
           "body": "All requests are now logged and easily trackable in one place."
         },
         {
-          "id": 155,
+          "id": 254,
           "eyebrow": "Outcome",
           "title": "Clear Status Indicators",
           "body": "Staff can instantly see which requests are new, pending, or completed."
         },
         {
-          "id": 156,
+          "id": 255,
           "eyebrow": "Outcome",
           "title": "Faster Response Times",
           "body": "Filtering and search tools significantly reduced the time to locate and act on requests."
@@ -502,40 +1010,40 @@
       ],
       "metrics": [
         {
-          "id": 154,
+          "id": 253,
           "value": "One Week",
           "label": "Timeline",
           "animate": false
         },
         {
-          "id": 155,
+          "id": 254,
           "value": "15+ Mobile Screens",
           "label": "Delivered",
           "animate": false
         },
         {
-          "id": 156,
+          "id": 255,
           "value": "60%",
           "label": "less time to process each request",
           "animate": true
         }
       ],
       "seo": {
-        "id": 70,
+        "id": 103,
         "metaTitle": "Kabbara Office — Mohamad Hawa",
         "metaDescription": "Kabbara Office is a digital solution built to help Deputy Karim Kabbara manage and respond to public service requests efficiently.",
         "shareImage": null
       }
     },
     {
-      "id": 33,
+      "id": 58,
       "title": "CodingCLebanon",
       "slug": "coding-lebanon",
       "category": "Community",
       "discipline": "Web design",
       "summary": "CodingCLebanon is an educational platform that empowers individuals to learn programming through personalized one-on-one online mentorship.",
       "role": "UI / UX Design",
-      "order": 2,
+      "order": 6,
       "featured": false,
       "chipBg": "#f2f2f4",
       "chipInk": "#86868b",
@@ -571,36 +1079,36 @@
       "gallery": [],
       "constraints": [
         {
-          "id": 160,
+          "id": 256,
           "title": "Users were unclear about how to get started or book their first session.",
           "body": ""
         },
         {
-          "id": 161,
+          "id": 257,
           "title": "The homepage lacked a clear call-to-action and value proposition.",
           "body": ""
         },
         {
-          "id": 162,
+          "id": 258,
           "title": "There was no centralized dashboard to track progress or session history.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 160,
+          "id": 256,
           "eyebrow": "Outcome",
           "title": "Boosted Onboarding",
           "body": "Clear CTAs and guidance helped new users start their learning journey faster."
         },
         {
-          "id": 161,
+          "id": 257,
           "eyebrow": "Outcome",
           "title": "Seamless Booking",
           "body": "Booking sessions was simplified into an intuitive and fast workflow."
         },
         {
-          "id": 162,
+          "id": 258,
           "eyebrow": "Outcome",
           "title": "Learner Empowerment",
           "body": "The dashboard gave students more control and visibility over their learning journey."
@@ -608,40 +1116,40 @@
       ],
       "metrics": [
         {
-          "id": 160,
+          "id": 256,
           "value": "3 Days",
           "label": "Timeline",
           "animate": false
         },
         {
-          "id": 161,
+          "id": 257,
           "value": "10+ Redesigned Screens",
           "label": "Delivered",
           "animate": false
         },
         {
-          "id": 162,
+          "id": 258,
           "value": "35%",
           "label": "more session bookings after the redesign",
           "animate": true
         }
       ],
       "seo": {
-        "id": 72,
+        "id": 104,
         "metaTitle": "CodingCLebanon — Mohamad Hawa",
         "metaDescription": "CodingCLebanon is an educational platform that empowers individuals to learn programming through personalized one-on-one online mentorship.",
         "shareImage": null
       }
     },
     {
-      "id": 34,
+      "id": 59,
       "title": "WFK Law Firm",
       "slug": "wfk-law-firm",
       "category": "Legal",
       "discipline": "Landing page",
       "summary": "WFK Law Firm is a professional legal firm that needed an internal tool to streamline employee task tracking, scheduling, and performance monitoring.",
       "role": "UI / UX Design",
-      "order": 3,
+      "order": 7,
       "featured": false,
       "chipBg": "#efeff1",
       "chipInk": "#86868b",
@@ -708,36 +1216,36 @@
       ],
       "constraints": [
         {
-          "id": 166,
+          "id": 259,
           "title": "Employees lacked a unified interface to view or manage their assigned tasks.",
           "body": ""
         },
         {
-          "id": 167,
+          "id": 260,
           "title": "There was no performance tracking mechanism or analytics overview for management.",
           "body": ""
         },
         {
-          "id": 168,
+          "id": 261,
           "title": "The solution needed to align with Power Apps limitations while maintaining good UX practices.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 166,
+          "id": 259,
           "eyebrow": "Outcome",
           "title": "Task Ownership",
           "body": "Employees can now clearly view and manage their assignments in real time."
         },
         {
-          "id": 167,
+          "id": 260,
           "eyebrow": "Outcome",
           "title": "Executive Overview",
           "body": "The dashboard provides management with performance insights and workload balance."
         },
         {
-          "id": 168,
+          "id": 261,
           "eyebrow": "Outcome",
           "title": "System Integration",
           "body": "The design was fully Power Apps compatible, ensuring smooth implementation within the existing IT infrastructure."
@@ -745,40 +1253,40 @@
       ],
       "metrics": [
         {
-          "id": 166,
+          "id": 259,
           "value": "10 Days",
           "label": "Timeline",
           "animate": false
         },
         {
-          "id": 167,
+          "id": 260,
           "value": "20+ Screens",
           "label": "Power Apps Compatible",
           "animate": false
         },
         {
-          "id": 168,
+          "id": 261,
           "value": "40%",
           "label": "reduction in task handling time",
           "animate": true
         }
       ],
       "seo": {
-        "id": 74,
+        "id": 105,
         "metaTitle": "WFK Law Firm — Mohamad Hawa",
         "metaDescription": "WFK Law Firm is a professional legal firm that needed an internal tool to streamline employee task tracking, scheduling, and performance monitoring.",
         "shareImage": null
       }
     },
     {
-      "id": 35,
+      "id": 60,
       "title": "Shipment Share",
       "slug": "shipment-share",
       "category": "Logistics",
       "discipline": "Mobile app design",
       "summary": "Shipment Share is a smart delivery platform that connects people who need to send packages with travelers already heading to the same destination.",
       "role": "UI / UX Design",
-      "order": 4,
+      "order": 8,
       "featured": false,
       "chipBg": "#e9e9ec",
       "chipInk": "#86868b",
@@ -814,36 +1322,36 @@
       "gallery": [],
       "constraints": [
         {
-          "id": 172,
+          "id": 262,
           "title": "Travelers wanted an easy way to offer extra luggage space for delivery without being overwhelmed.",
           "body": ""
         },
         {
-          "id": 173,
+          "id": 263,
           "title": "Senders needed to trust the traveler, know the exact route, and have direct communication.",
           "body": ""
         },
         {
-          "id": 174,
+          "id": 264,
           "title": "A clear visual summary of the trip, shipment capacity, and fees was essential to both parties.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 172,
+          "id": 262,
           "eyebrow": "Outcome",
           "title": "Real-Time Matchmaking",
           "body": "Travelers and senders can easily connect based on route and availability."
         },
         {
-          "id": 173,
+          "id": 263,
           "eyebrow": "Outcome",
           "title": "Trust-Driven UI",
           "body": "Clear sender/recipient info, travel timelines, and secure communication features."
         },
         {
-          "id": 174,
+          "id": 264,
           "eyebrow": "Outcome",
           "title": "Mobile Focus",
           "body": "Designed with mobile-first principles for everyday accessibility and fast interactions."
@@ -851,40 +1359,40 @@
       ],
       "metrics": [
         {
-          "id": 172,
+          "id": 262,
           "value": "14 Days",
           "label": "Timeline",
           "animate": false
         },
         {
-          "id": 173,
+          "id": 263,
           "value": "20+ Screens",
           "label": "Fully Mobile Responsive",
           "animate": false
         },
         {
-          "id": 174,
+          "id": 264,
           "value": "2 min",
           "label": "from choosing a trip to a confirmed shipment",
           "animate": true
         }
       ],
       "seo": {
-        "id": 76,
+        "id": 106,
         "metaTitle": "Shipment Share — Mohamad Hawa",
         "metaDescription": "Shipment Share is a smart delivery platform that connects people who need to send packages with travelers already heading to the same destination.",
         "shareImage": null
       }
     },
     {
-      "id": 36,
+      "id": 61,
       "title": "Shareb",
       "slug": "shareb",
       "category": "Product",
       "discipline": "Design system",
       "summary": "Shareb is a promotional lottery app designed to boost brand engagement through interactive weekly draws.",
       "role": "UI / UX Design",
-      "order": 5,
+      "order": 9,
       "featured": false,
       "chipBg": "#f2f2f4",
       "chipInk": "#86868b",
@@ -931,36 +1439,36 @@
       ],
       "constraints": [
         {
-          "id": 178,
+          "id": 265,
           "title": "QR code scanning had to be seamless and redirect users directly into the app or sign-up screen.",
           "body": ""
         },
         {
-          "id": 179,
+          "id": 266,
           "title": "The lottery button needed to feel satisfying and responsive — giving a mini dopamine hit.",
           "body": ""
         },
         {
-          "id": 180,
+          "id": 267,
           "title": "Showcasing past winners and brand sponsors built trust and encouraged participation.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 178,
+          "id": 265,
           "eyebrow": "Outcome",
           "title": "Instant Access",
           "body": "Users can enter the draw in seconds with no complicated forms."
         },
         {
-          "id": 179,
+          "id": 266,
           "eyebrow": "Outcome",
           "title": "Brand-Driven UI",
           "body": "Sponsors and partner logos are clearly featured for visibility."
         },
         {
-          "id": 180,
+          "id": 267,
           "eyebrow": "Outcome",
           "title": "Gamified Interaction",
           "body": "Tapping to participate adds a game-like layer to simple actions."
@@ -968,26 +1476,26 @@
       ],
       "metrics": [
         {
-          "id": 178,
+          "id": 265,
           "value": "10 Days",
           "label": "Timeline",
           "animate": false
         },
         {
-          "id": 179,
+          "id": 266,
           "value": "8+ Screens",
           "label": "Fully animated & Mobile Responsive",
           "animate": false
         },
         {
-          "id": 180,
+          "id": 267,
           "value": "5 sec",
           "label": "to enter the draw after scanning the QR code",
           "animate": true
         }
       ],
       "seo": {
-        "id": 78,
+        "id": 107,
         "metaTitle": "Shareb — Mohamad Hawa",
         "metaDescription": "Shareb is a promotional lottery app designed to boost brand engagement through interactive weekly draws.",
         "shareImage": null

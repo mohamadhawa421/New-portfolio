@@ -1,0 +1,241 @@
+{
+  "_comment": "Project content supplied by Mohamad, imported by scripts/import-projects.js. Image paths are relative to the --images directory.",
+  "projects": [
+    {
+      "slug": "kanz",
+      "title": "Kanz",
+      "category": "Fintech",
+      "discipline": "Product Design",
+      "role": "UI / UX Design",
+      "order": 0,
+      "featured": true,
+      "chipBg": "#efeff1",
+      "chipInk": "#86868b",
+      "summary": "Kanz is a mobile financial platform designed to make everyday money movement simpler, giving users easier access to their salary, transfers, withdrawals, and card payments in one place.",
+      "briefLead": "They needed a mobile experience that could bring essential financial services together while making everyday actions such as accessing salary, transferring money, withdrawing funds, and managing cards feel simple and accessible.",
+      "briefBody": "",
+      "problemLead": "Everyday financial tasks can become unnecessarily complicated when users need to move between different services, processes, and payment methods.",
+      "constraints": [
+        "Salary access, transfers, withdrawals, and cards were treated as separate experiences.",
+        "Essential money movements involved multiple steps and could create unnecessary friction.",
+        "Users had limited flexibility over when and how they accessed their earned money."
+      ],
+      "approachLead": "Designed Kanz around immediate access and control, bringing salary streaming, transfers, withdrawals, payments, and account management into one consistent mobile system.",
+      "approachBody": "The experience is structured around the actions users perform most frequently.\n\nKanz creates one mobile hub for everyday financial activity, allowing users to access earned salary, transfer money instantly, withdraw funds, manage cards, and control account settings from one place. Task-focused flows keep important actions simple while maintaining visibility and security.",
+      "decisions": [
+        {
+          "title": "Faster Access",
+          "body": "Users can access earned salary without relying solely on traditional payday cycles."
+        },
+        {
+          "title": "Everyday Flexibility",
+          "body": "Transfers, withdrawals, and payments are connected through one experience."
+        },
+        {
+          "title": "Greater Control",
+          "body": "Account, card, notification, and security settings are managed in one place."
+        }
+      ],
+      "shippedHeading": "A financial experience built around access and control.",
+      "shipped": [
+        {
+          "title": "Salary Streaming",
+          "body": "Access salary already earned before the regular payday."
+        },
+        {
+          "title": "Instant Transfers",
+          "body": "A streamlined flow for selecting recipients, entering amounts, and sending money."
+        },
+        {
+          "title": "Withdrawals & Cards",
+          "body": "Flexible withdrawal methods and virtual card management for everyday spending."
+        }
+      ],
+      "reflectionLead": "The goal was not simply to add more financial features, but to make access to money feel immediate, understandable, and under the user's control.",
+      "reflectionBody": "Kanz connects the most important financial actions into one mobile journey.",
+      "cover": "Kanz/Cover.png",
+      "approachShot": "Kanz/1.png",
+      "gallery": [
+        "Kanz/2.png",
+        "Kanz/3.png"
+      ]
+    },
+    {
+      "slug": "rowad",
+      "title": "Rowad",
+      "category": "Financial Education",
+      "discipline": "Web Experience Design",
+      "role": "UI / UX Design",
+      "order": 1,
+      "featured": false,
+      "chipBg": "#e9e9ec",
+      "chipInk": "#86868b",
+      "summary": "Rowad is a financial education and entrepreneurship platform designed to help entrepreneurs discover the knowledge, tools, and resources they need throughout their journey.",
+      "briefLead": "They needed a more organized digital experience that could bring courses, tools, podcasts, documents, events, and other resources into a clearer ecosystem while helping users discover what matters to them.",
+      "briefBody": "",
+      "problemLead": "Rowad offered a wide range of valuable entrepreneurial content, but the experience made it difficult to understand where to start and what to explore next.",
+      "constraints": [
+        "Resources were spread across different areas, making discovery feel fragmented.",
+        "Users had little guidance based on their business stage or individual needs.",
+        "Content existed as separate resources rather than feeling like one connected journey."
+      ],
+      "approachLead": "Restructured the information architecture around clearer content categories and user needs.",
+      "approachBody": "The central idea was the Journey Guide: a short personalized flow that understands the user's stage and goals, then connects them with relevant courses, tools, podcasts, documents, and other Rowad resources.\n\nThe redesigned experience turns Rowad's content ecosystem into a guided journey. The Journey Guide acts as an intelligent starting point, while the rest of the platform provides structured paths for discovering resources, learning content, podcasts, and practical tools.",
+      "decisions": [
+        {
+          "title": "Guided Discovery",
+          "body": "Users can start from their needs instead of searching through the entire platform."
+        },
+        {
+          "title": "Personalized Journey",
+          "body": "Recommendations adapt to each entrepreneur's stage, goals, and responses."
+        },
+        {
+          "title": "Connected Ecosystem",
+          "body": "Courses, tools, podcasts, and resources work together as one experience."
+        }
+      ],
+      "shippedHeading": "From a resource library to a guided journey.",
+      "shipped": [
+        {
+          "title": "Journey Guide",
+          "body": "Personalized onboarding and recommendations."
+        },
+        {
+          "title": "Content Discovery",
+          "body": "Structured access to courses, tools, and resources."
+        },
+        {
+          "title": "Podcasts & Editorial Content",
+          "body": "A richer way to explore stories and entrepreneurial insights."
+        }
+      ],
+      "reflectionLead": "The biggest opportunity was not adding more content, but making the existing content easier to understand and act on.",
+      "reflectionBody": "The Journey Guide gives Rowad a way to connect its ecosystem into a clear next step for every user.",
+      "cover": "Rowad/Rowad cover.png",
+      "approachShot": "Rowad/Jouney.png",
+      "gallery": [
+        "Rowad/Freebies.png",
+        "Rowad/Podcasts.png"
+      ]
+    },
+    {
+      "slug": "lebanese-prime-minister",
+      "title": "Lebanese Prime Minister",
+      "category": "Government & Public Sector",
+      "discipline": "Web Experience Design",
+      "role": "UI / UX Design",
+      "order": 2,
+      "featured": false,
+      "chipBg": "#f2f2f4",
+      "chipInk": "#86868b",
+      "summary": "A redesigned digital home for the Lebanese Prime Minister's Office, bringing government information, legislation, institutional content, and national history into a clearer and more accessible experience.",
+      "briefLead": "The project focused on restructuring the government portal around clearer information hierarchy, simpler navigation, responsive layouts, and better ways to explore complex institutional, legal, and historical content.",
+      "briefBody": "",
+      "problemLead": "The existing website had grown into a large collection of government information, but its structure made important content difficult to understand, scan, and navigate.",
+      "constraints": [
+        "Large volumes of information were presented with weak visual hierarchy.",
+        "The navigation structure made it difficult to understand how sections and institutions were connected.",
+        "Content-heavy experiences such as the Official Gazette and Grand Serail relied on static presentation instead of discovery and storytelling."
+      ],
+      "approachLead": "Restructured the information architecture around user needs and introduced a clearer hierarchy across the platform.",
+      "approachBody": "Key experiences were redesigned individually: the Official Gazette around browsing and reading, and the Grand Serail around visual storytelling and chronological exploration.\n\nThe redesigned portal creates a clearer path through government information, institutions, legislation, and history. Responsive layouts support different screen sizes, while focused experiences make the Official Gazette easier to explore and transform the Grand Serail into a narrative historical journey.",
+      "decisions": [
+        {
+          "title": "Clearer Navigation",
+          "body": "A simplified structure makes government information easier to reach and understand."
+        },
+        {
+          "title": "Better Reading",
+          "body": "The Official Gazette is organized around browsing, filtering, and document access."
+        },
+        {
+          "title": "Narrative History",
+          "body": "The Grand Serail becomes a visual timeline connecting places, moments, and history."
+        }
+      ],
+      "shippedHeading": "A government portal designed around information, not just pages.",
+      "shipped": [
+        {
+          "title": "Government & Institutions",
+          "body": "A clearer structure for ministries, institutions, and government information."
+        },
+        {
+          "title": "Official Gazette",
+          "body": "A redesigned experience for discovering issues, dates, categories, and documents."
+        },
+        {
+          "title": "Grand Serail",
+          "body": "A narrative-driven history experience built around visual moments and chronology."
+        }
+      ],
+      "reflectionLead": "The goal was not simply to make a government website look newer.",
+      "reflectionBody": "It was to make a complex institutional system easier to understand by giving different types of information the hierarchy, navigation, and interaction patterns they require.",
+      "cover": "PCM/Cover.png",
+      "approachShot": "PCM/الحكومة - حكومة الأصلاح والأنقاذ.png",
+      "gallery": [
+        "PCM/اعداد الجريدة الرسمية.png",
+        "PCM/عن السراي.png"
+      ]
+    },
+    {
+      "slug": "apamea",
+      "title": "Apamea",
+      "category": "Asset Management",
+      "discipline": "Product Design",
+      "role": "UI / UX Design",
+      "order": 3,
+      "featured": false,
+      "chipBg": "#efeff1",
+      "chipInk": "#86868b",
+      "summary": "Apamea is a multi-asset management platform designed to give investors a clearer view of their wealth by bringing different investment types into one structured workspace.",
+      "briefLead": "They needed a unified platform for managing different types of assets, replacing fragmented tracking with a structured workspace for monitoring portfolios, positions, performance, and investment activity.",
+      "briefBody": "",
+      "problemLead": "Managing different investments often means working across different tools and data structures, making it difficult to maintain a clear picture of overall performance.",
+      "constraints": [
+        "Different asset classes required different ways of tracking value and performance.",
+        "Large amounts of financial data made important information difficult to scan and compare.",
+        "Without a unified overview, understanding the bigger portfolio picture became harder."
+      ],
+      "approachLead": "Designed Apamea around a centralized asset-management model, creating shared interaction patterns across investment types while preserving the information unique to each asset class.",
+      "approachBody": "The experience connects high-level portfolio visibility with detailed asset views.\n\nApamea brings multiple investment categories into one workspace, with dedicated experiences for stocks, real estate, crypto, private equity, and other assets. Consistent navigation, portfolio controls, performance indicators, and detailed views make a complex financial system easier to understand and manage.",
+      "decisions": [
+        {
+          "title": "One Portfolio",
+          "body": "A centralized view of assets and investments across different categories."
+        },
+        {
+          "title": "Deeper Visibility",
+          "body": "Detailed views expose valuation, performance, positions, and asset-specific information."
+        },
+        {
+          "title": "Structured Management",
+          "body": "Consistent patterns make a complex multi-asset system easier to operate."
+        }
+      ],
+      "shippedHeading": "One system. Multiple asset classes.",
+      "shipped": [
+        {
+          "title": "Portfolio Management",
+          "body": "A centralized workspace for switching portfolios and understanding holdings."
+        },
+        {
+          "title": "Stock Market",
+          "body": "Position management, valuation, performance, P/L, and portfolio views."
+        },
+        {
+          "title": "Real Estate",
+          "body": "Project tracking for budgets, margins, stages, and activity."
+        }
+      ],
+      "reflectionLead": "The challenge was not simply presenting more financial data. It was creating a system where different types of investments could feel coherent.",
+      "reflectionBody": "Apamea connects those experiences through a shared structure while allowing each asset class to surface what matters most.",
+      "cover": "Apamea/Cover.png",
+      "approachShot": "Apamea/Actif - Vue d'ensemble.png",
+      "gallery": [
+        "Apamea/Mes Positions - switch portfolio.png",
+        "Apamea/Real Estate.png"
+      ]
+    }
+  ]
+}
