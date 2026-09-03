@@ -155,37 +155,69 @@ function clean(value) {
   return out;
 }
 
-function copyMedia() {
+/**
+ * Screens exported from a design tool are large PNGs — several megabytes each.
+ * WebP at quality 82 is visually indistinguishable for this kind of flat UI
+ * artwork and a fraction of the weight, so images are converted on the way out
+ * and the snapshot's URLs are rewritten to match. SVGs are copied untouched;
+ * they are already small and vector.
+ */
+async function copyMedia() {
   fs.rmSync(OUT_MEDIA, { recursive: true, force: true });
   fs.mkdirSync(OUT_MEDIA, { recursive: true });
 
   if (!fs.existsSync(UPLOADS)) {
     console.warn(`[export] No uploads directory at ${UPLOADS}`);
-    return 0;
+    return { copied: 0, before: 0, after: 0, renamed: new Map() };
   }
 
+  let sharp = null;
+  try {
+    sharp = require('sharp');
+  } catch {
+    console.warn('[export] sharp not available — copying images without conversion.');
+  }
+
+  const renamed = new Map();
   let copied = 0;
-  let missing = 0;
+  let before = 0;
+  let after = 0;
+  const missing = [];
 
   for (const filename of usedFiles) {
     const from = path.join(UPLOADS, filename);
     if (!fs.existsSync(from)) {
-      console.warn(`[export] Referenced file is missing from uploads: ${filename}`);
-      missing += 1;
+      missing.push(filename);
       continue;
     }
-    fs.copyFileSync(from, path.join(OUT_MEDIA, filename));
+
+    const ext = path.extname(filename).toLowerCase();
+    const convertible = sharp && (ext === '.png' || ext === '.jpg' || ext === '.jpeg');
+    before += fs.statSync(from).size;
+
+    if (convertible) {
+      const target = `${filename.slice(0, -ext.length)}.webp`;
+      const to = path.join(OUT_MEDIA, target);
+      await sharp(from).webp({ quality: 82, effort: 5 }).toFile(to);
+      after += fs.statSync(to).size;
+      renamed.set(filename, target);
+    } else {
+      const to = path.join(OUT_MEDIA, filename);
+      fs.copyFileSync(from, to);
+      after += fs.statSync(to).size;
+    }
+
     copied += 1;
   }
 
-  if (missing) {
+  if (missing.length) {
     throw new Error(
-      `${missing} referenced media file(s) are not in apps/cms/public/uploads — ` +
+      `${missing.length} referenced media file(s) are not in apps/cms/public/uploads — ` +
         'the built site would have broken images. Commit them, or re-upload in the admin.'
     );
   }
 
-  return copied;
+  return { copied, before, after, renamed };
 }
 
 async function main() {
@@ -227,10 +259,18 @@ async function main() {
     await strapi.destroy();
   }
 
-  fs.mkdirSync(path.dirname(OUT_JSON), { recursive: true });
-  fs.writeFileSync(OUT_JSON, `${JSON.stringify(snapshot, null, 2)}\n`);
+  const media = await copyMedia();
 
-  const copied = copyMedia();
+  // Point the snapshot at the converted files.
+  let json = JSON.stringify(snapshot, null, 2);
+  for (const [from, to] of media.renamed) {
+    json = json.split(`/media/${from}`).join(`/media/${to}`);
+  }
+
+  fs.mkdirSync(path.dirname(OUT_JSON), { recursive: true });
+  fs.writeFileSync(OUT_JSON, `${json}\n`);
+
+  const copied = media.copied;
 
   // Refresh the committed, credential-free copy of the database.
   const cleared = writePublicDatabase();
@@ -245,7 +285,12 @@ async function main() {
       `${snapshot.processSteps.length} process steps, 5 single types`
   );
   console.log(`[export] wrote ${rel(OUT_JSON)}`);
-  console.log(`[export] copied ${copied} media file(s) to ${rel(OUT_MEDIA)}`);
+  const mb = (n) => `${(n / 1024 / 1024).toFixed(1)} MB`;
+  const saved = media.before ? Math.round((1 - media.after / media.before) * 100) : 0;
+  console.log(
+    `[export] copied ${copied} media file(s) to ${rel(OUT_MEDIA)} — ` +
+      `${mb(media.before)} -> ${mb(media.after)} (${saved}% smaller)`
+  );
 }
 
 main().catch((error) => {

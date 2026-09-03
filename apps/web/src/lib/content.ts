@@ -129,6 +129,8 @@ function mapProject(raw: any, index: number): Project {
     discipline: text(raw?.discipline, 'Discipline'),
     summary: text(raw?.summary),
     role: text(raw?.role, 'UI / UX Design'),
+    timeline: text(raw?.timeline),
+    scope: text(raw?.scope),
     order: typeof raw?.order === 'number' ? raw.order : index,
     featured: bool(raw?.featured, false),
     cover: toMedia(raw?.cover, title),

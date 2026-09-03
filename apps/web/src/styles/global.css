@@ -232,7 +232,56 @@ figure {
   transform: none;
 }
 
+/* --------------------------------------------------------------------- */
+/* Corner smoothing                                                       */
+/* --------------------------------------------------------------------- */
+
+/*
+ * iOS-style continuous corners. `border-radius` alone draws a circular arc that
+ * meets the straight edge abruptly; a superellipse eases into it, which is what
+ * makes Apple's rounding look softer at the same radius.
+ *
+ * Progressive enhancement: browsers without `corner-shape` keep plain rounding,
+ * which is what the site had before. Pills are excluded — at a 9999px radius a
+ * superellipse squares the ends off and stops looking like a pill.
+ */
+@supports (corner-shape: superellipse(4)) {
+  body *:not(.pill-corner) {
+    corner-shape: superellipse(4);
+  }
+
+  .btn,
+  .chip,
+  .nav,
+  .nav__link,
+  .skip-link,
+  .skill,
+  .contact-block__dot,
+  .footer__logo,
+  .site-logo {
+    corner-shape: round;
+  }
+}
+
+/* --------------------------------------------------------------------- */
+/* Page transitions                                                       */
+/* --------------------------------------------------------------------- */
+
+/* The browser default is a half-second cross-fade of the entire page, which
+   reads as a lag on a site this light. Keep it short enough to feel like the
+   page simply changed. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 180ms;
+  animation-timing-function: var(--ease-out);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+
   html {
     scroll-behavior: auto;
   }

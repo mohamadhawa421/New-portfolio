@@ -47,6 +47,8 @@ export interface Project {
   discipline: string;
   summary: string;
   role: string;
+  timeline: string;
+  scope: string;
   order: number;
   featured: boolean;
   cover: Media | null;

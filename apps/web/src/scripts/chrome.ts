@@ -198,5 +198,11 @@ function init(): void {
   }
 }
 
-// Fires on first load and after every client-side navigation.
+// `astro:after-swap` fires once the new DOM is in place but before the browser
+// paints it, so revealing above-the-fold content there means it is already
+// visible on the first frame. Doing this on `astro:page-load` instead — which
+// runs after paint — showed up as a flash of empty page on every navigation.
+document.addEventListener('astro:after-swap', init);
+
+// Covers the very first load, where after-swap never fires.
 document.addEventListener('astro:page-load', init);

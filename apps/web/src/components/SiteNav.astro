@@ -22,7 +22,7 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
 
 {/* Desktop: the centred pill from the design. Hidden below 768px, where it
     would collide with the fixed logo mark. */}
-<nav class="nav" data-nav="1" aria-label="Primary">
+<nav class="nav" data-nav="1" aria-label="Primary" transition:persist="site-nav">
   {
     items.map((item) => (
       <a
@@ -56,11 +56,11 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     underneath them; without a backdrop the icons sit directly on top of
     photographs and headlines and become unreadable. This is the same glass the
     desktop pill picks up on scroll, driven by the same variables. */}
-<div class="topbar" aria-hidden="true"></div>
+<div class="topbar" aria-hidden="true" transition:persist="site-topbar"></div>
 
-<div class="scrim" data-scrim hidden></div>
+<div class="scrim" data-scrim hidden transition:persist="site-scrim"></div>
 
-<aside id="mobile-menu" class="panel" data-panel aria-label="Menu" inert>
+<aside id="mobile-menu" class="panel" data-panel aria-label="Menu" inert transition:persist="site-menu">
   <nav class="panel__links" aria-label="Mobile">
     {
       items.map((item) => (
@@ -106,7 +106,22 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
   let current: MenuController | null = null;
   let globalsBound = false;
 
+  /** The nav survives navigation, so its active state is updated by hand. */
+  function markActive() {
+    const path = location.pathname.replace(/\/+$/, '') || '/';
+    document.querySelectorAll<HTMLAnchorElement>('.nav__link, .panel__link').forEach((link) => {
+      const href = link.getAttribute('href') || '/';
+      const active = href === '/' ? path === '/' : path.startsWith(href);
+      link.classList.toggle('nav__link--active', active && link.classList.contains('nav__link'));
+      link.classList.toggle('panel__link--active', active && link.classList.contains('panel__link'));
+      if (active) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+    });
+  }
+
   function setup() {
+    markActive();
+
     const burger = document.querySelector<HTMLButtonElement>('[data-burger]');
     const panel = document.querySelector<HTMLElement>('[data-panel]');
     const scrim = document.querySelector<HTMLElement>('[data-scrim]');
@@ -160,6 +175,12 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
         }, 400);
       }
     }
+
+    if (burger.dataset.bound) {
+      // Persisted from the previous page — listeners are still attached.
+      return;
+    }
+    burger.dataset.bound = '1';
 
     burger.addEventListener('click', () => setOpen(!open));
     scrim.addEventListener('click', () => setOpen(false));

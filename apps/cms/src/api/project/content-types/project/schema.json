@@ -42,6 +42,14 @@
       "type": "string",
       "default": "UI / UX Design"
     },
+    "timeline": {
+      "type": "string",
+      "description": "e.g. \"One Week\". Shown in the case study facts row when set."
+    },
+    "scope": {
+      "type": "string",
+      "description": "e.g. \"44+ Screens\". Shown in the case study facts row when set."
+    },
     "order": {
       "type": "integer",
       "default": 0,
@@ -56,7 +64,9 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "chipBg": {
       "type": "string",
@@ -98,7 +108,9 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "approachCaption": {
       "type": "string"
@@ -117,7 +129,9 @@
       "type": "media",
       "multiple": true,
       "required": false,
-      "allowedTypes": ["images"],
+      "allowedTypes": [
+        "images"
+      ],
       "description": "The \"What shipped\" grid. The design lays out two side by side."
     },
     "metrics": {

@@ -365,14 +365,25 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     gap: clamp(10px, 2.6vw, 40px);
     padding: clamp(20px, 2.8vh, 28px) clamp(10px, 1.4vw, 18px);
     margin: 0 calc(-1 * clamp(10px, 1.4vw, 18px));
-    border-top: 1px solid var(--line-parchment);
     border-radius: var(--r-sm);
     color: inherit;
+    position: relative;
     will-change: transform;
     transition:
-      background 420ms var(--ease-out),
-      transform 520ms var(--ease-out),
+      background 200ms var(--ease-out),
+      transform 260ms var(--ease-out),
       opacity 520ms var(--ease-smooth);
+  }
+
+  /* Line, not border — see ProjectRow for why. */
+  .service::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: clamp(10px, 1.4vw, 18px);
+    right: clamp(10px, 1.4vw, 18px);
+    height: 1px;
+    background: var(--line-parchment);
   }
 
   .service:hover {

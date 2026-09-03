@@ -42,8 +42,14 @@ module.exports = async function handler(request, response) {
   const to = process.env.ENQUIRY_TO_EMAIL;
 
   if (!apiKey || !to) {
-    console.error('[enquiry] BREVO_API_KEY or ENQUIRY_TO_EMAIL is not set.');
-    return response.status(500).json({ error: 'Email is not configured yet.' });
+    const missing = [!apiKey && 'BREVO_API_KEY', !to && 'ENQUIRY_TO_EMAIL'].filter(Boolean);
+    console.error(`[enquiry] Not configured — missing ${missing.join(' and ')}.`);
+    return response.status(500).json({
+      error: 'not-configured',
+      // Naming the variable turns "it failed" into something fixable without
+      // digging through function logs. No secret is revealed by the name.
+      detail: `Set ${missing.join(' and ')} in Vercel → Settings → Environment Variables.`,
+    });
   }
 
   let body = request.body;
@@ -115,9 +121,21 @@ module.exports = async function handler(request, response) {
     });
 
     if (!brevo.ok) {
-      const detail = await brevo.text();
-      console.error(`[enquiry] Brevo responded ${brevo.status}: ${detail}`);
-      return response.status(502).json({ error: 'send-failed' });
+      const raw = await brevo.text();
+      console.error(`[enquiry] Brevo responded ${brevo.status}: ${raw}`);
+
+      // A 4xx from Brevo is almost always configuration — an unverified sender
+      // or a bad key — so pass the message through. 5xx is their outage and
+      // tells the visitor nothing useful.
+      let detail;
+      if (brevo.status >= 400 && brevo.status < 500) {
+        try {
+          detail = JSON.parse(raw).message;
+        } catch {
+          detail = raw.slice(0, 200);
+        }
+      }
+      return response.status(502).json({ error: 'send-failed', ...(detail ? { detail } : {}) });
     }
 
     return response.status(200).json({ ok: true });
