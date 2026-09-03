@@ -5,6 +5,7 @@ import '../styles/global.css';
 import SiteNav from '../components/SiteNav.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import IntroCurtain from '../components/IntroCurtain.astro';
+import Cursor from '../components/Cursor.astro';
 import { ClientRouter } from 'astro:transitions';
 import { getSiteSettings } from '../lib/content';
 import type { Seo } from '../lib/types';
@@ -60,17 +61,38 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
     <link rel="icon" type="image/svg+xml" href={faviconHref} />
     <link rel="apple-touch-icon" href={faviconHref} />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    {/* No web font is loaded on purpose. The stack in tokens.css starts with
+        system-ui / -apple-system, which resolves on every platform — SF Pro on
+        Apple, Segoe UI on Windows, Roboto on Android — so the Inter fallback
+        that used to be fetched from Google Fonts was never actually reached.
+        That request was render-blocking third-party CSS: ~275ms of blank page
+        on a warm connection and considerably worse on a cold one, which is the
+        flash of nothing-then-everything on first load. */}
 
-    {/* Swaps pages in place instead of a full reload, so the nav, fonts and
-        stylesheets are never re-fetched and navigation keeps its momentum.
-        Every script below re-initialises on `astro:page-load` because of it. */}
-    <ClientRouter />
+    {/* Swaps pages in place instead of a full reload, so the nav and styles are
+        never re-fetched and navigation keeps its momentum. Every script below
+        re-initialises on `astro:page-load` because of it.
+
+        fallback="none": browsers without native view transitions fall back to
+        an ordinary navigation rather than Astro's hand-rolled swap, which
+        rebuilds the document in JS and can show a frame of unstyled content. */}
+    {/* Runs before anything paints. Reading the stored choice here — rather
+        than from the deferred module — is what stops a dark-mode visitor
+        seeing a white page for a frame on every load. */}
+    <script is:inline>
+      (function () {
+        try {
+          var saved = localStorage.getItem('mh-theme');
+          if (saved === 'dark' || saved === 'light') {
+            document.documentElement.dataset.theme = saved;
+          }
+        } catch (e) {
+          /* private mode — fall through to the system preference */
+        }
+      })();
+    </script>
+
+    <ClientRouter fallback="none" />
 
   </head>
 
@@ -99,6 +121,8 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
 
     <SiteFooter settings={settings} />
 
+    <Cursor transition:persist="site-cursor" />
+
     {/* Runs while the parser is still in <body>, so it executes before the
         first paint but after the layout above it exists. It marks only the
         elements that are genuinely below the fold, which means content in the
@@ -119,6 +143,7 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
 
     <script>
       import '../scripts/chrome.ts';
+      import '../scripts/theme.ts';
     </script>
 
     <style>

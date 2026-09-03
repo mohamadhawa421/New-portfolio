@@ -1,0 +1,174 @@
+---
+/**
+ * Custom pointer.
+ *
+ * Two parts: a small solid dot that tracks the mouse exactly, and a larger ring
+ * that eases toward it a frame behind. The lag is the whole effect — it is what
+ * makes the pointer feel weighted rather than glued to the cursor.
+ *
+ * Only ever shown on a device with a real pointer. Touch screens and anyone who
+ * has asked for reduced motion keep the native cursor, and so does anyone whose
+ * browser cannot run the script — the native cursor is only hidden from inside
+ * the script, never from static CSS.
+ */
+---
+
+<div class="cursor" data-cursor aria-hidden="true">
+  <div class="cursor__ring" data-cursor-ring></div>
+  <div class="cursor__dot" data-cursor-dot></div>
+</div>
+
+<script>
+  function setupCursor() {
+    const rootEl = document.querySelector<HTMLElement>('[data-cursor]');
+    const ringEl = document.querySelector<HTMLElement>('[data-cursor-ring]');
+    const dotEl = document.querySelector<HTMLElement>('[data-cursor-dot]');
+    if (!rootEl || !ringEl || !dotEl) return;
+
+    const root = rootEl;
+    const ring = ringEl;
+    const dot = dotEl;
+
+    const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!fine || reduced) return;
+
+    // Only now is it safe to hide the real cursor.
+    document.documentElement.classList.add('has-custom-cursor');
+
+    let targetX = window.innerWidth / 2;
+    let targetY = window.innerHeight / 2;
+    let ringX = targetX;
+    let ringY = targetY;
+    let visible = false;
+    let raf = 0;
+
+    const INTERACTIVE = 'a, button, [role="button"], input, select, textarea, label, summary';
+
+    function frame() {
+      // Exponential ease toward the pointer. 0.18 keeps roughly a frame and a
+      // half of lag: enough to feel like weight, not enough to feel broken.
+      ringX += (targetX - ringX) * 0.18;
+      ringY += (targetY - ringY) * 0.18;
+
+      ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`;
+      dot.style.transform = `translate3d(${targetX}px, ${targetY}px, 0) translate(-50%, -50%)`;
+
+      raf = requestAnimationFrame(frame);
+    }
+
+    function onMove(event: PointerEvent) {
+      targetX = event.clientX;
+      targetY = event.clientY;
+
+      if (!visible) {
+        visible = true;
+        // Jump the ring to the pointer the first time so it does not fly in
+        // from the middle of the screen.
+        ringX = targetX;
+        ringY = targetY;
+        root.classList.add('cursor--on');
+      }
+
+      const overInteractive = (event.target as Element | null)?.closest?.(INTERACTIVE);
+      root.classList.toggle('cursor--active', Boolean(overInteractive));
+    }
+
+    window.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('pointerdown', () => root.classList.add('cursor--down'));
+    window.addEventListener('pointerup', () => root.classList.remove('cursor--down'));
+    document.addEventListener('mouseleave', () => root.classList.remove('cursor--on'));
+    document.addEventListener('mouseenter', () => root.classList.add('cursor--on'));
+
+    raf = requestAnimationFrame(frame);
+
+    // The client router keeps this element, so the loop must not be started twice.
+    document.addEventListener('astro:before-swap', () => cancelAnimationFrame(raf), { once: true });
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    if (!document.documentElement.dataset.cursorReady) {
+      document.documentElement.dataset.cursorReady = '1';
+      setupCursor();
+    }
+  });
+</script>
+
+<style is:global>
+  /* Hidden until the script confirms a real pointer, so touch users and
+     no-JS visitors never lose their cursor. */
+  html.has-custom-cursor,
+  html.has-custom-cursor * {
+    cursor: none !important;
+  }
+</style>
+
+<style>
+  .cursor {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 220ms var(--ease-glide);
+    /*
+     * Drawn white and blended with difference, so the pointer inverts against
+     * whatever is behind it: it renders black over the white sections and
+     * white over the near-black ones. A fixed black cursor disappears entirely
+     * on the dark contact page — and would do the same across a dark theme.
+     * This needs no theme awareness at all.
+     */
+    mix-blend-mode: difference;
+  }
+
+  .cursor--on {
+    opacity: 1;
+  }
+
+  .cursor__dot,
+  .cursor__ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 50%;
+    will-change: transform;
+  }
+
+  .cursor__dot {
+    width: 7px;
+    height: 7px;
+    /* White, not var(--ink) — the difference blend above does the inverting. */
+    background: #fff;
+    transition: width 260ms var(--ease-glide), height 260ms var(--ease-glide);
+  }
+
+  .cursor__ring {
+    width: 34px;
+    height: 34px;
+    border: 1.5px solid #fff;
+    opacity: 0.55;
+    transition:
+      width 320ms var(--ease-glide),
+      height 320ms var(--ease-glide),
+      opacity 320ms var(--ease-glide),
+      background-color 320ms var(--ease-glide);
+  }
+
+  /* Over anything clickable the ring opens up and the dot shrinks away. */
+  .cursor--active .cursor__ring {
+    width: 52px;
+    height: 52px;
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .cursor--active .cursor__dot {
+    width: 0;
+    height: 0;
+  }
+
+  .cursor--down .cursor__ring {
+    width: 28px;
+    height: 28px;
+  }
+</style>

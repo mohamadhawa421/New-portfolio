@@ -50,7 +50,7 @@ const { project, index = 0 } = Astro.props;
     /* Short enough to read as a direct response to the pointer. Anything past
        roughly 200ms starts to feel like the row is catching up with you. */
     transition:
-      transform 160ms var(--ease-out),
+      transform 320ms var(--ease-glide),
       opacity 520ms var(--ease-smooth);
   }
 
@@ -87,7 +87,13 @@ const { project, index = 0 } = Astro.props;
     z-index: -1;
     background: var(--surface-row-hover);
     opacity: 0;
-    transition: opacity 140ms ease-out;
+    /* Promoted up front. A layer that sits at opacity 0 is not rasterised
+       until something needs it, so the very first hover pays for creating and
+       uploading it — that is the hesitation before the first fade, which then
+       disappears once the layer is cached. Declaring the intent lets the
+       browser prepare it during idle time instead. */
+    will-change: opacity;
+    transition: opacity 280ms var(--ease-glide);
   }
 
   .row:hover {
@@ -129,6 +135,15 @@ const { project, index = 0 } = Astro.props;
     height: 100%;
     object-fit: cover;
     display: block;
+    /*
+     * Its own compositor layer. The source is a 1440px cover displayed at
+     * ~120px, and without this the downscale is re-rasterised inside the row's
+     * layer on every frame of the hover slide — which is the whole reason this
+     * row felt heavier than the text-only service rows next to it. Promoted,
+     * it rasterises once and is simply moved.
+     */
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   .row__text {
@@ -172,5 +187,42 @@ const { project, index = 0 } = Astro.props;
   .row__chevron {
     font-size: 19px;
     color: var(--blue);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Phones: stack it                                                    */
+  /*                                                                     */
+  /* Side by side, a 84px thumbnail next to wrapped text reads as a       */
+  /* cramped list item. Stacked, each project gets a full-width image and */
+  /* its own block of text — much closer to how the cards read.           */
+  /* ------------------------------------------------------------------ */
+  @media (max-width: 767px) {
+    .row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 14px;
+      padding: 18px clamp(10px, 1.4vw, 18px) 26px;
+    }
+
+    .row:hover {
+      /* No sideways slide on a stacked card — it just looks like drift. */
+      transform: translateZ(0);
+    }
+
+    .row__thumb {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: var(--r-sm);
+    }
+
+    .row__text {
+      flex: 1 1 auto;
+    }
+
+    .row__aside {
+      margin-left: 0;
+      justify-content: space-between;
+      width: 100%;
+    }
   }
 </style>

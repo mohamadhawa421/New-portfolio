@@ -33,7 +33,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     {/* ---------------------------------------------------------------- */}
     {/* Hero                                                              */}
     {/* ---------------------------------------------------------------- */}
-    <section class="section section--light hero" data-tile="light">
+    <section class="section section--light hero" data-lift data-tile="light">
       <div class="shell hero__inner">
         <div class="hero__copy">
           <h1 class="hero__title"><span data-rise="0">{home.heroTitle}</span></h1>
@@ -69,7 +69,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     {/* ---------------------------------------------------------------- */}
     {/* Selected work                                                     */}
     {/* ---------------------------------------------------------------- */}
-    <section class="section section--light work" data-tile="light">
+    <section class="section section--light work" data-lift data-tile="light">
       <div class="shell">
         <div class="work__header" data-reveal="0">
           <div>
@@ -90,7 +90,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     {/* ---------------------------------------------------------------- */}
     {/* Services                                                          */}
     {/* ---------------------------------------------------------------- */}
-    <section class="section section--parchment services" data-tile="parchment">
+    <section class="section section--parchment services" data-lift data-tile="parchment">
       <div class="shell">
         <div class="eyebrow" data-reveal="0">{home.servicesEyebrow}</div>
         <h2 class="h2 services__heading" data-reveal="1">{home.servicesHeading}</h2>
@@ -124,7 +124,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     {/* ---------------------------------------------------------------- */}
     {/* Manifesto                                                         */}
     {/* ---------------------------------------------------------------- */}
-    <section class="section section--dark manifesto" data-tile="dark">
+    <section class="section section--dark manifesto" data-lift data-tile="dark">
       <div class="shell">
         <h2 class="manifesto__heading">
           {
@@ -151,7 +151,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     {/* ---------------------------------------------------------------- */}
     {/* How I work                                                        */}
     {/* ---------------------------------------------------------------- */}
-    <section class="section section--light process" data-tile="light">
+    <section class="section section--light process" data-lift data-tile="light">
       <div class="shell process__inner">
         <div class="process__label" data-reveal="0">
           <div class="eyebrow">{home.processEyebrow}</div>
@@ -173,7 +173,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     {/* ---------------------------------------------------------------- */}
     {/* About preview                                                     */}
     {/* ---------------------------------------------------------------- */}
-    <section class="section section--parchment about" data-tile="parchment">
+    <section class="section section--parchment about" data-lift data-tile="parchment">
       <div class="shell about__inner">
         <div class="about__portrait" data-reveal="0">
           <div class="about__portrait-frame">
@@ -217,7 +217,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     {/* ---------------------------------------------------------------- */}
     {/* Contact                                                           */}
     {/* ---------------------------------------------------------------- */}
-    <section class="section section--dark contact" data-tile="dark">
+    <section class="section section--dark contact" data-lift data-tile="dark">
       <ContactBlock
         settings={settings}
         contact={contact}
@@ -374,7 +374,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     overflow: hidden;
     transform: translateZ(0);
     transition:
-      transform 160ms var(--ease-out),
+      transform 320ms var(--ease-glide),
       opacity 520ms var(--ease-smooth);
   }
 
@@ -399,7 +399,13 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     z-index: -1;
     background: var(--surface-row-hover-parchment);
     opacity: 0;
-    transition: opacity 140ms ease-out;
+    /* Promoted up front. A layer that sits at opacity 0 is not rasterised
+       until something needs it, so the very first hover pays for creating and
+       uploading it — that is the hesitation before the first fade, which then
+       disappears once the layer is cached. Declaring the intent lets the
+       browser prepare it during idle time instead. */
+    will-change: opacity;
+    transition: opacity 280ms var(--ease-glide);
   }
 
   .service:hover {

@@ -20,6 +20,9 @@ const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const REVEAL_SELECTOR = '[data-reveal],[data-rise],[data-num]';
 
+/** Longest reveal transition in global.css, used to know when a stagger is spent. */
+const REVEAL_MS = 880;
+
 /** Counts a figure up from zero, keeping any prefix/suffix around it ("20+"). */
 function rollNumber(el: HTMLElement): void {
   const final = el.dataset.numFinal ?? (el.dataset.numFinal = el.textContent ?? '');
@@ -53,17 +56,38 @@ function show(el: HTMLElement): void {
   if (el.dataset.shown) return;
   el.dataset.shown = '1';
 
-  if (el.hasAttribute('data-num')) {
-    rollNumber(el);
-    return;
+  const isRise = el.hasAttribute('data-rise');
+  if (!el.hasAttribute('data-num')) {
+    const index = parseInt(el.getAttribute(isRise ? 'data-rise' : 'data-reveal') || '0', 10);
+    const delay = index * (isRise ? 90 : 70);
+
+    if (delay) {
+      el.style.transitionDelay = `${delay}ms`;
+
+      /*
+       * The delay has to be removed once the reveal is done. `transition-delay`
+       * is not scoped to one property — it applies to every transition on the
+       * element — so a staggered item left holding a 700ms delay then waits
+       * 700ms before its *hover* starts moving.
+       *
+       * That is why the project rows felt progressively worse down the list:
+       * the last row is index 10, so its hover sat idle for 700ms before
+       * anything happened, while the four-item services list never exceeded
+       * 210ms and felt fine.
+       */
+      const clearAfter = delay + REVEAL_MS + 60;
+      window.setTimeout(() => {
+        el.style.transitionDelay = '';
+      }, clearAfter);
+    }
   }
 
-  const isRise = el.hasAttribute('data-rise');
-  const index = parseInt(el.getAttribute(isRise ? 'data-rise' : 'data-reveal') || '0', 10);
-  el.style.transitionDelay = `${index * (isRise ? 90 : 70)}ms`;
-  // Dropping the attribute is what animates it in; elements that were never
-  // hidden simply have nothing to remove.
+  // Must happen for counting numbers too. This used to sit after an early
+  // return for [data-num], which left every stat below the fold hidden for
+  // good — the number counted up behind opacity: 0.
   el.removeAttribute('data-hidden');
+
+  if (el.hasAttribute('data-num')) rollNumber(el);
 }
 
 /**
@@ -172,6 +196,18 @@ function measureTiles(): void {
 let lastCondensed: boolean | null = null;
 let lastOverDark: boolean | null = null;
 
+/**
+ * In dark mode every surface is dark, so the nav ink and the logo have to
+ * invert everywhere — not only over the sections tagged as dark tiles. Without
+ * this the black logo mark sits on a near-black page and disappears.
+ */
+function isDarkTheme(): boolean {
+  const set = root.dataset.theme;
+  if (set === 'dark') return true;
+  if (set === 'light') return false;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
 function chromePass(): void {
   const y = window.scrollY || root.scrollTop || 0;
   const condensed = y > 90;
@@ -179,10 +215,11 @@ function chromePass(): void {
   // Which tile sits under the nav decides its ink colour. Pure arithmetic now:
   // no layout is read during the scroll.
   const probe = y + 34;
-  let overDark = false;
+  let overDarkTile = false;
   for (const tile of tiles) {
-    if (probe >= tile.top && probe <= tile.bottom) overDark = tile.dark;
+    if (probe >= tile.top && probe <= tile.bottom) overDarkTile = tile.dark;
   }
+  const overDark = overDarkTile || isDarkTheme();
 
   if (condensed === lastCondensed && overDark === lastOverDark) return;
   lastCondensed = condensed;
@@ -196,9 +233,9 @@ function chromePass(): void {
     '--nav-bg',
     condensed
       ? overDark
-        ? 'rgba(40,40,42,0.7)'
+        ? 'rgba(28,28,32,0.72)'
         : 'rgba(255,255,255,0.74)'
-      : 'rgba(255,255,255,0)'
+      : 'transparent'
   );
   styles.setProperty('--nav-blur', `saturate(180%) blur(${condensed ? 20 : 0}px)`);
   styles.setProperty('--nav-shadow', `0 1px 8px rgba(0,0,0,${condensed ? 0.07 : 0})`);
@@ -247,6 +284,16 @@ function init(): void {
     listenersBound = true;
     window.addEventListener('scroll', scheduleChrome, { passive: true });
     window.addEventListener('resize', remeasure, { passive: true });
+
+    // The nav ink depends on the theme, so it has to be recomputed when the
+    // theme changes — by the switch, or by the OS while the page is open.
+    const repaintChrome = () => {
+      lastCondensed = null;
+      lastOverDark = null;
+      chromePass();
+    };
+    window.addEventListener('mh:themechange', repaintChrome);
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', repaintChrome);
     // Images finishing late change section offsets, so measure again.
     window.addEventListener('load', remeasure);
   }

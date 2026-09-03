@@ -34,15 +34,15 @@ const compactMetrics = project.metrics.some((metric) => metric.value.length > 14
     {/* ---------------------------------------------------------------- */}
     {/* Hero                                                              */}
     {/* ---------------------------------------------------------------- */}
-    <section class="section section--light case-hero" data-tile="light">
+    <section class="section section--light case-hero" data-lift data-tile="light">
       <div class="shell--narrow">
         <a class="text-link" href="/work">‹&nbsp;All work</a>
 
         <div class="eyebrow case-hero__meta" data-reveal="0">
           {project.num} — {project.category}
         </div>
-        <h1 class="case-hero__title" data-reveal="1">{project.title}</h1>
-        <p class="lead case-hero__summary" data-reveal="2">{project.summary}</p>
+        <h1 class="case-hero__title"><span data-rise="0">{project.title}</span></h1>
+        <p class="lead case-hero__summary"><span data-rise="1">{project.summary}</span></p>
 
         <dl class="case-hero__facts" data-reveal="3">
           <div>
@@ -76,7 +76,7 @@ const compactMetrics = project.metrics.some((metric) => metric.value.length > 14
     {/* ---------------------------------------------------------------- */}
     {/* Cover, brief, problem                                             */}
     {/* ---------------------------------------------------------------- */}
-    <section class="section section--parchment case-brief" data-tile="parchment">
+    <section class="section section--parchment case-brief" data-lift data-tile="parchment">
       <div class="shell--narrow">
         <div class="case-cover" style={`background:${project.chipBg};color:${project.chipInk}`}>
           {
@@ -142,7 +142,7 @@ const compactMetrics = project.metrics.some((metric) => metric.value.length > 14
     {
       (project.approachLead || project.approachBody || project.approachShot ||
         project.decisions.length > 0) && (
-        <section class="section section--light case-approach" data-tile="light">
+        <section class="section section--light case-approach" data-lift data-tile="light">
           <div class="shell--narrow">
             <div class="case-row case-row--flush" data-reveal="0">
               <div class="eyebrow--small case-row__label">The approach</div>
@@ -191,7 +191,7 @@ const compactMetrics = project.metrics.some((metric) => metric.value.length > 14
     {/* ---------------------------------------------------------------- */}
     {
       (project.gallery.length > 0 || project.metrics.length > 0) && (
-        <section class="section section--parchment case-shipped" data-tile="parchment">
+        <section class="section section--parchment case-shipped" data-lift data-tile="parchment">
           <div class="shell--narrow">
             <div class="eyebrow--small" data-reveal="0">What shipped</div>
             <h2 class="case-shipped__heading" data-reveal="0">{project.shippedHeading}</h2>
@@ -239,7 +239,7 @@ const compactMetrics = project.metrics.some((metric) => metric.value.length > 14
     {/* ---------------------------------------------------------------- */}
     {
       (project.reflectionLead || project.reflectionBody) && (
-        <section class="section section--light case-reflection" data-tile="light">
+        <section class="section section--light case-reflection" data-lift data-tile="light">
           <div class="shell--narrow case-row case-row--flush">
             <div class="eyebrow--small case-row__label">Looking back</div>
             <div class="case-row__body">
@@ -256,7 +256,7 @@ const compactMetrics = project.metrics.some((metric) => metric.value.length > 14
     {/* ---------------------------------------------------------------- */}
     {
       next && next.slug !== project.slug && (
-        <section class="section section--light case-next" data-tile="light">
+        <section class="section section--light case-next" data-lift data-tile="light">
           <div class="shell--narrow">
             <div class="case-next__label">Next project</div>
             <h2 class="case-next__title">
@@ -284,6 +284,9 @@ const compactMetrics = project.metrics.some((metric) => metric.value.length > 14
   }
 
   .case-hero__title {
+    /* Clips the rising text until it slides into place. */
+    overflow: hidden;
+    padding-bottom: 0.06em;
     max-width: 16ch;
     font-size: clamp(33px, 5.6vw, 76px);
     line-height: 1.04;
@@ -292,6 +295,9 @@ const compactMetrics = project.metrics.some((metric) => metric.value.length > 14
   }
 
   .case-hero__summary {
+    /* Clips the rising text until it slides into place. */
+    overflow: hidden;
+    padding-bottom: 0.06em;
     margin-top: 20px;
     max-width: 46ch;
   }

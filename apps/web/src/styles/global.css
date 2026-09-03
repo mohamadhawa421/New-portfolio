@@ -227,13 +227,20 @@ figure {
   transform: translateY(112%);
 }
 
+/*
+ * One curve for everything that enters the page, and the same curve the hover
+ * states use. Three different easings across reveals, rises and hovers is what
+ * made the motion feel like separate effects rather than one system.
+ */
 [data-reveal] {
-  transition: opacity 520ms var(--ease-smooth), transform 520ms var(--ease-smooth);
+  transition:
+    opacity 560ms var(--ease-glide),
+    transform 560ms var(--ease-glide);
 }
 
 [data-rise] {
   display: block;
-  transition: transform 880ms var(--ease-out);
+  transition: transform 820ms var(--ease-glide);
 }
 
 [data-shown] {
@@ -335,5 +342,61 @@ figure {
   [data-hidden] {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------- */
+/* Theme wave                                                             */
+/* --------------------------------------------------------------------- */
+
+/*
+ * The circular wipe is animated from theme.ts on ::view-transition-new(root).
+ * The default cross-fade has to be switched off or it fades underneath the
+ * wipe and muddies the edge.
+ */
+:root.theme-waving::view-transition-old(root),
+:root.theme-waving::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* The new theme is clipped in over the old, so it has to sit on top. */
+:root.theme-waving::view-transition-new(root) {
+  z-index: 1;
+}
+
+:root.theme-waving::view-transition-old(root) {
+  z-index: 0;
+}
+
+/*
+ * Lift and land. Each block gets its own --lift-delay, set in theme.ts from
+ * how far it sits from the switch, so the motion tracks the wave outward
+ * instead of everything jumping at once.
+ *
+ * Transform and opacity only: this runs over the whole page at once, and
+ * anything that triggers layout here would drop frames immediately.
+ */
+@keyframes mh-lift-land {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  38% {
+    transform: translate3d(0, -14px, 0) scale(1.012);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.is-lifting {
+  animation: mh-lift-land 620ms var(--ease-glide) both;
+  animation-delay: var(--lift-delay, 0ms);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-lifting {
+    animation: none;
   }
 }

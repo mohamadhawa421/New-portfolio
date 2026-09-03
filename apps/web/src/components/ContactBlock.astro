@@ -42,13 +42,13 @@ const waLabel = isContactPage
 
     {
       isContactPage ? (
-        <h1 class="contact-block__heading contact-block__heading--page">{heading}</h1>
+        <h1 class="contact-block__heading contact-block__heading--page"><span data-rise="0">{heading}</span></h1>
       ) : (
-        <h2 class="contact-block__heading">{heading}</h2>
+        <h2 class="contact-block__heading"><span data-rise="0">{heading}</span></h2>
       )
     }
 
-    <p class="contact-block__body">{body}</p>
+    <p class="contact-block__body"><span data-rise="1">{body}</span></p>
 
     <div class="contact-block__links">
       <a class="contact-block__link" href={settings.waHref} target="_blank" rel="noopener">
@@ -103,6 +103,9 @@ const waLabel = isContactPage
   }
 
   .contact-block__heading {
+    /* Clips the rising text until it slides into place. */
+    overflow: hidden;
+    padding-bottom: 0.06em;
     font-size: clamp(29px, 4.6vw, 64px);
     line-height: 1.05;
     letter-spacing: -0.018em;
@@ -117,6 +120,9 @@ const waLabel = isContactPage
   }
 
   .contact-block__body {
+    /* Clips the rising text until it slides into place. */
+    overflow: hidden;
+    padding-bottom: 0.06em;
     margin-top: 20px;
     max-width: 44ch;
     font-size: 17px;

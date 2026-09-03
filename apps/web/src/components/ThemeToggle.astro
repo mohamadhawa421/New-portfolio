@@ -1,0 +1,116 @@
+---
+/**
+ * Light/dark switch.
+ *
+ * Circular on purpose: the theme change spreads outward from this button as a
+ * expanding circle, so the control needs to look like the origin of that wave.
+ * The icon is one SVG whose rays retract and whose disc slides into a crescent,
+ * rather than two icons crossfading — a single shape morphing reads as the same
+ * object changing state.
+ */
+---
+
+<button
+  type="button"
+  class="theme-toggle"
+  data-theme-toggle
+  aria-label="Switch theme"
+  aria-pressed="false"
+  title="Switch theme"
+>
+  <svg class="theme-toggle__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <mask id="theme-crescent">
+      <rect x="0" y="0" width="24" height="24" fill="#fff" />
+      <!-- Slides over the disc to bite a crescent out of it. -->
+      <circle class="theme-toggle__bite" cx="24" cy="10" r="6" fill="#000" />
+    </mask>
+
+    <circle
+      class="theme-toggle__disc"
+      cx="12"
+      cy="12"
+      r="5"
+      mask="url(#theme-crescent)"
+    />
+
+    <g class="theme-toggle__rays" stroke-linecap="round">
+      <line x1="12" y1="1.6" x2="12" y2="3.6" />
+      <line x1="12" y1="20.4" x2="12" y2="22.4" />
+      <line x1="1.6" y1="12" x2="3.6" y2="12" />
+      <line x1="20.4" y1="12" x2="22.4" y2="12" />
+      <line x1="4.6" y1="4.6" x2="6" y2="6" />
+      <line x1="18" y1="18" x2="19.4" y2="19.4" />
+      <line x1="4.6" y1="19.4" x2="6" y2="18" />
+      <line x1="18" y1="6" x2="19.4" y2="4.6" />
+    </g>
+  </svg>
+</button>
+
+<style>
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: none;
+    border-radius: var(--r-pill);
+    background: transparent;
+    color: var(--nav-ink, var(--ink));
+    cursor: pointer;
+    transition: color 420ms ease, background 240ms var(--ease-glide);
+  }
+
+  .theme-toggle:hover {
+    background: color-mix(in srgb, currentColor 10%, transparent);
+  }
+
+  .theme-toggle__icon {
+    width: 21px;
+    height: 21px;
+    overflow: visible;
+  }
+
+  .theme-toggle__disc {
+    fill: currentColor;
+    transition: r 520ms var(--ease-glide);
+  }
+
+  .theme-toggle__bite {
+    /* Parked off to the side in light mode so the disc stays a full sun. */
+    transform: translateX(0);
+    transition: transform 520ms var(--ease-glide);
+  }
+
+  .theme-toggle__rays {
+    stroke: currentColor;
+    stroke-width: 1.7;
+    transform-origin: 12px 12px;
+    transition:
+      opacity 380ms var(--ease-glide),
+      transform 620ms var(--ease-glide);
+  }
+
+  /* Dark: rays spin away and shrink, the bite slides in to carve the crescent. */
+  :global(:root[data-theme='dark']) .theme-toggle__rays {
+    opacity: 0;
+    transform: rotate(-55deg) scale(0.45);
+  }
+
+  :global(:root[data-theme='dark']) .theme-toggle__bite {
+    transform: translateX(-9px);
+  }
+
+  :global(:root[data-theme='dark']) .theme-toggle__disc {
+    r: 6.4;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .theme-toggle__disc,
+    .theme-toggle__bite,
+    .theme-toggle__rays {
+      transition-duration: 0.001ms;
+    }
+  }
+</style>

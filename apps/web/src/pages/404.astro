@@ -4,10 +4,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 <BaseLayout title="Page not found — Mohamad Hawa" description="That page does not exist.">
   <main id="main" data-shell="1">
-    <section class="section section--light notfound" data-tile="light">
+    <section class="section section--light notfound" data-lift data-tile="light">
       <div class="shell--narrow">
         <div class="eyebrow">404</div>
-        <h1 class="notfound__heading">That page does not exist.</h1>
+        <h1 class="notfound__heading"><span data-rise="0">That page does not exist.</span></h1>
         <p class="notfound__body">
           The link may be old, or the project may have moved. The work index is the best
           place to pick things back up.
@@ -28,6 +28,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   }
 
   .notfound__heading {
+    /* Clips the rising text until it slides into place. The padding stops
+       descenders being shaved off by the same clip. */
+    overflow: hidden;
+    padding-bottom: 0.06em;
     margin-top: 16px;
     max-width: 18ch;
     font-size: clamp(33px, 5.6vw, 76px);

@@ -13,15 +13,15 @@ const categories = [
 
 <BaseLayout seo={work.seo}>
   <main id="main" data-shell="1">
-    <section class="section section--light work-hero" data-tile="light">
+    <section class="section section--light work-hero" data-lift data-tile="light">
       <div class="shell">
         <div class="eyebrow work-hero__eyebrow" data-reveal="0">{work.eyebrow}</div>
-        <h1 class="work-hero__heading" data-reveal="1">{work.heading}</h1>
-        <p class="lead work-hero__intro" data-reveal="2">{work.intro}</p>
+        <h1 class="work-hero__heading"><span data-rise="0">{work.heading}</span></h1>
+        <p class="lead work-hero__intro"><span data-rise="1">{work.intro}</span></p>
       </div>
     </section>
 
-    <section class="section section--light work-grid" data-tile="light">
+    <section class="section section--light work-grid" data-lift data-tile="light">
       <div class="shell work-grid__filters" data-reveal="0">
         {
           categories.map((category, i) => (
@@ -110,6 +110,10 @@ const categories = [
   }
 
   .work-hero__heading {
+    /* Clips the rising text until it slides into place. The padding stops
+       descenders being shaved off by the same clip. */
+    overflow: hidden;
+    padding-bottom: 0.06em;
     max-width: 16ch;
     font-size: clamp(36px, 6.2vw, 84px);
     line-height: 1.03;
@@ -118,6 +122,10 @@ const categories = [
   }
 
   .work-hero__intro {
+    /* Clips the rising text until it slides into place. The padding stops
+       descenders being shaved off by the same clip. */
+    overflow: hidden;
+    padding-bottom: 0.06em;
     margin-top: 20px;
     max-width: 48ch;
   }

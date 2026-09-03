@@ -16,6 +16,17 @@ export default defineConfig({
   output: 'static',
   integrations: [sitemap()],
   build: {
-    inlineStylesheets: 'auto',
+    /*
+     * 'auto' leaves larger stylesheets as separate <link> requests. Those are
+     * render-blocking, and on a cold connection the gap between the HTML
+     * arriving and the CSS arriving is a frame of unstyled markup piled in the
+     * top-left corner.
+     *
+     * The whole site's CSS is ~27KB raw and ~6KB over the wire, which is small
+     * enough to ship inside the document. Inlining removes three round-trips
+     * from the critical path and makes that unstyled frame structurally
+     * impossible, because the styles cannot arrive after the markup.
+     */
+    inlineStylesheets: 'always',
   },
 });

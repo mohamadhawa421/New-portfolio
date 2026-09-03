@@ -1,4 +1,5 @@
 ---
+import ThemeToggle from './ThemeToggle.astro';
 import type { SiteSettings } from '../lib/types';
 
 interface Props {
@@ -35,6 +36,7 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
       </a>
     ))
   }
+  <ThemeToggle />
 </nav>
 
 {/* Mobile: burger → slide-in sidebar. */}
@@ -85,6 +87,9 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
       <span>Email</span>
       <span class="panel__arrow" aria-hidden="true">↗</span>
     </a>
+    <div class="panel__theme">
+      <ThemeToggle />
+    </div>
     <p class="panel__location">{settings.location}</p>
   </div>
 </aside>
@@ -284,12 +289,19 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
       padding 620ms var(--ease-out),
       color 420ms ease,
       font-weight 200ms ease,
-      opacity 0.25s ease;
+      background 240ms var(--ease-glide);
   }
 
+  /* Same treatment as the theme switch sitting next to them: a soft pill of
+     the current ink rather than a dip in opacity. color-mix keeps it correct
+     in both themes, because it tints whatever the nav ink currently is. */
   .nav__link:hover {
-    opacity: 0.7;
+    background: color-mix(in srgb, currentColor 10%, transparent);
     color: var(--nav-ink, #1d1d1f);
+  }
+
+  .nav__link--active:hover {
+    background: color-mix(in srgb, var(--blue) 12%, transparent);
   }
 
   .nav__link--active,
@@ -452,11 +464,17 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     font-weight: 600;
     color: var(--ink);
     border-bottom: 1px solid var(--line);
-    transition: color 0.25s ease;
+    padding-inline: 10px;
+    margin-inline: -10px;
+    border-radius: var(--r-xs);
+    transition:
+      color 0.25s ease,
+      background 240ms var(--ease-glide);
   }
 
   .panel__link:hover {
     color: var(--blue);
+    background: color-mix(in srgb, currentColor 8%, transparent);
   }
 
   .panel__link--active,
@@ -488,6 +506,13 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
 
   .panel__arrow {
     color: var(--blue);
+  }
+
+  .panel__theme {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 18px;
+    margin-left: -10px;
   }
 
   .panel__location {

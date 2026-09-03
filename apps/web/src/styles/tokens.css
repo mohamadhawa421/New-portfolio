@@ -74,6 +74,9 @@
 
   /* ---- Motion -------------------------------------------------------- */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Slower into the move, long tail out of it. This is the curve the hover
+     states use: at 320ms it reads as gliding rather than snapping. */
+  --ease-glide: cubic-bezier(0.33, 0.02, 0.18, 1);
   --ease-smooth: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
   --spring: linear(
@@ -103,4 +106,93 @@
   --logo-op: 1;
   --logo-y: 0px;
   --logo-pe: auto;
+}
+
+/* ===================================================================== */
+/* Dark theme                                                            */
+/*                                                                       */
+/* Only the palette is redefined — every component reads these tokens, so */
+/* nothing else needs a dark variant.                                     */
+/*                                                                       */
+/* The light design has three ascending surfaces: white, parchment, and a */
+/* near-black feature tile. Dark inverts the direction but keeps the      */
+/* three steps, so a section that read as "raised" still reads as raised. */
+/* ===================================================================== */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --ink: #f5f5f7;
+  --ink-muted: #a1a1a6;
+  --ink-soft: #8e8e93;
+  --ink-softer: #86868b;
+  --ink-faint: #6e6e73;
+  --ink-on-dark: #f5f5f7;
+  --ink-on-dark-muted: #a1a1a6;
+
+  /* Lifted from #0066cc: that blue is tuned for white and goes muddy on a
+     dark ground. This is the same hue at the brightness Apple uses on dark. */
+  --blue: #2997ff;
+  --blue-hover: #47a6ff;
+  --blue-on-dark: #2997ff;
+
+  --surface: #0b0b0d;
+  --surface-parchment: #131316;
+  --surface-dark: #1c1c20;
+  --surface-card: #141417;
+  --surface-card-hover: #1b1b1f;
+  --surface-chip: #1b1b1f;
+  --surface-chip-hover: #232328;
+  --surface-row-hover: #17171a;
+  --surface-row-hover-parchment: #1d1d21;
+  --surface-form: #17171a;
+  --surface-input: #0f0f11;
+  --surface-button-dark: #2a2a2f;
+  --surface-button-dark-hover: #35353b;
+  --surface-placeholder: #1b1b1f;
+
+  --line: #232328;
+  --line-light: #1f1f24;
+  --line-parchment: #26262c;
+  --line-dark: #33333a;
+
+  --error-on-dark: #ff9f9f;
+}
+
+/* Follow the system until the visitor picks a side. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --ink: #f5f5f7;
+    --ink-muted: #a1a1a6;
+    --ink-soft: #8e8e93;
+    --ink-softer: #86868b;
+    --ink-faint: #6e6e73;
+    --ink-on-dark: #f5f5f7;
+    --ink-on-dark-muted: #a1a1a6;
+
+    --blue: #2997ff;
+    --blue-hover: #47a6ff;
+    --blue-on-dark: #2997ff;
+
+    --surface: #0b0b0d;
+    --surface-parchment: #131316;
+    --surface-dark: #1c1c20;
+    --surface-card: #141417;
+    --surface-card-hover: #1b1b1f;
+    --surface-chip: #1b1b1f;
+    --surface-chip-hover: #232328;
+    --surface-row-hover: #17171a;
+    --surface-row-hover-parchment: #1d1d21;
+    --surface-form: #17171a;
+    --surface-input: #0f0f11;
+    --surface-button-dark: #2a2a2f;
+    --surface-button-dark-hover: #35353b;
+    --surface-placeholder: #1b1b1f;
+
+    --line: #232328;
+    --line-light: #1f1f24;
+    --line-parchment: #26262c;
+    --line-dark: #33333a;
+  }
 }

@@ -7,14 +7,14 @@ const [about, settings] = await Promise.all([getAboutPage(), getSiteSettings()])
 
 <BaseLayout seo={about.seo}>
   <main id="main" data-shell="1">
-    <section class="section section--light about-hero" data-tile="light">
+    <section class="section section--light about-hero" data-lift data-tile="light">
       <div class="shell">
         <div class="eyebrow about-hero__eyebrow" data-reveal="0">{about.eyebrow}</div>
-        <h1 class="about-hero__heading" data-reveal="1">{about.heading}</h1>
+        <h1 class="about-hero__heading"><span data-rise="0">{about.heading}</span></h1>
       </div>
     </section>
 
-    <section class="section section--parchment about-body" data-tile="parchment">
+    <section class="section section--parchment about-body" data-lift data-tile="parchment">
       <div class="shell about-body__inner">
         <div class="about-body__aside" data-reveal="0">
           <div class="about-body__portrait">
@@ -84,6 +84,10 @@ const [about, settings] = await Promise.all([getAboutPage(), getSiteSettings()])
   }
 
   .about-hero__heading {
+    /* Clips the rising text until it slides into place. The padding stops
+       descenders being shaved off by the same clip. */
+    overflow: hidden;
+    padding-bottom: 0.06em;
     max-width: 18ch;
     font-size: clamp(33px, 5.6vw, 80px);
     line-height: 1.04;
