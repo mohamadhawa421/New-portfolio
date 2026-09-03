@@ -371,10 +371,10 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     border-radius: var(--r-sm);
     color: inherit;
     position: relative;
-    will-change: transform;
+    overflow: hidden;
+    transform: translateZ(0);
     transition:
-      background 200ms var(--ease-out),
-      transform 260ms var(--ease-out),
+      transform 160ms var(--ease-out),
       opacity 520ms var(--ease-smooth);
   }
 
@@ -387,12 +387,38 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     right: clamp(10px, 1.4vw, 18px);
     height: 1px;
     background: var(--line-parchment);
+    z-index: 1;
+  }
+
+  /* Compositor-only hover fill — see ProjectRow.astro for why this is a
+     separate opacity layer instead of a `background` transition. */
+  .service::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--surface-row-hover-parchment);
+    opacity: 0;
+    transition: opacity 140ms ease-out;
   }
 
   .service:hover {
-    background: var(--surface-row-hover-parchment);
-    transform: translateX(10px);
+    transform: translate3d(8px, 0, 0);
     color: inherit;
+  }
+
+  .service:hover::after {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .service:hover {
+      transform: translateZ(0);
+    }
+
+    .service:hover::after {
+      opacity: 0;
+    }
   }
 
   .service__num {

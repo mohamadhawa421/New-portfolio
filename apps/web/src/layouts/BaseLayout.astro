@@ -72,11 +72,6 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         Every script below re-initialises on `astro:page-load` because of it. */}
     <ClientRouter />
 
-    {/* Marks the document as scripted before first paint, so reveal-on-scroll
-        elements start hidden only when something is going to reveal them. */}
-    <script is:inline>
-      document.documentElement.classList.add('js');
-    </script>
   </head>
 
   <body>
@@ -103,6 +98,24 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
     <slot />
 
     <SiteFooter settings={settings} />
+
+    {/* Runs while the parser is still in <body>, so it executes before the
+        first paint but after the layout above it exists. It marks only the
+        elements that are genuinely below the fold, which means content in the
+        first screen is never hidden and there is nothing to flash. */}
+    <script is:inline>
+      (function () {
+        var vh = window.innerHeight || 800;
+        var nodes = document.querySelectorAll('[data-reveal],[data-rise],[data-num]');
+        for (var i = 0; i < nodes.length; i++) {
+          var el = nodes[i];
+          var trigger = el.hasAttribute('data-rise') && el.parentElement ? el.parentElement : el;
+          if (trigger.getBoundingClientRect().top >= vh * 0.94) {
+            el.setAttribute('data-hidden', '');
+          }
+        }
+      })();
+    </script>
 
     <script>
       import '../scripts/chrome.ts';

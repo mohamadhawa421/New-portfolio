@@ -43,12 +43,14 @@ const { project, index = 0 } = Astro.props;
     border-radius: var(--r-sm);
     color: inherit;
     position: relative;
-    will-change: transform;
-    /* Fast enough to feel like a response to the pointer rather than an
-       animation that plays afterwards. */
+    overflow: hidden;
+    /* Promote to its own layer so the slide composites instead of repainting
+       the thumbnail on every frame. */
+    transform: translateZ(0);
+    /* Short enough to read as a direct response to the pointer. Anything past
+       roughly 200ms starts to feel like the row is catching up with you. */
     transition:
-      background 200ms var(--ease-out),
-      transform 260ms var(--ease-out),
+      transform 160ms var(--ease-out),
       opacity 520ms var(--ease-smooth);
   }
 
@@ -62,12 +64,50 @@ const { project, index = 0 } = Astro.props;
     right: clamp(10px, 1.4vw, 18px);
     height: 1px;
     background: var(--line);
+    z-index: 1;
+  }
+
+  /*
+   * The hover fill used to transition `background-color` directly, which is a
+   * paint operation the browser redoes on every frame of the animation — on a
+   * row with a large thumbnail image that paint is expensive enough to feel
+   * laggy even though the slide itself was already compositor-only.
+   *
+   * A separate full-size layer that only ever animates `opacity` avoids that:
+   * opacity is compositor-only, same as transform, so the whole hover — fill
+   * and slide together — now costs the GPU nothing extra to run.
+   */
+  .row::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    /* .row is already a stacking context (transform: translateZ(0) forces
+       one), so z-index here is scoped to it: this sits behind the thumbnail
+       and text rather than covering them. */
+    z-index: -1;
+    background: var(--surface-row-hover);
+    opacity: 0;
+    transition: opacity 140ms ease-out;
   }
 
   .row:hover {
-    background: var(--surface-row-hover);
-    transform: translateX(10px);
+    transform: translate3d(8px, 0, 0);
     color: inherit;
+  }
+
+  .row:hover::after {
+    opacity: 1;
+  }
+
+  /* Touch screens have no hover; the slide would only ever fire on tap. */
+  @media (hover: none) {
+    .row:hover {
+      transform: translateZ(0);
+    }
+
+    .row:hover::after {
+      opacity: 0;
+    }
   }
 
   .row__thumb {

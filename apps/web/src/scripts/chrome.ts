@@ -51,9 +51,9 @@ function rollNumber(el: HTMLElement): void {
 
 function show(el: HTMLElement): void {
   if (el.dataset.shown) return;
+  el.dataset.shown = '1';
 
   if (el.hasAttribute('data-num')) {
-    el.dataset.shown = '1';
     rollNumber(el);
     return;
   }
@@ -61,7 +61,24 @@ function show(el: HTMLElement): void {
   const isRise = el.hasAttribute('data-rise');
   const index = parseInt(el.getAttribute(isRise ? 'data-rise' : 'data-reveal') || '0', 10);
   el.style.transitionDelay = `${index * (isRise ? 90 : 70)}ms`;
-  el.dataset.shown = '1';
+  // Dropping the attribute is what animates it in; elements that were never
+  // hidden simply have nothing to remove.
+  el.removeAttribute('data-hidden');
+}
+
+/**
+ * Marks everything below the fold so it can animate in later. Mirrors the
+ * inline script in BaseLayout, which handles the very first paint; this one
+ * covers client-side navigations, where that script does not re-run.
+ */
+function primeBelowFold(): void {
+  const viewportHeight = window.innerHeight || 800;
+  document.querySelectorAll<HTMLElement>(REVEAL_SELECTOR).forEach((el) => {
+    if (el.dataset.shown || el.hasAttribute('data-hidden')) return;
+    if (triggerFor(el).getBoundingClientRect().top >= viewportHeight * 0.94) {
+      el.setAttribute('data-hidden', '');
+    }
+  });
 }
 
 function showAll(): void {
@@ -99,12 +116,10 @@ function setUpReveals(): void {
     else watched.set(trigger, [el]);
   }
 
-  // Anything already on screen is revealed straight away. getBoundingClientRect
-  // is used rather than waiting for the observer because it ignores ancestor
-  // clipping, so it sees rise elements the observer cannot.
-  const viewportHeight = window.innerHeight || 800;
+  // Anything not marked hidden is already on screen and needs no animation —
+  // just record it as done so the observer ignores it.
   for (const [trigger, group] of watched) {
-    if (trigger.getBoundingClientRect().top < viewportHeight * 0.94) {
+    if (group.every((el) => !el.hasAttribute('data-hidden'))) {
       group.forEach(show);
       watched.delete(trigger);
     }
@@ -222,6 +237,7 @@ function init(): void {
   observer?.disconnect();
   observer = null;
 
+  primeBelowFold();
   setUpReveals();
   remeasure();
 

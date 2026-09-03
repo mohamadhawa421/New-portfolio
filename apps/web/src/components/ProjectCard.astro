@@ -43,21 +43,36 @@ const { project } = Astro.props;
   .card {
     display: flex;
     flex-direction: column;
+    position: relative;
     background: var(--surface-card);
     border-radius: var(--r-xl);
     overflow: hidden;
     color: inherit;
-    will-change: transform;
+    transform: translateZ(0);
     transition:
-      transform 260ms var(--ease-out),
-      background 200ms var(--ease-out),
+      transform 180ms var(--ease-out),
       opacity 520ms var(--ease-smooth);
   }
 
-  .card:hover {
-    transform: translateY(-6px);
+  /* Compositor-only hover fill — see ProjectRow.astro for why this is a
+     separate opacity layer instead of a `background` transition. */
+  .card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
     background: var(--surface-card-hover);
+    opacity: 0;
+    transition: opacity 140ms ease-out;
+  }
+
+  .card:hover {
+    transform: translate3d(0, -6px, 0);
     color: inherit;
+  }
+
+  .card:hover::after {
+    opacity: 1;
   }
 
   .card__tile {
@@ -67,6 +82,9 @@ const { project } = Astro.props;
     align-items: flex-end;
     padding: clamp(18px, 2vw, 26px);
     overflow: hidden;
+    /* Its own layer, so the 1.03 scale on hover composites the already-decoded
+       image instead of asking the browser to re-rasterise it every frame. */
+    transform: translateZ(0);
     transition: transform 420ms var(--ease-out);
   }
 

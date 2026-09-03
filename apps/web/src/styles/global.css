@@ -204,17 +204,26 @@ figure {
 /* --------------------------------------------------------------------- */
 /* Reveal-on-scroll                                                       */
 /*                                                                        */
-/* The .js class is set by a tiny blocking script in <head>, so elements   */
-/* only start hidden when JavaScript is actually going to reveal them.     */
+/* Only elements carrying [data-hidden] start invisible, and that attribute*/
+/* is set by a blocking script at the end of <body> which marks just the   */
+/* ones below the fold.                                                    */
+/*                                                                        */
+/* The previous version hid every reveal element from a class set in       */
+/* <head>, then un-hid them from a deferred module. Between those two      */
+/* moments the browser painted a page with an empty hero — which is        */
+/* exactly the flicker, and it happened on every single page load.         */
 /* --------------------------------------------------------------------- */
 
-.js [data-reveal]:not([data-shown]) {
+[data-hidden] {
   opacity: 0;
   transform: translateY(16px);
 }
 
-.js [data-rise]:not([data-shown]) {
+/* A rise element slides up inside an overflow:hidden parent; it is clipped
+   rather than faded, so it keeps full opacity. */
+[data-rise][data-hidden] {
   display: block;
+  opacity: 1;
   transform: translateY(112%);
 }
 
@@ -276,16 +285,34 @@ figure {
 /* --------------------------------------------------------------------- */
 
 /*
- * No cross-fade between pages. The sections are full-bleed white, parchment and
- * near-black, so fading one page into another blends two different backgrounds
- * and washes through a grey frame — which reads as a flash rather than a
- * transition. Swapping instantly is the smoother result; the content still
- * animates in through the reveal system.
+ * A quick blur-fade between pages.
+ *
+ * The obvious approach — cross-fading both snapshots — does not work here: the
+ * sections are full-bleed white, parchment and near-black, so fading one page
+ * out *while* the other fades in leaves a frame where both are semi-transparent
+ * and the two backgrounds average into grey. That grey frame is the flash.
+ *
+ * Instead the outgoing page holds still at full opacity and the incoming one
+ * animates in on top of it. There is never a transparent gap, so no wash — just
+ * the new page resolving out of a blur.
  */
-::view-transition-old(root),
-::view-transition-new(root) {
+@keyframes mh-page-in {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+::view-transition-old(root) {
   animation: none;
-  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  animation: mh-page-in 220ms var(--ease-out) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -305,8 +332,7 @@ figure {
     transition-duration: 0.001ms !important;
   }
 
-  .js [data-reveal]:not([data-shown]),
-  .js [data-rise]:not([data-shown]) {
+  [data-hidden] {
     opacity: 1;
     transform: none;
   }
