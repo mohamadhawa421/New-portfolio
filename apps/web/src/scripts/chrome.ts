@@ -52,10 +52,14 @@ function rollNumber(el: HTMLElement): void {
   requestAnimationFrame(step);
 }
 
-function show(el: HTMLElement): void {
-  if (el.dataset.shown) return;
-  el.dataset.shown = '1';
-
+/**
+ * Runs the entrance: applies the stagger, then drops [data-hidden] so the
+ * transition in global.css plays.
+ *
+ * Separate from show() because priming needs to claim an element now but
+ * reveal it a frame later — see primePage.
+ */
+function reveal(el: HTMLElement): void {
   const isRise = el.hasAttribute('data-rise');
   if (!el.hasAttribute('data-num')) {
     const index = parseInt(el.getAttribute(isRise ? 'data-rise' : 'data-reveal') || '0', 10);
@@ -90,19 +94,54 @@ function show(el: HTMLElement): void {
   if (el.hasAttribute('data-num')) rollNumber(el);
 }
 
+function show(el: HTMLElement): void {
+  if (el.dataset.shown) return;
+  el.dataset.shown = '1';
+  reveal(el);
+}
+
 /**
- * Marks everything below the fold so it can animate in later. Mirrors the
- * inline script in BaseLayout, which handles the very first paint; this one
- * covers client-side navigations, where that script does not re-run.
+ * Hides everything that has not been revealed yet, then plays the entrance for
+ * whatever is already on screen.
+ *
+ * This used to prime only what was below the fold, which meant a page's own
+ * heading — always above the fold — was never hidden and so never animated.
+ * Only the home page appeared to have an entrance, and only because its hero
+ * happens to sit beside content that scrolls.
+ *
+ * Above-the-fold elements are claimed immediately (marked shown, so the
+ * observer leaves them alone) but revealed two frames later. The browser has
+ * to paint the hidden state at least once or there is no start value to
+ * transition from and the elements simply pop in.
  */
-function primeBelowFold(): void {
+function primePage(): void {
   const viewportHeight = window.innerHeight || 800;
+  const above: HTMLElement[] = [];
+
   document.querySelectorAll<HTMLElement>(REVEAL_SELECTOR).forEach((el) => {
     if (el.dataset.shown || el.hasAttribute('data-hidden')) return;
-    if (triggerFor(el).getBoundingClientRect().top >= viewportHeight * 0.94) {
-      el.setAttribute('data-hidden', '');
+
+    const onScreen = triggerFor(el).getBoundingClientRect().top < viewportHeight * 0.94;
+
+    // A counting number above the fold is left as it is: hiding it would show
+    // a blank where a figure should be, and it has no entrance to gain.
+    if (onScreen && el.hasAttribute('data-num')) return;
+
+    el.setAttribute('data-hidden', '');
+    if (onScreen) {
+      el.dataset.shown = '1';
+      above.push(el);
     }
   });
+
+  if (!above.length) return;
+
+  if (reduced) {
+    above.forEach(reveal);
+    return;
+  }
+
+  requestAnimationFrame(() => requestAnimationFrame(() => above.forEach(reveal)));
 }
 
 function showAll(): void {
@@ -274,7 +313,7 @@ function init(): void {
   observer?.disconnect();
   observer = null;
 
-  primeBelowFold();
+  primePage();
   setUpReveals();
   remeasure();
 

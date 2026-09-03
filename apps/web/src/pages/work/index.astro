@@ -167,7 +167,11 @@ const categories = [
 
   .chip--active {
     background: var(--ink);
-    color: #fff;
+    /* Not #fff: the chip fills with the ink colour, which in dark mode is
+       near-white — so a hardcoded white label was white-on-white and the
+       selected filter read as blank. The page surface is the correct
+       counterpart to ink in either theme. */
+    color: var(--surface);
   }
 
   .work-grid__count {

@@ -127,17 +127,72 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         first paint but after the layout above it exists. It marks only the
         elements that are genuinely below the fold, which means content in the
         first screen is never hidden and there is nothing to flash. */}
+    <!--
+      Sets the start state for the entrance animations, and plays the entrance
+      for whatever is already on screen.
+
+      This is inline and blocking on purpose. It has to run before the first
+      paint: an element that is painted visible and only hidden afterwards
+      flashes, which is exactly the bug this replaced. And the reveal has to be
+      here too rather than in the deferred module — waiting for that module
+      leaves the heading blank for a beat on arrival.
+
+      Client-side navigations do not re-run this; primePage() in chrome.ts
+      mirrors it on astro:after-swap. Keep the two in step — the stagger
+      numbers below match the ones there.
+    -->
     <script is:inline>
       (function () {
         var vh = window.innerHeight || 800;
         var nodes = document.querySelectorAll('[data-reveal],[data-rise],[data-num]');
+        var above = [];
+
         for (var i = 0; i < nodes.length; i++) {
           var el = nodes[i];
           var trigger = el.hasAttribute('data-rise') && el.parentElement ? el.parentElement : el;
-          if (trigger.getBoundingClientRect().top >= vh * 0.94) {
-            el.setAttribute('data-hidden', '');
+          var onScreen = trigger.getBoundingClientRect().top < vh * 0.94;
+
+          // A counting figure on screen is left alone: hiding it would show a
+          // blank where a number belongs, and it has no entrance to gain.
+          if (onScreen && el.hasAttribute('data-num')) continue;
+
+          el.setAttribute('data-hidden', '');
+          if (onScreen) {
+            el.dataset.shown = '1';
+            above.push(el);
           }
         }
+
+        if (!above.length) return;
+
+        function reveal(el) {
+          if (!el.hasAttribute('data-num')) {
+            var isRise = el.hasAttribute('data-rise');
+            var index = parseInt(el.getAttribute(isRise ? 'data-rise' : 'data-reveal') || '0', 10);
+            var delay = index * (isRise ? 90 : 70);
+            if (delay) {
+              el.style.transitionDelay = delay + 'ms';
+              // Left in place it would also delay this element's hover.
+              setTimeout(function () {
+                el.style.transitionDelay = '';
+              }, delay + 940);
+            }
+          }
+          el.removeAttribute('data-hidden');
+        }
+
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          above.forEach(reveal);
+          return;
+        }
+
+        // Two frames: the hidden state has to be painted once or there is no
+        // value to transition from and everything just pops in.
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            above.forEach(reveal);
+          });
+        });
       })();
     </script>
 

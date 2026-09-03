@@ -8,6 +8,11 @@
  * rather than two icons crossfading — a single shape morphing reads as the same
  * object changing state.
  */
+
+// Two of these render per page (nav + mobile panel). The SVG mask needs an id,
+// and a shared one is invalid HTML: both icons would resolve to whichever mask
+// came first, so neither would get its own crescent.
+const maskId = `theme-crescent-${crypto.randomUUID().slice(0, 8)}`;
 ---
 
 <button
@@ -19,7 +24,7 @@
   title="Switch theme"
 >
   <svg class="theme-toggle__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <mask id="theme-crescent">
+    <mask id={maskId}>
       <rect x="0" y="0" width="24" height="24" fill="#fff" />
       <!-- Slides over the disc to bite a crescent out of it. -->
       <circle class="theme-toggle__bite" cx="24" cy="10" r="6" fill="#000" />
@@ -30,7 +35,7 @@
       cx="12"
       cy="12"
       r="5"
-      mask="url(#theme-crescent)"
+      mask={`url(#${maskId})`}
     />
 
     <g class="theme-toggle__rays" stroke-linecap="round">

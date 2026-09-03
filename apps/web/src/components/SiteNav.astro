@@ -417,6 +417,7 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
   }
 
   .panel {
+    --panel-inset: 14px;
     position: fixed;
     top: 0;
     right: 0;
@@ -428,10 +429,20 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     justify-content: space-between;
     gap: 32px;
     padding: 96px clamp(24px, 7vw, 36px) clamp(28px, 5vh, 44px);
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    box-shadow: -1px 0 24px rgba(0, 0, 0, 0.08);
+    /*
+     * Opaque, and following the theme surface rather than a hardcoded white
+     * that left the sidebar glaring over a dark page.
+     *
+     * Deliberately not glass: the translucent version let the hero headline
+     * and portrait read straight through the menu, and the backdrop-filter
+     * that was supposed to blur them was being dropped entirely. A menu has to
+     * be legible before it is pretty.
+     */
+    background: var(--surface);
+    /* A drop shadow separates the panel on a light page but disappears against
+       a dark one, so the edge is drawn as a line as well. */
+    border-left: 1px solid var(--line);
+    box-shadow: -1px 0 24px rgba(0, 0, 0, 0.14);
     visibility: hidden;
     transform: translateX(100%);
     overflow-y: auto;
@@ -452,24 +463,41 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
   .panel__links {
     display: flex;
     flex-direction: column;
+    /* Pulled wide so the hover fill extends to the panel's edges while the
+       text still lines up with everything else inside it. */
+    margin-inline: calc(-1 * var(--panel-inset));
   }
 
   .panel__link {
+    position: relative;
     display: flex;
     align-items: center;
+    /* Real vertical padding rather than a bare min-height, so the tap target
+       and the hover fill are the same shape as the text block inside them. */
+    padding: 15px var(--panel-inset);
     min-height: 56px;
-    font-size: clamp(24px, 7vw, 30px);
-    line-height: 1.2;
+    font-size: clamp(23px, 6.6vw, 29px);
+    line-height: 1.15;
     letter-spacing: -0.018em;
     font-weight: 600;
     color: var(--ink);
-    border-bottom: 1px solid var(--line);
-    padding-inline: 10px;
-    margin-inline: -10px;
-    border-radius: var(--r-xs);
+    border-radius: var(--r-sm);
     transition:
       color 0.25s ease,
       background 240ms var(--ease-glide);
+  }
+
+  /* Divider drawn as an inset line. A border on a rounded box curls at the
+     corners once the hover fill rounds them — the same reason the project
+     rows use a pseudo-element. */
+  .panel__link + .panel__link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: var(--panel-inset);
+    right: var(--panel-inset);
+    height: 1px;
+    background: var(--line);
   }
 
   .panel__link:hover {

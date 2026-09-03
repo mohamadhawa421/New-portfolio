@@ -292,34 +292,50 @@ figure {
 /* --------------------------------------------------------------------- */
 
 /*
- * A quick blur-fade between pages.
+ * Page transition: a short blur-and-fade, with nothing moving.
  *
- * The obvious approach — cross-fading both snapshots — does not work here: the
- * sections are full-bleed white, parchment and near-black, so fading one page
- * out *while* the other fades in leaves a frame where both are semi-transparent
- * and the two backgrounds average into grey. That grey frame is the flash.
+ * Three earlier versions moved the page — a rise, a cross-fade with a rise, a
+ * sheet sliding up over the old page. All of them drew the eye to the motion
+ * rather than the new content, and any version where both pages are visible at
+ * once reads as two pages sliding through each other.
  *
- * Instead the outgoing page holds still at full opacity and the incoming one
- * animates in on top of it. There is never a transparent gap, so no wash — just
- * the new page resolving out of a blur.
+ * So: no transforms at all. The old page defocuses and fades, the new one
+ * resolves out of the same soft blur. The two are sequenced rather than
+ * cross-faded — the incoming page starts 130ms in, after the outgoing one is
+ * nearly gone — so they are never meaningfully layered, but the 40ms of
+ * overlap avoids a hard blank frame between them.
+ *
+ * Short on purpose. At ~390ms end to end it registers as a soft handoff
+ * instead of an animation to sit through.
  */
+@keyframes mh-page-out {
+  from {
+    opacity: 1;
+    filter: blur(0px);
+  }
+  to {
+    opacity: 0;
+    filter: blur(6px);
+  }
+}
+
 @keyframes mh-page-in {
   from {
     opacity: 0;
-    filter: blur(10px);
+    filter: blur(6px);
   }
   to {
     opacity: 1;
-    filter: blur(0);
+    filter: blur(0px);
   }
 }
 
 ::view-transition-old(root) {
-  animation: none;
+  animation: mh-page-out 170ms var(--ease-in) both;
 }
 
 ::view-transition-new(root) {
-  animation: mh-page-in 220ms var(--ease-out) both;
+  animation: mh-page-in 260ms var(--ease-out) 130ms both;
 }
 
 @media (prefers-reduced-motion: reduce) {
