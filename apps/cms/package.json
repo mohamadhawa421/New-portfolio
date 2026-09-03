@@ -16,7 +16,8 @@
     "predev": "node scripts/ensure-db.js",
     "prestart": "node scripts/ensure-db.js",
     "preseed": "node scripts/ensure-db.js",
-    "preexport": "node scripts/ensure-db.js"
+    "preexport": "node scripts/ensure-db.js",
+    "prune-media": "node scripts/prune-media.js"
   },
   "dependencies": {
     "@strapi/plugin-cloud": "^5.0.0",

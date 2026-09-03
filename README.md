@@ -193,6 +193,33 @@ reveals.
 | `npm run build:site` | Export then build — what Vercel runs |
 | `npm run preview` | Serve the already-built site |
 | `npm run seed` | Reload the original design content (Strapi stopped; `-- --force` overwrites) |
+| `npm run prune-media` | List uploads nothing references (`-- --delete` removes them) |
+
+## The contact form
+
+The form sends through **Brevo** rather than opening the visitor's mail app, and
+it asks for their email so replies have somewhere to go. WhatsApp stays as a
+second button for people who prefer it.
+
+Sending is the one server-side piece: [`api/enquiry.js`](api/enquiry.js), a
+Vercel function. Set these in Vercel → Settings → Environment Variables:
+
+| Variable | Value |
+| --- | --- |
+| `BREVO_API_KEY` | A transactional API key from Brevo → SMTP & API → API keys |
+| `ENQUIRY_TO_EMAIL` | Where enquiries should land |
+| `BREVO_SENDER_EMAIL` | Optional. The "from" address — **must be a verified sender in Brevo**. Defaults to `ENQUIRY_TO_EMAIL` |
+| `BREVO_SENDER_NAME` | Optional. Defaults to "Portfolio enquiry" |
+
+The visitor's address goes in `replyTo`, never in `from`: sending as them would
+fail SPF/DKIM for their domain and land in spam. Hitting reply still reaches them.
+
+There is a hidden honeypot field; anything that fills it gets a success response
+and is silently dropped.
+
+> The function does not run under `astro dev` — Vercel functions need the Vercel
+> runtime. Locally the form will report a send failure. Use `npx vercel dev` to
+> exercise it for real, or test it on a preview deployment.
 
 ## Deploying
 

@@ -5,6 +5,7 @@ import '../styles/global.css';
 import SiteNav from '../components/SiteNav.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import IntroCurtain from '../components/IntroCurtain.astro';
+import { ClientRouter } from 'astro:transitions';
 import { getSiteSettings } from '../lib/content';
 import type { Seo } from '../lib/types';
 
@@ -57,6 +58,11 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
+
+    {/* Swaps pages in place instead of a full reload, so the nav, fonts and
+        stylesheets are never re-fetched and navigation keeps its momentum.
+        Every script below re-initialises on `astro:page-load` because of it. */}
+    <ClientRouter />
 
     {/* Marks the document as scripted before first paint, so reveal-on-scroll
         elements start hidden only when something is going to reveal them. */}
@@ -133,6 +139,16 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         height: 34px;
         width: auto;
         display: block;
+      }
+
+      /* On desktop the logo fades out as the nav pill condenses. On phones the
+         logo and the burger together are the header, so it has to stay. */
+      @media (max-width: 767px) {
+        .site-logo {
+          opacity: 1;
+          transform: none;
+          pointer-events: auto;
+        }
       }
     </style>
   </body>

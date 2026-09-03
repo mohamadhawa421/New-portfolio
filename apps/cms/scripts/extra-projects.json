@@ -1,0 +1,117 @@
+{
+  "_comment": "MyLebPass and Tahweel. Copy written from what each product publicly does (mylebpass.com, tahweel.io) — no metrics, timelines or client outcomes are claimed, because none were supplied.",
+  "projects": [
+    {
+      "slug": "mylebpass",
+      "title": "MyLebPass",
+      "category": "Product Design",
+      "discipline": "Product Design",
+      "role": "UI / UX Design",
+      "order": 4,
+      "featured": false,
+      "chipBg": "#e9e9ec",
+      "chipInk": "#86868b",
+      "summary": "MyLebPass is a digital membership that unlocks offers at restaurants, cafés, and lifestyle venues across Lebanon — one pass, scanned at the counter.",
+      "briefLead": "They needed a mobile experience that could make a paid membership feel worth it from the first use, turning a list of partner venues into something people open before deciding where to go.",
+      "briefBody": "",
+      "problemLead": "A discount pass only works if people remember it exists and can use it without friction at the counter.",
+      "constraints": [
+        "Members have to believe a yearly fee will pay for itself before they have used the pass even once.",
+        "Redemption happens in public, at a till, with people waiting — it has to take seconds, not menus.",
+        "Offers spread across venue types and towns are hard to browse when they are presented as one long list."
+      ],
+      "approachLead": "Designed the pass around the two moments that actually matter: deciding where to go, and redeeming once you are there.",
+      "approachBody": "Browsing is organised by venue type and area, so the catalogue reads like somewhere to go tonight rather than a directory to search. Redemption is a single screen holding the member's QR code, reachable in one tap from anywhere in the app.\n\nThe value of the membership is kept visible rather than buried in a settings page: what each venue offers, and what the pass has saved so far, sit alongside the browsing experience so the fee keeps justifying itself.",
+      "decisions": [
+        {
+          "title": "Worth It Upfront",
+          "body": "Savings are shown against the membership price, so the pass proves its value early instead of asking for faith."
+        },
+        {
+          "title": "Two-Tap Redemption",
+          "body": "The QR code is never more than a tap away, so using the pass at a counter is quicker than explaining it."
+        },
+        {
+          "title": "Browsable, Not Searchable",
+          "body": "Venues are grouped by type and area, so members can choose somewhere without already knowing what they want."
+        }
+      ],
+      "shippedHeading": "A membership people actually open.",
+      "shipped": [
+        {
+          "title": "Digital Pass",
+          "body": "One QR code that works across every partner venue, with no codes to remember."
+        },
+        {
+          "title": "Venue Catalogue",
+          "body": "Partner restaurants, cafés, and lifestyle spots grouped by category and area."
+        },
+        {
+          "title": "Offers & Savings",
+          "body": "What each venue gives members, and what the pass has saved them so far."
+        }
+      ],
+      "reflectionLead": "The hard part of a discount product is not the discount.",
+      "reflectionBody": "It is being present at the moment someone decides where to go, and effortless at the moment they pay. Both are interface problems more than pricing problems.",
+      "cover": "Lebpass cover.png",
+      "approachShot": "Mylebpass 1.png",
+      "gallery": ["Mylebpass 2.png", "Mylebpass 3.png"]
+    },
+    {
+      "slug": "tahweel",
+      "title": "Tahweel",
+      "category": "Product Design",
+      "discipline": "Product Design — concept",
+      "role": "UI / UX Design",
+      "order": 5,
+      "featured": false,
+      "chipBg": "#f2f2f4",
+      "chipInk": "#86868b",
+      "summary": "A self-initiated redesign of Tahweel, a MENA app for instant gaming top-ups, mobile recharges, gift cards, and eSIMs. Concept work — never handed over or implemented.",
+      "briefLead": "This one had no client and no brief. I use the product, kept noticing the same friction, and set myself the exercise of reworking it around how quickly someone can finish a task they have already done a dozen times.",
+      "briefBody": "Nothing here was commissioned by Tahweel, delivered to their team, or shipped. It is a personal study of an app I know well.",
+      "problemLead": "An app that sells many different digital products drifts towards being a catalogue, when most people open it to repeat one purchase they have made before.",
+      "constraints": [
+        "Gaming top-ups, mobile recharges, gift cards, and eSIMs are four different products competing for the same home screen.",
+        "Most sessions repeat a previous purchase, but every visit is treated as a first visit.",
+        "Paying for digital credit needs visible reassurance at the exact moment of checkout, not in a policy page."
+      ],
+      "approachLead": "Restructured the home screen around repeat purchases instead of around the product catalogue.",
+      "approachBody": "The first thing a returning user sees is what they bought last time, one tap from buying it again. Categories still exist, but they are somewhere you go when you want something new, not the toll you pay on every visit.\n\nCheckout was rebuilt around confidence: what is being bought, for which account, at what price, and when it arrives — all visible before the payment step rather than after it.",
+      "decisions": [
+        {
+          "title": "Repeat First",
+          "body": "The home screen leads with what this person actually buys, so the common case takes one tap."
+        },
+        {
+          "title": "One Category at a Time",
+          "body": "Four unrelated product types stop competing for attention and get their own focused space."
+        },
+        {
+          "title": "Trust at Checkout",
+          "body": "Account, price, and delivery are confirmed before payment, where the doubt actually happens."
+        }
+      ],
+      "shippedHeading": "A concept, explored end to end.",
+      "shipped": [
+        {
+          "title": "Home & Quick Repeat",
+          "body": "Recent purchases promoted to the top, with categories a step behind."
+        },
+        {
+          "title": "Category Browsing",
+          "body": "Focused space for top-ups, recharges, gift cards, and eSIMs."
+        },
+        {
+          "title": "Checkout & Confirmation",
+          "body": "Account, price, and delivery confirmed before the payment step."
+        }
+      ],
+      "reflectionLead": "Redesigning something nobody asked you to redesign is a good way to find out whether you understand the problem or just dislike the layout.",
+      "reflectionBody": "The interesting constraint here was restraint: the existing product works, and most of what I changed was hierarchy rather than features. If it were ever built, the next step would be checking the repeat-purchase assumption against real usage data rather than my own habits.",
+      "cover": "Tahweel cover.png",
+      "approachShot": "Tahweel 1.png",
+      "gallery": ["Tahweel 2.png", "Tahweel 3.png"]
+    }
+  ]
+}

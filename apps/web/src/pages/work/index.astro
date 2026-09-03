@@ -47,7 +47,7 @@ const categories = [
       </div>
 
       <p class="shell work-grid__empty" data-empty hidden>
-        Nothing in that sector yet.
+        Nothing in that category yet.
       </p>
     </section>
   </main>
@@ -55,39 +55,44 @@ const categories = [
 
 <script is:inline define:vars={{ allLabel: work.allFilterLabel }}>
   (function () {
-    const chips = document.querySelectorAll('[data-filter]');
-    const cards = document.querySelectorAll('[data-grid] [data-category]');
-    const counter = document.querySelector('[data-count]');
-    const empty = document.querySelector('[data-empty]');
+    function setupFilters() {
+      const chips = document.querySelectorAll('[data-filter]');
+      const cards = document.querySelectorAll('[data-grid] [data-category]');
+      const counter = document.querySelector('[data-count]');
+      const empty = document.querySelector('[data-empty]');
+      if (!chips.length || !cards.length) return;
 
-    function applyFilter(value) {
-      let shown = 0;
+      function applyFilter(value) {
+        let shown = 0;
 
-      cards.forEach((card) => {
-        const match = value === allLabel || card.dataset.category === value;
-        card.hidden = !match;
-        if (match) shown += 1;
+        cards.forEach((card) => {
+          const match = value === allLabel || card.dataset.category === value;
+          card.hidden = !match;
+          if (match) shown += 1;
+        });
+
+        if (counter) counter.textContent = String(shown);
+        if (empty) empty.hidden = shown !== 0;
+
+        // Reveals are handled by IntersectionObserver, which picks the newly
+        // visible cards up on its own. The nav still needs to know the page got
+        // shorter or taller.
+        window.dispatchEvent(new Event('scroll'));
+      }
+
+      chips.forEach((chip) => {
+        chip.addEventListener('click', () => {
+          chips.forEach((other) => {
+            const active = other === chip;
+            other.classList.toggle('chip--active', active);
+            other.setAttribute('aria-pressed', active ? 'true' : 'false');
+          });
+          applyFilter(chip.dataset.filter);
+        });
       });
-
-      if (counter) counter.textContent = String(shown);
-      if (empty) empty.hidden = shown !== 0;
-
-      // Reveals are handled by IntersectionObserver, which picks the newly
-      // visible cards up on its own. The nav still needs to know the page got
-      // shorter or taller.
-      window.dispatchEvent(new Event('scroll'));
     }
 
-    chips.forEach((chip) => {
-      chip.addEventListener('click', () => {
-        chips.forEach((other) => {
-          const active = other === chip;
-          other.classList.toggle('chip--active', active);
-          other.setAttribute('aria-pressed', active ? 'true' : 'false');
-        });
-        applyFilter(chip.dataset.filter);
-      });
-    });
+    document.addEventListener('astro:page-load', setupFilters);
   })();
 </script>
 

@@ -7,51 +7,121 @@
     "displayName": "Contact page",
     "description": "Contact copy plus every label, placeholder and message in the enquiry form."
   },
-  "options": { "draftAndPublish": true },
+  "options": {
+    "draftAndPublish": true
+  },
   "pluginOptions": {},
   "attributes": {
-    "heading": { "type": "string", "default": "Tell me what you're building." },
-    "body": { "type": "text" },
+    "heading": {
+      "type": "string",
+      "default": "Tell me what you're building."
+    },
+    "body": {
+      "type": "text"
+    },
     "homeBody": {
       "type": "text",
       "description": "The shorter version of the same block used in the home page's contact section."
     },
-
-    "budgetOptions": { "type": "component", "repeatable": true, "component": "shared.option" },
+    "budgetOptions": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.option"
+    },
     "unsureLabel": {
       "type": "string",
       "default": "Not sure yet",
       "description": "Appended to both the service and budget dropdowns."
     },
-
-    "formNameLabel": { "type": "string", "default": "Your name" },
-    "formNamePlaceholder": { "type": "string", "default": "Who am I talking to?" },
-    "formServiceLabel": { "type": "string", "default": "What do you need?" },
-    "formBudgetLabel": { "type": "string", "default": "Budget" },
-    "formBriefLabel": { "type": "string", "default": "What are you building?" },
+    "formNameLabel": {
+      "type": "string",
+      "default": "Your name"
+    },
+    "formNamePlaceholder": {
+      "type": "string",
+      "default": "Who am I talking to?"
+    },
+    "formServiceLabel": {
+      "type": "string",
+      "default": "What do you need?"
+    },
+    "formBudgetLabel": {
+      "type": "string",
+      "default": "Budget"
+    },
+    "formBriefLabel": {
+      "type": "string",
+      "default": "What are you building?"
+    },
     "formBriefPlaceholder": {
       "type": "text",
-      "default": "A sentence or two is plenty — what it is, who it's for, and when you'd like to start."
+      "default": "A sentence or two is plenty \u2014 what it is, who it's for, and when you'd like to start."
     },
-    "formWhatsappCta": { "type": "string", "default": "Send on WhatsApp" },
-    "formEmailCta": { "type": "string", "default": "Send by email" },
+    "formEmailLabel": {
+      "type": "string",
+      "default": "Your email"
+    },
+    "formEmailPlaceholder": {
+      "type": "string",
+      "default": "So I can reply to you"
+    },
+    "formErrorEmail": {
+      "type": "string",
+      "default": "Add an email address so I can reply."
+    },
+    "formSendCta": {
+      "type": "string",
+      "default": "Send message"
+    },
+    "formSendingLabel": {
+      "type": "string",
+      "default": "Sending\u2026"
+    },
+    "formSuccess": {
+      "type": "text",
+      "default": "Thanks \u2014 your message is on its way. I'll reply to the address you gave."
+    },
+    "formSendError": {
+      "type": "text",
+      "default": "That didn't send. Try again, or reach me on WhatsApp."
+    },
+    "formWhatsappCta": {
+      "type": "string",
+      "default": "Send on WhatsApp"
+    },
+    "formEmailCta": {
+      "type": "string",
+      "default": "Send by email"
+    },
     "formHint": {
       "type": "text",
-      "default": "Nothing is stored or sent from this page — it opens the message in your own app so you stay in control."
+      "default": "Nothing is stored or sent from this page \u2014 it opens the message in your own app so you stay in control."
     },
-    "formErrorName": { "type": "string", "default": "Add your name so I know who is writing." },
+    "formErrorName": {
+      "type": "string",
+      "default": "Add your name so I know who is writing."
+    },
     "formErrorBrief": {
       "type": "string",
-      "default": "Tell me a little more about the project — a sentence is enough."
+      "default": "Tell me a little more about the project \u2014 a sentence is enough."
     },
-    "formSentWhatsapp": { "type": "string", "default": "WhatsApp opened — press send there to deliver it." },
-    "formSentEmail": { "type": "string", "default": "Your mail app should be opening with the message ready." },
+    "formSentWhatsapp": {
+      "type": "string",
+      "default": "WhatsApp opened \u2014 press send there to deliver it."
+    },
+    "formSentEmail": {
+      "type": "string",
+      "default": "Your mail app should be opening with the message ready."
+    },
     "formGreeting": {
       "type": "string",
       "default": "Hi Mohamad, I would like to talk about a project.",
       "description": "First line of the composed WhatsApp / email message."
     },
-
-    "seo": { "type": "component", "repeatable": false, "component": "shared.seo" }
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
+    }
   }
 }

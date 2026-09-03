@@ -17,10 +17,12 @@
 
 const { ensureWorkingDatabase } = require('./db');
 
-process.on('unhandledRejection', (error) => {
+const ignoreKnexTeardown = (error) => {
   if (error instanceof Error && error.message === 'aborted') return;
   throw error;
-});
+};
+process.on('unhandledRejection', ignoreKnexTeardown);
+process.on('uncaughtException', ignoreKnexTeardown);
 
 const DELETE = process.argv.includes('--delete');
 

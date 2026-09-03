@@ -23,6 +23,7 @@
     "seed": "npm run seed --workspace=apps/cms",
     "preview": "npm run preview --workspace=apps/web",
     "deploy": "node scripts/publish.js",
-    "edit": "npm run dev --workspace=apps/cms"
+    "edit": "npm run dev --workspace=apps/cms",
+    "prune-media": "npm run prune-media --workspace=apps/cms"
   }
 }

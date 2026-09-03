@@ -23,10 +23,12 @@ const { ensureWorkingDatabase } = require('./db');
 // knex aborts queued pool operations while shutting down, which surfaces as an
 // unhandled 'aborted' rejection *after* every write has committed. Ignore that
 // one; anything else still crashes the script.
-process.on('unhandledRejection', (error) => {
+const ignoreKnexTeardown = (error) => {
   if (error instanceof Error && error.message === 'aborted') return;
   throw error;
-});
+};
+process.on('unhandledRejection', ignoreKnexTeardown);
+process.on('uncaughtException', ignoreKnexTeardown);
 
 const args = process.argv.slice(2);
 const argOf = (flag) => {

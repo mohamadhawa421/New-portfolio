@@ -112,12 +112,12 @@ function setUpReveals(): void {
 
   if (!watched.size) return;
 
-  const observer = new IntersectionObserver(
+  observer = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
         (watched.get(entry.target) ?? []).forEach(show);
-        observer.unobserve(entry.target);
+        observer?.unobserve(entry.target);
       }
     },
     {
@@ -167,6 +167,9 @@ function chromePass(): void {
   if (mark) mark.style.filter = overDark ? 'brightness(0) invert(1)' : 'none';
 }
 
+let observer: IntersectionObserver | null = null;
+let listenersBound = false;
+
 let frame = 0;
 function scheduleChrome(): void {
   if (frame) return;
@@ -177,16 +180,23 @@ function scheduleChrome(): void {
 }
 
 function init(): void {
+  // The client router swaps the whole page, so the previous page's observer is
+  // watching elements that no longer exist. Drop it before building a new one.
+  observer?.disconnect();
+  observer = null;
+
   setUpReveals();
   chromePass();
 
-  window.addEventListener('scroll', scheduleChrome, { passive: true });
-  window.addEventListener('resize', scheduleChrome, { passive: true });
-  window.addEventListener('load', chromePass);
+  // These are on `window`, which survives navigation — bind them once or every
+  // page visit would add another copy.
+  if (!listenersBound) {
+    listenersBound = true;
+    window.addEventListener('scroll', scheduleChrome, { passive: true });
+    window.addEventListener('resize', scheduleChrome, { passive: true });
+    window.addEventListener('load', chromePass);
+  }
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init, { once: true });
-} else {
-  init();
-}
+// Fires on first load and after every client-side navigation.
+document.addEventListener('astro:page-load', init);

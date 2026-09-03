@@ -33,6 +33,13 @@ const { project } = Astro.props;
 </a>
 
 <style>
+  /* The work page filters by setting the `hidden` attribute. Without this the
+     browser's own [hidden]{display:none} loses to display:flex below and the
+     cards never actually disappear. */
+  .card[hidden] {
+    display: none;
+  }
+
   .card {
     display: flex;
     flex-direction: column;

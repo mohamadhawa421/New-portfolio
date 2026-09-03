@@ -52,6 +52,12 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
   </span>
 </button>
 
+{/* Mobile only. The logo and burger are fixed, so page content scrolls
+    underneath them; without a backdrop the icons sit directly on top of
+    photographs and headlines and become unreadable. This is the same glass the
+    desktop pill picks up on scroll, driven by the same variables. */}
+<div class="topbar" aria-hidden="true"></div>
+
 <div class="scrim" data-scrim hidden></div>
 
 <aside id="mobile-menu" class="panel" data-panel aria-label="Menu" inert>
@@ -84,11 +90,38 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
 </aside>
 
 <script>
-  const burger = document.querySelector<HTMLButtonElement>('[data-burger]');
-  const panel = document.querySelector<HTMLElement>('[data-panel]');
-  const scrim = document.querySelector<HTMLElement>('[data-scrim]');
+  /**
+   * The client router re-renders this component on every navigation, so the
+   * burger and panel are new elements each time and have to be re-bound. The
+   * document- and window-level listeners are not — those are bound once and
+   * delegate to whichever panel is currently on the page.
+   */
+  interface MenuController {
+    isOpen: () => boolean;
+    setOpen: (next: boolean) => void;
+    panel: HTMLElement;
+    focusable: () => HTMLElement[];
+  }
 
-  if (burger && panel && scrim) {
+  let current: MenuController | null = null;
+  let globalsBound = false;
+
+  function setup() {
+    const burger = document.querySelector<HTMLButtonElement>('[data-burger]');
+    const panel = document.querySelector<HTMLElement>('[data-panel]');
+    const scrim = document.querySelector<HTMLElement>('[data-scrim]');
+
+    if (!burger || !panel || !scrim) {
+      current = null;
+      return;
+    }
+
+    // A navigation can land mid-transition; make sure nothing is left locked.
+    document.documentElement.classList.remove('menu-open');
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+
     const focusable = () =>
       Array.from(panel.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'));
 
@@ -131,31 +164,36 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     burger.addEventListener('click', () => setOpen(!open));
     scrim.addEventListener('click', () => setOpen(false));
 
-    // Navigating away closes it, so the panel is never left open behind a
-    // back-button restore.
+    // With the client router the link does not reload the page, so the panel
+    // has to be closed explicitly or it would stay open over the new page.
     panel.querySelectorAll('a[href]').forEach((link) => {
       link.addEventListener('click', () => setOpen(false));
     });
 
+    current = { isOpen: () => open, setOpen, panel, focusable };
+
+    if (globalsBound) return;
+    globalsBound = true;
+
     document.addEventListener('keydown', (event) => {
-      if (!open) return;
+      if (!current || !current.isOpen()) return;
 
       if (event.key === 'Escape') {
         event.preventDefault();
-        setOpen(false);
+        current.setOpen(false);
         return;
       }
 
       if (event.key !== 'Tab') return;
 
       // Keep focus inside the panel while it is open.
-      const items = focusable();
+      const items = current.focusable();
       if (!items.length) return;
       const first = items[0];
       const last = items[items.length - 1];
       const active = document.activeElement;
 
-      if (event.shiftKey && (active === first || !panel.contains(active))) {
+      if (event.shiftKey && (active === first || !current.panel.contains(active))) {
         event.preventDefault();
         last.focus();
       } else if (!event.shiftKey && active === last) {
@@ -170,13 +208,15 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     // resize and the media query: resize always fires, the media query is the
     // cheaper signal when it does.
     const closeIfDesktop = () => {
-      if (window.innerWidth >= 768) setOpen(false);
+      if (window.innerWidth >= 768) current?.setOpen(false);
     };
 
     window.addEventListener('resize', closeIfDesktop, { passive: true });
     window.addEventListener('orientationchange', closeIfDesktop);
     window.matchMedia('(min-width: 768px)').addEventListener('change', closeIfDesktop);
   }
+
+  document.addEventListener('astro:page-load', setup);
 </script>
 
 <style>
@@ -235,6 +275,32 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
   .nav__link--active:hover {
     color: var(--blue);
     font-weight: 600;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Mobile top bar                                                      */
+  /* ------------------------------------------------------------------ */
+  .topbar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 68px;
+    z-index: 199;
+    background: var(--nav-bg, rgba(255, 255, 255, 0));
+    backdrop-filter: var(--nav-blur, saturate(180%) blur(0px));
+    -webkit-backdrop-filter: var(--nav-blur, saturate(180%) blur(0px));
+    box-shadow: var(--nav-shadow, 0 1px 8px rgba(0, 0, 0, 0));
+    transition:
+      background 520ms ease,
+      box-shadow 520ms ease,
+      backdrop-filter 520ms ease;
+  }
+
+  /* The bar is the surface; it must not sit above the open menu. */
+  :global(html.menu-open) .topbar {
+    opacity: 0;
   }
 
   /* ------------------------------------------------------------------ */
@@ -424,6 +490,10 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
 
     .panel {
       display: flex;
+    }
+
+    .topbar {
+      display: block;
     }
   }
 
