@@ -58,28 +58,46 @@ interface Beat {
   freeze: number;
   /** The field comes up. */
   hold: number;
-  /** The power starts going out of it. */
-  collapse: number;
-  /** The power goes out and everything drifts home together. */
-  restore: number;
+  /**
+   * The power starts running out. Nothing moves yet — the storm has to be
+   * visibly weakening before anything is allowed to fall out of it.
+   */
+  decay: number;
+  /** The purple starts leaving the character. */
+  avatar: number;
+  /** Pieces begin drifting home, each on its own clock. */
+  drift: number;
+  /** Letters begin finding each other again. */
+  letters: number;
   /** Nothing is left. */
   done: number;
 }
 
+/*
+ * The takeover is fast and the recovery is not.
+ *
+ * Two and a half seconds of storm, five of it passing — the ratio is the point.
+ * The destruction has to impress and the restoration has to satisfy, and those
+ * are not the same speed. Nothing in the second half is a reversal of anything
+ * in the first: the pieces come home on their own trajectories, their own
+ * timings and their own curves, because debris settling and debris being thrown
+ * look nothing alike.
+ */
 const BEAT: Beat = {
   /*
    * Almost immediately, because the delay that matters is per piece, not
    * global: each one waits exactly as long as the ring takes to reach it, so
    * the throw and the shatter happen under the leading edge rather than behind
-   * it. The furthest piece is thrown at 70 + WAVE_MS and has landed 480ms
-   * later, which is what sets the freeze.
+   * it.
    */
   impact: 70,
   freeze: 1080,
   hold: 1080,
-  collapse: 2400,
-  restore: 2700,
-  done: 4700,
+  decay: 2400,
+  drift: 3000,
+  avatar: 3100,
+  letters: 3300,
+  done: 7700,
 };
 
 /*
@@ -92,10 +110,15 @@ const MOBILE_BEAT: Beat = {
   fight: 300,
   freeze: 1450,
   hold: 1450,
-  collapse: 2800,
-  restore: 3100,
-  done: 5100,
+  decay: 2800,
+  drift: 3400,
+  avatar: 3500,
+  letters: 3700,
+  done: 8100,
 };
+
+/** How long the field takes to exhaust itself once it starts. */
+const DECAY_MS = 3000;
 
 /** How long the leading edge takes to cross the viewport. Matches the CSS. */
 const WAVE_MS = 420;
@@ -173,6 +196,14 @@ interface Anchor {
   y: number;
 }
 
+/** How one piece comes home: when it is let go, and the shape of its path. */
+interface Settle {
+  delay: number;
+  duration: number;
+  /** How far it bows off the straight line, and which way. */
+  bow: number;
+}
+
 let running = false;
 let restorers: Array<() => void> = [];
 let timers: number[] = [];
@@ -184,6 +215,9 @@ let source: Anchor = { x: 0, y: 0 };
 
 /** Everything the sequence wrote an inline style to, for the final sweep. */
 let touched: HTMLElement[] = [];
+
+/** The return animations, so teardown can cancel any still in flight. */
+let returning: Animation[] = [];
 
 export function isRunning(): boolean {
   return running;
@@ -264,6 +298,9 @@ function shatterText(el: HTMLElement, budget: { left: number }, arrival: number)
         // Off the mark when the wave gets to this heading, then letter by
         // letter along it — so a word comes apart from where it was standing.
         letter.style.setProperty('--cd', `${arrival + index * 9}ms`);
+        // And its own, unrelated moment to come back — not the reverse of the
+        // order it left in.
+        letter.style.setProperty('--lr', `${Math.round(Math.random() * 900)}ms`);
         word.appendChild(letter);
         index += 1;
       }
@@ -302,6 +339,7 @@ export function run(options: DesignerModeOptions): void {
   timers = [];
   restorers = [];
   touched = [];
+  returning = [];
 
   const root = document.documentElement;
   const narrow = window.innerWidth < 768;
@@ -360,7 +398,7 @@ export function run(options: DesignerModeOptions): void {
    */
   const swirl = (Math.random() * 2 - 1) * 0.8;
   const lean = { x: (Math.random() * 2 - 1) * 0.35, y: (Math.random() * 2 - 1) * 0.28 };
-  const placed: Array<{ el: HTMLElement; anchor: Anchor }> = [];
+  const placed: Array<{ el: HTMLElement; anchor: Anchor; settle: Settle }> = [];
 
   for (const el of chosen) {
     const rect = el.getBoundingClientRect();
@@ -425,7 +463,19 @@ export function run(options: DesignerModeOptions): void {
      * last to settle, so the page reassembles from the middle instead of
      * everything arriving at once.
      */
-    el.style.setProperty('--rd', `${Math.round(Math.min(1, distance / reach) * 420)}ms`);
+    /*
+     * How this particular piece comes home, decided now and used much later.
+     *
+     * Nearer the character is released sooner — the field lets go from the
+     * middle outward — but every piece also gets its own slice of randomness on
+     * top, so no two set off together and nothing arrives in formation.
+     */
+    const settle = {
+      delay: Math.round(Math.min(1, distance / reach) * 620 + Math.random() * 620),
+      duration: Math.round(1900 + Math.random() * 1100),
+      // Which way it bows on the way back, and how far.
+      bow: (Math.random() < 0.5 ? -1 : 1) * (10 + Math.random() * 18),
+    };
 
     undo(() => {
       // An empty attribute is not a style, and leaving one behind would mean
@@ -438,7 +488,7 @@ export function run(options: DesignerModeOptions): void {
     });
 
     el.classList.add('dm-piece');
-    placed.push({ el, anchor: { x: cx + dx, y: cy + dy } });
+    placed.push({ el, anchor: { x: cx + dx, y: cy + dy }, settle });
   }
 
   /* ---- The nav stops being a pill ------------------------------------- */
@@ -524,71 +574,106 @@ export function run(options: DesignerModeOptions): void {
 
 
 
-  /* ---- Act five: let go ----------------------------------------------- */
-
-  after(beat.collapse, () => {
-    stopField();
-    root.classList.remove('dm-charged');
-    root.classList.add('dm-collapsing');
-    undo(() => root.classList.remove('dm-collapsing'));
-  });
+  /* ---- Act five: the power runs out ----------------------------------- */
 
   /*
-   * The storm passing, not the lights going out.
-   *
-   * The purple leaves the picture and every piece starts drifting home in the
-   * same instant, and both take about a second and a half to finish — so the
-   * portrait fading back to itself and the interface settling around it are one
-   * movement rather than two. The pieces nearest the character are released
-   * first, which is what makes it read as the field letting go from the middle
-   * outward instead of everything arriving at once.
+   * The field weakens on its own for six hundred milliseconds before a single
+   * element is allowed to move. That gap is the whole difference between a
+   * storm passing and an animation ending: the arcs thin out, the big ones
+   * stop, the glow starts going, and only once it is visibly losing does
+   * anything fall out of it.
    */
-  after(beat.restore, () => {
-    delete root.dataset.designer;
-    root.classList.remove('dm-shattered');
+  after(beat.decay, () => {
+    beginDecay();
+    root.classList.remove('dm-charged');
+    root.classList.add('dm-quiet');
+    undo(() => root.classList.remove('dm-quiet'));
+  });
+
+  /* ---- Act six: debris settles ---------------------------------------- */
+
+  /*
+   * Each piece takes its own way home, and none of them retraces how it got
+   * there.
+   *
+   * The path bows: out of the current, sideways, and only then in — which is
+   * how something released from a force actually travels, and nothing like the
+   * straight line a reversed throw would draw. It drifts a few pixels past its
+   * mark and eases back, so the last thing each piece does is settle rather
+   * than stop.
+   *
+   * Reads are batched ahead of the writes, so the fourteen matrices cost one
+   * layout pass between them.
+   */
+  after(beat.drift, () => {
+    const frozen = placed.map(({ el }) => getComputedStyle(el).transform);
+
+    placed.forEach(({ el, settle }, i) => {
+      const m = new DOMMatrix(frozen[i]);
+      const fx = m.m41;
+      const fy = m.m42;
+      const spin = (Math.atan2(m.b, m.a) * 180) / Math.PI;
+      const size = Math.hypot(m.a, m.b);
+
+      const span = Math.hypot(fx, fy) || 1;
+      // Perpendicular to the way home, which is what makes the path a curve.
+      const bowX = (-fy / span) * settle.bow;
+      const bowY = (fx / span) * settle.bow;
+
+      const animation = el.animate(
+        [
+          {
+            transform: `translate(${fx}px, ${fy}px) rotate(${spin}deg) scale(${size})`,
+            easing: 'cubic-bezier(0.36, 0, 0.5, 0.6)',
+          },
+          {
+            transform:
+              `translate(${(fx * 0.54 + bowX).toFixed(1)}px, ${(fy * 0.54 + bowY).toFixed(1)}px) ` +
+              `rotate(${(spin * 0.42).toFixed(2)}deg) scale(${(1 + (size - 1) * 0.42).toFixed(3)})`,
+            offset: 0.5,
+            easing: 'cubic-bezier(0.3, 0.1, 0.2, 1)',
+          },
+          {
+            // A few pixels past the mark, so it arrives by settling.
+            transform: `translate(${(-fx * 0.022).toFixed(1)}px, ${(-fy * 0.022).toFixed(1)}px)`,
+            offset: 0.86,
+            easing: 'cubic-bezier(0.4, 0, 0.3, 1)',
+          },
+          { transform: 'none' },
+        ],
+        { duration: settle.duration, delay: settle.delay, fill: 'both' }
+      );
+
+      returning.push(animation);
+
+      // The CSS states can go now; the animation is what is driving it.
+      el.classList.remove('dm-held', 'dm-thrown');
+    });
 
     /*
-     * The sidebar goes back with everything else, not after it.
-     *
-     * Held until teardown, it sat out on its own for a second and a half after
-     * the rest of the page had settled and then slid away by itself, which
-     * read as a bug rather than as the last thing to be let go.
+     * The sidebar is let go with everything else rather than after it. Held to
+     * the end it sat out alone for a second and a half and then slid away by
+     * itself, which read as a bug and not as the last thing released.
      */
     if (panel) {
       panel.classList.remove('dm-fighting', 'dm-taken');
       panel.classList.add('dm-releasing');
     }
+  });
 
-    /*
-     * Caught where they actually are, then let go.
-     *
-     * The held pieces are mid-drift, and that drift is a CSS animation. Simply
-     * removing it hands the element straight back to its base transform — the
-     * position it was thrown to, not the one it has drifted to — so the return
-     * began with a jump of however far the drift had got, and only then eased
-     * home. What is wanted is a single unbroken movement from wherever a piece
-     * is at this instant.
-     *
-     * So: read every current matrix, pin each one down as an inline transform
-     * with transitions off, drop the animation, and only then transition to
-     * nothing. Reads are batched ahead of the writes and there is one forced
-     * reflow for the lot, so this is a single layout pass rather than fourteen.
-     */
-    const frozen = placed.map(({ el }) => getComputedStyle(el).transform);
+  /* ---- Act seven: the character comes back ---------------------------- */
 
-    placed.forEach(({ el }, i) => {
-      el.style.transition = 'none';
-      el.style.transform = frozen[i];
-    });
+  after(beat.avatar, () => {
+    delete root.dataset.designer;
+    character.classList.remove('dm-source');
+  });
 
-    void document.body.offsetWidth;
+  /* ---- Act eight: the words find each other --------------------------- */
 
-    for (const { el } of placed) {
-      el.classList.remove('dm-held', 'dm-thrown');
-      // Back to the long, soft curve on .dm-piece.
-      el.style.transition = '';
-      el.style.transform = 'none';
-    }
+  after(beat.letters, () => {
+    root.classList.remove('dm-shattered');
+    root.classList.add('dm-settling');
+    undo(() => root.classList.remove('dm-settling'));
   });
 
   after(beat.done, () => {
@@ -607,6 +692,15 @@ export function teardown(): void {
 
   for (const id of timers) window.clearTimeout(id);
   timers = [];
+
+  for (const animation of returning) {
+    try {
+      animation.cancel();
+    } catch {
+      /* already finished */
+    }
+  }
+  returning = [];
 
   stopField();
 
@@ -682,12 +776,34 @@ let lastSlot = -1;
 
 /** True once per turn of the arc pair, for the sound to hang off. */
 function slotChanged(now: number): boolean {
-  const slot = Math.floor(now / 760);
+  const slot = Math.floor(now / (760 / Math.max(0.25, power(now))));
   if (slot === lastSlot) return false;
   lastSlot = slot;
   return true;
 }
 let onArc: (() => void) | null = null;
+
+/** When the power started going, or 0 while the field is still at full. */
+let decayFrom = 0;
+
+/**
+ * How much of the field is left, from one down to nothing.
+ *
+ * The curve matters as much as the length. A linear fade reads as a dimmer
+ * being turned down; this leaves most of its strength early and then trails
+ * off, so the last second is a few thin sparks a long way apart rather than a
+ * steady glow that stops.
+ */
+function power(now: number): number {
+  if (!decayFrom) return 1;
+  const t = Math.min(1, (now - decayFrom) / DECAY_MS);
+  return Math.max(0, Math.pow(1 - t, 1.7));
+}
+
+/** Starts the field exhausting itself. */
+export function beginDecay(): void {
+  if (!decayFrom) decayFrom = performance.now();
+}
 
 export function setArcListener(fn: (() => void) | null): void {
   onArc = fn;
@@ -743,6 +859,7 @@ function startField(el: HTMLCanvasElement): void {
   ctx.scale(dpr, dpr);
 
   wireField();
+  decayFrom = 0;
   motes = [];
   nextMote = 0;
   lastSlot = -1;
@@ -788,15 +905,15 @@ function jaggedPath(from: Anchor, to: Anchor, seed: number, spread: number): voi
 }
 
 /** The field itself: slow rings of force running out from the character. */
-function drawFieldLines(now: number): void {
-  if (!ctx) return;
+function drawFieldLines(now: number, strength: number): void {
+  if (!ctx || strength <= 0.1) return;
   const period = 2600;
 
   for (let i = 0; i < 2; i += 1) {
     const t = ((now / period + i / 2) % 1);
     const radius = 60 + t * Math.max(window.innerWidth, window.innerHeight) * 0.62;
     // In at the start, out at the end, so a ring never appears or vanishes.
-    const alpha = Math.sin(t * Math.PI) * 0.075;
+    const alpha = Math.sin(t * Math.PI) * 0.075 * strength * strength;
     if (alpha <= 0.002) continue;
 
     ctx.beginPath();
@@ -812,11 +929,14 @@ function drawField(now: number): void {
   frame = requestAnimationFrame(drawField);
   if (!ctx || !canvas || !links.length) return;
 
+  const p = power(now);
   ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+  // Spent. Nothing left to draw, and no reason to keep clearing a blank canvas.
+  if (p <= 0.015) return;
   ctx.globalCompositeOperation = 'lighter';
   ctx.lineCap = 'round';
 
-  drawFieldLines(now);
+  drawFieldLines(now, p);
 
   // One small sound per pair of arcs, not per frame of them.
   const step = Math.floor(now / 130);
@@ -833,7 +953,13 @@ function drawField(now: number): void {
    * The pair advances on its own slow clock, and each one fades in and out
    * across its turn, so a line is never cut off mid-existence.
    */
-  const SLOT_MS = 760;
+  /*
+   * As the power goes, the gaps between arcs stretch out: at full strength one
+   * every three quarters of a second, and by the end one every three. That
+   * lengthening is most of what makes it read as running out rather than
+   * merely dimming.
+   */
+  const SLOT_MS = 760 / Math.max(0.25, p);
   const slot = Math.floor(now / SLOT_MS);
   const withinSlot = (now % SLOT_MS) / SLOT_MS;
   // In over the first fifth, out over the last quarter, full in between.
@@ -842,8 +968,11 @@ function drawField(now: number): void {
   for (let i = 0; i < 1; i += 1) {
     const link = links[(slot + i) % links.length];
     if (!link) continue;
+    // The long reaches out of the character are the first thing it cannot
+    // afford any more.
+    if (link.hot && p < 0.55) continue;
 
-    const alpha = (link.hot ? 0.42 : 0.28) * envelope;
+    const alpha = (link.hot ? 0.42 : 0.28) * envelope * p;
     if (alpha <= 0.01) continue;
     const seed = step * 0.7 + link.phase;
 
@@ -854,19 +983,20 @@ function drawField(now: number): void {
     // rather than floating on the page. Any more and it becomes a glow.
     ctx.strokeStyle = link.hot ? CORE : FIELD;
     ctx.globalAlpha = alpha * 0.22;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 3 * (0.4 + 0.6 * p);
     ctx.stroke();
 
     ctx.strokeStyle = link.hot ? ARC : GLOW;
     ctx.globalAlpha = alpha;
-    ctx.lineWidth = link.hot ? 1.1 : 0.9;
+    // Thinner as it weakens, down to a hairline.
+    ctx.lineWidth = (link.hot ? 1.1 : 0.9) * (0.45 + 0.55 * p);
     ctx.stroke();
   }
 
   /* ---- Motes ---------------------------------------------------------- */
 
-  if (now > nextMote && motes.length < 12) {
-    nextMote = now + 190 + Math.random() * 260;
+  if (p > 0.3 && now > nextMote && motes.length < 12) {
+    nextMote = now + (190 + Math.random() * 260) / Math.max(0.3, p);
     const a = anchors[(Math.random() * anchors.length) | 0];
     const angle = Math.random() * Math.PI * 2;
     motes.push({
@@ -888,7 +1018,7 @@ function drawField(now: number): void {
     ctx.beginPath();
     ctx.arc(mote.x, mote.y, 1.15, 0, Math.PI * 2);
     ctx.fillStyle = ARC;
-    ctx.globalAlpha = Math.sin(t * Math.PI) * 0.45;
+    ctx.globalAlpha = Math.sin(t * Math.PI) * 0.45 * p;
     ctx.fill();
   }
 

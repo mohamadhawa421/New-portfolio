@@ -585,10 +585,12 @@ figure {
   --dm-deep: #4c1d95;
   --dm-glow: #8b5cf6;
 
+  /* Slow, because the purple draining out of the site is part of the storm
+     passing rather than a colour being switched back. */
   transition:
-    --blue 620ms var(--ease-glide),
-    --blue-hover 620ms var(--ease-glide),
-    --blue-on-dark 620ms var(--ease-glide);
+    --blue 1700ms var(--ease-glide),
+    --blue-hover 1700ms var(--ease-glide),
+    --blue-on-dark 1700ms var(--ease-glide);
 }
 
 /*
@@ -706,6 +708,17 @@ figure {
   transition-delay: var(--cd);
 }
 
+/*
+ * Coming back together takes three times as long as coming apart, and every
+ * letter is on its own clock — so a word does not reassemble, it converges.
+ * The last few arrive so slowly that they are simply there.
+ */
+:root.dm-settling .dm-char {
+  transition-duration: 1700ms;
+  transition-delay: var(--lr, 0ms);
+  transition-timing-function: cubic-bezier(0.2, 0.85, 0.24, 1);
+}
+
 /* ---- The field ------------------------------------------------------- */
 
 .dm-field {
@@ -736,11 +749,14 @@ figure {
     color-mix(in srgb, var(--dm-deep) 16%, transparent) 45%,
     transparent 78%
   );
-  transition: opacity 420ms var(--ease-out);
+  transition: opacity 2600ms var(--ease-out);
 }
 
 :root.dm-charged::after {
   opacity: 1;
+  /* In quickly, out slowly. It arrives with the shock and leaves with the
+     weather. */
+  transition-duration: 420ms;
 }
 
 @media (prefers-reduced-motion: reduce) {

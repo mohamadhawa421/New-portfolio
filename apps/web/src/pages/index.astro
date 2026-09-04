@@ -342,7 +342,17 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     position: absolute;
     inset: 0;
     opacity: 0;
-    transition: opacity 420ms var(--ease-glide);
+    /*
+     * On fast, off slow. The purple-eyed version arrives with the shock, and
+     * takes nearly two seconds to give way again — so the character powering
+     * down happens across the same stretch as the rest of the page settling,
+     * rather than being a swap at the end of it.
+     */
+    transition: opacity 1900ms var(--ease-glide);
+  }
+
+  :global(:root[data-designer]) .hero__portrait-alt {
+    transition-duration: 420ms;
   }
 
   :global(:root[data-designer]) .hero__portrait-alt {
@@ -358,6 +368,15 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
    */
   :global(.hero__portrait-frame.dm-source) {
     animation: portrait-charge 1900ms var(--ease-glide) infinite alternate;
+  }
+
+  /*
+   * The source shutting down. Losing the animation on its own would drop the
+   * glow in a single frame; this lets it go out over the same long beat the
+   * eyes take to fade.
+   */
+  .hero__portrait-frame {
+    transition: box-shadow 1700ms var(--ease-out);
   }
 
   @keyframes portrait-charge {
