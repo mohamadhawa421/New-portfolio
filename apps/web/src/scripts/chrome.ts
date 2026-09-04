@@ -563,12 +563,36 @@ document.addEventListener('astro:before-swap', (event) => {
   // whenever it abandons a transition — hiding the tab mid-navigation is
   // enough. The class still has to come off either way.
   if (transition) {
-    transition.finished
-      .finally(() => {
-        root.classList.remove('morphing');
-        releaseMorphNames();
-      })
-      .catch(() => {});
+    /*
+     * The class comes off however the transition ends. `finally`, because the
+     * browser rejects `finished` whenever it abandons one, and hiding the tab
+     * mid-navigation is enough to do that.
+     */
+    transition.finished.finally(() => root.classList.remove('morphing')).catch(() => {});
+
+    /*
+     * The name comes off later, and never early.
+     *
+     * Releasing it the moment `finished` settled was taking it away while the
+     * morph was still the thing on screen, and the cover stopped morphing at
+     * all. Both of the ways a transition can end badly do this: an abandoned
+     * one rejects immediately, and a skipped one *resolves* immediately, so
+     * neither `finally` nor `then` is on its own a signal that the move is over.
+     *
+     * So it waits for the transition to settle and for the cover animation's
+     * own length to have passed, whichever is later. The cost of being late is
+     * nothing — an unused name sits there until the next navigation — and the
+     * cost of being early is the effect itself.
+     */
+    const settled = transition.finished.catch(() => {});
+    const elapsed = new Promise((done) => window.setTimeout(done, MORPH_MS + 140));
+    const era = morphEra;
+
+    void Promise.all([settled, elapsed]).then(() => {
+      // A navigation that started while this was waiting has already named its
+      // own cover, and releasing now would take that one instead.
+      if (era === morphEra) releaseMorphNames();
+    });
   } else {
     root.classList.remove('morphing');
     releaseMorphNames();
@@ -727,6 +751,15 @@ function morphSlugFor(from: string, to: string): string | null {
 /** Set for the length of one navigation, by the before-preparation handler. */
 let morphSlug: string | null = null;
 
+/** How long the cover takes to move, matching mh-morph-radius in global.css. */
+const MORPH_MS = 460;
+
+/**
+ * Counts navigations, so a release scheduled by one cannot land on the next.
+ * Incremented before anything else the navigation does.
+ */
+let morphEra = 0;
+
 function applyMorphName(slug: string | null): void {
   document.querySelectorAll<HTMLElement>('[data-morph]').forEach((el) => {
     const isTarget = Boolean(el.dataset.slug) && el.dataset.slug === slug;
@@ -876,6 +909,7 @@ document.addEventListener('astro:before-preparation', (event) => {
   const from = detail.from?.pathname ?? window.location.pathname;
   const to = detail.to?.pathname ?? window.location.pathname;
 
+  morphEra += 1;
   morphSlug = morphSlugFor(from, to);
 
   // The inline priming script in BaseLayout runs during the swap, before this
