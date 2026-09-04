@@ -145,6 +145,34 @@ function show(el: HTMLElement): void {
 const STAGGER_MS = 85;
 
 /**
+ * How long a whole cascade is allowed to take, however many items are in it.
+ *
+ * A fixed step per item is fine for a row of three and wrong for a grid of
+ * twelve: at 85ms apiece the last card waited 935ms before it began, and
+ * nearly a second and a half before it finished. Scrolling into the work grid
+ * meant scrolling into a page that was still filling in.
+ *
+ * Past about six items the step shrinks so the cascade always lands inside
+ * this budget. Below that nothing changes — a small group keeps the spacing it
+ * has, because that is where the effect is legible.
+ */
+const CASCADE_MS = 420;
+
+/**
+ * How far into the viewport an element can be before its entrance is dropped.
+ *
+ * The observer reports as an element crosses the bottom edge, but the report
+ * arrives on a later frame, and a fling can carry the element most of the way
+ * up the screen in the meantime. Staggering something the visitor is already
+ * looking at is how a list comes to be read as loading: the content is there,
+ * and the page is holding it back.
+ *
+ * Anything already past the middle by the time we get to it has been on screen
+ * long enough. It skips the queue and fades in on the spot.
+ */
+const LATE_AT = 0.5;
+
+/**
  * Reveals a set of elements that became visible at the same moment, cascading
  * the ones that asked for it.
  *
@@ -156,11 +184,27 @@ const STAGGER_MS = 85;
  * so a lone card entering on scroll waits for nothing, and a row of three
  * entering at once counts itself off.
  */
-function revealGroup(els: HTMLElement[]): void {
+function revealGroup(els: HTMLElement[], scrolled = false): void {
+  /*
+   * `scrolled` separates the two callers. The observer is reporting things the
+   * visitor has scrolled to, and how far past them they already are is worth
+   * knowing. Priming is not: everything it reveals is on screen at load, much
+   * of it near the top, and treating that as "already scrolled past" would
+   * throw away the entrance on every first paint.
+   */
+  const queued = els.filter((el) => el.hasAttribute('data-stagger') && !(scrolled && isLate(el)));
+  const gap = queued.length > 1 ? Math.min(STAGGER_MS, CASCADE_MS / (queued.length - 1)) : 0;
+  const queue = new Set(queued);
+
   let step = 0;
   for (const el of els) {
-    reveal(el, el.hasAttribute('data-stagger') ? step++ * STAGGER_MS : 0);
+    reveal(el, queue.has(el) ? step++ * gap : 0);
   }
+}
+
+/** Whether the visitor has already scrolled well past this element. */
+function isLate(el: HTMLElement): boolean {
+  return triggerFor(el).getBoundingClientRect().top < (window.innerHeight || 800) * LATE_AT;
 }
 
 /**
@@ -317,7 +361,7 @@ function setUpReveals(): void {
         }
         observer?.unobserve(entry.target);
       }
-      revealGroup(batch);
+      revealGroup(batch, true);
     },
     {
       // Matches the prototype's "reveal once the top passes 94% of the

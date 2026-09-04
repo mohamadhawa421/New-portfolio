@@ -69,7 +69,7 @@ const categories = [
       </div>
 
       <div class="shell work-grid__list" data-work-grid data-all-label={work.allFilterLabel}>
-        {projects.map((project) => <ProjectCard project={project} />)}
+        {projects.map((project, index) => <ProjectCard project={project} index={index} />)}
       </div>
 
       <p class="shell work-grid__empty" data-empty hidden>
