@@ -226,7 +226,8 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
               el.style.transitionDelay = delay + 'ms';
               // Left in place it would also delay this element's hover.
               setTimeout(function () {
-                el.style.transitionDelay = '';
+                el.style.removeProperty('transition-delay');
+                if (!el.getAttribute('style')) el.removeAttribute('style');
               }, delay + 760);
             }
           }

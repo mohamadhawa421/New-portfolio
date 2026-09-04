@@ -2,40 +2,36 @@
 /**
  * Designer mode. An easter egg behind the portrait.
  *
- * Click the picture and it takes the hit, a ring of purple leaves the point of
- * the click and crosses the page, every section flinches as the ring passes
- * through it, the site borrows that purple as its accent, and a card totals up
- * the designer's personality. A few seconds later it all eases back.
+ * Click the picture and the interface is taken apart: a shock leaves the
+ * character, crosses the viewport, and shoves every component off its mark as
+ * it passes; headings come apart into letters; on a phone the hidden sidebar is
+ * dragged out and fights before it is taken. Everything stops at once, held in
+ * a purple field, and then the power drops and the page puts itself back
+ * exactly as it was.
  *
  * Nothing announces it. There is no label, no hover state and no cursor change:
  * the portrait is a picture, and a picture that turns out to do something is
  * only a surprise if you were not told to expect one. It is the same bargain as
  * the layout grid on the G key.
  *
- * The accent itself is three custom properties swapping value. Registering them
- * with @property is what lets a colour interpolate at all — without it the
- * whole site would snap from blue to purple and back, which is the difference
- * between a wink and a glitch.
+ * This component is the markup the sequence needs — the shock rings, the wash,
+ * and the canvas the field is drawn on — plus the wiring. The sequence itself
+ * is scripts/designer-mode.ts, and the sound is scripts/designer-sound.ts.
  *
- * This component holds the wave and the behaviour; the card is
- * DesignerCard.astro, which sits inside the portrait. They are apart for a
- * reason: the wave is fixed to the viewport, and the flinch puts a transform on
- * every section — including the hero — which would make the hero the wave's
- * containing block and clip it to the top of the page.
+ * It sits at the end of <main>, outside every section, and it has to: the rings
+ * are fixed to the viewport, and a transformed ancestor would become their
+ * containing block and clip the whole thing to one part of the page.
  */
-
 ---
 
 <div class="ring" data-egg-ring aria-hidden="true"></div>
 <div class="ring ring--trail" data-egg-ring-trail aria-hidden="true"></div>
 <div class="wash" data-egg-wash aria-hidden="true"></div>
+<canvas class="dm-field" data-egg-field aria-hidden="true"></canvas>
 
 <script>
-  /** How long the ring takes to cross the page. Must match the CSS. */
-  const RING_MS = 720;
-
-  /** How long a section's flinch lasts. Must match `.is-struck`. */
-  const SHAKE_MS = 420;
+  import * as mode from '../scripts/designer-mode';
+  import * as sound from '../scripts/designer-sound';
 
   /**
    * Whatever will shut the egg down, or nothing if it is not on this page.
@@ -49,125 +45,29 @@
   let globalsBound = false;
 
   function setupEgg() {
-    const card = document.querySelector<HTMLElement>('[data-egg-card]');
     const ring = document.querySelector<HTMLElement>('[data-egg-ring]');
     const trail = document.querySelector<HTMLElement>('[data-egg-ring-trail]');
     const wash = document.querySelector<HTMLElement>('[data-egg-wash]');
+    const field = document.querySelector<HTMLCanvasElement>('[data-egg-field]');
     const trigger = document.querySelector<HTMLElement>('[data-egg-trigger]');
-    if (!card || !ring || !trail || !wash || !trigger) {
+    if (!ring || !trail || !wash || !field || !trigger) {
       dismiss = () => {};
       return;
     }
 
     const root = document.documentElement;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const holdFor = Number(card.dataset.hold) || 5200;
 
-    let on = false;
-    let releaseTimer = 0;
-    let countFrame = 0;
-    let struck: HTMLElement[] = [];
-    let clearStruckTimer = 0;
-
-    /* ---------------------------------------------------------------- */
-    /* The card                                                          */
-    /* ---------------------------------------------------------------- */
-
-    /**
-     * Runs each figure up from zero.
-     *
-     * One loop for all four rather than a timer each: they start together and
-     * the last one lands with the bars, so the card reads as one thing
-     * arriving rather than four.
-     */
-    function countUp(): void {
-      const figures = Array.from(card!.querySelectorAll<HTMLElement>('[data-trait-to]'));
-      if (reduced) {
-        figures.forEach((el) => (el.textContent = el.dataset.traitTo ?? ''));
-        return;
-      }
-
-      const started = performance.now();
-      const duration = 860;
-
-      const step = (now: number) => {
-        const k = Math.min(1, (now - started) / duration);
-        // Fast out of the gate, settling on the number rather than hitting it.
-        const eased = 1 - Math.pow(1 - k, 3);
-        for (const el of figures) {
-          const to = Number(el.dataset.traitTo) || 0;
-          el.textContent = String(Math.round(to * eased));
-        }
-        countFrame = k < 1 ? requestAnimationFrame(step) : 0;
-      };
-
-      countFrame = requestAnimationFrame(step);
-    }
-
-    /* ---------------------------------------------------------------- */
-    /* The shockwave                                                     */
-    /* ---------------------------------------------------------------- */
-
-    /**
-     * Flinches each section as the ring reaches it.
-     *
-     * Same idea as the theme wave's lift, and the same reason it works: the
-     * delay for a given block is how long the ring takes to travel the distance
-     * to its nearest edge, so a tall section starts moving when the ring hits
-     * its edge rather than when it reaches its middle. Without that the whole
-     * page shudders at once, which reads as a rendering fault rather than as
-     * something passing through.
-     *
-     * Transform only. This runs over the entire page at once, and anything that
-     * touched layout here would drop frames on the spot.
-     */
-    function strike(originX: number, originY: number, reach: number): void {
-      releaseStruck();
-      if (reduced) return;
-
-      const targets = Array.from(document.querySelectorAll<HTMLElement>('[data-lift]'));
-      let last = 0;
-
-      for (const el of targets) {
-        const rect = el.getBoundingClientRect();
-        // Nothing off screen: it cannot be seen flinching, and promoting it
-        // costs a layer for no one.
-        if (rect.bottom < -200 || rect.top > window.innerHeight + 200) continue;
-
-        const dx = Math.max(rect.left - originX, 0, originX - rect.right);
-        const dy = Math.max(rect.top - originY, 0, originY - rect.bottom);
-        const distance = Math.hypot(dx, dy);
-
-        const delay = Math.round(Math.min(1, distance / reach) * RING_MS);
-        last = Math.max(last, delay);
-
-        el.style.setProperty('--strike-delay', `${delay}ms`);
-        el.classList.add('is-struck');
-        struck.push(el);
-      }
-
-      // Held until the furthest one has finished, not until the ring has.
-      // Pulling the class off mid-animation snaps a section back to where it
-      // started, which is the one thing a flinch must not do.
-      clearStruckTimer = window.setTimeout(releaseStruck, last + SHAKE_MS + 60);
-    }
-
-    function releaseStruck(): void {
-      window.clearTimeout(clearStruckTimer);
-      clearStruckTimer = 0;
-      for (const el of struck) {
-        el.classList.remove('is-struck');
-        el.style.removeProperty('--strike-delay');
-      }
-      struck = [];
-    }
-
-    function ripple(originX: number, originY: number): number {
+    /** Sends the shock out from the click. */
+    function ripple(originX: number, originY: number): void {
       const reach = Math.hypot(
         Math.max(originX, window.innerWidth - originX),
         Math.max(originY, window.innerHeight - originY)
       );
-      if (reduced) return reach;
+
+      // The wash under the field is centred on the same point.
+      root.style.setProperty('--dm-fx', `${originX}px`);
+      root.style.setProperty('--dm-fy', `${originY}px`);
 
       for (const el of [ring!, trail!, wash!]) {
         el.style.setProperty('--egg-x', `${originX}px`);
@@ -180,75 +80,31 @@
         void el.offsetWidth;
         el.classList.add('is-rippling');
       }
-
-      return reach;
     }
 
     /** The picture recoils from the press that landed on it. */
     function hit(): void {
-      if (reduced) return;
       trigger!.classList.remove('is-hit');
       void trigger!.offsetWidth;
       trigger!.classList.add('is-hit');
     }
 
-    /* ---------------------------------------------------------------- */
-    /* Open and close                                                    */
-    /* ---------------------------------------------------------------- */
-
-    function open(originX: number, originY: number): void {
-      window.clearTimeout(releaseTimer);
-
-      hit();
-      strike(originX, originY, ripple(originX, originY));
-
-      if (!on) {
-        on = true;
-        root.dataset.designer = '';
-        card!.hidden = false;
-        /*
-         * The hidden state has to be painted once or there is nothing to
-         * transition from and the card simply appears. A forced reflow does
-         * that synchronously — requestAnimationFrame would too, right up until
-         * the tab is in the background, where it does not run at all and the
-         * card would sit at zero opacity for the whole of designer mode.
-         */
-        void card!.offsetWidth;
-        card!.classList.add('is-on');
-        countUp();
-      }
-
-      releaseTimer = window.setTimeout(close, holdFor);
+    function stop(): void {
+      mode.setArcListener(null);
+      mode.teardown();
+      sound.end();
+      root.style.removeProperty('--dm-fx');
+      root.style.removeProperty('--dm-fy');
+      trigger!.classList.remove('is-hit');
     }
-
-    function close(): void {
-      if (!on) return;
-      on = false;
-
-      window.clearTimeout(releaseTimer);
-      cancelAnimationFrame(countFrame);
-      releaseStruck();
-
-      delete root.dataset.designer;
-      card!.classList.remove('is-on');
-
-      // Held in the DOM until it has finished leaving.
-      window.setTimeout(() => {
-        if (!on) card!.hidden = true;
-      }, 460);
-    }
-
-    /* ---------------------------------------------------------------- */
-    /* Wiring                                                            */
-    /* ---------------------------------------------------------------- */
 
     /*
      * Warm the purple-eyed portrait on the way down, not on the way up.
      *
-     * It is lazy — most visitors never trigger this, and it is not worth 28KB
-     * on every home page load for them. But a cross-fade to a picture that has
-     * not arrived yet is a blank square, so pointerdown, which lands a moment
-     * before the click, is where it gets fetched and decoded.
+     * It is lazy — most visitors never trigger this, and it is not worth the
+     * bytes on every home page load for them. But a cross-fade to a picture
+     * that has not arrived yet is a blank square, so pointerdown, which lands a
+     * moment before the click, is where it gets fetched and decoded.
      */
     const alt = document.querySelector<HTMLImageElement>('.hero__portrait-alt');
     trigger.addEventListener(
@@ -262,20 +118,59 @@
     );
 
     trigger.addEventListener('click', (event) => {
+      // Already running: let it finish. Re-triggering mid-sequence would fight
+      // its own teardown for the page's transforms.
+      if (mode.isRunning()) return;
+
       const point = event as MouseEvent;
-      // A keyboard-driven click reports 0,0; put the wave on the portrait.
+      // A keyboard-driven click reports 0,0; put the shock on the portrait.
       const box = trigger.getBoundingClientRect();
       const x = point.clientX || box.left + box.width / 2;
       const y = point.clientY || box.top + box.height / 2;
 
-      // Clicking again while it runs re-strikes rather than closing: the wave
-      // is the fun part, and the mode lets go on its own soon enough.
-      open(x, y);
+      hit();
+
+      /*
+       * Reduced motion gets the colour and nothing else.
+       *
+       * The whole sequence is displacement — there is no gentler version of it
+       * to offer. So the site simply turns purple for a moment and turns back,
+       * which acknowledges the click without moving anything at all.
+       */
+      if (reduced) {
+        root.dataset.designer = '';
+        window.setTimeout(() => delete root.dataset.designer, 2600);
+        return;
+      }
+
+      ripple(x, y);
+
+      /*
+       * The context is created here, inside the click, which is both the
+       * autoplay policy and the right manners: nothing on this site makes a
+       * noise until someone has asked it to.
+       */
+      sound.begin();
+      sound.surge();
+      mode.setArcListener(sound.tick);
+
+      const narrow = window.innerWidth < 768;
+      if (narrow) {
+        // Under the sidebar's fight, and only there.
+        window.setTimeout(() => sound.strain(1100), 300);
+      }
+      window.setTimeout(() => sound.release(), narrow ? 2900 : 2500);
+
+      mode.run({
+        originX: x,
+        originY: y,
+        character: trigger,
+        field: field!,
+        onEnd: stop,
+      });
     });
 
-    card.addEventListener('click', close);
-
-    dismiss = close;
+    dismiss = stop;
 
     if (globalsBound) return;
     globalsBound = true;
@@ -284,7 +179,7 @@
       if ((event as KeyboardEvent).key === 'Escape') dismiss();
     });
 
-    // Leaving the page mid-egg would otherwise carry the purple to the next one.
+    // Leaving the page mid-sequence would otherwise carry it to the next one.
     document.addEventListener('astro:before-swap', () => dismiss());
   }
 
@@ -293,18 +188,18 @@
 
 <style>
   /* ------------------------------------------------------------------ */
-  /* The wave                                                            */
+  /* The shock                                                           */
   /*                                                                     */
-  /* Two rings and a wash, all from the point of the click, all purely    */
-  /* transform and opacity. This runs over the whole page at once and     */
-  /* anything that touched layout here would drop frames immediately.     */
+  /* Two rings and a wash, all from the point of the click, all purely   */
+  /* transform and opacity. This crosses the whole viewport at once and  */
+  /* anything that touched layout here would drop frames immediately.    */
   /* ------------------------------------------------------------------ */
   .ring,
   .wash {
     position: fixed;
     left: var(--egg-x, 50%);
     top: var(--egg-y, 50%);
-    z-index: 9990;
+    z-index: 9992;
     pointer-events: none;
     border-radius: 50%;
     opacity: 0;
@@ -316,42 +211,46 @@
     margin-left: calc(var(--egg-reach, 600px) * -1);
   }
 
+  /*
+   * The leading edge is the one place the hot end of the palette is spent
+   * in quantity — it is the strongest moment in the whole sequence, and it
+   * lasts about half a second.
+   */
   .ring {
-    border: 3px solid var(--egg-purple);
-    /* A little bloom either side of the line, so it reads as energy rather
-       than as an outlined circle scaling up. */
+    border: 3px solid var(--dm-core);
     box-shadow:
-      0 0 22px color-mix(in srgb, var(--egg-purple) 55%, transparent),
-      inset 0 0 22px color-mix(in srgb, var(--egg-purple) 45%, transparent);
+      0 0 26px color-mix(in srgb, var(--dm-glow) 62%, transparent),
+      inset 0 0 26px color-mix(in srgb, var(--dm-wave) 55%, transparent);
   }
 
-  /* A second, thinner ring a beat behind the first. One ring is an outline;
-     two are a pulse. */
+  /* A second, thinner ring a beat behind. One ring is an outline; two are a
+     shock front with something behind it. */
   .ring--trail {
     border-width: 1.5px;
+    border-color: var(--dm-arc);
     box-shadow: none;
-    opacity: 0;
   }
 
   .wash {
     background: radial-gradient(
       circle,
-      color-mix(in srgb, var(--egg-purple) 34%, transparent) 0%,
-      color-mix(in srgb, var(--egg-purple) 14%, transparent) 45%,
-      transparent 72%
+      color-mix(in srgb, var(--dm-wave) 40%, transparent) 0%,
+      color-mix(in srgb, var(--dm-field) 22%, transparent) 42%,
+      color-mix(in srgb, var(--dm-deep) 10%, transparent) 62%,
+      transparent 76%
     );
   }
 
   .ring.is-rippling {
-    animation: egg-ring 720ms cubic-bezier(0.16, 0.72, 0.24, 1) both;
+    animation: egg-ring 420ms cubic-bezier(0.14, 0.76, 0.2, 1) both;
   }
 
   .ring--trail.is-rippling {
-    animation: egg-ring-trail 820ms cubic-bezier(0.16, 0.72, 0.24, 1) 90ms both;
+    animation: egg-ring-trail 540ms cubic-bezier(0.14, 0.76, 0.2, 1) 60ms both;
   }
 
   .wash.is-rippling {
-    animation: egg-wash 860ms var(--ease-out) both;
+    animation: egg-wash 620ms var(--ease-out) both;
   }
 
   @keyframes egg-ring {
@@ -370,8 +269,8 @@
       opacity: 0;
       transform: scale(0.012);
     }
-    18% {
-      opacity: 0.7;
+    16% {
+      opacity: 0.78;
     }
     100% {
       opacity: 0;
@@ -384,49 +283,12 @@
       opacity: 0;
       transform: scale(0.02);
     }
-    28% {
+    26% {
       opacity: 1;
     }
     100% {
       opacity: 0;
       transform: scale(1.12);
-    }
-  }
-
-  /* ------------------------------------------------------------------ */
-  /* The flinch                                                          */
-  /*                                                                     */
-  /* Applied to every [data-lift] block — the same set the theme wave     */
-  /* lifts — each with its own delay, so the shudder tracks the ring      */
-  /* outward instead of hitting the whole page at once.                   */
-  /* ------------------------------------------------------------------ */
-  :global(.is-struck) {
-    animation: egg-strike 420ms var(--ease-out) both;
-    animation-delay: var(--strike-delay, 0ms);
-    will-change: transform;
-  }
-
-  @keyframes egg-strike {
-    0% {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-    18% {
-      transform: translate3d(0, 5px, 0) scale(0.9925);
-    }
-    46% {
-      transform: translate3d(0, -3px, 0) scale(1.004);
-    }
-    74% {
-      transform: translate3d(0, 1.5px, 0) scale(0.999);
-    }
-    100% {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    :global(.is-struck) {
-      animation: none;
     }
   }
 </style>

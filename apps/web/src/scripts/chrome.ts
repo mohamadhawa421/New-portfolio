@@ -109,7 +109,10 @@ function reveal(el: HTMLElement, extra = 0): void {
        */
       const clearAfter = delay + REVEAL_MS + 60;
       window.setTimeout(() => {
-        el.style.transitionDelay = '';
+        el.style.removeProperty('transition-delay');
+        // Clearing the property leaves `style=""` on the element — inert, but
+        // it is a mark on the markup that nothing put there on purpose.
+        if (!el.getAttribute('style')) el.removeAttribute('style');
       }, clearAfter);
     }
   }

@@ -537,7 +537,9 @@ figure {
 /* --------------------------------------------------------------------- */
 /* Designer mode                                                          */
 /*                                                                        */
-/* The easter egg behind the portrait. See DesignerEgg.astro.             */
+/* The takeover behind the portrait. The sequence is driven by            */
+/* scripts/designer-mode.ts; everything it does to the page it does with  */
+/* the classes and custom properties below, and undoes by removing them.  */
 /* --------------------------------------------------------------------- */
 
 /*
@@ -568,9 +570,20 @@ figure {
 }
 
 :root {
-  /* Deeper than the avatar's background it came from — the wave and the accent
-     both have to hold their own against the page, not blend into a portrait. */
-  --egg-purple: #6848d8;
+  /*
+   * The energy palette, and the balance between its parts.
+   *
+   * --dm-field and --dm-wave carry the mass of it: the wash, the blooms, the
+   * held glow. --dm-core and --dm-arc are the hot end and are rationed —
+   * a thin arc, the leading edge of the shock, a spark. Spend them everywhere
+   * and the whole thing turns to neon.
+   */
+  --dm-wave: #7c3aed;
+  --dm-core: #a855f7;
+  --dm-arc: #c084fc;
+  --dm-field: #6d28d9;
+  --dm-deep: #4c1d95;
+  --dm-glow: #8b5cf6;
 
   transition:
     --blue 620ms var(--ease-glide),
@@ -580,27 +593,161 @@ figure {
 
 /*
  * Every accent on the site is one of these three, so this is the whole of the
- * colour change: links, buttons, the filter chips, the cursor's ring, the
- * selection highlight, the meters on the card itself.
+ * colour change: links, buttons, the filter chips, the pointer's ring, the
+ * selection highlight.
  */
 :root[data-designer] {
-  --blue: #6848d8;
-  --blue-hover: #7959e4;
-  --blue-on-dark: #9c86f2;
+  --blue: #7c3aed;
+  --blue-hover: #8b5cf6;
+  --blue-on-dark: #a855f7;
 }
 
 /* Lifted on a dark ground for the same reason the blue is. */
 :root[data-designer][data-theme='dark'] {
-  --egg-purple: #9c86f2;
-  --blue: #9c86f2;
-  --blue-hover: #ac99f6;
+  --blue: #a855f7;
+  --blue-hover: #b76ef9;
 }
 
 @media (prefers-color-scheme: dark) {
   :root[data-designer]:not([data-theme='light']) {
-    --egg-purple: #9c86f2;
-    --blue: #9c86f2;
-    --blue-hover: #ac99f6;
+    --blue: #a855f7;
+    --blue-hover: #b76ef9;
+  }
+}
+
+/* ---- The pieces ------------------------------------------------------ */
+
+/*
+ * Two sets of variables, and the difference between them is the whole trick.
+ *
+ * --px/--py/--pr/--ps are where a piece is going, written once when the
+ * sequence starts because the field needs them to know where everything will
+ * end up. --ax/--ay/--ar/--as are where it currently is, and they are only
+ * pointed at the first set while `dm-thrown` is on. Take the class off and
+ * they fall back to their defaults, which is to say home — so the return needs
+ * no second set of numbers and cannot land anywhere except exactly where the
+ * piece began.
+ */
+.dm-piece {
+  transform: translate3d(var(--ax, 0px), var(--ay, 0px), 0) rotate(var(--ar, 0deg))
+    scale(var(--as, 1));
+  /*
+   * The way home is the slowest thing in the sequence, and deliberately so.
+   * The storm is over; nothing is being thrown any more. Everything drifts back
+   * and settles, and the stagger on it means the page reassembles rather than
+   * snapping.
+   */
+  transition: transform 1450ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--rd, 0ms);
+  will-change: transform;
+}
+
+.dm-piece.dm-thrown {
+  --ax: var(--px);
+  --ay: var(--py);
+  --ar: var(--pr);
+  --as: var(--ps);
+  /*
+   * Fast out and a long settle, rather than a shove that stops.
+   *
+   * The tail is most of the curve: a piece is gone in the first fifty
+   * milliseconds and then spends half a second easing to a halt, which is what
+   * makes the hand-off into the slow drift invisible. Stopping dead and then
+   * starting to drift reads as two animations.
+   */
+  transition-duration: 560ms;
+  transition-delay: var(--pd);
+  transition-timing-function: cubic-bezier(0.06, 0.84, 0.16, 1);
+}
+
+/*
+ * Held, not frozen. Something being gripped by a field is not perfectly still,
+ * and a page of genuinely motionless elements looks like a paused video rather
+ * than like something under tension. Two or three pixels is enough.
+ */
+.dm-piece.dm-held {
+  animation: dm-hold 3800ms var(--ease-glide) var(--jd) infinite alternate;
+}
+
+@keyframes dm-hold {
+  from {
+    transform: translate3d(var(--px), var(--py), 0) rotate(var(--pr)) scale(var(--ps));
+  }
+  to {
+    transform: translate3d(calc(var(--px) + var(--jx)), calc(var(--py) + var(--jy)), 0)
+      rotate(calc(var(--pr) + var(--jr))) scale(var(--ps));
+  }
+}
+
+/* ---- The letters ----------------------------------------------------- */
+
+/*
+ * Words stay unbreakable.
+ *
+ * Letters have to be inline-block to take a transform, and a line of inline
+ * blocks may be broken between any two of them — so without this the browser
+ * is free to wrap a heading mid-word the instant it is split, before anything
+ * has moved. The word is the unit; the letters move inside it.
+ */
+.dm-word {
+  white-space: nowrap;
+}
+
+.dm-char {
+  display: inline-block;
+  /* Slow on the way back for the same reason the pieces are. */
+  transition: transform 980ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+:root.dm-shattered .dm-char {
+  transform: translate3d(var(--cx), var(--cy), 0) rotate(var(--cr));
+  transition-duration: 460ms;
+  transition-delay: var(--cd);
+}
+
+/* ---- The field ------------------------------------------------------- */
+
+.dm-field {
+  position: fixed;
+  inset: 0;
+  z-index: 9989;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms var(--ease-out);
+}
+
+/*
+ * A wash of the deep end, under everything, while the field holds.
+ *
+ * It is what stops the arcs reading as stray lines on a white page — they need
+ * something to be electricity *in*.
+ */
+:root::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9988;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    circle at var(--dm-fx, 50%) var(--dm-fy, 50%),
+    color-mix(in srgb, var(--dm-field) 20%, transparent) 0%,
+    color-mix(in srgb, var(--dm-deep) 16%, transparent) 45%,
+    transparent 78%
+  );
+  transition: opacity 420ms var(--ease-out);
+}
+
+:root.dm-charged::after {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dm-piece,
+  .dm-char {
+    transition: none;
+    animation: none;
   }
 }
 

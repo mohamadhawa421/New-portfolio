@@ -3,7 +3,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import FeaturedProject from '../components/FeaturedProject.astro';
 import ProjectRow from '../components/ProjectRow.astro';
 import ContactBlock from '../components/ContactBlock.astro';
-import DesignerCard from '../components/DesignerCard.astro';
 import DesignerEgg from '../components/DesignerEgg.astro';
 import {
   getContactPage,
@@ -81,7 +80,6 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
               aria-hidden="true"
             />
           </div>
-          <DesignerCard />
         </div>
       </div>
     </section>
@@ -352,6 +350,26 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   }
 
   /*
+   * The source.
+   *
+   * It is the one thing on the page that does not move while the sequence
+   * runs — everything else is being thrown about by it, and a controller that
+   * is also being thrown is just another victim. It charges instead.
+   */
+  :global(.hero__portrait-frame.dm-source) {
+    animation: portrait-charge 1900ms var(--ease-glide) infinite alternate;
+  }
+
+  @keyframes portrait-charge {
+    from {
+      box-shadow: 0 0 30px -8px color-mix(in srgb, var(--dm-field) 80%, transparent);
+    }
+    to {
+      box-shadow: 0 0 74px -4px color-mix(in srgb, var(--dm-core) 85%, transparent);
+    }
+  }
+
+  /*
    * The picture takes the hit.
    *
    * A press that only changes colour somewhere else does not feel like it
@@ -375,7 +393,8 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    :global(.hero__portrait-frame.is-hit) {
+    :global(.hero__portrait-frame.is-hit),
+    :global(.hero__portrait-frame.dm-source) {
       animation: none;
     }
 

@@ -44,6 +44,9 @@ const canDraw = Boolean(viewBox) && paths.length > 0;
 {
   logo && (
     <div class="intro" data-intro role="button" tabindex="0" aria-label="Skip intro">
+      {/* An electrical fault that is not one. See the note in the styles. */}
+      <span class="intro__spark" aria-hidden="true"></span>
+
       <div class="intro__logo">
         {canDraw ? (
           <svg class="intro-logo" viewBox={viewBox} role="img" aria-label={logo.alt}>
@@ -114,6 +117,20 @@ const canDraw = Boolean(viewBox) && paths.length > 0;
         curtain.classList.add('intro--in');
       }, 200)
     );
+    /*
+     * The hint.
+     *
+     * Once, at 1240ms — deliberately not on the same beat as the wordmark
+     * arriving at 200 or the curtain leaving at 1900, because a flicker that
+     * lands with something else reads as part of it. On its own, in the gap, it
+     * reads as a fault. That is the whole idea: not "here is an animation" but
+     * "did something just happen?".
+     */
+    timers.push(
+      setTimeout(function () {
+        curtain.classList.add('intro--spark');
+      }, 1240)
+    );
     timers.push(
       setTimeout(function () {
         curtain.classList.add('intro--out');
@@ -166,6 +183,64 @@ const canDraw = Boolean(viewBox) && paths.length > 0;
 
   .intro--out {
     opacity: 0;
+  }
+
+  /*
+   * The easter egg, foreshadowed.
+   *
+   * A hairline of purple that appears for four frames somewhere off to the side
+   * of the wordmark and is gone. No glow, no bloom, no growth — those all read
+   * as intentional. What reads as an anomaly is something small, hard-edged and
+   * too fast to have been looked at directly.
+   *
+   * The colour is the sequence's own core purple, so the connection is there to
+   * be made later even though nobody could make it now.
+   *
+   * `steps()` rather than a fade: electricity does not ease.
+   */
+  .intro__spark {
+    position: absolute;
+    top: calc(50% - clamp(30px, 7vh, 62px));
+    left: calc(50% + clamp(96px, 21vw, 208px));
+    width: 1.5px;
+    height: clamp(9px, 1.4vh, 15px);
+    background: #a855f7;
+    opacity: 0;
+    /* Bent, so it is a spark and not a tick mark. */
+    clip-path: polygon(40% 0, 100% 38%, 58% 44%, 100% 100%, 0 56%, 44% 50%);
+    transform: rotate(14deg);
+  }
+
+  .intro--spark .intro__spark {
+    animation: intro-spark 150ms steps(1, end) 1;
+  }
+
+  @keyframes intro-spark {
+    0% {
+      opacity: 0;
+    }
+    18% {
+      opacity: 1;
+    }
+    34% {
+      opacity: 0;
+    }
+    52% {
+      opacity: 0.85;
+      transform: rotate(14deg) translate(1px, -2px) scaleY(1.25);
+    }
+    72% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .intro--spark .intro__spark {
+      animation: none;
+    }
   }
 
   .intro__logo {
