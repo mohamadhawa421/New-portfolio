@@ -954,6 +954,7 @@ function drawField(now: number): void {
   drawFieldLines(now, p);
 
   // One small sound per pair of arcs, not per frame of them.
+  // Advances on its own clock, and seeds the jitter on every arc drawn below.
   const step = Math.floor(now / 130);
   if (slotChanged(now)) onArc?.();
 

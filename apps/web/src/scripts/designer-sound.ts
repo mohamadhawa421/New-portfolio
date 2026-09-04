@@ -25,9 +25,14 @@
 
 type Ctx = AudioContext & { mhNoise?: AudioBuffer };
 
-/** The instants this needs. Structurally the Beat designer-mode publishes. */
+/**
+ * The instants this needs. Structurally a subset of the Beat designer-mode
+ * publishes, and deliberately not all of it: the phone's extra act, where the
+ * sidebar is dragged out and resists, has no sound of its own. The blast is
+ * already slowing across exactly that window, and the three elements chosen for
+ * this — the wave, the strike, the rewind — do not include a fourth.
+ */
 export interface SoundBeat {
-  fight?: number;
   freeze: number;
   decay: number;
   drift: number;
