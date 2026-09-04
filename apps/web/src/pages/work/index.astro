@@ -83,10 +83,13 @@ const categories = [
   (function () {
     function setupFilters() {
       const grid = document.querySelector('[data-work-grid]');
+      if (!grid || grid.dataset.filtersBound) return;
+      grid.dataset.filtersBound = '1';
+
       const chips = document.querySelectorAll('[data-filter]');
       const cards = document.querySelectorAll('[data-work-grid] [data-categories]');
       // Read from the DOM rather than interpolating CMS text into this script.
-      const allLabel = grid ? grid.dataset.allLabel : 'All';
+      const allLabel = grid.dataset.allLabel || 'All';
       const counter = document.querySelector('[data-count]');
       const empty = document.querySelector('[data-empty]');
       if (!chips.length || !cards.length) return;
@@ -116,19 +119,74 @@ const categories = [
         window.dispatchEvent(new Event('scroll'));
       }
 
-      chips.forEach((chip) => {
-        chip.addEventListener('click', () => {
-          chips.forEach((other) => {
-            const active = other === chip;
-            other.classList.toggle('chip--active', active);
-            other.setAttribute('aria-pressed', active ? 'true' : 'false');
-          });
-          applyFilter(chip.dataset.filter);
+      /** Presses a chip and filters the grid. */
+      function select(value, writeUrl) {
+        chips.forEach((chip) => {
+          const active = chip.dataset.filter === value;
+          chip.classList.toggle('chip--active', active);
+          chip.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
+
+        applyFilter(value);
+
+        if (!writeUrl) return;
+
+        /*
+         * The filter lives in the URL so that history carries it.
+         *
+         * Opening a project and coming back used to land on an unfiltered
+         * grid: the selection was a variable in this closure, and the closure
+         * went with the page. Putting it in the address means the browser
+         * restores it for us on the way back, along with the scroll position
+         * that was recorded against the same entry — and it makes a filtered
+         * grid something the visitor can send to someone.
+         *
+         * replaceState, not push: a chip is a change of view, not a place. And
+         * the existing state object is passed straight back through, because
+         * the router keeps its scroll offsets in there and dropping them would
+         * cost us the restore this is meant to protect.
+         */
+        const url = new URL(window.location.href);
+        if (value === allLabel) url.searchParams.delete('filter');
+        else url.searchParams.set('filter', value);
+        history.replaceState(history.state, '', url);
+      }
+
+      chips.forEach((chip) => {
+        chip.addEventListener('click', () => select(chip.dataset.filter, true));
       });
+
+      // Restore whatever the address asks for, ignoring a filter that no
+      // longer exists — a link kept from before the services were recut.
+      const asked = new URLSearchParams(window.location.search).get('filter');
+      const known = asked && Array.prototype.some.call(chips, (c) => c.dataset.filter === asked);
+      select(known ? asked : allLabel, false);
     }
 
-    document.addEventListener('astro:page-load', setupFilters);
+    /*
+     * Called at once, not only on astro:page-load.
+     *
+     * The router re-runs this script during the swap, which is before the
+     * scroll position is restored — and the grid has to be the right height by
+     * then, or the restore lands against a full-length list and the visitor
+     * arrives somewhere they have never been.
+     */
+    setupFilters();
+
+    /*
+     * The listener is a belt to that brace, for the fallback path where the
+     * router replaces the document instead of swapping it. It is registered
+     * once and not once per visit: this script runs again on every swap, and
+     * a fresh `setupFilters` is a different function every time, so
+     * addEventListener would stack them — each one holding the chips and cards
+     * of a page that has already been thrown away.
+     */
+    if (!window.__mhWorkFilters) {
+      window.__mhWorkFilters = true;
+      document.addEventListener('astro:page-load', function () {
+        setupFilters();
+      });
+    }
   })();
 </script>
 
