@@ -80,6 +80,34 @@ let lastStrike = 0;
 /** Whether the output device has been forced open yet. */
 let opened = false;
 
+/* --- TEMPORARY, for ?sound-check. Removed once the delay is understood. --- */
+let probe: AnalyserNode | null = null;
+
+/** An analyser on the master bus, so the page can time its own first sample. */
+export function probeNode(): AnalyserNode | null {
+  const audio = context();
+  if (!audio || !master) return null;
+  if (!probe) {
+    probe = audio.createAnalyser();
+    probe.fftSize = 512;
+    master.connect(probe);
+  }
+  return probe;
+}
+
+/** What the audio pipeline says about itself, at the moment of asking. */
+export function stats(): Record<string, unknown> | null {
+  if (!ctx) return null;
+  return {
+    state: ctx.state,
+    rate: ctx.sampleRate,
+    baseLatency: +(ctx.baseLatency ?? 0).toFixed(4),
+    outputLatency: +(ctx.outputLatency ?? 0).toFixed(4),
+    prebuilt: Boolean(waveBuf),
+    clock: +ctx.currentTime.toFixed(3),
+  };
+}
+
 let waveBuf: AudioBuffer | null = null;
 let backBuf: AudioBuffer | null = null;
 let strikeBuf: AudioBuffer | null = null;
