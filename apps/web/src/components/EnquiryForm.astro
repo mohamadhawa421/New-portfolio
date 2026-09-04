@@ -16,6 +16,28 @@ const budgetOptions = [...contact.budgetOptions, contact.unsureLabel];
 const showWhatsApp = settings.contactMode !== 'Email';
 const showEmail = settings.contactMode !== 'WhatsApp';
 
+/*
+ * The two dropdowns, described once. Both are rendered from this list so the
+ * picker markup — native select, button, floating menu — exists in a single
+ * place, and so the scoped styles below reach all of it.
+ */
+const pickers = [
+  {
+    key: 'service',
+    name: 'service',
+    label: contact.formServiceLabel,
+    options: serviceOptions,
+    fieldClass: 'enquiry__field--service',
+  },
+  {
+    key: 'budget',
+    name: 'budget',
+    label: contact.formBudgetLabel,
+    options: budgetOptions,
+    fieldClass: 'enquiry__field--budget',
+  },
+];
+
 const config = {
   whatsapp: settings.whatsappNumber.replace(/[^\d]/g, ''),
   email: settings.email,
@@ -42,19 +64,89 @@ const config = {
   </div>
 
   <div class="enquiry__row">
-    <div class="enquiry__field enquiry__field--service">
-      <label for={`${id}-service`}>{contact.formServiceLabel}</label>
-      <select id={`${id}-service`} name="service">
-        {serviceOptions.map((option) => <option value={option}>{option}</option>)}
-      </select>
-    </div>
+    {
+      pickers.map((field) => (
+        <div class:list={['enquiry__field', field.fieldClass]}>
+          <label id={`${id}-${field.key}-label`} for={`${id}-${field.key}`}>
+            {field.label}
+          </label>
 
-    <div class="enquiry__field enquiry__field--budget">
-      <label for={`${id}-budget`}>{contact.formBudgetLabel}</label>
-      <select id={`${id}-budget`} name="budget">
-        {budgetOptions.map((option) => <option value={option}>{option}</option>)}
-      </select>
-    </div>
+          {/*
+            Both controls ship. The <select> is the one that works with no
+            JavaScript and is the one the form reads its value from; the button
+            and the menu are hidden until the script hands the interaction over
+            to them, which is also the moment the select is taken out of view.
+          */}
+          <div class="picker" data-picker>
+            <select id={`${id}-${field.key}`} name={field.name}>
+              {field.options.map((option) => (
+                <option value={option}>{option}</option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              class="picker__button"
+              id={`${id}-${field.key}-button`}
+              role="combobox"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              aria-controls={`${id}-${field.key}-menu`}
+              aria-labelledby={`${id}-${field.key}-label ${id}-${field.key}-value`}
+              data-picker-button
+              hidden
+            >
+              <span class="picker__value" id={`${id}-${field.key}-value`} data-picker-value>
+                {field.options[0]}
+              </span>
+              <svg class="picker__chevron" viewBox="0 0 12 8" aria-hidden="true" focusable="false">
+                <path
+                  d="M1 1.75 6 6.25 11 1.75"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+
+            <div
+              class="picker__menu"
+              id={`${id}-${field.key}-menu`}
+              role="listbox"
+              aria-labelledby={`${id}-${field.key}-label`}
+              data-picker-menu
+              hidden
+            >
+              <ul class="picker__list">
+                {field.options.map((option, index) => (
+                  <li
+                    class="picker__option"
+                    id={`${id}-${field.key}-option-${index}`}
+                    role="option"
+                    aria-selected={index === 0 ? 'true' : 'false'}
+                    data-value={option}
+                  >
+                    <span class="picker__option-text">{option}</span>
+                    <svg class="picker__tick" viewBox="0 0 14 11" aria-hidden="true" focusable="false">
+                      <path
+                        d="M1 5.5 5 9.5 13 1.5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      ))
+    }
   </div>
 
   <div class="enquiry__field">
@@ -101,6 +193,238 @@ const config = {
     services: string[];
   }
 
+  /*
+   * A <select> that behaves like the rest of the form.
+   *
+   * The native control is kept — it is the value the form reads, it is what
+   * works before this module runs, and it is the thing a browser without
+   * JavaScript falls back to. What changes is who the visitor talks to: a
+   * button carrying the current choice, and a menu that floats clear of the
+   * field rather than being painted onto it by the operating system.
+   *
+   * The button is the combobox and keeps focus the whole time, with
+   * aria-activedescendant naming the option under the keyboard. Moving real
+   * focus into the list would mean managing its return on every exit, and
+   * Escape and Tab would each need catching before the browser saw them.
+   */
+  function setupPicker(picker: HTMLElement) {
+    const select = picker.querySelector<HTMLSelectElement>('select');
+    const button = picker.querySelector<HTMLButtonElement>('[data-picker-button]');
+    const valueText = picker.querySelector<HTMLElement>('[data-picker-value]');
+    const menu = picker.querySelector<HTMLElement>('[data-picker-menu]');
+    if (!select || !button || !valueText || !menu) return;
+
+    const options = Array.from(menu.querySelectorAll<HTMLElement>('[role="option"]'));
+    if (!options.length) return;
+
+    // The label pointed at the select, which is about to be taken out of view.
+    // A label whose target cannot be reached is worse than no label at all.
+    const label = picker
+      .closest('.enquiry__field')
+      ?.querySelector<HTMLLabelElement>('label[for]');
+    if (label) label.htmlFor = button.id;
+
+    picker.dataset.enhanced = '1';
+    button.hidden = false;
+
+    let open = false;
+    let active = 0;
+    let closing = 0;
+    let typed = '';
+    let typedAt = 0;
+
+    /** Where the select's value sits in the list, or 0 if it somehow does not. */
+    function chosen(): number {
+      const found = options.findIndex((option) => option.dataset.value === select!.value);
+      return found === -1 ? 0 : found;
+    }
+
+    /** Brings the button and the ticks back in line with the select. */
+    function paint() {
+      const index = chosen();
+      valueText!.textContent = options[index].dataset.value ?? '';
+      options.forEach((option, i) => {
+        option.setAttribute('aria-selected', i === index ? 'true' : 'false');
+      });
+    }
+
+    function setActive(index: number) {
+      active = Math.max(0, Math.min(options.length - 1, index));
+      options.forEach((option, i) => {
+        option.classList.toggle('picker__option--active', i === active);
+      });
+      button!.setAttribute('aria-activedescendant', options[active].id);
+      options[active].scrollIntoView({ block: 'nearest' });
+    }
+
+    /*
+     * Which side the menu opens on, and how tall it may be.
+     *
+     * The menu is positioned against the field rather than the viewport, so it
+     * travels with the form on scroll and needs no correction while it is open.
+     * All this decides is the moment it opens: below unless the space there is
+     * too short to show a few options, and never taller than the room it has.
+     */
+    function place() {
+      const box = button!.getBoundingClientRect();
+      const room = { below: innerHeight - box.bottom - 24, above: box.top - 24 };
+      const above = room.below < 180 && room.above > room.below;
+      picker.dataset.place = above ? 'above' : 'below';
+      menu!.style.setProperty(
+        '--picker-room',
+        `${Math.max(140, Math.round(above ? room.above : room.below))}px`
+      );
+    }
+
+    function onOutside(event: PointerEvent) {
+      if (!picker.contains(event.target as Node)) closeMenu(false);
+    }
+
+    function openMenu(start: 'selected' | 'first' | 'last') {
+      if (open) return;
+      open = true;
+      window.clearTimeout(closing);
+
+      menu!.hidden = false;
+      place();
+      button!.setAttribute('aria-expanded', 'true');
+
+      /*
+       * The transition needs a starting state to run from, and the menu has
+       * only just entered the flow. Reading a layout property flushes the
+       * closed state to the style system before the open one is set.
+       *
+       * A frame would do the same, but requestAnimationFrame stops dead in a
+       * backgrounded tab — and a menu that never becomes visible because the
+       * visitor opened it and switched away is worse than one that skips its
+       * fade. This is synchronous and does not care.
+       */
+      void menu!.offsetHeight;
+      picker.classList.add('picker--open');
+
+      setActive(start === 'first' ? 0 : start === 'last' ? options.length - 1 : chosen());
+
+      document.addEventListener('pointerdown', onOutside, true);
+      window.addEventListener('resize', place);
+    }
+
+    function closeMenu(keepFocus = true) {
+      if (!open) return;
+      open = false;
+      typed = '';
+
+      picker.classList.remove('picker--open');
+      button!.setAttribute('aria-expanded', 'false');
+      button!.removeAttribute('aria-activedescendant');
+
+      document.removeEventListener('pointerdown', onOutside, true);
+      window.removeEventListener('resize', place);
+
+      // Out of the accessibility tree once it has finished fading, not before —
+      // `hidden` would cut the transition off on its first frame.
+      closing = window.setTimeout(() => {
+        if (!open) menu!.hidden = true;
+      }, 200);
+
+      if (keepFocus) button!.focus();
+    }
+
+    function choose(index: number) {
+      const next = options[index]?.dataset.value;
+      if (next != null && select!.value !== next) {
+        select!.value = next;
+        // The form clears its error box on `input`, and anything else watching
+        // a select expects `change`. Setting `.value` in script fires neither.
+        select!.dispatchEvent(new Event('input', { bubbles: true }));
+        select!.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      paint();
+      closeMenu();
+    }
+
+    /** Jumps to the option the visitor is spelling out. */
+    function typeahead(key: string) {
+      const now = Date.now();
+      typed = now - typedAt > 700 ? key : typed + key;
+      typedAt = now;
+
+      const from = typed.length === 1 ? active + 1 : active;
+      for (let step = 0; step < options.length; step += 1) {
+        const i = (from + step) % options.length;
+        const text = options[i].dataset.value?.toLowerCase() ?? '';
+        if (text.startsWith(typed)) {
+          if (open) setActive(i);
+          else choose(i);
+          return;
+        }
+      }
+    }
+
+    button.addEventListener('click', () => {
+      if (open) closeMenu();
+      else openMenu('selected');
+    });
+
+    button.addEventListener('keydown', (event) => {
+      const key = event.key;
+
+      if (key === 'Escape') {
+        if (open) {
+          event.preventDefault();
+          closeMenu();
+        }
+        return;
+      }
+
+      if (key === 'Tab') {
+        if (open) closeMenu(false);
+        return;
+      }
+
+      if (key === 'ArrowDown' || key === 'ArrowUp') {
+        event.preventDefault();
+        if (!open) openMenu(key === 'ArrowDown' ? 'selected' : 'selected');
+        else setActive(active + (key === 'ArrowDown' ? 1 : -1));
+        return;
+      }
+
+      if (key === 'Home' || key === 'End') {
+        if (!open) return;
+        event.preventDefault();
+        setActive(key === 'Home' ? 0 : options.length - 1);
+        return;
+      }
+
+      if (key === 'Enter' || key === ' ' || key === 'Spacebar') {
+        event.preventDefault();
+        if (open) choose(active);
+        else openMenu('selected');
+        return;
+      }
+
+      if (key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        typeahead(key.toLowerCase());
+      }
+    });
+
+    options.forEach((option, index) => {
+      // The button holds focus for the whole interaction; a press inside the
+      // menu must not take it away, or the menu closes under the finger.
+      option.addEventListener('mousedown', (event) => event.preventDefault());
+      option.addEventListener('click', () => choose(index));
+      option.addEventListener('pointerenter', () => {
+        if (open) setActive(index);
+      });
+    });
+
+    // Anything that sets the select from elsewhere — the ?service= preset
+    // arriving late, a browser restoring the form on back — still shows.
+    select.addEventListener('change', paint);
+
+    paint();
+  }
+
   function setupForms() {
     document.querySelectorAll<HTMLFormElement>('[data-enquiry]').forEach((form) => {
       // The client router re-runs this on every navigation, and the form is not
@@ -121,6 +445,9 @@ const config = {
       // option is already chosen when the visitor arrives.
       const preset = new URLSearchParams(window.location.search).get('service');
       if (preset && config.services.includes(preset)) serviceInput.value = preset;
+
+      // After the preset, so the button opens showing the right choice.
+      form.querySelectorAll<HTMLElement>('[data-picker]').forEach(setupPicker);
 
       function showError(message: string, focus?: HTMLElement) {
         errorBox.textContent = message;
@@ -273,6 +600,192 @@ const config = {
   .enquiry textarea {
     line-height: 1.45;
     resize: vertical;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The dropdowns                                                       */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * The enquiry form is a dark panel in both themes, so the menu is built from
+   * the form's own tokens rather than the page's: one step lighter than the
+   * panel, the way the send buttons are, which is what makes it read as
+   * floating above rather than cut into it.
+   */
+  .picker {
+    position: relative;
+    min-width: 0;
+  }
+
+  .picker[data-enhanced] select {
+    display: none;
+  }
+
+  /*
+   * `display` on the rule below outranks the `[hidden] { display: none }` the
+   * browser supplies, so the attribute alone does not hide the button — and
+   * until the script ran, the field was drawn twice: the native select and the
+   * button that is meant to replace it, stacked.
+   */
+  .picker__button[hidden] {
+    display: none;
+  }
+
+  .picker__button {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 50px;
+    padding: 14px 16px;
+    border: none;
+    border-radius: var(--r-xs);
+    background: var(--surface-input);
+    color: var(--ink-on-dark);
+    font: inherit;
+    font-size: 17px;
+    letter-spacing: -0.022em;
+    text-align: left;
+    cursor: pointer;
+    /* A control, not a passage. Dragging across it to open the menu was
+       leaving the label highlighted behind the menu. */
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background 200ms var(--ease-glide);
+  }
+
+  .picker__button:hover {
+    background: var(--surface-button-dark);
+  }
+
+  .picker__button:focus-visible {
+    outline: 2px solid var(--blue-on-dark);
+    outline-offset: 2px;
+  }
+
+  /* The longest service name is wider than the field on a small phone. The
+     menu wraps it in full; the button, which is one line by definition,
+     says that it continues. */
+  .picker__value {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .picker__chevron {
+    flex: none;
+    width: 12px;
+    height: 8px;
+    color: var(--ink-on-dark-muted);
+    transition: transform 260ms var(--ease-out);
+  }
+
+  .picker--open .picker__chevron {
+    transform: rotate(180deg);
+  }
+
+  .picker__menu {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 60;
+    box-sizing: border-box;
+    padding: 6px;
+    border: 1px solid var(--line-menu);
+    border-radius: var(--r-md);
+    background: var(--surface-button-dark);
+    /* Two shadows: a wide soft one for the distance from the panel, and a
+       tight one so the edge is still described where the wide one is too
+       faint to read on a dark ground. */
+    box-shadow:
+      0 18px 40px rgba(0, 0, 0, 0.38),
+      0 2px 6px rgba(0, 0, 0, 0.24);
+    max-height: min(300px, var(--picker-room, 300px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition:
+      opacity 160ms var(--ease-glide),
+      transform 200ms var(--ease-out);
+  }
+
+  /* Detached from the field, on whichever side it opens. */
+  .picker[data-place='below'] .picker__menu {
+    top: calc(100% + 8px);
+  }
+
+  .picker[data-place='above'] .picker__menu {
+    bottom: calc(100% + 8px);
+    transform: translateY(4px);
+  }
+
+  .picker--open .picker__menu {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .picker__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .picker__option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    border-radius: var(--r-xs);
+    font-size: 16px;
+    line-height: 1.35;
+    letter-spacing: -0.018em;
+    color: var(--ink-on-dark);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background 140ms var(--ease-glide);
+  }
+
+  .picker__option-text {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* One highlight, driven by the keyboard and by the pointer alike, so the two
+     can never disagree about which option is about to be taken. */
+  .picker__option--active {
+    background: var(--surface-button-dark-hover);
+  }
+
+  .picker__tick {
+    flex: none;
+    width: 14px;
+    height: 11px;
+    color: var(--blue-on-dark);
+    opacity: 0;
+  }
+
+  .picker__option[aria-selected='true'] .picker__tick {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .picker__menu,
+    .picker__chevron,
+    .picker__option {
+      transition: none;
+    }
+
+    .picker__menu {
+      transform: none;
+    }
   }
 
   .enquiry ::placeholder {

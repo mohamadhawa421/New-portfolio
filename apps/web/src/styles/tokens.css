@@ -56,6 +56,14 @@
   --line-light: #e8e8ea;
   --line-parchment: #dedee1;
   --line-dark: #3a3a3c;
+  /*
+   * The hairline around a surface that floats above the enquiry form. The form
+   * is a dark panel in both themes, and the menu that opens out of it is a step
+   * lighter again — at that separation a solid line reads as a drawn edge, so
+   * this is the light the surface catches rather than a colour of its own. One
+   * value serves both themes for the same reason the form does.
+   */
+  --line-menu: rgba(255, 255, 255, 0.12);
 
   /* ---- Feedback ------------------------------------------------------ */
   --error-on-dark: #ff9f9f;
