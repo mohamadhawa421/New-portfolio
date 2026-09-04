@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FeaturedProject from '../components/FeaturedProject.astro';
 import ProjectRow from '../components/ProjectRow.astro';
+import CharacterAside from '../components/CharacterAside.astro';
 import ContactBlock from '../components/ContactBlock.astro';
 import DesignerEgg from '../components/DesignerEgg.astro';
 import {
@@ -244,6 +245,18 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
         heading={home.contactHeading}
         body={home.contactBody}
         formId="home"
+      />
+
+      {/*
+        Inside the contact section rather than after it, so he stands on the
+        same dark ground and inside the same shell as the form above him — at
+        the end of the page without a section of his own.
+      */}
+      <CharacterAside
+        src="/character-thinking.webp"
+        alt="Mohamad, thinking"
+        message="You've read everything. You haven't clicked everything."
+        tone="dark"
       />
     </section>
 

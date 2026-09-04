@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import CharacterAside from '../../components/CharacterAside.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
 import { getProjects, getServices, getWorkPage } from '../../lib/content';
 
@@ -75,6 +76,18 @@ const categories = [
       <p class="shell work-grid__empty" data-empty hidden>
         Nothing in that category yet.
       </p>
+
+      {/*
+        At the foot of the grid, which is where the oldest projects are — he is
+        standing next to the ones he is talking about. He waits to be scrolled
+        to rather than for a fraction of the page, since on this page the
+        position is the joke.
+      */}
+      <CharacterAside
+        src="/character-hush.webp"
+        alt="Mohamad, asking for quiet"
+        message="Shh — the older ones are placeholders. They don't know they're being replaced."
+      />
     </section>
   </main>
 </BaseLayout>

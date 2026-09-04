@@ -1,0 +1,419 @@
+---
+/**
+ * A character leaning into the page with something to say.
+ *
+ * Deliberately not an illustration section. It sits at the end of whatever it
+ * is put in, aligned to the right edge of the same shell as everything else, at
+ * about the size of a large avatar — close enough to the page's own furniture
+ * that it reads as an aside rather than a banner. Nothing above it moves to
+ * make room, because it takes up the width that was already there.
+ *
+ * Two of these exist: the thinking one at the end of the home page, and the
+ * hushing one under the older work. Both are found rather than presented, so
+ * neither is in the document until the visitor has come far enough to earn it.
+ */
+interface Props {
+  /** Character artwork. Transparent background, no frame. */
+  src: string;
+  /** What he is doing, not what he looks like — he is the aside, not content. */
+  alt: string;
+  /** Exactly what he says. */
+  message: string;
+  /**
+   * Which set of surfaces the bubble is built from. The home page's last
+   * section is a dark panel in both themes and needs the on-dark set, the
+   * same one the enquiry form's menu uses; everywhere else follows the page.
+   */
+  tone?: 'page' | 'dark';
+}
+
+const { src, alt, message, tone = 'page' } = Astro.props;
+---
+
+<aside class="aside" class:list={[`aside--${tone}`]} data-character>
+  <div class="aside__inner">
+    <p class="aside__bubble">{message}</p>
+
+    <div class="aside__figure">
+      {/* The flicker. One element, behind him, that blooms and goes out. */}
+      <span class="aside__spark" aria-hidden="true"></span>
+      <img class="aside__art" src={src} alt={alt} loading="lazy" decoding="async" />
+    </div>
+  </div>
+</aside>
+
+<script>
+  /**
+   * Brings each character in once, then stops watching.
+   *
+   * A scroll listener on a timestamp throttle. The throttle is 120ms and the
+   * listener takes itself off as soon as the last character has arrived, so
+   * the cost is a handful of rect reads spread across one scroll and nothing
+   * at all afterwards.
+   */
+  function setupCharacters() {
+    const nodes = Array.from(document.querySelectorAll<HTMLElement>('[data-character]'));
+    if (!nodes.length) return;
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /** Still waiting to be shown. Emptied as they arrive. */
+    const pending = nodes.filter((el) => {
+      if (el.dataset.arrived) return false;
+      el.dataset.arrived = '1';
+      return true;
+    });
+    if (!pending.length) return;
+
+    function arrive(el: HTMLElement) {
+      // Reduced motion gets him without the entrance rather than without him.
+      el.classList.add(reduced ? 'aside--instant' : 'aside--here');
+    }
+
+    /*
+     * He arrives when the visitor reaches him, and not on any measure of the
+     * page as a whole. Two thirds up the viewport rather than at the edge, so
+     * he is properly on screen before the light goes — announcing himself from
+     * the bottom edge means the flash happens where nobody is looking.
+     */
+    function due(el: HTMLElement): boolean {
+      return el.getBoundingClientRect().top < window.innerHeight * 0.66;
+    }
+
+    let waiting = pending;
+    let last = 0;
+
+    function pass() {
+      waiting = waiting.filter((el) => {
+        if (!due(el)) return true;
+        arrive(el);
+        return false;
+      });
+
+      if (!waiting.length) window.removeEventListener('scroll', onScroll);
+    }
+
+    function onScroll() {
+      const now = Date.now();
+      if (now - last < 120) return;
+      last = now;
+      pass();
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    // The trigger may already be met on arrival — a short page, or a restored
+    // scroll position that lands past it.
+    pass();
+  }
+
+  document.addEventListener('astro:page-load', setupCharacters);
+</script>
+
+<style>
+  .aside {
+    /* The same shell and gutter as the section it sits in, so he lines up with
+       the content above rather than with the window. */
+    max-width: var(--shell);
+    margin: 0 auto;
+    padding-top: clamp(30px, 4vw, 52px);
+  }
+
+  .aside__inner {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: clamp(10px, 1.4vw, 16px);
+    /* He is an aside to the page, not a second column of it. Past this the
+       bubble stops reading as a remark and starts reading as a paragraph. */
+    max-width: 520px;
+    margin-left: auto;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The character                                                       */
+  /* ------------------------------------------------------------------ */
+
+  .aside__figure {
+    position: relative;
+    flex: none;
+    width: clamp(88px, 11vw, 124px);
+    /* Bottom-aligned with the bubble, and sitting on the same line as the end
+       of the section. */
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .aside__art {
+    display: block;
+    width: 100%;
+    height: auto;
+    /* He starts a little low and a little small, and settles. */
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.97);
+  }
+
+  /*
+   * The light that says look here.
+   *
+   * This has a job beyond decoration: he arrives at the edge of a page the
+   * visitor is reading down the middle of, and without something to catch the
+   * eye he is simply missed. So the bloom covers the whole of him rather than
+   * sitting behind his head, and it is bright enough to register in peripheral
+   * vision — which is the only place it will be seen from.
+   *
+   * Still the storm's palette, spent carefully: --dm-glow and --dm-wave carry
+   * the mass, and the hot --dm-core is the middle of it and nothing else.
+   * Bright for about a third of a second, then gone.
+   */
+  .aside__spark {
+    position: absolute;
+    left: 50%;
+    top: 42%;
+    width: 150%;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--dm-core) 62%, transparent) 0%,
+      color-mix(in srgb, var(--dm-glow) 40%, transparent) 26%,
+      color-mix(in srgb, var(--dm-wave) 20%, transparent) 48%,
+      color-mix(in srgb, var(--dm-deep) 8%, transparent) 66%,
+      transparent 78%
+    );
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The bubble                                                          */
+  /* ------------------------------------------------------------------ */
+
+  .aside__bubble {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-bottom: clamp(14px, 2vw, 26px);
+    padding: 13px 16px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--aside-line);
+    background: var(--aside-surface);
+    color: var(--aside-ink);
+    box-shadow: var(--aside-shadow);
+    font-size: 15px;
+    line-height: 1.45;
+    letter-spacing: -0.014em;
+    text-wrap: pretty;
+
+    opacity: 0;
+    transform: translate3d(0, 6px, 0) scale(0.98);
+    /* Grows out of the corner nearest him. */
+    transform-origin: 100% 100%;
+  }
+
+  /*
+   * The pointer, aimed at him.
+   *
+   * A small square rotated behind the bubble so only the corner clears the
+   * edge. The two borders it carries are the two that meet at that corner, so
+   * the outer point is drawn in the bubble's own line and the rest of the
+   * square hides behind the bubble with no seam.
+   *
+   * Side by side he is to the right, so it leaves from the right edge, low
+   * down — the bubble sits above his shoulder and the tail runs back to him.
+   */
+  .aside__bubble::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    bottom: 14px;
+    width: 11px;
+    height: 11px;
+    background: var(--aside-surface);
+    border-top: 1px solid var(--aside-line);
+    border-right: 1px solid var(--aside-line);
+    transform: rotate(45deg);
+    /* A squircle on an 11px nub reads as a blob. */
+    corner-shape: round;
+    border-top-right-radius: 2px;
+  }
+
+  /* ---- The two tones ------------------------------------------------ */
+
+  /*
+   * Everything above paints from these four, and only these four change.
+   */
+  .aside--page {
+    --aside-surface: var(--surface-card);
+    --aside-ink: var(--ink);
+    --aside-line: var(--line);
+    --aside-shadow: 0 10px 26px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  /* The home page's last section is a dark panel in both themes, so the bubble
+     is built the way the enquiry form's menu is: a step lighter than the
+     surface it floats over, with a hairline of caught light. */
+  .aside--dark {
+    --aside-surface: var(--surface-button-dark);
+    --aside-ink: var(--ink-on-dark);
+    --aside-line: var(--line-menu);
+    --aside-shadow: 0 14px 32px rgba(0, 0, 0, 0.34), 0 2px 6px rgba(0, 0, 0, 0.22);
+  }
+
+  /* On a dark ground a plain shadow does nothing, so the bubble is given the
+     faintest purple lift instead — the only place the accent touches it. */
+  .aside--dark .aside__bubble {
+    box-shadow:
+      var(--aside-shadow),
+      0 0 0 3px color-mix(in srgb, var(--dm-wave) 7%, transparent);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) .aside--page {
+      --aside-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  :root[data-theme='dark'] .aside--page {
+    --aside-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The arrival                                                         */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * Flicker, then him, then what he says — in that order and quickly, so it
+   * reads as one small event rather than three staged ones. The whole thing is
+   * under a second and nothing about it is loud.
+   */
+  .aside--here .aside__spark {
+    animation: aside-spark 420ms var(--ease-out) both;
+  }
+
+  .aside--here .aside__art {
+    animation:
+      aside-arrive 460ms var(--ease-out) 200ms both,
+      aside-lit 620ms var(--ease-out) 200ms both;
+  }
+
+  .aside--here .aside__bubble {
+    animation: aside-speak 380ms var(--ease-out) 480ms both;
+  }
+
+  @keyframes aside-spark {
+    0% {
+      opacity: 0;
+      scale: 0.7;
+    }
+    /* Two beats rather than one bloom: a flicker is something failing to
+       settle, and a single fade is just a light coming on. */
+    28% {
+      opacity: 1;
+      scale: 1.02;
+    }
+    44% {
+      opacity: 0.42;
+      scale: 0.99;
+    }
+    60% {
+      opacity: 0.8;
+      scale: 1.05;
+    }
+    100% {
+      opacity: 0;
+      scale: 1.16;
+    }
+  }
+
+  /*
+   * He is lit by the same light rather than standing in front of it. A drop
+   * shadow follows his cut-out edge, so the glow is around him and not around
+   * a rectangle, and it fades as the bloom behind him does.
+   */
+  @keyframes aside-lit {
+    0% {
+      filter: drop-shadow(0 0 14px color-mix(in srgb, var(--dm-core) 85%, transparent));
+    }
+    45% {
+      filter: drop-shadow(0 0 10px color-mix(in srgb, var(--dm-glow) 55%, transparent));
+    }
+    100% {
+      filter: drop-shadow(0 0 0 transparent);
+    }
+  }
+
+  @keyframes aside-arrive {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 10px, 0) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  @keyframes aside-speak {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 6px, 0) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  /* No flicker, no rise — he is simply there, which is the whole effect for
+     anyone who has asked not to be moved at. */
+  .aside--instant .aside__art,
+  .aside--instant .aside__bubble {
+    opacity: 1;
+    transform: none;
+  }
+
+  .aside--instant .aside__spark {
+    display: none;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Narrow                                                              */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * Not the desktop composition made small. On a phone the bubble takes the
+   * width it needs and he stands under his own remark at the right-hand edge,
+   * which keeps the line lengths readable instead of squeezing a paragraph
+   * into whatever is left beside a picture.
+   */
+  @media (max-width: 560px) {
+    .aside__inner {
+      display: block;
+      max-width: none;
+    }
+
+    .aside__bubble {
+      margin-bottom: 10px;
+      margin-left: auto;
+      max-width: 30ch;
+      transform-origin: 100% 100%;
+    }
+
+    /* He is underneath now, so the tail turns to point down at him. */
+    .aside__bubble::after {
+      right: 22px;
+      bottom: -6px;
+      border-top: none;
+      border-bottom: 1px solid var(--aside-line);
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 2px;
+    }
+
+    .aside__figure {
+      width: 84px;
+      margin-left: auto;
+    }
+  }
+</style>
