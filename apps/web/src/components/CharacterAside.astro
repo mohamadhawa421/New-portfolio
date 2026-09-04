@@ -134,6 +134,16 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
 
     armVoice();
 
+    /*
+     * One strike, at one level, for both of the moments he makes a sound.
+     *
+     * Arriving used to be quieter than being pressed, on the theory that a
+     * sound nobody asked for should apologise for itself. It only made the
+     * arrival sound like a lesser version of the same event. It is the same
+     * event — he turns up, or he says the next thing — so it is the same sound.
+     */
+    const STRIKE = 0.28;
+
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     /** Still waiting to be shown. Emptied as they arrive. */
@@ -171,7 +181,7 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
       el.classList.add(reduced ? 'aside--instant' : 'aside--here');
       // Quiet, and only if the page is already making sound. A reduced-motion
       // visitor still gets it: a sound is not something that moves.
-      if (reached) sound.spark(0.16);
+      if (reached) sound.spark(STRIKE);
     }
 
     /**
@@ -203,7 +213,7 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
        * be heard from then on too.
        */
       sound.unlock();
-      sound.spark(0.28);
+      sound.spark(STRIKE);
 
       if (reduced) {
         say.textContent = script[next];
