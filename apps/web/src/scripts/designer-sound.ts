@@ -74,6 +74,38 @@ export interface SoundShape {
 /** TEMPORARY — remove with the diagnostic in play(). */
 function report(message: string): void {
   console.info(`[designer sound] ${message}`);
+  document.dispatchEvent(new CustomEvent('mh:sound-report', { detail: message }));
+}
+
+/**
+ * TEMPORARY. A plain loud beep, to tell "this machine plays Web Audio" apart
+ * from "the egg's sound is too quiet to notice". Nothing else uses it.
+ */
+export function testTone(): void {
+  const audio = context();
+  if (!audio || !master) {
+    report('test tone: no context');
+    return;
+  }
+  if (audio.state === 'suspended') void audio.resume();
+
+  const t = audio.currentTime;
+  master.gain.cancelScheduledValues(t);
+  master.gain.setValueAtTime(1, t);
+
+  const osc = audio.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.value = 440;
+
+  const gain = audio.createGain();
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+
+  osc.connect(gain).connect(master);
+  osc.start(t);
+  osc.stop(t + 0.5);
+  report(`test tone: state=${audio.state} rate=${audio.sampleRate}`);
 }
 
 let ctx: Ctx | null = null;
