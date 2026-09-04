@@ -97,6 +97,29 @@ figure {
   margin: 0 auto;
 }
 
+/*
+ * Sections are spaced apart in `min(Nvh, Mvw)`, and this is the one place that
+ * says why. The values themselves stay with the sections they belong to, since
+ * each carries its own weight in the hierarchy.
+ *
+ * The rhythm was viewport height alone. That reads correctly on a desktop, but
+ * a phone is tall and narrow, so it took its spacing from the dimension it has
+ * most of and applied it to a single column 390px wide: 101px above and below
+ * every section, 135px around the manifesto — a quarter of a screen of nothing
+ * between one section and the next, with the sections themselves reading as
+ * adrift rather than as a page.
+ *
+ * The second term is the same number scaled by four thirds, which puts the
+ * crossover at a 4:3 viewport. Wider than that — every laptop and desktop, and
+ * a tablet in either orientation — the height term is still the smaller one and
+ * nothing moves at all. Narrower, the width takes over and the whole rhythm
+ * scales down together, so the manifesto keeps its extra weight over the
+ * services and the hierarchy arrives intact at a smaller size.
+ *
+ * The floors come down to match. A floor set for the old rhythm would have
+ * clamped the new one straight back up to it, and the change would have been
+ * invisible on the only screens it was for.
+ */
 .section {
   padding-inline: var(--gutter);
 }

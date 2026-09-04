@@ -75,7 +75,7 @@ const [about, settings] = await Promise.all([getAboutPage(), getSiteSettings()])
 
 <style>
   .about-hero {
-    padding-top: clamp(132px, 17vh, 196px);
+    padding-top: clamp(100px, min(17vh, 26vw), 196px);
     padding-bottom: clamp(44px, 6.5vh, 80px);
   }
 
@@ -103,7 +103,7 @@ const [about, settings] = await Promise.all([getAboutPage(), getSiteSettings()])
   }
 
   .about-body {
-    padding-block: clamp(56px, 9vh, 100px);
+    padding-block: clamp(46px, min(9vh, 12vw), 100px);
   }
 
   .about-body__inner {
