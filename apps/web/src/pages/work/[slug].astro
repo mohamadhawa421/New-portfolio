@@ -335,7 +335,14 @@ const coverStyle = project.cover
   .case-hero__title {
     /* Clips the rising text until it slides into place. */
     overflow: hidden;
-    padding-bottom: 0.06em;
+    /*
+     * Room for the descenders inside the clip, cancelled again by the margin so
+     * the heading occupies exactly the space it did before. A tight
+     * line-height puts the line box above the bottom of the glyphs, and the
+     * same overflow that hides the rising text was shaving them.
+     */
+    padding-bottom: 0.16em;
+    margin-bottom: -0.1em;
     max-width: 16ch;
     font-size: clamp(33px, 5.6vw, 76px);
     line-height: 1.04;
@@ -346,7 +353,14 @@ const coverStyle = project.cover
   .case-hero__summary {
     /* Clips the rising text until it slides into place. */
     overflow: hidden;
-    padding-bottom: 0.06em;
+    /*
+     * Room for the descenders inside the clip, cancelled again by the margin so
+     * the heading occupies exactly the space it did before. A tight
+     * line-height puts the line box above the bottom of the glyphs, and the
+     * same overflow that hides the rising text was shaving them.
+     */
+    padding-bottom: 0.16em;
+    margin-bottom: -0.1em;
     margin-top: 20px;
     max-width: 46ch;
   }

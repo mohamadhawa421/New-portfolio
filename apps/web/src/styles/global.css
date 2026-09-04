@@ -237,7 +237,13 @@ figure {
 [data-rise][data-hidden] {
   display: block;
   opacity: 1;
-  transform: translate3d(0, 112%, 0);
+  /*
+   * Far enough down to clear the clip box, which is now taller than the line
+   * box by the descender padding below. At 112% the waiting text sat exactly
+   * on the old clip edge, which is why that padding could never be more than a
+   * hair — and why descenders were being shaved instead.
+   */
+  transform: translate3d(0, 130%, 0);
 }
 
 /*

@@ -279,7 +279,14 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     letter-spacing: -0.021em;
     font-weight: 600;
     overflow: hidden;
-    padding-bottom: 0.04em;
+    /*
+     * Room for the descenders inside the clip, cancelled again by the margin so
+     * the heading occupies exactly the space it did before. A tight
+     * line-height puts the line box above the bottom of the glyphs, and the
+     * same overflow that hides the rising text was shaving them.
+     */
+    padding-bottom: 0.16em;
+    margin-bottom: -0.12em;
   }
 
   .hero__subtitle {
@@ -290,7 +297,14 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     line-height: 1.14;
     letter-spacing: -0.004em;
     overflow: hidden;
-    padding-bottom: 0.06em;
+    /*
+     * Room for the descenders inside the clip, cancelled again by the margin so
+     * the heading occupies exactly the space it did before. A tight
+     * line-height puts the line box above the bottom of the glyphs, and the
+     * same overflow that hides the rising text was shaving them.
+     */
+    padding-bottom: 0.16em;
+    margin-bottom: -0.1em;
   }
 
   .hero__intro {

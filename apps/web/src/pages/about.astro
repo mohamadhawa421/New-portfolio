@@ -87,7 +87,14 @@ const [about, settings] = await Promise.all([getAboutPage(), getSiteSettings()])
     /* Clips the rising text until it slides into place. The padding stops
        descenders being shaved off by the same clip. */
     overflow: hidden;
-    padding-bottom: 0.06em;
+    /*
+     * Room for the descenders inside the clip, cancelled again by the margin so
+     * the heading occupies exactly the space it did before. A tight
+     * line-height puts the line box above the bottom of the glyphs, and the
+     * same overflow that hides the rising text was shaving them.
+     */
+    padding-bottom: 0.16em;
+    margin-bottom: -0.1em;
     max-width: 18ch;
     font-size: clamp(33px, 5.6vw, 80px);
     line-height: 1.04;
