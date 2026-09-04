@@ -5,6 +5,18 @@
  */
 
 :root {
+  /*
+   * Declared, not merely implied.
+   *
+   * The dark palettes below both state `color-scheme: dark`, and nothing ever
+   * stated the other half — so on a phone set to dark with the site switched to
+   * light, the browser still believed the page was a dark one and painted its
+   * own surfaces to match: the overscroll area, the scrollbars, and the strip
+   * behind the address bar, which is where it showed as a black band under a
+   * white page.
+   */
+  color-scheme: light;
+
   /* ---- Type ---------------------------------------------------------- */
   --font-sans: 'SF Pro Display', 'SF Pro Text', system-ui, -apple-system,
     BlinkMacSystemFont, Inter, sans-serif;

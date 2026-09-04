@@ -19,9 +19,8 @@
  * instant palette swap; they just miss the circular wipe.
  */
 
-type Theme = 'light' | 'dark';
-
-const STORAGE_KEY = 'mh-theme';
+import { STORAGE_KEY, resolvedTheme, restoreTheme, systemTheme } from './theme-state';
+import type { Theme } from './theme-state';
 
 /** How long one wave takes, from the first press. */
 const WAVE_MS = 700;
@@ -91,16 +90,6 @@ function timeAtProgress(progress: number): number {
     previousY = y;
   }
   return 1;
-}
-
-function current(): Theme {
-  const set = document.documentElement.dataset.theme;
-  if (set === 'dark' || set === 'light') return set;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-function systemTheme(): Theme {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 /**
@@ -223,7 +212,7 @@ function settleNow(): void {
 }
 
 function toggle(button: HTMLElement): void {
-  const next: Theme = current() === 'dark' ? 'light' : 'dark';
+  const next: Theme = resolvedTheme() === 'dark' ? 'light' : 'dark';
 
   const rect = button.getBoundingClientRect();
   const originX = rect.left + rect.width / 2;
@@ -324,7 +313,7 @@ function setup(): void {
   document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]').forEach((button) => {
     if (button.dataset.bound) return;
     button.dataset.bound = '1';
-    button.setAttribute('aria-pressed', String(current() === 'dark'));
+    button.setAttribute('aria-pressed', String(resolvedTheme() === 'dark'));
     button.addEventListener('click', () => toggle(button));
   });
 }
@@ -344,16 +333,7 @@ document.addEventListener('astro:page-load', () => {
  * Restoring it on `astro:after-swap` puts it back before the browser paints,
  * so the theme carries across pages with no flash.
  */
-document.addEventListener('astro:after-swap', () => {
-  try {
-    const saved = sessionStorage.getItem(STORAGE_KEY);
-    if (saved === 'dark' || saved === 'light') {
-      document.documentElement.dataset.theme = saved;
-    }
-  } catch {
-    /* private mode — falls back to the system preference */
-  }
-});
+document.addEventListener('astro:after-swap', restoreTheme);
 
 /*
  * Changing the system theme is a deliberate act, so it wins: the override is

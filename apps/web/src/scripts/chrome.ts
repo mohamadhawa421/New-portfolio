@@ -13,6 +13,8 @@
  *    throttled through rAF.
  */
 
+import { resolvedTheme, restoreTheme } from './theme-state';
+
 const root = document.documentElement;
 const styles = root.style;
 
@@ -373,10 +375,7 @@ let lastOverDark: boolean | null = null;
  * this the black logo mark sits on a near-black page and disappears.
  */
 function isDarkTheme(): boolean {
-  const set = root.dataset.theme;
-  if (set === 'dark') return true;
-  if (set === 'light') return false;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return resolvedTheme() === 'dark';
 }
 
 function chromePass(): void {
@@ -535,6 +534,12 @@ document.addEventListener('astro:before-swap', (event) => {
 });
 
 document.addEventListener('astro:after-swap', () => {
+  /*
+   * First, before anything reads it. The router has just wiped every attribute
+   * off <html>, and the nav ink is decided from the theme.
+   */
+  restoreTheme();
+
   /*
    * Inside the transition's update callback: the last moment at which the
    * incoming snapshot can be given the name its counterpart is flying to.
