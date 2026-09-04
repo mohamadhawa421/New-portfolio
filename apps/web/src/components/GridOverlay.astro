@@ -1,0 +1,170 @@
+---
+/**
+ * Easter egg: press G for the layout grid.
+ *
+ * The joke is aimed at the people this portfolio is for. Every designer who
+ * opens a site they like eventually wants to know how it is put together —
+ * this just hands them the answer: the real twelve columns, the real gutter and
+ * shell width read from the same custom properties the layout uses, an 8px
+ * baseline, and a live readout of the viewport and which breakpoint is active.
+ *
+ * It is a tool rather than a gag, so it stays useful on a second look, and it
+ * cannot be stumbled into: G alone, never while typing, never with a modifier.
+ */
+---
+
+<div class="grid-egg" data-grid hidden aria-hidden="true">
+  <div class="grid-egg__baseline"></div>
+  <div class="grid-egg__shell">
+    {Array.from({ length: 12 }).map(() => <span class="grid-egg__col" />)}
+  </div>
+</div>
+
+<div class="grid-egg__readout" data-grid-readout hidden aria-hidden="true"></div>
+
+<script>
+  function setupGrid() {
+    if (document.documentElement.dataset.gridEgg) return;
+    document.documentElement.dataset.gridEgg = '1';
+
+    const gridEl = document.querySelector<HTMLElement>('[data-grid]');
+    const readoutEl = document.querySelector<HTMLElement>('[data-grid-readout]');
+    if (!gridEl || !readoutEl) return;
+
+    // Narrowing does not survive into the nested handlers below.
+    const grid = gridEl;
+    const readout = readoutEl;
+
+    let on = false;
+    let introduced = false;
+
+    function describe(): string {
+      const w = window.innerWidth;
+      const name = w < 768 ? 'mobile' : w < 1024 ? 'tablet' : 'desktop';
+      const shell = getComputedStyle(document.documentElement).getPropertyValue('--shell').trim();
+      return `${w}px · ${name} · shell ${shell} · 12 col`;
+    }
+
+    function paint() {
+      if (!on) return;
+      readout.textContent = introduced ? describe() : `${describe()}  —  press G to hide`;
+    }
+
+    function toggle() {
+      on = !on;
+      grid.hidden = !on;
+      readout.hidden = !on;
+
+      if (on) {
+        paint();
+        // Only ever say how to leave the first time; after that it is a tool,
+        // not a tutorial.
+        introduced = true;
+      }
+    }
+
+    window.addEventListener('keydown', (event) => {
+      if (event.key !== 'g' && event.key !== 'G') return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+      // Never while the visitor is writing — the contact form is full of
+      // fields, and swallowing a "g" there would be a genuine bug.
+      const el = document.activeElement as HTMLElement | null;
+      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+
+      event.preventDefault();
+      toggle();
+    });
+
+    window.addEventListener('resize', paint, { passive: true });
+  }
+
+  document.addEventListener('astro:page-load', setupGrid);
+</script>
+
+<style>
+  .grid-egg {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    pointer-events: none;
+  }
+
+  /* The 8px rhythm the spacing scale is built on. */
+  .grid-egg__baseline {
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--blue) 16%, transparent) 0 1px,
+      transparent 1px 8px
+    );
+    opacity: 0.5;
+  }
+
+  /* Mirrors .shell exactly, so the columns land where the layout does. */
+  .grid-egg__shell {
+    position: absolute;
+    inset: 0;
+    max-width: var(--shell);
+    margin: 0 auto;
+    padding-inline: var(--gutter);
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 24px;
+  }
+
+  .grid-egg__col {
+    background: color-mix(in srgb, var(--blue) 12%, transparent);
+    border-inline: 1px solid color-mix(in srgb, var(--blue) 22%, transparent);
+  }
+
+  /* Below the shell's own breakpoint the layout is not twelve columns, so
+     neither is the grid. */
+  @media (max-width: 767px) {
+    .grid-egg__shell {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .grid-egg__col:nth-child(n + 5) {
+      display: none;
+    }
+  }
+
+  .grid-egg__readout {
+    position: fixed;
+    bottom: 18px;
+    left: 50%;
+    translate: -50% 0;
+    z-index: 9999;
+    pointer-events: none;
+    padding: 9px 16px;
+    border-radius: var(--r-pill);
+    background: var(--surface-dark);
+    color: var(--ink-on-dark);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
+    animation: mh-grid-readout 320ms var(--ease-out) both;
+  }
+
+  @keyframes mh-grid-readout {
+    from {
+      opacity: 0;
+      translate: -50% 8px;
+    }
+    to {
+      opacity: 1;
+      translate: -50% 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .grid-egg__readout {
+      animation: none;
+    }
+  }
+</style>

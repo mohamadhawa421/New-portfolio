@@ -11,7 +11,12 @@ const { project, index = 0 } = Astro.props;
 ---
 
 <a class="row" href={`/work/${project.slug}`} data-reveal={String(index)}>
-  <div class="row__thumb" style={`background:${project.chipBg};color:${project.chipInk}`}>
+  <div
+    class="row__thumb"
+    data-morph
+    data-slug={project.slug}
+    style={`background:${project.chipBg};color:${project.chipInk}`}
+  >
     {
       project.cover ? (
         <img src={project.cover.url} alt={project.cover.alt} loading="lazy" decoding="async" />

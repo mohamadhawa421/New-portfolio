@@ -114,12 +114,54 @@ function show(el: HTMLElement): void {
  * to paint the hidden state at least once or there is no start value to
  * transition from and the elements simply pop in.
  */
+/**
+ * True while the client router is swapping documents.
+ *
+ * A card's cover and the case study's cover share a view-transition-name, so
+ * the browser morphs one into the other across a navigation. That element must
+ * stay visible for the morph to land on: hiding it means the snapshot flies to
+ * its destination and then vanishes, because the real element underneath was
+ * primed for a reveal it will not get until the visitor scrolls.
+ *
+ * On a first load there is no morph, so the entrance stagger runs as normal.
+ */
+let swapping = false;
+
+function isMorphTarget(el: HTMLElement): boolean {
+  return el.matches('[data-morph]') || el.querySelector('[data-morph]') !== null;
+}
+
+/**
+ * Whether this page has already played its entrance in this session.
+ *
+ * The flag is written by the inline priming script, which always runs first.
+ */
+function alreadyRevealed(): boolean {
+  try {
+    return sessionStorage.getItem(`mh-seen:${window.location.pathname}`) === '1';
+  } catch {
+    return false;
+  }
+}
+
 function primePage(): void {
+  // Coming back to a page should not replay its entrance. Returning from a
+  // case study, the listing re-ran every row's fade underneath the cover
+  // morphing back into its card — two animations of the same content at once,
+  // which is what made the return feel unsettled rather than smooth.
+  if (alreadyRevealed()) return;
+
   const viewportHeight = window.innerHeight || 800;
   const above: HTMLElement[] = [];
 
   document.querySelectorAll<HTMLElement>(REVEAL_SELECTOR).forEach((el) => {
     if (el.dataset.shown || el.hasAttribute('data-hidden')) return;
+
+    // Claim it so the later astro:page-load pass does not hide it either.
+    if (swapping && isMorphTarget(el)) {
+      el.dataset.shown = '1';
+      return;
+    }
 
     const onScreen = triggerFor(el).getBoundingClientRect().top < viewportHeight * 0.94;
 
@@ -141,7 +183,19 @@ function primePage(): void {
     return;
   }
 
-  requestAnimationFrame(() => requestAnimationFrame(() => above.forEach(reveal)));
+  let done = false;
+  const run = () => {
+    if (done) return;
+    done = true;
+    above.forEach(reveal);
+  };
+
+  requestAnimationFrame(() => requestAnimationFrame(run));
+
+  // requestAnimationFrame stops dead in a backgrounded tab rather than just
+  // slowing, which would leave the heading painted hidden and never revealed.
+  // Timers are throttled there but do still fire.
+  window.setTimeout(run, 500);
 }
 
 function showAll(): void {
@@ -313,6 +367,10 @@ function init(): void {
   observer?.disconnect();
   observer = null;
 
+  // Before priming: after-swap runs inside the transition, so this is the last
+  // chance to name the element the incoming snapshot will be taken from.
+  applyMorphName(readMorphSlug());
+
   primePage();
   setUpReveals();
   remeasure();
@@ -321,6 +379,12 @@ function init(): void {
   // page visit would add another copy.
   if (!listenersBound) {
     listenersBound = true;
+    document.addEventListener('pointerdown', armMorph, true);
+    // Keyboard activation never fires pointerdown.
+    document.addEventListener('keydown', (event) => {
+      if ((event as KeyboardEvent).key === 'Enter') armMorph(event);
+    }, true);
+
     window.addEventListener('scroll', scheduleChrome, { passive: true });
     window.addEventListener('resize', remeasure, { passive: true });
 
@@ -342,7 +406,154 @@ function init(): void {
 // paints it, so revealing above-the-fold content there means it is already
 // visible on the first frame. Doing this on `astro:page-load` instead — which
 // runs after paint — showed up as a flash of empty page on every navigation.
-document.addEventListener('astro:after-swap', init);
+document.addEventListener('astro:before-swap', () => {
+  swapping = true;
+
+  /*
+   * `html { scroll-behavior: smooth }` is there for in-page anchors, but the
+   * router restores scroll position with scrollTo() — which that rule turns
+   * into an animation. Going back then slides the page down from the top over
+   * a second or so instead of simply being where it was, and any interruption
+   * leaves it stranded part way.
+   *
+   * Restoring position is not a scroll the visitor should see happen.
+   */
+  root.style.scrollBehavior = 'auto';
+});
+
+document.addEventListener('astro:after-swap', () => {
+  init();
+  restoreScroll();
+  swapping = false;
+});
+
+/* ---------------------------------------------------------------------- */
+/* Scroll restoration                                                       */
+/* ---------------------------------------------------------------------- */
+
+/*
+ * Re-applies the saved scroll position until it actually takes.
+ *
+ * The router does save it — history.state carries the offset, and hands it back
+ * on popstate — but it restores immediately after the swap, while the incoming
+ * page is often still shorter than the offset being restored to. The browser
+ * clamps the scroll to whatever the document height allows at that instant,
+ * which on a page whose images have not laid out yet is frequently zero, and
+ * nothing scrolls it back down once the real height arrives.
+ *
+ * So: ask again over the next few hundred milliseconds, and stop the moment
+ * the visitor takes over. Being dragged to a position you did not ask for is
+ * worse than losing it.
+ */
+function restoreScroll(): void {
+  const state = history.state as { scrollX?: number; scrollY?: number } | null;
+  const targetY = state?.scrollY ?? 0;
+  const targetX = state?.scrollX ?? 0;
+  if (!targetY && !targetX) return;
+
+  let cancelled = false;
+  const surrender = () => {
+    cancelled = true;
+  };
+
+  window.addEventListener('wheel', surrender, { once: true, passive: true });
+  window.addEventListener('touchstart', surrender, { once: true, passive: true });
+  window.addEventListener('keydown', surrender, { once: true });
+
+  const settled = () => Math.abs(window.scrollY - targetY) <= 2;
+
+  const apply = (attempt: number): void => {
+    if (cancelled || settled()) return;
+
+    // Explicitly instant. `html { scroll-behavior: smooth }` is back in force
+    // by the time the later attempts run, and an animated restore never lands:
+    // each attempt restarts the animation the previous one began.
+    window.scrollTo({ left: targetX, top: targetY, behavior: 'instant' });
+
+    // ~400ms of attempts: long enough for a page of images to lay out, short
+    // enough that it cannot fight the visitor for meaningfully long.
+    if (attempt < 8 && !settled()) window.setTimeout(() => apply(attempt + 1), 50);
+  };
+
+  apply(0);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Shared-element morph                                                     */
+/* ---------------------------------------------------------------------- */
+
+/*
+ * Exactly one cover carries a view-transition-name at any moment.
+ *
+ * Naming every cover on a listing looks correct but is not: only the cover
+ * being opened has a counterpart on the case study. Every other name exists on
+ * one side of the transition only, and the browser gives each of those its own
+ * independent entry animation instead of folding it into the page fade — so
+ * covers flash in one by one, the big featured one most visibly of all.
+ *
+ * The name is therefore applied to a single element, at navigation time, and
+ * the slug is remembered so the return trip can name the same card again.
+ */
+const MORPH_KEY = 'mh-morph';
+
+function readMorphSlug(): string | null {
+  try {
+    return sessionStorage.getItem(MORPH_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function applyMorphName(slug: string | null): void {
+  document.querySelectorAll<HTMLElement>('[data-morph]').forEach((el) => {
+    el.style.viewTransitionName = el.dataset.slug && el.dataset.slug === slug ? `cover-${slug}` : '';
+  });
+}
+
+function rememberMorph(slug: string): void {
+  try {
+    sessionStorage.setItem(MORPH_KEY, slug);
+  } catch {
+    /* private mode — the morph is simply skipped */
+  }
+}
+
+/*
+ * pointerdown rather than click: the router starts the transition on click, and
+ * the outgoing snapshot has to already carry the name by then.
+ */
+function armMorph(event: Event): void {
+  const link = (event.target as Element | null)?.closest?.('a[href^="/work/"]');
+  const tile = link?.querySelector<HTMLElement>('[data-morph][data-slug]');
+  if (!tile?.dataset.slug) return;
+
+  rememberMorph(tile.dataset.slug);
+  applyMorphName(tile.dataset.slug);
+}
+
+/*
+ * The path the visitor was on before this one.
+ *
+ * A case study's "All work" link is a forward navigation, so it lands at the
+ * top of the listing. If the listing is where they actually came from, going
+ * back instead restores their scroll position — and lets them watch the cover
+ * morph back into the card they opened.
+ */
+let lastPath: string | null = null;
+
+document.addEventListener('astro:page-load', () => {
+  if (lastPath !== null && lastPath !== window.location.pathname) {
+    (window as unknown as { __mhFrom?: string }).__mhFrom = lastPath;
+  }
+  lastPath = window.location.pathname;
+});
+
+document.addEventListener('astro:page-load', () => {
+  // After the restore has been applied, hand anchors their smooth scroll back.
+  window.setTimeout(() => {
+    root.style.scrollBehavior = '';
+  }, 0);
+});
 
 // Covers the very first load, where after-swap never fires.
 document.addEventListener('astro:page-load', init);

@@ -1,0 +1,133 @@
+---
+/**
+ * The logo mark, drawn rather than dropped in.
+ *
+ * The SVG is inlined at build time instead of being referenced as an <img>,
+ * because an <img> is opaque to CSS — there is no way to reach the path inside
+ * one and animate it. The file still comes from the CMS; only the delivery
+ * changes.
+ *
+ * The mark is a filled monogram, so "drawing" it means stroking its contour and
+ * revealing that stroke, then fading the fill in underneath and letting the
+ * stroke go. The line writes the shape, the shape fills in behind it.
+ *
+ * The reveal is `pathLength="1"`, which renormalises the path to one unit long
+ * whatever its real geometry. That makes `stroke-dasharray: 1` exact without
+ * measuring anything at runtime, so the whole animation is CSS and starts on
+ * the first frame rather than waiting for a script.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+
+interface Props {
+  src: string;
+  alt: string;
+}
+
+const { src, alt } = Astro.props;
+
+let viewBox = '';
+let paths: string[] = [];
+
+try {
+  // Static build, so the file is on disk next to the output.
+  const file = path.join(process.cwd(), 'public', src.replace(/^\//, ''));
+  const raw = fs
+    .readFileSync(file, 'utf8')
+    // Design tools embed a provenance manifest that is larger than the artwork.
+    .replace(/<metadata>[\s\S]*?<\/metadata>/g, '');
+
+  viewBox = raw.match(/viewBox="([^"]+)"/)?.[1] ?? '';
+  paths = [...raw.matchAll(/<path[^>]*\sd="([^"]+)"/g)].map((m) => m[1]);
+} catch {
+  // Unreadable or not an SVG — the <img> fallback below still renders.
+}
+
+const canDraw = Boolean(viewBox) && paths.length > 0;
+---
+
+{
+  canDraw ? (
+    <svg
+      class="logo-mark"
+      viewBox={viewBox}
+      role="img"
+      aria-label={alt}
+      data-logo-mark
+    >
+      {paths.map((d) => (
+        <path class="logo-mark__fill" d={d} fill="currentColor" />
+      ))}
+      {paths.map((d) => (
+        <path
+          class="logo-mark__stroke"
+          d={d}
+          pathLength="1"
+          fill="none"
+          stroke="currentColor"
+        />
+      ))}
+    </svg>
+  ) : (
+    <img src={src} alt={alt} width="34" height="34" />
+  )
+}
+
+<style>
+  .logo-mark {
+    height: 34px;
+    width: auto;
+    display: block;
+    /* Inherits --nav-ink through .site-logo, so the mark inverts over dark
+       sections and in dark mode without a filter hack. */
+    color: inherit;
+    overflow: visible;
+  }
+
+  .logo-mark__stroke {
+    stroke-width: 20;
+    stroke-linejoin: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation:
+      mh-logo-draw 1000ms var(--ease-glide) 120ms forwards,
+      mh-logo-lift 360ms var(--ease-out) 980ms forwards;
+  }
+
+  .logo-mark__fill {
+    opacity: 0;
+    animation: mh-logo-ink 420ms var(--ease-out) 820ms forwards;
+  }
+
+  @keyframes mh-logo-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* The contour hands off to the solid mark rather than sitting on top of it,
+     which would leave the glyph a touch heavier than it is drawn. */
+  @keyframes mh-logo-lift {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes mh-logo-ink {
+    to {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .logo-mark__stroke {
+      animation: none;
+      opacity: 0;
+    }
+
+    .logo-mark__fill {
+      animation: none;
+      opacity: 1;
+    }
+  }
+</style>

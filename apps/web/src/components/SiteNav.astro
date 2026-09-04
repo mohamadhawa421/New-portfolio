@@ -417,7 +417,7 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
   }
 
   .panel {
-    --panel-inset: 14px;
+    --panel-inset: 20px;
     position: fixed;
     top: 0;
     right: 0;
@@ -474,14 +474,16 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     align-items: center;
     /* Real vertical padding rather than a bare min-height, so the tap target
        and the hover fill are the same shape as the text block inside them. */
-    padding: 15px var(--panel-inset);
-    min-height: 56px;
+    padding: 18px var(--panel-inset);
+    min-height: 62px;
     font-size: clamp(23px, 6.6vw, 29px);
     line-height: 1.15;
     letter-spacing: -0.018em;
     font-weight: 600;
     color: var(--ink);
-    border-radius: var(--r-sm);
+    /* A larger radius on a block this wide: --r-sm reads as a tight corner on
+       a fill nearly the width of the panel. */
+    border-radius: var(--r-md);
     transition:
       color 0.25s ease,
       background 240ms var(--ease-glide);
@@ -502,7 +504,7 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
 
   .panel__link:hover {
     color: var(--blue);
-    background: color-mix(in srgb, currentColor 8%, transparent);
+    background: color-mix(in srgb, currentColor 10%, transparent);
   }
 
   .panel__link--active,

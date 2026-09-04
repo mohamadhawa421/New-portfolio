@@ -19,6 +19,9 @@
 </div>
 
 <script>
+  /** Set once the cursor is running, so navigations can trigger a re-measure. */
+  let measure: () => void = () => {};
+
   function setupCursor() {
     const rootEl = document.querySelector<HTMLElement>('[data-cursor]');
     const ringEl = document.querySelector<HTMLElement>('[data-cursor-ring]');
@@ -45,11 +48,152 @@
 
     const INTERACTIVE = 'a, button, [role="button"], input, select, textarea, label, summary';
 
+    /*
+     * Magnetism.
+     *
+     * Buttons and the other small controls, not links or cards: on something
+     * the size of a project row the pull reads as the layout drifting.
+     */
+    const MAGNETIC = '.btn, .enquiry__send, .chip, .theme-toggle, .text-link';
+
+    /** Fraction of the pointer's offset from centre that the control leans. */
+    const LEAN = 0.22;
+    /** Hard ceiling on that lean. Past about this the control stops looking
+     *  attached to the layout it sits in. */
+    const LEAN_MAX = 10;
+    /** How far the ring drifts off the true pointer toward the control. */
+    const RING_PULL = 0.32;
+    /** How far outside a control the field reaches. The pull has to start
+     *  before the pointer arrives or it is not magnetism, just a hover state. */
+    const FIELD = 26;
+
+    /*
+     * Positions are stored in document space and measured once per page rather
+     * than read per pointermove. Calling getBoundingClientRect() on every move
+     * would force a layout flush on the one interaction that has to stay
+     * perfectly smooth.
+     */
+    interface Magnet {
+      el: HTMLElement;
+      top: number;
+      left: number;
+      w: number;
+      h: number;
+    }
+
+    let magnets: Magnet[] = [];
+    let magnet: Magnet | null = null;
+    let releasing: HTMLElement | null = null;
+    let leanX = 0;
+    let leanY = 0;
+
+    const clamp = (v: number, max: number) => (v > max ? max : v < -max ? -max : v);
+
+    // Exposed so a navigation can re-measure without re-running setup.
+    measure = measureMagnets;
+
+    function measureMagnets(): void {
+      const sx = window.scrollX;
+      const sy = window.scrollY;
+      magnets = Array.from(document.querySelectorAll<HTMLElement>(MAGNETIC)).map((el) => {
+        const r = el.getBoundingClientRect();
+        return { el, top: r.top + sy, left: r.left + sx, w: r.width, h: r.height };
+      });
+      magnet = null;
+    }
+
+    /**
+     * The control the pointer belongs to: the one under it, or failing that the
+     * nearest one within the field.
+     *
+     * Nearest matters. Two controls sitting side by side have overlapping
+     * fields, and simply taking the first match in document order meant
+     * hovering one button could pull its neighbour instead — which reads as a
+     * second button lurching about underneath the one you are pointing at.
+     */
+    function fieldAt(px: number, py: number): Magnet | null {
+      let best: Magnet | null = null;
+      let bestDistance = Infinity;
+
+      for (const m of magnets) {
+        // Distance from the point to the rectangle, zero when inside it.
+        const dx = px < m.left ? m.left - px : px > m.left + m.w ? px - (m.left + m.w) : 0;
+        const dy = py < m.top ? m.top - py : py > m.top + m.h ? py - (m.top + m.h) : 0;
+
+        // Directly over a control always wins outright.
+        if (dx === 0 && dy === 0) return m;
+
+        const distance = Math.hypot(dx, dy);
+        if (distance <= FIELD && distance < bestDistance) {
+          bestDistance = distance;
+          best = m;
+        }
+      }
+
+      return best;
+    }
+
+    function engage(next: Magnet | null): void {
+      if (magnet === next) return;
+
+      // Whatever was easing back has had its turn; a stray offset left on an
+      // element is worse than one snapped frame.
+      if (releasing && releasing !== next?.el) releasing.style.translate = '';
+      releasing = null;
+
+      if (magnet) {
+        if (next) magnet.el.style.translate = '';
+        else releasing = magnet.el;
+        magnet.el.style.willChange = '';
+      }
+
+      magnet = next;
+
+      if (next) {
+        leanX = 0;
+        leanY = 0;
+        next.el.style.willChange = 'translate';
+      }
+    }
+
     function frame() {
+      let wantX = 0;
+      let wantY = 0;
+      let ringToX = targetX;
+      let ringToY = targetY;
+
+      if (magnet) {
+        // Document space back to viewport space.
+        const cx = magnet.left + magnet.w / 2 - window.scrollX;
+        const cy = magnet.top + magnet.h / 2 - window.scrollY;
+
+        wantX = clamp((targetX - cx) * LEAN, LEAN_MAX);
+        wantY = clamp((targetY - cy) * LEAN, LEAN_MAX);
+
+        // The ring drifts toward the control's centre; the dot never does.
+        // Keeping the dot honest is what stops this feeling like input lag —
+        // the thing you aim with is always exactly where you put it.
+        ringToX = targetX + (cx - targetX) * RING_PULL;
+        ringToY = targetY + (cy - targetY) * RING_PULL;
+      }
+
+      leanX += (wantX - leanX) * 0.2;
+      leanY += (wantY - leanY) * 0.2;
+
+      const held = magnet?.el ?? releasing;
+      if (held) {
+        if (!magnet && Math.abs(leanX) < 0.06 && Math.abs(leanY) < 0.06) {
+          held.style.translate = '';
+          releasing = null;
+        } else {
+          held.style.translate = `${leanX.toFixed(2)}px ${leanY.toFixed(2)}px`;
+        }
+      }
+
       // Exponential ease toward the pointer. 0.18 keeps roughly a frame and a
       // half of lag: enough to feel like weight, not enough to feel broken.
-      ringX += (targetX - ringX) * 0.18;
-      ringY += (targetY - ringY) * 0.18;
+      ringX += (ringToX - ringX) * 0.18;
+      ringY += (ringToY - ringY) * 0.18;
 
       ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`;
       dot.style.transform = `translate3d(${targetX}px, ${targetY}px, 0) translate(-50%, -50%)`;
@@ -70,11 +214,26 @@
         root.classList.add('cursor--on');
       }
 
-      const overInteractive = (event.target as Element | null)?.closest?.(INTERACTIVE);
+      const el = event.target as Element | null;
+      const overInteractive = el?.closest?.(INTERACTIVE);
       root.classList.toggle('cursor--active', Boolean(overInteractive));
+
+      engage(fieldAt(targetX + window.scrollX, targetY + window.scrollY));
     }
 
     window.addEventListener('pointermove', onMove, { passive: true });
+    /*
+     * Document-space positions do not change when the page scrolls, only when
+     * it reflows — so scrolling costs nothing here and only a resize, a late
+     * image, or a new page needs a re-measure.
+     */
+    window.addEventListener('resize', measureMagnets, { passive: true });
+    window.addEventListener('load', measureMagnets);
+    measureMagnets();
+
+    // Entrance animations translate elements into place, so anything measured
+    // during one sits a few pixels off. Re-measure once they have settled.
+    window.setTimeout(measureMagnets, 1400);
     window.addEventListener('pointerdown', () => root.classList.add('cursor--down'));
     window.addEventListener('pointerup', () => root.classList.remove('cursor--down'));
     document.addEventListener('mouseleave', () => root.classList.remove('cursor--on'));
@@ -82,15 +241,30 @@
 
     raf = requestAnimationFrame(frame);
 
-    // The client router keeps this element, so the loop must not be started twice.
-    document.addEventListener('astro:before-swap', () => cancelAnimationFrame(raf), { once: true });
+    /*
+     * The pointer is leaving with the old page: drop the magnet so the control
+     * being removed does not take a stray offset to the grave, and re-measure
+     * once the new page is up. The loop itself keeps running — the cursor
+     * element is persisted, so there is nothing to restart.
+     */
+    document.addEventListener('astro:before-swap', () => engage(null));
+    document.addEventListener('astro:after-swap', measureMagnets);
   }
 
+  /*
+   * Runs exactly once per tab. The flag deliberately lives on window rather
+   * than on <html>, whose attributes the client router replaces on every
+   * navigation — keeping it there re-ran this on each page and stacked up
+   * another copy of every window listener.
+   */
   document.addEventListener('astro:page-load', () => {
-    if (!document.documentElement.dataset.cursorReady) {
-      document.documentElement.dataset.cursorReady = '1';
-      setupCursor();
+    const w = window as unknown as { __mhCursor?: boolean };
+    if (w.__mhCursor) {
+      measure();
+      return;
     }
+    w.__mhCursor = true;
+    setupCursor();
   });
 </script>
 

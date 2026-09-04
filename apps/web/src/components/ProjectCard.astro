@@ -14,7 +14,16 @@ const { project } = Astro.props;
   data-reveal="0"
   data-category={project.category}
 >
-  <div class="card__tile" style={`background:${project.chipBg};color:${project.chipInk}`}>
+  <!-- Pairs with the cover on the case study. The browser lifts this element
+       out of the page transition and morphs it into its counterpart, so the
+       project reads as expanding out of its own card rather than the card
+       being replaced by a new page. -->
+  <div
+    class="card__tile"
+    data-morph
+    data-slug={project.slug}
+    style={`background:${project.chipBg};color:${project.chipInk}`}
+  >
     {
       project.cover ? (
         <img src={project.cover.url} alt={project.cover.alt} loading="lazy" decoding="async" />

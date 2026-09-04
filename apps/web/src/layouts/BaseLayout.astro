@@ -5,6 +5,8 @@ import '../styles/global.css';
 import SiteNav from '../components/SiteNav.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import IntroCurtain from '../components/IntroCurtain.astro';
+import SiteLogo from '../components/SiteLogo.astro';
+import GridOverlay from '../components/GridOverlay.astro';
 import Cursor from '../components/Cursor.astro';
 import { ClientRouter } from 'astro:transitions';
 import { getSiteSettings } from '../lib/content';
@@ -108,11 +110,7 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
       href="/"
       aria-label={`${settings.siteName} — home`}
     >
-      {
-        settings.logoMark && (
-          <img src={settings.logoMark.url} alt={settings.siteName} width="34" height="34" />
-        )
-      }
+      {settings.logoMark && <SiteLogo src={settings.logoMark.url} alt={settings.siteName} />}
     </a>
 
     <SiteNav pathname={Astro.url.pathname} settings={settings} />
@@ -122,6 +120,7 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
     <SiteFooter settings={settings} />
 
     <Cursor transition:persist="site-cursor" />
+    <GridOverlay transition:persist="grid-egg" />
 
     {/* Runs while the parser is still in <body>, so it executes before the
         first paint but after the layout above it exists. It marks only the
@@ -147,8 +146,49 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         var nodes = document.querySelectorAll('[data-reveal],[data-rise],[data-num]');
         var above = [];
 
+        /*
+         * The client router re-runs this script on every navigation, so this is
+         * the first thing that touches the incoming page — before chrome.ts
+         * gets a look at it. The flag lives on window because the router
+         * replaces the <html> element's attributes during a swap.
+         */
+        var isSwap = !!window.__mhPrimed;
+        window.__mhPrimed = 1;
+
+        /*
+         * A page plays its entrance once per session, not once per visit.
+         * Coming back from a case study used to replay every row's fade while
+         * the cover was still morphing back into its card — two animations of
+         * the same content at the same time. Leaving the page as it was found
+         * is both calmer and closer to what actually happened: the visitor
+         * never left it.
+         */
+        var seenKey = 'mh-seen:' + location.pathname;
+        var seenBefore = false;
+        try {
+          seenBefore = sessionStorage.getItem(seenKey) === '1';
+          sessionStorage.setItem(seenKey, '1');
+        } catch (e) {
+          /* private mode — every visit animates, which is the old behaviour */
+        }
+        if (seenBefore) return;
+
         for (var i = 0; i < nodes.length; i++) {
           var el = nodes[i];
+
+          /*
+           * A project cover and the case study's cover share a
+           * view-transition-name, so the browser morphs one into the other
+           * across a navigation. Hiding the destination means the snapshot
+           * flies to it and then disappears, leaving a gap until the visitor
+           * scrolls far enough to trigger the reveal. Claim it instead, so
+           * nothing hides it later either.
+           */
+          if (isSwap && (el.matches('[data-morph]') || el.querySelector('[data-morph]'))) {
+            el.dataset.shown = '1';
+            continue;
+          }
+
           var trigger = el.hasAttribute('data-rise') && el.parentElement ? el.parentElement : el;
           var onScreen = trigger.getBoundingClientRect().top < vh * 0.94;
 
@@ -186,13 +226,27 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
           return;
         }
 
+        var done = false;
+        function run() {
+          if (done) return;
+          done = true;
+          above.forEach(reveal);
+        }
+
         // Two frames: the hidden state has to be painted once or there is no
         // value to transition from and everything just pops in.
         requestAnimationFrame(function () {
-          requestAnimationFrame(function () {
-            above.forEach(reveal);
-          });
+          requestAnimationFrame(run);
         });
+
+        /*
+         * Safety net. requestAnimationFrame does not merely slow down in a
+         * backgrounded tab, it stops entirely — so a page opened in a tab the
+         * visitor has not switched to yet would paint its heading hidden and
+         * leave it that way. Timers are throttled there but still fire, so this
+         * guarantees the content appears whether or not the entrance ever runs.
+         */
+        setTimeout(run, 500);
       })();
     </script>
 
@@ -235,6 +289,14 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         transition:
           opacity 480ms var(--ease-out),
           transform 520ms var(--ease-out);
+      }
+
+      .site-logo {
+        color: var(--nav-ink, #1d1d1f);
+        transition:
+          opacity 480ms var(--ease-out),
+          transform 520ms var(--ease-out),
+          color 300ms var(--ease-out);
       }
 
       .site-logo img {

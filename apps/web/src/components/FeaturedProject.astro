@@ -9,7 +9,12 @@ const { project } = Astro.props;
 ---
 
 <a class="featured" href={`/work/${project.slug}`} data-reveal="0">
-  <div class="featured__tile" style={`background:${project.chipBg}`}>
+  <div
+    class="featured__tile"
+    data-morph
+    data-slug={project.slug}
+    style={`background:${project.chipBg}`}
+  >
     {
       project.cover ? (
         <img src={project.cover.url} alt={project.cover.alt} loading="lazy" decoding="async" />

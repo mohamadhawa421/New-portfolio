@@ -330,6 +330,45 @@ figure {
   }
 }
 
+/*
+ * Shared-element morph: the project cover.
+ *
+ * The old and new covers are captured as images and then stretched between two
+ * different rectangles. The rounded corner is baked into those images, so
+ * stretching distorts it — the corner reads as square for most of the move and
+ * only snaps back to round at the end.
+ *
+ * Clipping the group fixes it: the corner is then drawn live by the group at a
+ * constant radius for the whole move rather than being a stretched picture of
+ * one. Both covers already use --r-xl, so nothing has to interpolate.
+ *
+ * `root` has to opt back out — the universal selector matches it too, and a
+ * clipped, rounded root would round off the whole page during a transition.
+ */
+::view-transition-group(*) {
+  border-radius: var(--r-xl);
+  overflow: clip;
+}
+
+@supports (corner-shape: squircle) {
+  ::view-transition-group(*) {
+    corner-shape: squircle;
+  }
+}
+
+/* The two snapshots live in the image-pair, so it has to clip as well or the
+   corner is only enforced on the outer box. */
+::view-transition-image-pair(*) {
+  border-radius: inherit;
+  overflow: clip;
+}
+
+::view-transition-group(root),
+::view-transition-image-pair(root) {
+  border-radius: 0;
+  overflow: visible;
+}
+
 ::view-transition-old(root) {
   animation: mh-page-out 170ms var(--ease-in) both;
 }
