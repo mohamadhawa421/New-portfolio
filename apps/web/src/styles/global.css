@@ -41,7 +41,7 @@ a:hover {
 }
 
 ::selection {
-  background: var(--blue);
+  background: var(--blue-fill);
   color: #fff;
 }
 
@@ -199,7 +199,7 @@ figure {
 }
 
 .btn--primary {
-  background: var(--blue);
+  background: var(--blue-fill);
   color: #fff;
 }
 
@@ -598,6 +598,18 @@ figure {
   initial-value: #2997ff;
 }
 
+@property --blue-fill {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0066cc;
+}
+
+@property --blue-fill-hover {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0a72d8;
+}
+
 :root {
   /*
    * The energy palette, and the balance between its parts.
@@ -619,7 +631,9 @@ figure {
   transition:
     --blue 1700ms var(--ease-glide),
     --blue-hover 1700ms var(--ease-glide),
-    --blue-on-dark 1700ms var(--ease-glide);
+    --blue-on-dark 1700ms var(--ease-glide),
+    --blue-fill 1700ms var(--ease-glide),
+    --blue-fill-hover 1700ms var(--ease-glide);
 }
 
 /*
@@ -631,6 +645,10 @@ figure {
   --blue: #7c3aed;
   --blue-hover: #8b5cf6;
   --blue-on-dark: #a855f7;
+  /* A shade under the ink for the same reason the blue is: white has to sit on
+     this one. #6d28d9 carries it at 7:1, #7c3aed at 5.7. */
+  --blue-fill: #6d28d9;
+  --blue-fill-hover: #7c3aed;
 }
 
 /* Lifted on a dark ground for the same reason the blue is. */

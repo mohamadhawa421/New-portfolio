@@ -16,7 +16,8 @@ const { settings } = Astro.props;
           <img
             src={settings.logoFull.url}
             alt={`${settings.siteName} — ${settings.roleTitle}`}
-            height="26"
+            width={settings.logoFull.width}
+            height={settings.logoFull.height}
           />
         ) : (
           <span>{settings.siteName}</span>

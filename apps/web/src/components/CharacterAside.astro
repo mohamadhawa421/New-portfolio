@@ -15,6 +15,14 @@
 interface Props {
   /** Character artwork. Transparent background, no frame. */
   src: string;
+  /**
+   * The artwork's own pixel size. Declared so the browser can reserve the right
+   * shape before the file arrives: the art is lazy and sits at the end of a
+   * page, which is exactly where an unsized image shifts the layout under
+   * someone who has just scrolled to it.
+   */
+  width: number;
+  height: number;
   /** What he is doing, not what he looks like — he is the aside, not content. */
   alt: string;
   /** Exactly what he says. */
@@ -27,7 +35,7 @@ interface Props {
   tone?: 'page' | 'dark';
 }
 
-const { src, alt, message, tone = 'page' } = Astro.props;
+const { src, alt, message, width, height, tone = 'page' } = Astro.props;
 ---
 
 <aside class="aside" class:list={[`aside--${tone}`]} data-character>
@@ -37,7 +45,15 @@ const { src, alt, message, tone = 'page' } = Astro.props;
     <div class="aside__figure">
       {/* The flicker. One element, behind him, that blooms and goes out. */}
       <span class="aside__spark" aria-hidden="true"></span>
-      <img class="aside__art" src={src} alt={alt} loading="lazy" decoding="async" />
+      <img
+        class="aside__art"
+        src={src}
+        alt={alt}
+        width={width}
+        height={height}
+        loading="lazy"
+        decoding="async"
+      />
     </div>
   </div>
 </aside>

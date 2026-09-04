@@ -26,7 +26,14 @@
   --ink-muted: #6e6e73;
   --ink-soft: #86868b;
   --ink-softer: #8e8e93;
-  --ink-faint: #a1a1a6;
+  /*
+   * The quietest grey that is still text. It was #a1a1a6, which is 2.6:1 on
+   * white — the numbered labels over every card and case study were decorative
+   * rather than readable. Nothing carrying it is large enough for the relaxed
+   * threshold, so it takes the full 4.5:1 on the lightest ground it meets,
+   * which is the parchment.
+   */
+  --ink-faint: #6e6e73;
   --ink-on-dark: #ffffff;
   --ink-on-dark-muted: #c7c7cc;
 
@@ -34,6 +41,23 @@
   --blue: #0066cc;
   --blue-hover: #0a72d8;
   --blue-on-dark: #2997ff;
+
+  /*
+   * The accent as a fill, which is not the same colour as the accent as ink.
+   *
+   * On a dark page the link blue has to be light to be read against it —
+   * #2997ff sits at 7:1 on the near-black, which is right. Fill a button with
+   * that same blue, put white on top, and it is 3:1, which is not: the primary
+   * button, the WhatsApp button, the skip link and the selection highlight
+   * were all failing on contrast in dark mode for exactly that reason. One
+   * token cannot be both, so there are two.
+   *
+   * Light needs no separate value — a fill dark enough for white text is the
+   * same blue the light theme already uses for ink — but it is written out
+   * anyway so the two are visibly a pair.
+   */
+  --blue-fill: #0066cc;
+  --blue-fill-hover: #0a72d8;
 
   /* ---- Surfaces ------------------------------------------------------ */
   --surface: #ffffff;
@@ -160,7 +184,9 @@
   --ink-muted: #a1a1a6;
   --ink-soft: #8e8e93;
   --ink-softer: #86868b;
-  --ink-faint: #6e6e73;
+  /* 3.9:1 on the near-black before; 5.4 now, and still passing on the cards
+     and the raised dark surface, the other two grounds it meets. */
+  --ink-faint: #86868b;
   --ink-on-dark: #f5f5f7;
   --ink-on-dark-muted: #a1a1a6;
 
@@ -169,6 +195,10 @@
   --blue: #2997ff;
   --blue-hover: #47a6ff;
   --blue-on-dark: #2997ff;
+
+  /* Deep enough to carry white text: 5.3:1, against 3:1 for the link blue. */
+  --blue-fill: #0f6ad0;
+  --blue-fill-hover: #1573d8;
 
   --surface: #0b0b0d;
   --surface-parchment: #131316;
@@ -207,13 +237,19 @@
     --ink-muted: #a1a1a6;
     --ink-soft: #8e8e93;
     --ink-softer: #86868b;
-    --ink-faint: #6e6e73;
+    /* 3.9:1 on the near-black before; 5.4 now, and still passing on the cards
+       and the raised dark surface, the other two grounds it meets. */
+    --ink-faint: #86868b;
     --ink-on-dark: #f5f5f7;
     --ink-on-dark-muted: #a1a1a6;
 
     --blue: #2997ff;
     --blue-hover: #47a6ff;
     --blue-on-dark: #2997ff;
+
+    /* Deep enough to carry white text: 5.3:1, against 3:1 for the link blue. */
+    --blue-fill: #0f6ad0;
+    --blue-fill-hover: #1573d8;
 
     --surface: #0b0b0d;
     --surface-parchment: #131316;
