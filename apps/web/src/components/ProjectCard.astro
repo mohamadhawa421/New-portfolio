@@ -97,6 +97,14 @@ const { project } = Astro.props;
     align-items: flex-end;
     padding: clamp(18px, 2vw, 26px);
     overflow: hidden;
+    /*
+     * The tile states its own corner rather than borrowing the card's clip.
+     * Visually identical — the card already clips it to exactly this shape —
+     * but the morph into a case study reads the radius off this element, and
+     * an inherited clip reads as zero. The cover then started square and
+     * snapped round at the end of the move.
+     */
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
     /* Its own layer, so the 1.03 scale on hover composites the already-decoded
        image instead of asking the browser to re-rasterise it every frame. */
     transform: translateZ(0);
