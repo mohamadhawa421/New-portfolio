@@ -3,6 +3,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import FeaturedProject from '../components/FeaturedProject.astro';
 import ProjectRow from '../components/ProjectRow.astro';
 import ContactBlock from '../components/ContactBlock.astro';
+import AvatarEyes from '../components/AvatarEyes.astro';
+import DesignerEgg from '../components/DesignerEgg.astro';
 import {
   getContactPage,
   getHomePage,
@@ -46,7 +48,9 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
         </div>
 
         <div class="hero__portrait" data-reveal="1">
-          <div class="hero__portrait-frame">
+          {/* No label, no hover state, no cursor change. The portrait is a
+              picture; that it also does something is the whole point. */}
+          <div class="hero__portrait-frame" data-egg-trigger>
             {
               settings.portrait && (
                 <img
@@ -61,7 +65,9 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
                 />
               )
             }
+            <AvatarEyes />
           </div>
+          <DesignerEgg />
         </div>
       </div>
     </section>
@@ -290,6 +296,8 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   }
 
   .hero__portrait {
+    /* The egg's card hangs off this on a wide screen. */
+    position: relative;
     flex: 1 1 300px;
     min-width: 230px;
     max-width: 420px;

@@ -599,13 +599,15 @@
      */
     --cursor-ink: #1d1d1f;
     --cursor-veil: rgba(255, 255, 255, 0.7);
-    --cursor-accent: #0066cc;
+    /* The accent, not a copy of it — so the pointer turns purple with
+       everything else when designer mode is running. */
+    --cursor-accent: var(--blue);
   }
 
   .cursor--light {
     --cursor-ink: #f5f5f7;
     --cursor-veil: rgba(0, 0, 0, 0.45);
-    --cursor-accent: #2997ff;
+    --cursor-accent: var(--blue-on-dark);
   }
 
   :global(html.has-custom-cursor) .cursor {

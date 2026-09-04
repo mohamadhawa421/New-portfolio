@@ -535,6 +535,75 @@ figure {
 }
 
 /* --------------------------------------------------------------------- */
+/* Designer mode                                                          */
+/*                                                                        */
+/* The easter egg behind the portrait. See DesignerEgg.astro.             */
+/* --------------------------------------------------------------------- */
+
+/*
+ * Registered so they can be interpolated.
+ *
+ * A custom property is a string as far as the engine is concerned, and a string
+ * cannot animate — so the accent would snap from blue to purple and back, which
+ * reads as a rendering fault rather than a wink. Declaring the syntax makes
+ * them real colours with a real transition. Browsers without @property still
+ * get the swap, just instantly.
+ */
+@property --blue {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0066cc;
+}
+
+@property --blue-hover {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0a72d8;
+}
+
+@property --blue-on-dark {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #2997ff;
+}
+
+:root {
+  /* The avatar's own background, sampled off the drawing. */
+  --egg-purple: #6d5ac5;
+
+  transition:
+    --blue 620ms var(--ease-glide),
+    --blue-hover 620ms var(--ease-glide),
+    --blue-on-dark 620ms var(--ease-glide);
+}
+
+/*
+ * Every accent on the site is one of these three, so this is the whole of the
+ * colour change: links, buttons, the filter chips, the cursor's ring, the
+ * selection highlight, the meters on the card itself.
+ */
+:root[data-designer] {
+  --blue: #6d5ac5;
+  --blue-hover: #7d6cd2;
+  --blue-on-dark: #a78bfa;
+}
+
+/* Lifted on a dark ground for the same reason the blue is. */
+:root[data-designer][data-theme='dark'] {
+  --egg-purple: #a78bfa;
+  --blue: #a78bfa;
+  --blue-hover: #b9a2fd;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-designer]:not([data-theme='light']) {
+    --egg-purple: #a78bfa;
+    --blue: #a78bfa;
+    --blue-hover: #b9a2fd;
+  }
+}
+
+/* --------------------------------------------------------------------- */
 /* Theme wave                                                             */
 /* --------------------------------------------------------------------- */
 

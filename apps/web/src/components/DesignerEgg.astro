@@ -1,0 +1,493 @@
+---
+/**
+ * Designer mode. An easter egg behind the portrait.
+ *
+ * Click the picture and the site borrows the avatar's purple as its accent for
+ * a few seconds, a ring of it crosses the page from wherever the click landed,
+ * a small card totals up the designer's personality, and the eyes start
+ * following the pointer. Then everything eases back to normal.
+ *
+ * Nothing announces it. There is no label, no hover state and no cursor change:
+ * the portrait is a picture, and a picture that turns out to do something is
+ * only a surprise if you were not told to expect one. It is the same bargain as
+ * the layout grid on the G key.
+ *
+ * The accent itself is four custom properties swapping value. Registering them
+ * with @property is what lets a colour interpolate at all — without it the
+ * whole site would snap from blue to purple and back, which is the difference
+ * between a wink and a glitch.
+ */
+
+/** The joke, in one place. */
+const TRAITS = [
+  { label: 'Curiosity', value: 94 },
+  { label: 'Pixel perfectionism', value: 97 },
+  { label: 'Coffee dependency', value: 89 },
+  { label: 'Deadline avoidance', value: 12 },
+];
+
+/** How long designer mode lasts before it lets go on its own. */
+const HOLD_MS = 9000;
+---
+
+<div class="pulse" data-egg-pulse aria-hidden="true"></div>
+<div class="wash" data-egg-wash aria-hidden="true"></div>
+
+<aside class="card" data-egg-card data-hold={HOLD_MS} hidden>
+  <p class="card__eyebrow">Designer personality unlocked</p>
+
+  <dl class="card__traits">
+    {
+      TRAITS.map((trait, i) => (
+        <div class="trait" style={`--i:${i}`}>
+          <dt class="trait__label">{trait.label}</dt>
+          <dd class="trait__value">
+            <span data-trait-to={String(trait.value)}>{trait.value}</span>%
+          </dd>
+          <div class="trait__track">
+            <div class="trait__fill" style={`--to:${trait.value}%`} />
+          </div>
+        </div>
+      ))
+    }
+  </dl>
+</aside>
+
+<script>
+  /**
+   * How far the iris may slide, in the portrait's own 1024px units.
+   *
+   * Past its own corner the iris is clipped by the aperture rather than
+   * stopped, so it can be given more room than the sclera strictly has and
+   * still look right — an eye looking hard left really does lose part of its
+   * iris under the lid.
+   */
+  const TRAVEL_X = 13;
+  const TRAVEL_Y = 4;
+
+  /** How far the pointer has to be from the portrait for a full look. */
+  const GAZE_RADIUS = 520;
+
+  /**
+   * Whatever will shut the egg down, or nothing if it is not on this page.
+   *
+   * The two listeners below live on `document`, which survives navigation, so
+   * they are bound once and delegate here. Binding them inside setup would add
+   * another pair every time the visitor came back to the home page, each one
+   * holding the previous page's elements.
+   */
+  let dismiss: () => void = () => {};
+  let globalsBound = false;
+
+  function setupEgg() {
+    const card = document.querySelector<HTMLElement>('[data-egg-card]');
+    const pulse = document.querySelector<HTMLElement>('[data-egg-pulse]');
+    const wash = document.querySelector<HTMLElement>('[data-egg-wash]');
+    const trigger = document.querySelector<HTMLElement>('[data-egg-trigger]');
+    const eyes = document.querySelector<SVGSVGElement>('[data-avatar-eyes]');
+    if (!card || !pulse || !wash || !trigger) {
+      dismiss = () => {};
+      return;
+    }
+
+    const root = document.documentElement;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const holdFor = Number(card.dataset.hold) || 9000;
+
+    let on = false;
+    let releaseTimer = 0;
+    let countFrame = 0;
+
+    /* ---------------------------------------------------------------- */
+    /* The eyes                                                          */
+    /* ---------------------------------------------------------------- */
+
+    /**
+     * Points the eyes at a spot on the screen.
+     *
+     * The portrait's box gives both the centre to measure from and the scale
+     * to answer in: the offset is written in the drawing's units, so it stays
+     * correct whether the portrait is 230px wide on a phone or 420 on a
+     * desktop, and nothing has to be recalculated when the window resizes.
+     */
+    function gaze(clientX: number, clientY: number): void {
+      if (!eyes) return;
+
+      const box = eyes.getBoundingClientRect();
+      if (!box.width) return;
+
+      const dx = clientX - (box.left + box.width / 2);
+      const dy = clientY - (box.top + box.height / 2);
+
+      // Normalised, then eased so the eyes reach the corner of their travel
+      // well before the pointer reaches the corner of the screen.
+      const distance = Math.hypot(dx, dy) || 1;
+      const reach = Math.min(1, distance / GAZE_RADIUS);
+      const pull = Math.sqrt(reach);
+
+      const x = (dx / distance) * pull * TRAVEL_X;
+      const y = (dy / distance) * pull * TRAVEL_Y;
+
+      eyes.style.setProperty('--eye-x', `${x.toFixed(2)}px`);
+      eyes.style.setProperty('--eye-y', `${y.toFixed(2)}px`);
+    }
+
+    function onPointerMove(event: PointerEvent) {
+      gaze(event.clientX, event.clientY);
+    }
+
+    function restEyes(): void {
+      eyes?.style.setProperty('--eye-x', '0px');
+      eyes?.style.setProperty('--eye-y', '0px');
+    }
+
+    /* ---------------------------------------------------------------- */
+    /* The card                                                          */
+    /* ---------------------------------------------------------------- */
+
+    /**
+     * Runs each figure up from zero.
+     *
+     * One loop for all four rather than a timer each: they start together and
+     * the last one lands with the bars, so the card reads as one thing
+     * arriving rather than four.
+     */
+    function countUp(): void {
+      const figures = Array.from(card!.querySelectorAll<HTMLElement>('[data-trait-to]'));
+      if (reduced) {
+        figures.forEach((el) => (el.textContent = el.dataset.traitTo ?? ''));
+        return;
+      }
+
+      const started = performance.now();
+      const duration = 900;
+
+      const step = (now: number) => {
+        const k = Math.min(1, (now - started) / duration);
+        // Fast out of the gate, settling on the number rather than hitting it.
+        const eased = 1 - Math.pow(1 - k, 3);
+        for (const el of figures) {
+          const to = Number(el.dataset.traitTo) || 0;
+          el.textContent = String(Math.round(to * eased));
+        }
+        countFrame = k < 1 ? requestAnimationFrame(step) : 0;
+      };
+
+      countFrame = requestAnimationFrame(step);
+    }
+
+    /* ---------------------------------------------------------------- */
+    /* The wave                                                          */
+    /* ---------------------------------------------------------------- */
+
+    function ripple(originX: number, originY: number): void {
+      if (reduced) return;
+
+      const reach = Math.hypot(
+        Math.max(originX, window.innerWidth - originX),
+        Math.max(originY, window.innerHeight - originY)
+      );
+
+      for (const el of [pulse!, wash!]) {
+        el.style.setProperty('--egg-x', `${originX}px`);
+        el.style.setProperty('--egg-y', `${originY}px`);
+        el.style.setProperty('--egg-reach', `${Math.ceil(reach)}px`);
+
+        // Restart rather than continue: a second click inside the first
+        // animation would otherwise do nothing at all.
+        el.classList.remove('is-rippling');
+        void el.offsetWidth;
+        el.classList.add('is-rippling');
+      }
+    }
+
+    /* ---------------------------------------------------------------- */
+    /* Open and close                                                    */
+    /* ---------------------------------------------------------------- */
+
+    function open(originX: number, originY: number): void {
+      window.clearTimeout(releaseTimer);
+      ripple(originX, originY);
+
+      if (!on) {
+        on = true;
+        root.dataset.designer = '';
+        card!.hidden = false;
+        /*
+         * The hidden state has to be painted once or there is nothing to
+         * transition from and the card simply appears. A forced reflow does
+         * that synchronously — requestAnimationFrame would too, right up until
+         * the tab is in the background, where it does not run at all and the
+         * card would sit at zero opacity for the whole of designer mode.
+         */
+        void card!.offsetWidth;
+        card!.classList.add('is-on');
+        countUp();
+
+        /*
+         * `nearest` scrolls the minimum, and only when the card would be off
+         * screen — which it is whenever the portrait was tapped while sitting
+         * at the bottom of a phone.
+         */
+        card!.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
+
+        if (fine && !reduced) {
+          window.addEventListener('pointermove', onPointerMove, { passive: true });
+          gaze(originX, originY);
+        }
+      }
+
+      releaseTimer = window.setTimeout(close, holdFor);
+    }
+
+    function close(): void {
+      if (!on) return;
+      on = false;
+
+      window.clearTimeout(releaseTimer);
+      cancelAnimationFrame(countFrame);
+      window.removeEventListener('pointermove', onPointerMove);
+
+      restEyes();
+      delete root.dataset.designer;
+      card!.classList.remove('is-on');
+
+      // Held in the DOM until it has finished leaving.
+      window.setTimeout(() => {
+        if (!on) card!.hidden = true;
+      }, 460);
+    }
+
+    /* ---------------------------------------------------------------- */
+    /* Wiring                                                            */
+    /* ---------------------------------------------------------------- */
+
+    trigger.addEventListener('click', (event) => {
+      const point = event as MouseEvent;
+      // A keyboard-driven click reports 0,0; put the wave on the portrait.
+      const box = trigger.getBoundingClientRect();
+      const x = point.clientX || box.left + box.width / 2;
+      const y = point.clientY || box.top + box.height / 2;
+
+      if (on) close();
+      else open(x, y);
+    });
+
+    card.addEventListener('click', close);
+
+    dismiss = close;
+
+    if (globalsBound) return;
+    globalsBound = true;
+
+    document.addEventListener('keydown', (event) => {
+      if ((event as KeyboardEvent).key === 'Escape') dismiss();
+    });
+
+    // Leaving the page mid-egg would otherwise carry the purple to the next one.
+    document.addEventListener('astro:before-swap', () => dismiss());
+  }
+
+  document.addEventListener('astro:page-load', setupEgg);
+</script>
+
+<style>
+  /* ------------------------------------------------------------------ */
+  /* The wave                                                            */
+  /*                                                                     */
+  /* A ring and a wash, both from the point of the click, both purely    */
+  /* transform and opacity. This runs over the whole page at once and    */
+  /* anything that touched layout here would drop frames immediately.    */
+  /* ------------------------------------------------------------------ */
+  .pulse,
+  .wash {
+    position: fixed;
+    left: var(--egg-x, 50%);
+    top: var(--egg-y, 50%);
+    z-index: 9990;
+    pointer-events: none;
+    border-radius: 50%;
+    opacity: 0;
+    /* Sized off the click point so the scale below is the same number
+       whatever the viewport, and the ring always just clears the corner. */
+    width: calc(var(--egg-reach, 600px) * 2);
+    height: calc(var(--egg-reach, 600px) * 2);
+    margin-top: calc(var(--egg-reach, 600px) * -1);
+    margin-left: calc(var(--egg-reach, 600px) * -1);
+  }
+
+  .pulse {
+    border: 2px solid var(--egg-purple);
+  }
+
+  .wash {
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--egg-purple) 26%, transparent) 0%,
+      transparent 70%
+    );
+  }
+
+  .pulse.is-rippling {
+    animation: egg-ring 780ms var(--ease-out) both;
+  }
+
+  .wash.is-rippling {
+    animation: egg-wash 900ms var(--ease-out) both;
+  }
+
+  @keyframes egg-ring {
+    from {
+      opacity: 0.65;
+      transform: scale(0.01);
+    }
+    to {
+      opacity: 0;
+      transform: scale(1.04);
+    }
+  }
+
+  @keyframes egg-wash {
+    0% {
+      opacity: 0;
+      transform: scale(0.02);
+    }
+    35% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.1);
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The card                                                            */
+  /* ------------------------------------------------------------------ */
+  /*
+   * Hung off the portrait rather than off the window.
+   *
+   * The picture is what was clicked, and a card pinned to the bottom of the
+   * screen reads as an unrelated notification — worse, on a phone the bottom of
+   * the screen is usually where the portrait is, so the card covered the eyes
+   * it had just brought to life.
+   */
+  .card {
+    position: absolute;
+    z-index: 9991;
+    top: calc(100% + 14px);
+    left: 0;
+    right: 0;
+    padding: 18px 20px 20px;
+    border-radius: var(--r-xl);
+    background: var(--surface-card);
+    color: var(--ink);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.06),
+      0 18px 44px rgba(0, 0, 0, 0.16);
+    /* The same hairline the rest of the site uses to separate a raised
+       surface from the one behind it, which matters most in dark mode where
+       the shadow alone does almost nothing. */
+    outline: 1px solid var(--line);
+    outline-offset: -1px;
+    cursor: pointer;
+
+    opacity: 0;
+    translate: 0 14px;
+    transition:
+      opacity 380ms var(--ease-out),
+      translate 460ms var(--ease-out);
+  }
+
+  .card[hidden] {
+    display: none;
+  }
+
+  .card.is-on {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  /* Wide enough to sit under one corner of the picture rather than all of it. */
+  @media (min-width: 768px) {
+    .card {
+      left: auto;
+      width: 320px;
+    }
+  }
+
+  .card__eyebrow {
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--blue);
+    transition: color 620ms var(--ease-glide);
+  }
+
+  .card__traits {
+    margin: 16px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+  }
+
+  .trait {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: 7px 12px;
+  }
+
+  .trait__label {
+    font-size: 15px;
+    letter-spacing: -0.016em;
+    color: var(--ink-muted);
+  }
+
+  .trait__value {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.016em;
+    color: var(--ink);
+    /* So the figure does not jostle its own label while it counts. */
+    font-variant-numeric: tabular-nums;
+  }
+
+  .trait__track {
+    grid-column: 1 / -1;
+    height: 3px;
+    border-radius: var(--r-pill);
+    background: var(--surface-chip);
+    overflow: hidden;
+  }
+
+  .trait__fill {
+    height: 100%;
+    width: 0;
+    border-radius: inherit;
+    background: var(--blue);
+    transition:
+      width 760ms var(--ease-out),
+      background-color 620ms var(--ease-glide);
+    /* Each bar starts a beat after the one above it, so the card fills in
+       reading order rather than all at once. */
+    transition-delay: calc(var(--i) * 90ms);
+  }
+
+  .card.is-on .trait__fill {
+    width: var(--to);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card {
+      transition: none;
+    }
+
+    .trait__fill {
+      transition: none;
+      transition-delay: 0ms;
+    }
+  }
+</style>
