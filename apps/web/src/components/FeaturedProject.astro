@@ -6,18 +6,6 @@ interface Props {
 }
 
 const { project } = Astro.props;
-
-/*
- * The cover loads eagerly.
- *
- * It is the largest image on the home page and it sits at the fold, so lazy
- * meant scrolling down to an empty tile and watching it fill: invisible to the
- * preload scanner, and not fetched until layout had decided where it goes.
- *
- * No fetchpriority to go with it. The hero portrait above is already declared
- * the priority and is the paint that actually decides this page — the cover
- * needs to stop being deferred, not to compete with it.
- */
 ---
 
 <a class="featured" href={`/work/${project.slug}`} data-reveal="0">
@@ -29,14 +17,7 @@ const { project } = Astro.props;
   >
     {
       project.cover ? (
-        <img
-          src={project.cover.url}
-          alt={project.cover.alt}
-          width={project.cover.width}
-          height={project.cover.height}
-          loading="eager"
-          decoding="async"
-        />
+        <img src={project.cover.url} alt={project.cover.alt} loading="lazy" decoding="async" />
       ) : (
         <span class="featured__initials" style={`color:${project.chipInk}`}>
           {project.initials}
