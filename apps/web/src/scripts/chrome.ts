@@ -734,6 +734,59 @@ function applyMorphRadius(slug: string): void {
   }
 }
 
+/* ---------------------------------------------------------------------- */
+/* Links to the page you are already on                                     */
+/* ---------------------------------------------------------------------- */
+
+/*
+ * A link to the current page scrolls to the top instead of navigating.
+ *
+ * The logo is the one that matters. On a phone it stays put at the top of every
+ * page — the nav pill hides it once you scroll, but the phone header is the
+ * logo and the burger, so it cannot — which makes it the easiest thing on the
+ * screen to press while already on the home page. Doing that ran an entire
+ * navigation to the same URL: a page transition, a full re-initialise, and
+ * scroll restoration putting you back exactly where you started. All of that to
+ * arrive where you already were.
+ *
+ * Scrolling up is what a logo is for anyway.
+ *
+ * Capture, not bubble: the router's own click handler is bound from the head
+ * and so runs before anything bound down here. It does check whether the event
+ * has been cancelled — but only a capturing listener gets to cancel it first.
+ */
+document.addEventListener(
+  'click',
+  (event) => {
+    const mouse = event as MouseEvent;
+    if (mouse.defaultPrevented || mouse.button !== 0) return;
+    if (mouse.metaKey || mouse.ctrlKey || mouse.shiftKey || mouse.altKey) return;
+
+    const link = (mouse.target as Element | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
+    if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+
+    const to = new URL(link.href, window.location.href);
+    if (to.origin !== window.location.origin) return;
+    // An in-page anchor is a link to somewhere, even on this page.
+    if (to.hash) return;
+    if (to.pathname !== window.location.pathname || to.search !== window.location.search) return;
+
+    event.preventDefault();
+
+    /*
+     * After the other handlers, not before them.
+     *
+     * A link inside the mobile menu closes it, and closing it restores the
+     * scroll position the page was locked at — which would land on top of this
+     * and put the visitor straight back down the page.
+     */
+    window.setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+    }, 0);
+  },
+  true
+);
+
 /*
  * Fires before the router fetches the next page and well before the outgoing
  * snapshot is taken, which is the window in which the name has to be set.
