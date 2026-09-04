@@ -319,9 +319,15 @@ function chromePass(): void {
   lastOverDark = overDark;
 
   styles.setProperty('--nav-top', condensed ? '10px' : '18px');
-  styles.setProperty('--nav-gap', condensed ? '2px' : 'clamp(16px,4.6vw,56px)');
-  styles.setProperty('--nav-pad', condensed ? '2px 6px' : '2px 12px');
-  styles.setProperty('--nav-link-pad', condensed ? '0 15px' : '0 6px');
+  /*
+   * The links carry their own padding in both states rather than being spaced
+   * apart by the gap alone. At 6px of padding the hover fill hugged the text
+   * so tightly it read as a highlighter mark instead of a control; the gap is
+   * pulled in to compensate, so the rhythm along the bar is about what it was.
+   */
+  styles.setProperty('--nav-gap', condensed ? '2px' : 'clamp(6px,2.2vw,30px)');
+  styles.setProperty('--nav-pad', condensed ? '2px 6px' : '2px 6px');
+  styles.setProperty('--nav-link-pad', condensed ? '0 15px' : '0 16px');
   styles.setProperty(
     '--nav-bg',
     condensed
@@ -361,6 +367,23 @@ function remeasure(): void {
   chromePass();
 }
 
+/**
+ * Restarts the logo's draw-on animation.
+ *
+ * The logo survives navigation (transition:persist), so its animation has
+ * already finished and will not run again on its own. Dropping the flag,
+ * forcing a reflow and setting it again is what makes the browser treat it as
+ * a new animation rather than a continuing one.
+ */
+function replayLogoDraw(): void {
+  const mark = document.querySelector('[data-logo-mark]');
+  if (!mark) return;
+
+  delete root.dataset.logoDraw;
+  void (mark as HTMLElement).offsetWidth;
+  root.dataset.logoDraw = '1';
+}
+
 function init(): void {
   // The client router swaps the whole page, so the previous page's observer is
   // watching elements that no longer exist. Drop it before building a new one.
@@ -370,6 +393,8 @@ function init(): void {
   // Before priming: after-swap runs inside the transition, so this is the last
   // chance to name the element the incoming snapshot will be taken from.
   applyMorphName(readMorphSlug());
+
+  replayLogoDraw();
 
   primePage();
   setUpReveals();

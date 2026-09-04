@@ -481,9 +481,9 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     letter-spacing: -0.018em;
     font-weight: 600;
     color: var(--ink);
-    /* A larger radius on a block this wide: --r-sm reads as a tight corner on
-       a fill nearly the width of the panel. */
-    border-radius: var(--r-md);
+    /* A pill. On a fill this wide and this tall the fully rounded ends read as
+       a deliberate control rather than a rounded-off rectangle. */
+    border-radius: var(--r-pill);
     transition:
       color 0.25s ease,
       background 240ms var(--ease-glide);

@@ -91,6 +91,15 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         } catch (e) {
           /* private mode — fall through to the system preference */
         }
+
+        /*
+         * The mark draws itself on arrival at every page. Set here, before the
+         * first paint, so it is never briefly solid and then restarted as a
+         * line. Client-side navigations are handled in chrome.ts, which has to
+         * replay it by hand — the logo is a persisted element, so it does not
+         * get re-created and its animation would otherwise only ever run once.
+         */
+        document.documentElement.dataset.logoDraw = '1';
       })();
     </script>
 

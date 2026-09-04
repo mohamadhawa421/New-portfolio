@@ -84,9 +84,26 @@ const canDraw = Boolean(viewBox) && paths.length > 0;
     overflow: visible;
   }
 
+  /*
+   * At rest the mark is simply the mark: solid, no contour.
+   *
+   * The draw is an arrival, so it belongs to arriving — the first load of the
+   * home page in a session, and nowhere else. Replaying it on every page made
+   * a one-off flourish into a tic, and it fired on deep links into a case
+   * study where nobody had arrived anywhere.
+   */
   .logo-mark__stroke {
     stroke-width: 20;
     stroke-linejoin: round;
+    opacity: 0;
+  }
+
+  .logo-mark__fill {
+    opacity: 1;
+  }
+
+  :global(:root[data-logo-draw]) .logo-mark__stroke {
+    opacity: 1;
     stroke-dasharray: 1;
     stroke-dashoffset: 1;
     animation:
@@ -94,7 +111,7 @@ const canDraw = Boolean(viewBox) && paths.length > 0;
       mh-logo-lift 360ms var(--ease-out) 980ms forwards;
   }
 
-  .logo-mark__fill {
+  :global(:root[data-logo-draw]) .logo-mark__fill {
     opacity: 0;
     animation: mh-logo-ink 420ms var(--ease-out) 820ms forwards;
   }
@@ -120,12 +137,12 @@ const canDraw = Boolean(viewBox) && paths.length > 0;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .logo-mark__stroke {
+    :global(:root[data-logo-draw]) .logo-mark__stroke {
       animation: none;
       opacity: 0;
     }
 
-    .logo-mark__fill {
+    :global(:root[data-logo-draw]) .logo-mark__fill {
       animation: none;
       opacity: 1;
     }
