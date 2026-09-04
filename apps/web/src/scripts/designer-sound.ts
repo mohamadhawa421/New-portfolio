@@ -57,8 +57,18 @@ const LEVEL = 0.5;
  */
 const FREEZE_RATE = 0.12;
 
-/** The shockwave's length. The rewind's arithmetic depends on it. */
-const WAVE_SECONDS = 2.6;
+/**
+ * The shockwave's length, and the reason it is this long.
+ *
+ * The launch only ever uses the front of it, and the freeze creeps through the
+ * next half second — so the rest exists for the rewind, which has to cross the
+ * whole window the pieces take to come home. At 2.6 seconds there was not
+ * enough material to do that at any speed worth calling a rewind: spreading a
+ * short buffer over a long window forces the playback rate down, and the
+ * restoration came out slower than real time. Four seconds of blast is what
+ * lets the way back run faster than the way out.
+ */
+const WAVE_SECONDS = 4;
 
 let ctx: Ctx | null = null;
 let master: GainNode | null = null;
@@ -67,6 +77,8 @@ let arcBus: GainNode | null = null;
 let stopped = true;
 let voices: AudioScheduledSourceNode[] = [];
 let lastStrike = 0;
+/** Whether the output device has been forced open yet. */
+let opened = false;
 
 let waveBuf: AudioBuffer | null = null;
 let backBuf: AudioBuffer | null = null;
@@ -206,16 +218,42 @@ function build(audio: Ctx): void {
 /* ---------------------------------------------------------------------- */
 
 /**
- * Creates the context and the three buffers, inside the gesture that asked for
- * them. Separate from play() because unlocking audio has to happen in the click
- * handler itself, while the piece begins from its own clock a moment later.
+ * Builds everything that can be built before anyone has committed to anything.
+ *
+ * Called on hover. A context created outside a gesture starts suspended, which
+ * is fine — what matters is that it exists and that four seconds of blast have
+ * already been synthesised, so the press that follows has nothing left to do
+ * but resume.
+ */
+export function warm(): void {
+  const audio = context();
+  if (!audio) return;
+  build(audio);
+}
+
+/**
+ * Opens the audio device, inside the gesture that asked for it.
+ *
+ * Resuming is not enough on its own. A context that has never produced a sample
+ * has not necessarily opened an output device, and opening one can take a
+ * noticeable fraction of a second — which is heard as the sound arriving late
+ * while the wave has already crossed the screen. Playing one silent sample
+ * forces the device open now, on the press, rather than on the click.
  */
 export function unlock(): void {
   const audio = context();
-  if (!audio) return;
+  if (!audio || !master) return;
   stopped = false;
   if (audio.state === 'suspended') void audio.resume();
   build(audio);
+
+  if (opened) return;
+  opened = true;
+  const silence = audio.createBuffer(1, 1, audio.sampleRate);
+  const src = audio.createBufferSource();
+  src.buffer = silence;
+  src.connect(master);
+  src.start(0);
 }
 
 /** Fades out and lets everything ring off rather than cutting it. */
@@ -294,11 +332,18 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
   const decay = at(beat.decay);
   const drift = at(beat.drift);
 
-  // Fast, because the first thing through the gate is a transient and a long
-  // ramp would take the edge off the one moment that needs an edge.
+  /*
+   * Set, not ramped.
+   *
+   * There was a twelve millisecond fade here, and an exponential fade from
+   * 0.0001 is inaudible for most of its length — measured, the output did not
+   * cross a fiftieth of full scale until 7.9ms in. Twelve milliseconds is
+   * nothing to wait for, but it was eating the front of the transient, which is
+   * the one part of this sound that has to be instant. Nothing is playing yet,
+   * so there is no click to avoid.
+   */
   master.gain.cancelScheduledValues(t0);
-  master.gain.setValueAtTime(0.0001, t0);
-  master.gain.exponentialRampToValueAtTime(LEVEL, t0 + 0.012);
+  master.gain.setValueAtTime(LEVEL, t0);
 
   /* ---- The wave, and time closing around it -------------------------- */
 
@@ -371,21 +416,27 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
    * pieces were being let go. Skipping that head means the swell is already
    * underway on the frame the picture starts moving.
    *
+   * The pieces are released over the first 1240ms of this window and each takes
+   * between 1.9 and 3 seconds, so the last of them lands at about 7.2 seconds —
+   * and the crack has to land with them, not a second early. That sets the
+   * window at four seconds and the tail at seven hundred milliseconds.
+   *
    * For a rate ramping exponentially from a to b over W, the buffer consumed is
-   * W(b - a) / ln(b / a). From twice the held rate to 1.3 over 3.5s that is
-   * 2.2 seconds, which is what is left after the skip — so the reversed
-   * transient, which is the crack and comes last now, lands exactly as the run
-   * of pieces ends.
+   * W(b - a) / ln(b / a). From three times the held rate to 1.55 over four
+   * seconds that is 3.2 seconds, which is what is left of the blast after the
+   * silent head is skipped. It ends above real speed rather than below it, so
+   * the way back is quicker than the way out, and the reversed transient — the
+   * crack, which comes last now — lands as the pieces do.
    */
-  const REWIND_TAIL_MS = 1200;
-  const REWIND_SKIP = 0.45;
+  const REWIND_TAIL_MS = 700;
+  const REWIND_SKIP = 0.8;
   const span = Math.max(1.2, (beat.done - beat.drift - REWIND_TAIL_MS) / 1000);
 
   const back = audio.createBufferSource();
   back.buffer = backBuf;
-  // Twice the held rate: the frozen sound starting to move again, not a new one.
-  back.playbackRate.setValueAtTime(FREEZE_RATE * 2, drift);
-  back.playbackRate.exponentialRampToValueAtTime(1.3, drift + span);
+  // Three times the held rate: the frozen sound already moving again.
+  back.playbackRate.setValueAtTime(FREEZE_RATE * 3, drift);
+  back.playbackRate.exponentialRampToValueAtTime(1.55, drift + span);
 
   /*
    * The level rides the material rather than sitting flat on top of it.

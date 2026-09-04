@@ -106,10 +106,32 @@
      * that has not arrived yet is a blank square, so pointerdown, which lands a
      * moment before the click, is where it gets fetched and decoded.
      */
+    /*
+     * Hovering the portrait is the earliest honest warning that the egg is
+     * about to be triggered, and it costs a context that starts suspended and
+     * fifty milliseconds of synthesis. By the press there is nothing left to
+     * build; by the click the device is already open.
+     */
+    trigger.addEventListener('pointerenter', () => sound.warm(), { once: true });
+
     const alt = document.querySelector<HTMLImageElement>('.hero__portrait-alt');
     trigger.addEventListener(
       'pointerdown',
       () => {
+        /*
+         * The audio starts warming here too, and for the same reason.
+         *
+         * Creating the context and synthesising four seconds of blast took long
+         * enough inside the click that the sound arrived visibly after the
+         * wave — and a fresh AudioContext also needs a moment to spin its
+         * render thread up before the clock it is being scheduled against
+         * starts moving. pointerdown is a user gesture like any other, so the
+         * autoplay policy is satisfied, and it lands a hundred milliseconds or
+         * so before the click. By the time the wave leaves, there is nothing
+         * left to prepare.
+         */
+        sound.unlock();
+
         if (!alt || alt.complete) return;
         alt.loading = 'eager';
         if (typeof alt.decode === 'function') void alt.decode().catch(() => {});
@@ -181,6 +203,24 @@
 
     if (globalsBound) return;
     globalsBound = true;
+
+    /*
+     * The audio device is opened on the first press anywhere on the page.
+     *
+     * Opening one takes a fraction of a second the first time, and that fraction
+     * is heard as the wave crossing the screen in silence and the sound turning
+     * up afterwards. Hovering the portrait is too late if the pointer was
+     * already over it when the page loaded, and pressing it is far too late.
+     *
+     * Any press is a user gesture, so this satisfies the autoplay policy, and
+     * most visitors press something — a link, a filter, the theme switch —
+     * long before they think to press the portrait. It costs one suspended
+     * context and fifty milliseconds of synthesis, once.
+     */
+    document.addEventListener('pointerdown', () => sound.unlock(), {
+      once: true,
+      passive: true,
+    });
 
     document.addEventListener('keydown', (event) => {
       if ((event as KeyboardEvent).key === 'Escape') dismiss();

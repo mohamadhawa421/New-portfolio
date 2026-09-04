@@ -298,6 +298,21 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         left: 12px;
       }
 
+      /*
+       * The nav's offset uses `translate`, not `transform`, so that designer
+       * mode can throw the logo.
+       *
+       * The logo is a piece like every other piece, but it is the only one that
+       * was already driving its own transform — and this rule is scoped, so it
+       * outranks .dm-piece and won. The shock reached the logo and nothing
+       * happened; it then arrived late on its own 520ms easing, a beat behind
+       * everything around it, which read as falling behind and snapping into
+       * place rather than being blown away.
+       *
+       * `translate` is an independent property and composes with `transform`
+       * instead of replacing it, so the nav can keep lifting the logo by ten
+       * pixels while the storm has it.
+       */
       .site-logo {
         position: fixed;
         top: 18px;
@@ -307,18 +322,12 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         align-items: center;
         min-height: 44px;
         opacity: var(--logo-op, 1);
-        transform: translateY(var(--logo-y, 0px));
+        translate: 0 var(--logo-y, 0px);
         pointer-events: var(--logo-pe, auto);
-        transition:
-          opacity 480ms var(--ease-out),
-          transform 520ms var(--ease-out);
-      }
-
-      .site-logo {
         color: var(--nav-ink, #1d1d1f);
         transition:
           opacity 480ms var(--ease-out),
-          transform 520ms var(--ease-out),
+          translate 520ms var(--ease-out),
           color 300ms var(--ease-out);
       }
 
@@ -333,7 +342,7 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
       @media (max-width: 767px) {
         .site-logo {
           opacity: 1;
-          transform: none;
+          translate: none;
           pointer-events: auto;
         }
       }
