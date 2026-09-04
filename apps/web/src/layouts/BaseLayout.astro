@@ -132,14 +132,38 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
 
     {settings.showIntro && <IntroCurtain logo={settings.logoFull} />}
 
+    {/*
+      On a phone this doubles as the way out of a project.
+
+      The case study's own "All work" link sits at the top of the page, so
+      getting back to the listing from halfway down means scrolling up first.
+      The logo is already fixed to the corner and already the way home, and on
+      a narrow screen it is half the header — so on a project page it becomes
+      the way back instead. The script below decides which it is; the markup
+      carries both.
+    */}
     <a
       class="site-logo"
       data-logo="1"
+      data-home-label={`${settings.siteName} — home`}
       transition:persist="site-logo"
       href="/"
       aria-label={`${settings.siteName} — home`}
     >
       {settings.logoMark && <SiteLogo src={settings.logoMark.url} alt={settings.siteName} />}
+      <span class="site-logo__back" aria-hidden="true">
+        <svg viewBox="0 0 9 14" focusable="false">
+          <path
+            d="M7.5 1 1.5 7l6 6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span>Back</span>
+      </span>
     </a>
 
     <SiteNav pathname={Astro.url.pathname} settings={settings} />
@@ -309,6 +333,69 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
     <script>
       import '../scripts/chrome.ts';
       import '../scripts/theme.ts';
+
+      /**
+       * The logo becomes the way back, on a phone, inside a project.
+       *
+       * It carries `transition:persist`, so this element outlives every
+       * navigation — which is exactly why the decision has to be made here on
+       * every page load rather than rendered into the markup once. It also
+       * means the non-project case has to be written out too: whatever the last
+       * page turned it into, this puts it back.
+       *
+       * Only on narrow screens. On a desktop the case study's own "All work"
+       * link is in view for most of the page and the nav is a permanent pill,
+       * so nothing is gained by taking the logo away.
+       */
+      const CASE_STUDY = /^\/work\/[^/]+\/?$/;
+      const narrow = window.matchMedia('(max-width: 767px)');
+
+      function setupLogoBack() {
+        const logo = document.querySelector<HTMLAnchorElement>('[data-logo]');
+        if (!logo) return;
+
+        const back = CASE_STUDY.test(window.location.pathname) && narrow.matches;
+        logo.classList.toggle('site-logo--back', back);
+
+        if (back) {
+          logo.href = '/work';
+          logo.setAttribute('aria-label', 'Back to all work');
+        } else {
+          logo.href = '/';
+          logo.setAttribute('aria-label', logo.dataset.homeLabel || 'Home');
+        }
+      }
+
+      /*
+       * Walking back through history rather than pushing a new entry, when the
+       * listing is genuinely the previous page.
+       *
+       * Two things come free with that: the browser restores the scroll
+       * position, so the visitor lands on the card they opened, and the cover
+       * morphs back into that card rather than into whatever is at the top.
+       * Arriving from outside — a shared link, a search result — it stays an
+       * ordinary link, because going back would leave the site.
+       *
+       * This mirrors the rule on the case study's own "All work" link, in
+       * pages/work/[slug].astro. Keep the two in step.
+       */
+      document.addEventListener('click', (event) => {
+        const logo = (event.target as Element | null)?.closest?.('[data-logo]');
+        if (!logo || !logo.classList.contains('site-logo--back')) return;
+
+        const mouse = event as MouseEvent;
+        if (mouse.metaKey || mouse.ctrlKey || mouse.shiftKey || mouse.button !== 0) return;
+
+        const from = (window as unknown as { __mhFrom?: string }).__mhFrom;
+        if (from !== '/work' && from !== '/') return;
+
+        event.preventDefault();
+        history.back();
+      });
+
+      // A phone turned on its side crosses the breakpoint without navigating.
+      narrow.addEventListener('change', setupLogoBack);
+      document.addEventListener('astro:page-load', setupLogoBack);
     </script>
 
     <style>
@@ -368,6 +455,36 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         height: 34px;
         width: auto;
         display: block;
+      }
+
+      /*
+       * Never a class-free `hidden`: `display` on the rule below outranks the
+       * browser's own [hidden] rule, and the attribute would do nothing.
+       */
+      .site-logo__back {
+        display: none;
+        align-items: center;
+        gap: 7px;
+        font-size: 16px;
+        letter-spacing: -0.018em;
+        color: currentColor;
+      }
+
+      .site-logo__back svg {
+        width: 9px;
+        height: 14px;
+        flex: none;
+      }
+
+      .site-logo--back .site-logo__back {
+        display: inline-flex;
+      }
+
+      /* The mark steps aside rather than being removed, so nothing it is in the
+         middle of drawing is interrupted. */
+      .site-logo--back :global(.logo-mark),
+      .site-logo--back img {
+        display: none;
       }
 
       /* On desktop the logo fades out as the nav pill condenses. On phones the
