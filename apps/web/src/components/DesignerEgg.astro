@@ -138,8 +138,6 @@
        * which acknowledges the click without moving anything at all.
        */
       if (reduced) {
-        // TEMPORARY, with the diagnostic in designer-sound.ts.
-        console.info('[designer sound] reduced motion is on — the egg is silent by design');
         root.dataset.designer = '';
         window.setTimeout(() => delete root.dataset.designer, 2600);
         return;
@@ -193,79 +191,6 @@
   }
 
   document.addEventListener('astro:page-load', setupEgg);
-
-  /* ------------------------------------------------------------------ */
-  /* TEMPORARY sound check                                               */
-  /*                                                                     */
-  /* Only with ?sound-check in the address, so no visitor ever meets it. */
-  /* Every measurement says the sequence plays; it is reported silent on */
-  /* a real machine. This puts the answer on the page rather than in a   */
-  /* console, and separates "Web Audio works here" from "the egg is too  */
-  /* quiet to notice" with a plain beep.                                 */
-  /* ------------------------------------------------------------------ */
-  function soundCheck() {
-    if (!new URLSearchParams(window.location.search).has('sound-check')) return;
-    if (document.querySelector('[data-sound-check]')) return;
-
-    const panel = document.createElement('div');
-    panel.dataset.soundCheck = '1';
-    panel.style.cssText = [
-      'position:fixed',
-      'left:16px',
-      'bottom:16px',
-      'z-index:99999',
-      'max-width:280px',
-      'padding:14px 16px',
-      'border-radius:14px',
-      'border:1px solid rgba(255,255,255,.16)',
-      'background:#1c1c20',
-      'color:#f5f5f7',
-      'font:13px/1.5 system-ui,sans-serif',
-      'box-shadow:0 12px 34px rgba(0,0,0,.45)',
-    ].join(';');
-
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    const title = document.createElement('div');
-    title.textContent = 'Sound check';
-    title.style.cssText = 'font-weight:600;margin-bottom:8px';
-
-    const motion = document.createElement('div');
-    motion.textContent = reduced
-      ? '⚠ Reduce Motion is ON — the egg skips everything, sound included.'
-      : 'Reduce Motion: off';
-    motion.style.cssText = `margin-bottom:10px;color:${reduced ? '#ff9f9f' : '#a1a1a6'}`;
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = 'Play a test beep';
-    button.style.cssText = [
-      'display:block',
-      'width:100%',
-      'padding:9px 12px',
-      'margin-bottom:10px',
-      'border:0',
-      'border-radius:10px',
-      'background:#2997ff',
-      'color:#fff',
-      'font:inherit',
-      'cursor:pointer',
-    ].join(';');
-    button.addEventListener('click', () => sound.testTone());
-
-    const line = document.createElement('div');
-    line.textContent = 'Trigger the portrait, or press the button.';
-    line.style.cssText = 'color:#a1a1a6;word-break:break-word';
-
-    document.addEventListener('mh:sound-report', (event) => {
-      line.textContent = (event as CustomEvent<string>).detail;
-    });
-
-    panel.append(title, motion, button, line);
-    document.body.appendChild(panel);
-  }
-
-  document.addEventListener('astro:page-load', soundCheck);
 </script>
 
 <style>

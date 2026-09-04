@@ -71,43 +71,6 @@ export interface SoundShape {
   fieldDecay: number;
 }
 
-/** TEMPORARY — remove with the diagnostic in play(). */
-function report(message: string): void {
-  console.info(`[designer sound] ${message}`);
-  document.dispatchEvent(new CustomEvent('mh:sound-report', { detail: message }));
-}
-
-/**
- * TEMPORARY. A plain loud beep, to tell "this machine plays Web Audio" apart
- * from "the egg's sound is too quiet to notice". Nothing else uses it.
- */
-export function testTone(): void {
-  const audio = context();
-  if (!audio || !master) {
-    report('test tone: no context');
-    return;
-  }
-  if (audio.state === 'suspended') void audio.resume();
-
-  const t = audio.currentTime;
-  master.gain.cancelScheduledValues(t);
-  master.gain.setValueAtTime(1, t);
-
-  const osc = audio.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.value = 440;
-
-  const gain = audio.createGain();
-  gain.gain.setValueAtTime(0.0001, t);
-  gain.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
-
-  osc.connect(gain).connect(master);
-  osc.start(t);
-  osc.stop(t + 0.5);
-  report(`test tone: state=${audio.state} rate=${audio.sampleRate}`);
-}
-
 let ctx: Ctx | null = null;
 let master: GainNode | null = null;
 /** Spark level, automated across the sequence so ticks follow the storm. */
@@ -237,28 +200,10 @@ export function tick(): void {
  */
 export function play(beat: SoundBeat, shape: SoundShape): void {
   const audio = context();
-  if (!audio || !master || !arcBus) {
-    report('no audio context — Web Audio unavailable or refused');
-    return;
-  }
+  if (!audio || !master || !arcBus) return;
 
   stopped = false;
   if (audio.state === 'suspended') void audio.resume();
-
-  /*
-   * TEMPORARY. Reports why nothing was heard, if nothing was heard.
-   *
-   * The sequence renders correctly offline — measured, phase by phase — and is
-   * still silent on a real machine, which means the fault is in the live
-   * context rather than in the schedule. This says which.
-   */
-  report(`state=${audio.state} rate=${audio.sampleRate} t0=${audio.currentTime.toFixed(3)}`);
-  window.setTimeout(() => {
-    report(
-      `+300ms state=${audio.state} t=${audio.currentTime.toFixed(3)} ` +
-        `master=${master!.gain.value.toFixed(4)}`
-    );
-  }, 300);
 
   const t0 = audio.currentTime;
   /** An instant from the beat, in audio time. */
