@@ -44,8 +44,16 @@ export interface SoundShape {
   fieldDecay: number;
 }
 
-/** Peak level on the site. */
-const LEVEL = 0.5;
+/**
+ * Peak level on the site.
+ *
+ * Halved from where the audition left it. The sequence opens on a transient
+ * that is deliberately the sharpest thing in it, and at the old level that
+ * arrived as a shock rather than as a shockwave — an easter egg should not
+ * make anyone put the laptop down. This puts the launch near -13dBFS and the
+ * held field around -25, which is present without being startling.
+ */
+const LEVEL = 0.25;
 
 /**
  * How far time slows once the field takes hold.

@@ -84,7 +84,26 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
    */
   import * as sound from '../scripts/designer-sound';
 
+  /**
+   * Takes the previous page's scroll listener off.
+   *
+   * Without this the listener outlives the page that added it: it is only
+   * removed once every character on that page has arrived, and one who never
+   * did — the usual case, since he sits at the foot of a long page — leaves it
+   * attached for good. The stale closure then answers the next page's scrolls
+   * while holding an element that is no longer in the document, and a detached
+   * element reports a rect of zeros, so it is always considered to be in view.
+   *
+   * That is why pressing a nav link made a strike: the router scrolls the new
+   * page to the top, the old page's listener heard it, measured a character
+   * who had been thrown away, decided he had just been reached, and rang.
+   */
+  let detach: (() => void) | null = null;
+
   function setupCharacters() {
+    detach?.();
+    detach = null;
+
     const nodes = Array.from(document.querySelectorAll<HTMLElement>('[data-character]'));
     if (!nodes.length) return;
 
@@ -99,22 +118,22 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
     if (!pending.length) return;
 
     /**
-     * Brings him in. `heard` is false when he was already on screen before
-     * anyone scrolled anywhere.
+     * Brings him in, silently.
      *
-     * That distinction is the whole of it. Arriving on a page already scrolled
-     * to where he stands — coming back from a project, or a restored position —
-     * he is simply there, and a strike at that moment is a sound with no cause,
-     * landing a beat after whatever was clicked to get here. It reads as the
-     * card having made it, or the back button. He only strikes when the visitor
-     * actually reaches him.
+     * He used to strike as he arrived, and it never once landed where it was
+     * meant to. Every route into a page produces a scroll that is not the
+     * visitor's — the router restoring a position, a page settling, a stale
+     * listener from the page before measuring an element that has already been
+     * thrown away — and each of those rang a strike a beat after a nav link or
+     * a back button was pressed, which read as the link having made the sound.
+     * Three separate fixes each closed one path and left another.
+     *
+     * So the arrival is quiet. He only makes a sound when he is pressed, which
+     * is the one moment that cannot be anything but deliberate.
      */
-    function arrive(el: HTMLElement, heard: boolean) {
+    function arrive(el: HTMLElement) {
       // Reduced motion gets him without the entrance rather than without him.
       el.classList.add(reduced ? 'aside--instant' : 'aside--here');
-      // Quiet, and only if the page is already making sound. A reduced-motion
-      // visitor still gets it: a sound is not something that moves.
-      if (heard) sound.spark(0.16);
     }
 
     /**
@@ -179,21 +198,27 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
     let waiting = pending;
     let last = 0;
 
-    function pass(scrolled: boolean) {
+    function pass() {
       waiting = waiting.filter((el) => {
+        // An element that has left the document is not waiting for anything,
+        // and a detached one reports a rect of zeros — which reads as in view.
+        if (!el.isConnected) return false;
         if (!due(el)) return true;
-        arrive(el, scrolled);
+        arrive(el);
         return false;
       });
 
-      if (!waiting.length) window.removeEventListener('scroll', onScroll);
+      if (!waiting.length) {
+        window.removeEventListener('scroll', onScroll);
+        detach = null;
+      }
     }
 
     function onScroll() {
       const now = Date.now();
       if (now - last < 120) return;
       last = now;
-      pass(true);
+      pass();
     }
 
     for (const el of pending) {
@@ -203,13 +228,20 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
     }
 
     window.addEventListener('scroll', onScroll, { passive: true });
+    detach = () => window.removeEventListener('scroll', onScroll);
 
     // The trigger may already be met on arrival — a short page, or a restored
-    // scroll position that lands past it. Silently, in that case: see arrive().
-    pass(false);
+    // scroll position that lands past it.
+    pass();
   }
 
   document.addEventListener('astro:page-load', setupCharacters);
+
+  // The page is going; so is anything it was still listening for.
+  document.addEventListener('astro:before-swap', () => {
+    detach?.();
+    detach = null;
+  });
 </script>
 
 <style>
