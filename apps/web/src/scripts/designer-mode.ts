@@ -123,6 +123,21 @@ const DECAY_MS = 3000;
 /** How long the leading edge takes to cross the viewport. Matches the CSS. */
 const WAVE_MS = 420;
 
+/*
+ * The three numbers the sound needs, published so it cannot drift from the
+ * picture. Every instant in designer-sound.ts is derived from the beat below
+ * rather than written down a second time — the sound used to carry its own
+ * copy of the timings, and a release scheduled at 2500ms against a decay that
+ * begins at 2400 is a coincidence, not an arrangement.
+ */
+export { DECAY_MS as FIELD_DECAY_MS, WAVE_MS as WAVE_CROSS_MS };
+export type { Beat };
+
+/** Which timeline this viewport runs on. The one place that decides. */
+export function beatFor(): Beat {
+  return window.innerWidth < 768 ? MOBILE_BEAT : BEAT;
+}
+
 /* ---------------------------------------------------------------------- */
 /* What gets taken apart                                                    */
 /* ---------------------------------------------------------------------- */
@@ -343,7 +358,7 @@ export function run(options: DesignerModeOptions): void {
 
   const root = document.documentElement;
   const narrow = window.innerWidth < 768;
-  const beat = narrow ? MOBILE_BEAT : BEAT;
+  const beat = beatFor();
 
   const { originX, originY, character, field } = options;
   const reach = Math.hypot(

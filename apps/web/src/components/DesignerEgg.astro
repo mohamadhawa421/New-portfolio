@@ -138,6 +138,8 @@
        * which acknowledges the click without moving anything at all.
        */
       if (reduced) {
+        // TEMPORARY, with the diagnostic in designer-sound.ts.
+        console.info('[designer sound] reduced motion is on — the egg is silent by design');
         root.dataset.designer = '';
         window.setTimeout(() => delete root.dataset.designer, 2600);
         return;
@@ -150,16 +152,23 @@
        * autoplay policy and the right manners: nothing on this site makes a
        * noise until someone has asked it to.
        */
-      sound.begin();
-      sound.surge();
-      mode.setArcListener(sound.tick);
+      sound.unlock();
 
-      const narrow = window.innerWidth < 768;
-      if (narrow) {
-        // Under the sidebar's fight, and only there.
-        window.setTimeout(() => sound.strain(1100), 300);
-      }
-      window.setTimeout(() => sound.release(), narrow ? 2900 : 2500);
+      /*
+       * The picture and the sound are handed the same beat, and the sound
+       * schedules the whole sequence from it in one pass on the audio clock.
+       *
+       * There are no timers here any more. There used to be two, holding a
+       * release at 2500ms and a strain of 1100ms — numbers that had to be kept
+       * in step by hand with a decay that begins at 2400 and a fight that ends
+       * at the freeze, and were not. Everything the sound does is now derived
+       * from the instants below, so the two cannot drift apart.
+       */
+      sound.play(mode.beatFor(), {
+        wave: mode.WAVE_CROSS_MS,
+        fieldDecay: mode.FIELD_DECAY_MS,
+      });
+      mode.setArcListener(sound.tick);
 
       mode.run({
         originX: x,
