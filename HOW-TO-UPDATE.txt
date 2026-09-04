@@ -54,15 +54,20 @@ Fill in the fields. The ones that matter most:
   Slug           The web address. Click "Regenerate" and it fills itself in
                  from the title. Leave it alone after that — changing it
                  later breaks any link anyone has already shared.
-  Category       Must be one of these four, spelled exactly:
-                     Product Design
-                     Web Experience
-                     Landing Page
-                     Design System
-                 These are the filter buttons on the Work page. A new
-                 category creates a new button, so a typo makes a button
-                 with one project in it.
-  Discipline     Free text, shown on the case study, e.g. "Product Design".
+  Categories     One row per service the project belongs to. Add a row and
+                 type the service name, spelled exactly:
+                     Landing page / showcase website
+                     Mobile app
+                     Web app
+                     Design system
+                     Redesign web / mobile
+                 A project can have more than one — a redesign that shipped
+                 as a web app has both, and it then shows up under either
+                 filter. Put the main one first: it leads the label on the
+                 card. These are the filter buttons on the Work page, and a
+                 service with no projects under it is left out of them, so a
+                 typo makes a button with one project in it.
+  Discipline     Free text, shown on the case study, e.g. "Web app design".
   Summary        One line. Appears on the card and under the title.
   Order          0 is first. Lower numbers come first. To put a new project
                  at the top, give it 0 and add 1 to the others.
@@ -86,7 +91,6 @@ Fill in the fields. The ones that matter most:
                                  "Value" is the short name, "Label" is the
                                  sentence under it.
   Reflection lead / body         The "Looking back" section.
-  Timeline / Scope               Optional, e.g. "10 Days" / "20+ Screens".
 
 Leave a field empty and that part of the page simply does not appear.
 

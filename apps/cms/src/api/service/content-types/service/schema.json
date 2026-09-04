@@ -5,7 +5,7 @@
     "singularName": "service",
     "pluralName": "services",
     "displayName": "Service",
-    "description": "The \"Four ways to work together\" list. Each one preselects itself in the enquiry form."
+    "description": "The \"Five ways to work together\" list. Also the Work page's filter chips and the enquiry form's service options. Each one preselects itself in the form."
   },
   "options": {
     "draftAndPublish": true

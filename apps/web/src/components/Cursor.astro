@@ -6,6 +6,12 @@
  * that eases toward it a frame behind. The lag is the whole effect — it is what
  * makes the pointer feel weighted rather than glued to the cursor.
  *
+ * It is drawn in the site's own ink rather than blended, and it reads the
+ * section under it: light ink over the dark tiles and the dark theme, dark ink
+ * everywhere else. A hairline of the opposite value sits under both shapes, so
+ * it stays legible over a project cover of any colour without the pointer ever
+ * looking like an effect in its own right.
+ *
  * Only ever shown on a device with a real pointer. Touch screens and anyone who
  * has asked for reduced motion keep the native cursor, and so does anyone whose
  * browser cannot run the script — the native cursor is only hidden from inside
@@ -13,31 +19,79 @@
  */
 ---
 
-<div class="cursor" data-cursor aria-hidden="true">
+<!--
+  The directive belongs here rather than on <Cursor /> in the layout: Astro
+  drops transition:persist when it is put on a component tag, silently, so the
+  element was replaced on every navigation while the script below carried on
+  driving the detached one. The pointer then had no visible element to move and
+  the native cursor was still hidden — no pointer at all until a full reload.
+-->
+<div class="cursor" data-cursor aria-hidden="true" transition:persist="site-cursor">
   <div class="cursor__ring" data-cursor-ring></div>
   <div class="cursor__dot" data-cursor-dot></div>
 </div>
 
 <script>
-  /** Set once the cursor is running, so navigations can trigger a re-measure. */
-  let measure: () => void = () => {};
+  /**
+   * Re-states everything the router's DOM swap knocks out from under the
+   * pointer. Set once the pointer is actually running; a no-op until then.
+   */
+  let restate: () => void = () => {};
+
+  /** True once the custom pointer has taken over from the native one. */
+  let running = false;
+
+  /**
+   * Hides the native cursor.
+   *
+   * The class has to be re-applied after every navigation. The client router
+   * replaces the <html> element's attributes wholesale with the incoming
+   * document's, and this class is only ever set at runtime — so it was there on
+   * first paint and gone the moment the visitor followed any link.
+   */
+  function claimCursor() {
+    if (running) document.documentElement.classList.add('has-custom-cursor');
+  }
 
   function setupCursor() {
-    const rootEl = document.querySelector<HTMLElement>('[data-cursor]');
-    const ringEl = document.querySelector<HTMLElement>('[data-cursor-ring]');
-    const dotEl = document.querySelector<HTMLElement>('[data-cursor-dot]');
-    if (!rootEl || !ringEl || !dotEl) return;
+    /*
+     * Re-acquired rather than captured once.
+     *
+     * The element is persisted across navigations, so ordinarily these three
+     * stay valid for the life of the tab — but a persist that stops working is
+     * a silent failure, and the symptom is a pointer that has vanished with no
+     * clue why. Looking the elements up again after every swap costs three
+     * queries and takes the whole failure mode off the table.
+     */
+    let root = document.querySelector<HTMLElement>('[data-cursor]');
+    let ring = document.querySelector<HTMLElement>('[data-cursor-ring]');
+    let dot = document.querySelector<HTMLElement>('[data-cursor-dot]');
+    if (!root || !ring || !dot) return;
 
-    const root = rootEl;
-    const ring = ringEl;
-    const dot = dotEl;
+    /** True if the elements are still in the document this frame belongs to. */
+    function reacquire(): boolean {
+      if (root!.isConnected && ring!.isConnected && dot!.isConnected) return true;
+
+      const nextRoot = document.querySelector<HTMLElement>('[data-cursor]');
+      const nextRing = document.querySelector<HTMLElement>('[data-cursor-ring]');
+      const nextDot = document.querySelector<HTMLElement>('[data-cursor-dot]');
+      if (!nextRoot || !nextRing || !nextDot) return false;
+
+      // Carry the visible state over to the replacement.
+      nextRoot.className = root!.className;
+      root = nextRoot;
+      ring = nextRing;
+      dot = nextDot;
+      return true;
+    }
 
     const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!fine || reduced) return;
 
     // Only now is it safe to hide the real cursor.
-    document.documentElement.classList.add('has-custom-cursor');
+    running = true;
+    claimCursor();
 
     let targetX = window.innerWidth / 2;
     let targetY = window.innerHeight / 2;
@@ -90,9 +144,6 @@
     let leanY = 0;
 
     const clamp = (v: number, max: number) => (v > max ? max : v < -max ? -max : v);
-
-    // Exposed so a navigation can re-measure without re-running setup.
-    measure = measureMagnets;
 
     function measureMagnets(): void {
       const sx = window.scrollX;
@@ -221,6 +272,59 @@
        */
     }
 
+    /* ------------------------------------------------------------------ */
+    /* Ink                                                                 */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * Whether the pointer should be drawn light.
+     *
+     * The same rule the nav uses for its own ink: light over a section tagged
+     * as a dark tile, and light everywhere once the page itself is dark. The
+     * section is read off the element under the pointer, which is already in
+     * hand from the move event — no layout is measured for it.
+     */
+    let overDarkTile = false;
+
+    function pageIsDark(): boolean {
+      const set = document.documentElement.dataset.theme;
+      if (set === 'dark') return true;
+      if (set === 'light') return false;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+
+    function paintInk(): void {
+      root!.classList.toggle('cursor--light', overDarkTile || pageIsDark());
+    }
+
+    function readTile(el: Element | null): void {
+      const tile = el?.closest?.<HTMLElement>('[data-tile]');
+      // No tile means the fixed chrome or the footer, both of which sit on the
+      // page's own surface — the theme alone decides there.
+      overDarkTile = tile?.dataset.tile === 'dark';
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* The loop                                                            */
+    /* ------------------------------------------------------------------ */
+
+    /*
+     * The loop runs only while something is still moving.
+     *
+     * An unconditional requestAnimationFrame is a wake-up every 16ms for the
+     * whole life of the tab, which on a laptop on battery or a weak GPU is a
+     * real cost for a pointer that is usually sitting still. It stops as soon
+     * as the ring has caught up and nothing is leaning, and any input starts
+     * it again.
+     */
+    let looping = false;
+
+    function wake(): void {
+      if (looping) return;
+      looping = true;
+      requestAnimationFrame(frame);
+    }
+
     function frame() {
       let wantX = 0;
       let wantY = 0;
@@ -260,38 +364,123 @@
       ringX += (ringToX - ringX) * 0.18;
       ringY += (ringToY - ringY) * 0.18;
 
-      ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`;
-      dot.style.transform = `translate3d(${targetX}px, ${targetY}px, 0) translate(-50%, -50%)`;
+      // Within a tenth of a pixel of everything it is chasing, and with no
+      // control left to release: nothing would change on the next frame.
+      const settled =
+        !releasing &&
+        Math.abs(ringToX - ringX) < 0.1 &&
+        Math.abs(ringToY - ringY) < 0.1 &&
+        Math.abs(wantX - leanX) < 0.02 &&
+        Math.abs(wantY - leanY) < 0.02;
+
+      if (settled) {
+        ringX = ringToX;
+        ringY = ringToY;
+      }
+
+      ring!.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`;
+      dot!.style.transform = `translate3d(${targetX}px, ${targetY}px, 0) translate(-50%, -50%)`;
+
+      if (settled) {
+        looping = false;
+        return;
+      }
 
       requestAnimationFrame(frame);
     }
 
-    function onMove(event: PointerEvent) {
-      targetX = event.clientX;
-      targetY = event.clientY;
+    /* ------------------------------------------------------------------ */
+    /* Input                                                               */
+    /* ------------------------------------------------------------------ */
 
+    function show(): void {
       if (!visible) {
         visible = true;
         // Jump the ring to the pointer the first time so it does not fly in
         // from the middle of the screen.
         ringX = targetX;
         ringY = targetY;
-        root.classList.add('cursor--on');
       }
+      root!.classList.add('cursor--on');
+    }
+
+    /*
+     * `visible` is reset here, not just the class.
+     *
+     * Leaving the flag set meant the guard in show() short-circuited for the
+     * rest of the session, so once anything had hidden the pointer no amount of
+     * moving the mouse brought it back — and with the native cursor hidden too,
+     * that left no pointer on screen at all.
+     */
+    function hide(): void {
+      visible = false;
+      root!.classList.remove('cursor--on');
+    }
+
+    /**
+     * The element the last move was over.
+     *
+     * Both of the questions asked about it — is this interactive, and which
+     * section is it in — walk up the tree to answer. A pointer crossing a
+     * heading fires dozens of moves over the same element, and re-walking for
+     * every one of them is work with a guaranteed identical answer.
+     */
+    let lastTarget: Element | null = null;
+
+    function adopt(el: Element | null): void {
+      lastTarget = el;
+      root!.classList.toggle('cursor--active', Boolean(el?.closest?.(INTERACTIVE)));
+      readTile(el);
+      paintInk();
+    }
+
+    function onMove(event: PointerEvent) {
+      targetX = event.clientX;
+      targetY = event.clientY;
+      show();
 
       const el = event.target as Element | null;
-      const overInteractive = el?.closest?.(INTERACTIVE);
-      root.classList.toggle('cursor--active', Boolean(overInteractive));
+      if (el !== lastTarget) adopt(el);
 
       engage(fieldAt(targetX + window.scrollX, targetY + window.scrollY));
+      wake();
     }
+
+    /**
+     * Puts the pointer back into the state the page it has landed on implies.
+     *
+     * A navigation replaces everything under a pointer that has not moved, so
+     * without this the ring stays open over a link that is no longer there and
+     * the ink stays light over a dark section that has just been swapped out.
+     */
+    function resync(): void {
+      if (!reacquire()) return;
+      claimCursor();
+      measureMagnets();
+
+      adopt(document.elementFromPoint(targetX, targetY));
+
+      // The router's swap can fire a boundary event that hides the pointer on
+      // the way out; the visitor never left the window, so put it back.
+      if (visible) root!.classList.add('cursor--on');
+      wake();
+    }
+
+    restate = resync;
 
     window.addEventListener('pointermove', onMove, { passive: true });
     /*
      * Document-space positions do not change when the page scrolls, only when
-     * it reflows — so scrolling costs nothing here and only a resize, a late
-     * image, or a new page needs a re-measure.
+     * it reflows — so scrolling costs nothing here. A magnet is the exception:
+     * its viewport-space centre moves, so the lean has to be recomputed.
      */
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (magnet) wake();
+      },
+      { passive: true }
+    );
     window.addEventListener('resize', measureMagnets, { passive: true });
     window.addEventListener('load', measureMagnets);
     measureMagnets();
@@ -299,21 +488,48 @@
     // Entrance animations translate elements into place, so anything measured
     // during one sits a few pixels off. Re-measure once they have settled.
     window.setTimeout(measureMagnets, 1400);
-    window.addEventListener('pointerdown', () => root.classList.add('cursor--down'));
-    window.addEventListener('pointerup', () => root.classList.remove('cursor--down'));
-    document.addEventListener('mouseleave', () => root.classList.remove('cursor--on'));
-    document.addEventListener('mouseenter', () => root.classList.add('cursor--on'));
 
-    requestAnimationFrame(frame);
+    const press = () => root!.classList.add('cursor--down');
+    const release = () => root!.classList.remove('cursor--down');
+    window.addEventListener('pointerdown', press);
+    window.addEventListener('pointerup', release);
+    /*
+     * A press that ends anywhere other than on the page never fires pointerup:
+     * dragging out of the window, the browser cancelling the gesture, or the
+     * tab losing focus to whatever the click opened. The ring would otherwise
+     * stay contracted until the next click.
+     */
+    window.addEventListener('pointercancel', release);
+    window.addEventListener('blur', release);
+
+    /*
+     * Only a genuine exit from the window hides the pointer.
+     *
+     * `mouseleave` on the document also fires when the element under the
+     * pointer is removed — which the client router does to the entire page on
+     * every navigation. `relatedTarget` is null only when the pointer has
+     * really left; during a swap it names whatever it moved to instead.
+     */
+    document.addEventListener('mouseleave', (event) => {
+      if ((event as MouseEvent).relatedTarget === null) hide();
+    });
+    document.addEventListener('mouseenter', show);
+
+    // The ink follows the theme as well as the section, so it has to be
+    // repainted when the switch is used or the OS changes underneath it.
+    window.addEventListener('mh:themechange', paintInk);
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintInk);
+
+    paintInk();
+    wake();
 
     /*
      * The pointer is leaving with the old page: drop the magnet so the control
-     * being removed does not take a stray offset to the grave, and re-measure
-     * once the new page is up. The loop itself keeps running — the cursor
-     * element is persisted, so there is nothing to restart.
+     * being removed does not take a stray offset to the grave. The loop itself
+     * needs no restarting — the cursor element is persisted.
      */
     document.addEventListener('astro:before-swap', () => engage(null));
-    document.addEventListener('astro:after-swap', measureMagnets);
+    document.addEventListener('astro:after-swap', resync);
   }
 
   /*
@@ -325,7 +541,9 @@
   document.addEventListener('astro:page-load', () => {
     const w = window as unknown as { __mhCursor?: boolean };
     if (w.__mhCursor) {
-      measure();
+      // Also covers the router's no-view-transition fallback path, where
+      // astro:after-swap is not the moment the attributes are replaced.
+      restate();
       return;
     }
     w.__mhCursor = true;
@@ -344,20 +562,54 @@
 
 <style>
   .cursor {
+    /*
+     * Not merely transparent when idle: this is a full-viewport fixed layer,
+     * and on a phone — where the custom pointer never runs at all — it would
+     * ride along with every scroll for nothing.
+     *
+     * The class is added by the script only on a device with a real pointer.
+     */
+    display: none;
     position: fixed;
     inset: 0;
     z-index: 9999;
     pointer-events: none;
     opacity: 0;
     transition: opacity 220ms var(--ease-glide);
+
     /*
-     * Drawn white and blended with difference, so the pointer inverts against
-     * whatever is behind it: it renders black over the white sections and
-     * white over the near-black ones. A fixed black cursor disappears entirely
-     * on the dark contact page — and would do the same across a dark theme.
-     * This needs no theme awareness at all.
+     * The ring resizes as it opens over a control. Containment keeps that
+     * inside this layer: without it a size change on the ring is a layout
+     * invalidation the browser has to prove does not affect the page.
      */
-    mix-blend-mode: difference;
+    contain: layout size style;
+
+    /* ---- Ink ------------------------------------------------------- */
+    /*
+     * The pointer is drawn in the palette rather than blended.
+     *
+     * A `mix-blend-mode: difference` pointer needs no theme awareness, which
+     * is why it was there — but it inverts whatever is behind it, so over a
+     * green project cover it turned magenta, and it forced the whole page
+     * beneath the layer to be composited on every frame.
+     *
+     * `--cursor-veil` is a hairline of the opposite value sitting under both
+     * shapes. It is what keeps a dark pointer readable over a dark photograph
+     * without making the pointer itself look like an effect.
+     */
+    --cursor-ink: #1d1d1f;
+    --cursor-veil: rgba(255, 255, 255, 0.7);
+    --cursor-accent: #0066cc;
+  }
+
+  .cursor--light {
+    --cursor-ink: #f5f5f7;
+    --cursor-veil: rgba(0, 0, 0, 0.45);
+    --cursor-accent: #2997ff;
+  }
+
+  :global(html.has-custom-cursor) .cursor {
+    display: block;
   }
 
   .cursor--on {
@@ -374,40 +626,56 @@
   }
 
   .cursor__dot {
-    width: 7px;
-    height: 7px;
-    /* White, not var(--ink) — the difference blend above does the inverting. */
-    background: #fff;
-    transition: width 260ms var(--ease-glide), height 260ms var(--ease-glide);
+    width: 6px;
+    height: 6px;
+    background: var(--cursor-ink);
+    box-shadow: 0 0 0 1px var(--cursor-veil);
+    transition:
+      width 240ms var(--ease-glide),
+      height 240ms var(--ease-glide),
+      background-color 260ms ease,
+      box-shadow 260ms ease;
   }
 
   .cursor__ring {
-    width: 34px;
-    height: 34px;
-    border: 1.5px solid #fff;
-    opacity: 0.55;
+    width: 30px;
+    height: 30px;
+    border: 1.4px solid color-mix(in srgb, var(--cursor-ink) 42%, transparent);
+    /* Two hairlines sandwiching the border, so the outline reads on any
+       background without thickening the line itself. */
+    box-shadow:
+      0 0 0 1px var(--cursor-veil),
+      inset 0 0 0 1px var(--cursor-veil);
     transition:
       width 320ms var(--ease-glide),
       height 320ms var(--ease-glide),
-      opacity 320ms var(--ease-glide),
-      background-color 320ms var(--ease-glide);
+      border-color 260ms ease,
+      background-color 320ms var(--ease-glide),
+      box-shadow 260ms ease;
   }
 
-  /* Over anything clickable the ring opens up and the dot shrinks away. */
+  /* Over anything clickable the ring opens up, takes the accent, and the dot
+     shrinks away — the pointer becomes the target rather than marking it. */
   .cursor--active .cursor__ring {
-    width: 52px;
-    height: 52px;
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.12);
+    width: 46px;
+    height: 46px;
+    border-color: color-mix(in srgb, var(--cursor-accent) 70%, transparent);
+    background: color-mix(in srgb, var(--cursor-accent) 12%, transparent);
   }
 
   .cursor--active .cursor__dot {
     width: 0;
     height: 0;
+    box-shadow: none;
   }
 
   .cursor--down .cursor__ring {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
+  }
+
+  .cursor--active.cursor--down .cursor__ring {
+    width: 38px;
+    height: 38px;
   }
 </style>

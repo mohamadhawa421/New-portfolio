@@ -50,21 +50,36 @@
 
   /* ---- Radii --------------------------------------------------------- */
   /*
-   * Every rounded corner is a squircle (see global.css). These values scale
-   * with the surface so the corners read as one family: a 400px portrait and a
-   * 120px thumbnail need different numbers to look like the same shape.
+   * Every rounded corner is a squircle (see global.css), and the whole family
+   * is tuned to one ratio: a corner of about 10-11% of the surface's shorter
+   * side. That is what makes a 420px portrait and a 120px thumbnail read as
+   * the same shape rather than the same number — the portrait is the reference
+   * (45px on 420px, the Figma "90px + 100% corner smoothing" setting) and the
+   * 120x75 row thumbnail lands on exactly the same ratio at 8px.
    *
-   * The portrait is the reference — 90px on a ~400px square, which is the
-   * Figma "90px + 100% corner smoothing" setting — and everything else is
-   * stepped down from it in roughly the same proportion.
+   * The large image surfaces used to break that. A case study cover is 1124px
+   * wide and 632px tall, and a flat 22px on it is 3.5% — visually a straight
+   * edge with the corner knocked off, nothing like the portrait. The three
+   * tokens below that scale with the viewport are the ones whose surfaces do:
+   * they hold the ratio from a phone to a wide display instead of holding a
+   * number.
+   *
+   * Pills and buttons deliberately sit outside this. They are sized by their
+   * content, not by the layout, and they already read correctly.
    */
-  --r-portrait: 45px;
-  --r-xl: 22px;
-  --r-lg: 18px;
+  --r-portrait: clamp(34px, 3.6vw, 48px);
+  /* Full-bleed imagery: the case study cover and the featured project tile. */
+  --r-2xl: clamp(24px, 4.2vw, 56px);
+  /* Cards, the enquiry form, and the gallery. */
+  --r-xl: clamp(20px, 2.2vw, 30px);
+  /* Inset imagery inside a case study. */
+  --r-lg: clamp(18px, 1.8vw, 26px);
   --r-md: 15px;
   --r-sm: 12px;
   --r-xs: 10px;
-  --r-2xs: 8px;
+  /* The home page's project thumbnails. Rounder than the ratio alone asks
+     for: at 120x75 the squircle only starts to read as one past about 15%. */
+  --r-2xs: clamp(11px, 1vw, 14px);
   --r-pill: 9999px;
 
   /* ---- Layout -------------------------------------------------------- */

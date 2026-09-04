@@ -661,7 +661,14 @@ export interface ApiProjectProject extends Struct.CollectionTypeSchema {
     approachShot: Schema.Attribute.Media<'images'>;
     briefBody: Schema.Attribute.Text;
     briefLead: Schema.Attribute.Text;
-    category: Schema.Attribute.String & Schema.Attribute.Required;
+    categories: Schema.Attribute.Component<'shared.option', true> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      >;
     chipBg: Schema.Attribute.String & Schema.Attribute.DefaultTo<'#efeff1'>;
     chipInk: Schema.Attribute.String & Schema.Attribute.DefaultTo<'#86868b'>;
     constraints: Schema.Attribute.Component<'shared.constraint', true>;

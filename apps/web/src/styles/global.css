@@ -11,6 +11,15 @@
 
 html {
   scroll-behavior: smooth;
+  /*
+   * Stated here as well as on <body>.
+   *
+   * iOS Safari paints the strip behind its own toolbars from the canvas, and
+   * the canvas takes its colour from the root element. Leaving it to propagate
+   * up from the body is enough on a desktop browser but not there, where the
+   * page ended up sitting on a black band under the address bar.
+   */
+  background: var(--surface);
 }
 
 body {
@@ -216,7 +225,11 @@ figure {
 
 [data-hidden] {
   opacity: 0;
-  transform: translateY(16px);
+  /* translate3d rather than translateY: the z keeps the element on its own
+     compositor layer for the whole move, so the fade never asks the browser to
+     re-rasterise a card and its cover mid-scroll. That re-raster is what read
+     as flicker while dragging a phone through the grid. */
+  transform: translate3d(0, 14px, 0);
 }
 
 /* A rise element slides up inside an overflow:hidden parent; it is clipped
@@ -224,7 +237,7 @@ figure {
 [data-rise][data-hidden] {
   display: block;
   opacity: 1;
-  transform: translateY(112%);
+  transform: translate3d(0, 112%, 0);
 }
 
 /*
@@ -234,13 +247,34 @@ figure {
  */
 [data-reveal] {
   transition:
-    opacity 560ms var(--ease-glide),
-    transform 560ms var(--ease-glide);
+    opacity 460ms var(--ease-glide),
+    transform 460ms var(--ease-glide);
 }
 
 [data-rise] {
   display: block;
-  transition: transform 820ms var(--ease-glide);
+  transition: transform 680ms var(--ease-glide);
+}
+
+/*
+ * Phones scroll fast, and a reveal that is still running when the element has
+ * already passed the middle of the screen reads as a card that never quite
+ * arrives. Shorter, and a shorter distance to cover.
+ */
+@media (max-width: 767px) {
+  [data-hidden] {
+    transform: translate3d(0, 10px, 0);
+  }
+
+  [data-reveal] {
+    transition:
+      opacity 360ms var(--ease-glide),
+      transform 360ms var(--ease-glide);
+  }
+
+  [data-rise] {
+    transition: transform 560ms var(--ease-glide);
+  }
 }
 
 [data-shown] {
@@ -283,7 +317,11 @@ figure {
   .skill,
   .contact-block__dot,
   .footer__logo,
-  .site-logo {
+  .site-logo,
+  /* A squircle at a 50% radius is a rounded square, which is what the two
+     pointer shapes turned into. They are circles. */
+  .cursor__dot,
+  .cursor__ring {
     corner-shape: round;
   }
 }
@@ -355,7 +393,7 @@ figure {
  * root overrides have to come after to win.
  */
 ::view-transition-group(*) {
-  animation-duration: 640ms;
+  animation-duration: 460ms;
   animation-timing-function: var(--ease-glide);
 }
 
@@ -378,7 +416,7 @@ figure {
  */
 ::view-transition-image-pair(*) {
   overflow: clip;
-  animation: mh-morph-radius 640ms var(--ease-glide) both;
+  animation: mh-morph-radius 460ms var(--ease-glide) both;
 }
 
 @keyframes mh-morph-radius {
@@ -400,7 +438,7 @@ figure {
 /* The cross-fade between the two covers, matched to the group's own move. */
 ::view-transition-old(*),
 ::view-transition-new(*) {
-  animation-duration: 640ms;
+  animation-duration: 460ms;
   animation-timing-function: var(--ease-glide);
 }
 
@@ -412,17 +450,71 @@ figure {
 }
 
 ::view-transition-old(root) {
-  animation: mh-page-out 200ms var(--ease-in) both;
+  animation: mh-page-out 150ms var(--ease-in) both;
 }
 
 ::view-transition-new(root) {
-  animation: mh-page-in 320ms var(--ease-out) 160ms both;
+  animation: mh-page-in 240ms var(--ease-out) 120ms both;
+}
+
+/* --------------------------------------------------------------------- */
+/* Opening and closing a project                                          */
+/*                                                                        */
+/* Between a listing and a case study the cover is the transition. Fading  */
+/* the whole page underneath it means two things move at once and neither  */
+/* is the one being followed, so the page simply swaps and the cover       */
+/* carries the move on its own.                                            */
+/*                                                                        */
+/* mix-blend-mode has to be reset: the UA gives both snapshots             */
+/* plus-lighter for its cross-fade, which with neither of them fading      */
+/* would add one to the other and blow the page out white.                 */
+/* --------------------------------------------------------------------- */
+:root.morphing::view-transition-old(root),
+:root.morphing::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+:root.morphing::view-transition-old(root) {
+  opacity: 0;
+}
+
+:root.morphing::view-transition-new(root) {
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /*
+   * Switching the fade off is not enough on its own. The UA gives both
+   * snapshots `mix-blend-mode: plus-lighter` for its own cross-fade, so two
+   * fully opaque snapshots are added together and the page flashes white.
+   * The new one simply replaces the old one instead.
+   */
   ::view-transition-old(root),
   ::view-transition-new(root) {
     animation: none;
+    mix-blend-mode: normal;
+  }
+
+  ::view-transition-old(root) {
+    opacity: 0;
+  }
+
+  ::view-transition-new(root) {
+    opacity: 1;
+  }
+
+  /*
+   * The `*, *::before, *::after` reset below does not reach the view-transition
+   * pseudo-elements, so without this the cover still flew across the screen for
+   * someone who has asked the whole site to stop moving.
+   */
+  ::view-transition-group(*),
+  ::view-transition-image-pair(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
   }
 
   html {

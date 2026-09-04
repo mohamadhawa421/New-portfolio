@@ -4,8 +4,10 @@
     {
       "slug": "mylebpass",
       "title": "MyLebPass",
-      "category": "Product Design",
-      "discipline": "Product Design",
+      "categories": [
+        "Web app"
+      ],
+      "discipline": "Web app design",
       "role": "UI / UX Design",
       "order": 4,
       "featured": false,
@@ -55,13 +57,18 @@
       "reflectionBody": "It is being present at the moment someone decides where to go, and effortless at the moment they pay. Both are interface problems more than pricing problems.",
       "cover": "Lebpass cover.png",
       "approachShot": "Mylebpass 1.png",
-      "gallery": ["Mylebpass 2.png", "Mylebpass 3.png"]
+      "gallery": [
+        "Mylebpass 2.png",
+        "Mylebpass 3.png"
+      ]
     },
     {
       "slug": "tahweel",
       "title": "Tahweel",
-      "category": "Product Design",
-      "discipline": "Product Design — concept",
+      "categories": [
+        "Redesign web / mobile"
+      ],
+      "discipline": "Mobile app redesign",
       "role": "UI / UX Design",
       "order": 5,
       "featured": false,
@@ -111,7 +118,10 @@
       "reflectionBody": "The interesting constraint here was restraint: the existing product works, and most of what I changed was hierarchy rather than features. If it were ever built, the next step would be checking the repeat-purchase assumption against real usage data rather than my own habits.",
       "cover": "Tahweel cover.png",
       "approachShot": "Tahweel 1.png",
-      "gallery": ["Tahweel 2.png", "Tahweel 3.png"]
+      "gallery": [
+        "Tahweel 2.png",
+        "Tahweel 3.png"
+      ]
     }
   ]
 }

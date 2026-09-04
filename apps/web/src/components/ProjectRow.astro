@@ -8,6 +8,22 @@ interface Props {
 }
 
 const { project, index = 0 } = Astro.props;
+
+/*
+ * The placeholder colour is only painted when there is no cover.
+ *
+ * Behind one, it is never meant to be seen — and it was: a rounded, clipped
+ * frame and the picture inside it are rasterised separately, so the corner
+ * pixels blend the two and a pale placeholder under a dark cover surfaces as a
+ * hairline along whichever edge happens to land off the pixel grid. It moved
+ * from project to project with the layout, and re-rasterising the layer on
+ * scroll made it come and go.
+ *
+ * With nothing to bleed through, there is nothing to see.
+ */
+const thumbStyle = project.cover
+  ? `color:${project.chipInk}`
+  : `background:${project.chipBg};color:${project.chipInk}`;
 ---
 
 <a class="row" href={`/work/${project.slug}`} data-reveal={String(index)}>
@@ -15,7 +31,7 @@ const { project, index = 0 } = Astro.props;
     class="row__thumb"
     data-morph
     data-slug={project.slug}
-    style={`background:${project.chipBg};color:${project.chipInk}`}
+    style={thumbStyle}
   >
     {
       project.cover ? (
@@ -49,14 +65,10 @@ const { project, index = 0 } = Astro.props;
     color: inherit;
     position: relative;
     overflow: hidden;
-    /* Promote to its own layer so the slide composites instead of repainting
-       the thumbnail on every frame. */
-    transform: translateZ(0);
-    /* Short enough to read as a direct response to the pointer. Anything past
-       roughly 200ms starts to feel like the row is catching up with you. */
-    transition:
-      transform 320ms var(--ease-glide),
-      opacity 520ms var(--ease-smooth);
+    /* The hover fill below sits at z-index -1, which only stays inside the row
+       if the row is a stacking context. `isolation` makes one without asking
+       for a compositor layer, which is what the old translateZ(0) did. */
+    isolation: isolate;
   }
 
   /* The divider is drawn as a line rather than a border: a border on a rounded
@@ -86,39 +98,13 @@ const { project, index = 0 } = Astro.props;
     content: '';
     position: absolute;
     inset: 0;
-    /* .row is already a stacking context (transform: translateZ(0) forces
-       one), so z-index here is scoped to it: this sits behind the thumbnail
-       and text rather than covering them. */
+    /* .row is a stacking context (isolation: isolate), so z-index here is
+       scoped to it: this sits behind the thumbnail and text rather than
+       covering them. */
     z-index: -1;
     background: var(--surface-row-hover);
     opacity: 0;
-    /* Promoted up front. A layer that sits at opacity 0 is not rasterised
-       until something needs it, so the very first hover pays for creating and
-       uploading it — that is the hesitation before the first fade, which then
-       disappears once the layer is cached. Declaring the intent lets the
-       browser prepare it during idle time instead. */
-    will-change: opacity;
     transition: opacity 280ms var(--ease-glide);
-  }
-
-  .row:hover {
-    transform: translate3d(8px, 0, 0);
-    color: inherit;
-  }
-
-  .row:hover::after {
-    opacity: 1;
-  }
-
-  /* Touch screens have no hover; the slide would only ever fire on tap. */
-  @media (hover: none) {
-    .row:hover {
-      transform: translateZ(0);
-    }
-
-    .row:hover::after {
-      opacity: 0;
-    }
   }
 
   .row__thumb {
@@ -136,19 +122,24 @@ const { project, index = 0 } = Astro.props;
   }
 
   .row__thumb img {
-    width: 100%;
-    height: 100%;
+    /*
+     * Half a pixel of bleed on every side.
+     *
+     * The tile and the image inside it are rasterised separately, and at a
+     * fractional device-pixel width the rounded clip antialiases against the
+     * tile's own background — a pale hairline down one edge of a card, on
+     * exactly the covers whose layout happens to land off the pixel grid.
+     * Overlapping the frame puts the picture under the seam.
+     *
+     * `max-width` has to be overridden: the global `img { max-width: 100% }`
+     * would otherwise clamp the extra pixel straight back off.
+     */
+    width: calc(100% + 1px);
+    height: calc(100% + 1px);
+    margin: -0.5px;
+    max-width: none;
     object-fit: cover;
     display: block;
-    /*
-     * Its own compositor layer. The source is a 1440px cover displayed at
-     * ~120px, and without this the downscale is re-rasterised inside the row's
-     * layer on every frame of the hover slide — which is the whole reason this
-     * row felt heavier than the text-only service rows next to it. Promoted,
-     * it rasterises once and is simply moved.
-     */
-    transform: translateZ(0);
-    backface-visibility: hidden;
   }
 
   .row__text {
@@ -209,15 +200,11 @@ const { project, index = 0 } = Astro.props;
       padding: 18px clamp(10px, 1.4vw, 18px) 26px;
     }
 
-    .row:hover {
-      /* No sideways slide on a stacked card — it just looks like drift. */
-      transform: translateZ(0);
-    }
-
     .row__thumb {
       width: 100%;
       aspect-ratio: 16 / 9;
-      border-radius: var(--r-sm);
+      /* Full width now, so it follows the card scale rather than the row's. */
+      border-radius: var(--r-xl);
     }
 
     .row__text {
@@ -228,6 +215,61 @@ const { project, index = 0 } = Astro.props;
       margin-left: 0;
       justify-content: space-between;
       width: 100%;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Hover                                                               */
+  /*                                                                     */
+  /* All of it is behind a pointer query. A touch screen cannot hover, so */
+  /* every layer these rules promote — the row, its downscaled thumbnail, */
+  /* the pre-rasterised fill — is memory a phone spends on nothing, and   */
+  /* enough of them together is what makes a long list stutter as it is   */
+  /* dragged.                                                             */
+  /* ------------------------------------------------------------------ */
+  @media (hover: hover) and (pointer: fine) {
+    .row {
+      /* Promote to its own layer so the slide composites instead of
+         repainting the thumbnail on every frame. */
+      transform: translateZ(0);
+      /* Short enough to read as a direct response to the pointer. Anything
+         past roughly 200ms starts to feel like the row is catching up. */
+      transition:
+        transform 320ms var(--ease-glide),
+        opacity 520ms var(--ease-smooth);
+    }
+
+    .row::after {
+      /* Promoted up front. A layer that sits at opacity 0 is not rasterised
+         until something needs it, so the very first hover pays for creating
+         and uploading it — that is the hesitation before the first fade. */
+      will-change: opacity;
+    }
+
+    .row:hover {
+      transform: translate3d(8px, 0, 0);
+      color: inherit;
+    }
+
+    .row:hover::after {
+      opacity: 1;
+    }
+
+    .row__thumb img {
+      /*
+       * Its own compositor layer. The source is a 1440px cover displayed at
+       * ~120px, and without this the downscale is re-rasterised inside the
+       * row's layer on every frame of the hover slide.
+       */
+      transform: translateZ(0);
+      backface-visibility: hidden;
+    }
+  }
+
+  /* Stacked on a phone, a sideways slide only reads as drift. */
+  @media (hover: hover) and (pointer: fine) and (max-width: 767px) {
+    .row:hover {
+      transform: translateZ(0);
     }
   }
 </style>

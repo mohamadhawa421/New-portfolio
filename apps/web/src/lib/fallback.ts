@@ -65,7 +65,7 @@ const seeds = [
   {
     title: 'Wise Academy',
     slug: 'wise-academy',
-    category: 'Education',
+    categories: ['Web app'],
     discipline: 'Web app design',
     summary:
       'A learning academy’s platform — programmes, enrolment, and student progress in one place.',
@@ -80,12 +80,12 @@ const seeds = [
   {
     title: 'Kabbara Office',
     slug: 'kabbara-office',
-    category: 'Corporate',
-    discipline: 'Landing page',
-    summary: 'A single page built to establish credibility fast and route serious enquiries.',
-    briefLead: 'One page, one job: make a first-time visitor confident enough to get in touch.',
+    categories: ['Mobile app'],
+    discipline: 'Mobile app design',
+    summary: 'A request queue an office can actually work through, on the phone in their pocket.',
+    briefLead: 'One screen, one job: know what is waiting and what has already been dealt with.',
     briefBody:
-      'Written and laid out in the order a sceptical reader asks questions — who are you, what do you do, why should I believe it, how do I reach you.',
+      'Status became the organising idea rather than a label, so the queue could be read at a glance and filtered down to the handful of requests that needed a decision today.',
     chipBg: '#e9e9ec',
     chipInk: '#86868b',
     featured: false,
@@ -93,8 +93,8 @@ const seeds = [
   {
     title: 'Coding Lebanon',
     slug: 'coding-lebanon',
-    category: 'Community',
-    discipline: 'Web design',
+    categories: ['Landing page / showcase website'],
+    discipline: 'Landing page design',
     summary: 'A learning community’s home for programmes, cohorts, and applications.',
     briefLead:
       'A community site that had to speak to two audiences at once: learners and the people funding them.',
@@ -107,13 +107,13 @@ const seeds = [
   {
     title: 'WFK Law Firm',
     slug: 'wfk-law-firm',
-    category: 'Legal',
-    discipline: 'Landing page',
-    summary: 'Practice areas, people, and enquiries — legible on a phone in thirty seconds.',
+    categories: ['Web app'],
+    discipline: 'Web app design',
+    summary: 'A case board a legal team can read at a glance, inside the tools they already use.',
     briefLead:
-      'Legal websites tend to hide the one thing a visitor came for: can you help with my specific problem?',
+      'Legal software tends to hide the one thing the team came for: what is moving, and what is stuck.',
     briefBody:
-      'Practice areas were promoted to the front of the experience, in plain language, with a direct route to contact from every one of them.',
+      'Status was promoted to the front of the interface, in plain language, with a direct route into every case from the board itself.',
     chipBg: '#efeff1',
     chipInk: '#86868b',
     featured: false,
@@ -121,7 +121,7 @@ const seeds = [
   {
     title: 'Shipment Share',
     slug: 'shipment-share',
-    category: 'Logistics',
+    categories: ['Mobile app'],
     discipline: 'Mobile app design',
     summary: 'Matching senders with travellers — designed thumb-first for mobile.',
     briefLead:
@@ -135,10 +135,10 @@ const seeds = [
   {
     title: 'Shareb',
     slug: 'shareb',
-    category: 'Product',
-    discipline: 'Design system',
-    summary: 'Product interface work carried through into a reusable component language.',
-    briefLead: 'Started as screens, ended as a system — because the screens kept multiplying.',
+    categories: ['Web app'],
+    discipline: 'Web app design',
+    summary: 'A promotional entry flow built to be scanned once and understood immediately.',
+    briefLead: 'One tap from a printed code to being in the draw, with nothing to read on the way.',
     briefBody:
       'Tokens, components, and rules for spacing and states, documented so the tenth screen someone else builds still looks like the first one I did.',
     chipBg: '#f2f2f4',
@@ -192,7 +192,7 @@ export const fallbackHomePage = {
   workHeadingSuffix: 'projects.',
   workLinkLabel: 'Open the index',
   servicesEyebrow: 'What I do',
-  servicesHeading: 'Four ways to work together.',
+  servicesHeading: 'Five ways to work together.',
   servicesIntro:
     'Pick the one that sounds like your project — it opens the brief with that already filled in.',
   manifestoLead: "Complexity isn't the problem.",
@@ -224,13 +224,13 @@ export const fallbackWorkPage = {
   eyebrow: 'Work',
   heading: 'Every project starts the same way.',
   intro:
-    'With a question about the person who has to use it. Filter by sector, or read straight through.',
+    'With a question about the person who has to use it. Filter by the kind of work, or read straight through.',
   allFilterLabel: 'All',
   countLabel: 'shown',
   seo: {
     metaTitle: 'Work — Mohamad Hawa',
     metaDescription:
-      'Selected UI/UX projects across education, legal, logistics, community and corporate products.',
+      'Selected UI/UX projects — landing pages, mobile apps, web apps, design systems and redesigns.',
   },
 };
 
@@ -307,21 +307,23 @@ export const fallbackContactPage = {
 
 export const fallbackServices = [
   {
-    title: 'Web app design',
+    title: 'Landing page / showcase website',
     description:
-      'Dashboards, portals, and tools where the workflow matters more than the wallpaper.',
+      'One page — or a short set of them — that says the right thing in the right order and asks for one action.',
     ctaLabel: 'Start here',
     order: 0,
   },
   {
-    title: 'Mobile app design',
-    description: 'iOS and Android flows built around one thumb, one hand, and short attention.',
+    title: 'Mobile app',
+    description:
+      'iOS and Android products designed thumb-first: the model underneath, the flows on top, and every state in between.',
     ctaLabel: 'Start here',
     order: 1,
   },
   {
-    title: 'Landing page',
-    description: 'One page that says the right thing in the right order and asks for one action.',
+    title: 'Web app',
+    description:
+      'Dashboards, portals and internal tools where a lot of data has to stay readable and a lot of people have to stay oriented.',
     ctaLabel: 'Start here',
     order: 2,
   },
@@ -330,6 +332,13 @@ export const fallbackServices = [
     description: 'Components, tokens, and rules so the tenth screen looks like the first.',
     ctaLabel: 'Start here',
     order: 3,
+  },
+  {
+    title: 'Redesign web / mobile',
+    description:
+      'An existing product taken apart and rebuilt around what people are actually trying to do with it.',
+    ctaLabel: 'Start here',
+    order: 4,
   },
 ];
 

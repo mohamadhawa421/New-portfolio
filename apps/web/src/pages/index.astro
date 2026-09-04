@@ -374,10 +374,10 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     color: inherit;
     position: relative;
     overflow: hidden;
-    transform: translateZ(0);
-    transition:
-      transform 320ms var(--ease-glide),
-      opacity 520ms var(--ease-smooth);
+    /* The hover fill below sits at z-index -1, which only stays inside the row
+       if the row is a stacking context. `isolation` makes one without asking
+       for a compositor layer — see ProjectRow.astro. */
+    isolation: isolate;
   }
 
   /* Line, not border — see ProjectRow for why. */
@@ -401,31 +401,30 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     z-index: -1;
     background: var(--surface-row-hover-parchment);
     opacity: 0;
-    /* Promoted up front. A layer that sits at opacity 0 is not rasterised
-       until something needs it, so the very first hover pays for creating and
-       uploading it — that is the hesitation before the first fade, which then
-       disappears once the layer is cached. Declaring the intent lets the
-       browser prepare it during idle time instead. */
-    will-change: opacity;
     transition: opacity 280ms var(--ease-glide);
   }
 
-  .service:hover {
-    transform: translate3d(8px, 0, 0);
-    color: inherit;
-  }
-
-  .service:hover::after {
-    opacity: 1;
-  }
-
-  @media (hover: none) {
-    .service:hover {
+  /* Behind a pointer query for the same reason as ProjectRow's: a touch screen
+     cannot hover, so the layers these rules promote are spent on nothing. */
+  @media (hover: hover) and (pointer: fine) {
+    .service {
       transform: translateZ(0);
+      transition:
+        transform 320ms var(--ease-glide),
+        opacity 520ms var(--ease-smooth);
+    }
+
+    .service::after {
+      will-change: opacity;
+    }
+
+    .service:hover {
+      transform: translate3d(8px, 0, 0);
+      color: inherit;
     }
 
     .service:hover::after {
-      opacity: 0;
+      opacity: 1;
     }
   }
 

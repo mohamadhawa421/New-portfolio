@@ -68,6 +68,27 @@ const { settings } = Astro.props;
     height: 26px;
     width: auto;
     display: block;
+    transition: filter 420ms var(--ease-out);
+  }
+
+  /*
+   * The wordmark is black artwork in a file, so it cannot take a colour from
+   * the palette the way the rest of the footer does — on a dark page it was
+   * black on near-black and simply disappeared. Flattened to black and then
+   * inverted, it becomes the same near-white the ink is, which is exactly what
+   * chrome.ts does to the mark in the corner.
+   *
+   * Both selectors, matching tokens.css: the explicit choice, and the system
+   * preference for as long as no choice has been made.
+   */
+  :global(:root[data-theme='dark']) .footer__logo img {
+    filter: brightness(0) invert(1);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .footer__logo img {
+      filter: brightness(0) invert(1);
+    }
   }
 
   .footer__links {

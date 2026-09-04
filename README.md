@@ -137,7 +137,7 @@ Collection types:
 | Type | What it holds |
 | --- | --- |
 | **Project** | Everything on a card *and* the full case study: brief, problem constraints, approach, decisions, gallery, metrics, reflection |
-| **Service** | The "Four ways to work together" list. Each links to the contact form with itself preselected |
+| **Service** | The "Five ways to work together" list. It is also the Work page's filter chips and the enquiry form's service options, so the three always agree. Each links to the contact form with itself preselected |
 | **Process step** | The "How I work" list |
 
 Ordering is by the `order` field, lowest first. On a Project it also drives the
@@ -172,7 +172,7 @@ in the form stays true. Selecting a service on the home page links to
 previous Next.js portfolio by `apps/cms/scripts/import-legacy.js`, which parses
 that repo's `lib/project-data.ts` rather than retyping it. Research findings
 became the numbered constraints, `finalSolutions` became the outcome cards, and
-timeline/scope/impact became the three metrics. Nothing was invented: the only
+the impact statements became the three metrics. Nothing was invented: the only
 authored strings are the metric labels, which restate the sentence they came
 from. Image captions are empty because the old site had none.
 

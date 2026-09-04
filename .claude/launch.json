@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "web",
-      "runtimeExecutable": "/opt/homebrew/opt/node@22/bin/npm",
+      "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--workspace=apps/web"],
       "port": 4321
     }

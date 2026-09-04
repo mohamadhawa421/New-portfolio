@@ -43,12 +43,16 @@ export interface Experience {
 export interface Project {
   title: string;
   slug: string;
+  /**
+   * Every service this project answers to, in the order it was filed. Drives
+   * the Work page filters, so each one is the title of a Service.
+   */
+  categories: string[];
+  /** The first category. Leads the card and case study meta line. */
   category: string;
   discipline: string;
   summary: string;
   role: string;
-  timeline: string;
-  scope: string;
   order: number;
   featured: boolean;
   cover: Media | null;

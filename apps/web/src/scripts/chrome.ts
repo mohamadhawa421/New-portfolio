@@ -18,10 +18,36 @@ const styles = root.style;
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/**
+ * A touch screen scrolls faster than a wheel, and a reveal that only starts
+ * once an element is already well inside the viewport is still running when
+ * the element has passed the middle of the screen — which reads as a card that
+ * arrives late rather than one that arrives.
+ *
+ * On a coarse pointer the trigger moves to the viewport edge, so the entrance
+ * has the whole height of the screen to play out in.
+ */
+const coarse = window.matchMedia('(pointer: coarse)').matches;
+
+/** How far into the viewport an element's top has to come to be revealed. */
+const REVEAL_AT = coarse ? 0.995 : 0.94;
+
+/**
+ * The glass blur behind the condensed nav.
+ *
+ * On a phone this is a full-width bar, and a backdrop filter is re-applied on
+ * every frame of every scroll — at three times the device pixel ratio it is
+ * comfortably the most expensive thing on the page. The radius is what that
+ * costs, and on a 68px strip the difference between 20 and 12 is not something
+ * anyone can see. Desktop, where the same bar is a small centred pill over a
+ * discrete GPU, keeps the original.
+ */
+const NAV_BLUR_PX = coarse ? 12 : 20;
+
 const REVEAL_SELECTOR = '[data-reveal],[data-rise],[data-num]';
 
 /** Longest reveal transition in global.css, used to know when a stagger is spent. */
-const REVEAL_MS = 880;
+const REVEAL_MS = 700;
 
 /** Counts a figure up from zero, keeping any prefix/suffix around it ("20+"). */
 function rollNumber(el: HTMLElement): void {
@@ -59,11 +85,11 @@ function rollNumber(el: HTMLElement): void {
  * Separate from show() because priming needs to claim an element now but
  * reveal it a frame later — see primePage.
  */
-function reveal(el: HTMLElement): void {
+function reveal(el: HTMLElement, extra = 0): void {
   const isRise = el.hasAttribute('data-rise');
   if (!el.hasAttribute('data-num')) {
     const index = parseInt(el.getAttribute(isRise ? 'data-rise' : 'data-reveal') || '0', 10);
-    const delay = index * (isRise ? 90 : 70);
+    const delay = index * (isRise ? 90 : 70) + extra;
 
     if (delay) {
       el.style.transitionDelay = `${delay}ms`;
@@ -94,10 +120,61 @@ function reveal(el: HTMLElement): void {
   if (el.hasAttribute('data-num')) rollNumber(el);
 }
 
-function show(el: HTMLElement): void {
-  if (el.dataset.shown) return;
+/** Marks an element as spoken for. False if something already had it. */
+function claim(el: HTMLElement): boolean {
+  if (el.dataset.shown) return false;
   el.dataset.shown = '1';
-  reveal(el);
+  return true;
+}
+
+function show(el: HTMLElement): void {
+  if (claim(el)) reveal(el);
+}
+
+/**
+ * How long each item in a cascade waits behind the one before it.
+ *
+ * Fast enough that a row of cards still reads as arriving together, slow
+ * enough to see them arrive one at a time rather than as a block.
+ */
+const STAGGER_MS = 85;
+
+/**
+ * Reveals a set of elements that became visible at the same moment, cascading
+ * the ones that asked for it.
+ *
+ * A grid is why this exists. Every card carries the same `data-reveal` index,
+ * because a fixed index per card would be wrong: the twelfth card would sit on
+ * a 700ms delay when it finally scrolled into view, long after the cascade it
+ * was numbered for had any meaning. The order has to come from what is
+ * actually appearing together, which is only known at the moment it happens —
+ * so a lone card entering on scroll waits for nothing, and a row of three
+ * entering at once counts itself off.
+ */
+function revealGroup(els: HTMLElement[]): void {
+  let step = 0;
+  for (const el of els) {
+    reveal(el, el.hasAttribute('data-stagger') ? step++ * STAGGER_MS : 0);
+  }
+}
+
+/**
+ * Whether this arrival should leave the page exactly as it was found.
+ *
+ * Two cases, and only two. A cover morphing back into its card is one
+ * animation; replaying every card's fade underneath it is a second one over
+ * the same content, which is what made the return feel unsettled. And an
+ * arrival that restores a scroll position lands mid-page, where an entrance
+ * would animate content the visitor is already looking at.
+ *
+ * Everything else — a reload, a fresh visit, following a link from another
+ * page — plays the entrance. This used to be a blanket once-per-session flag,
+ * which also swallowed the entrance on a plain reload.
+ */
+function arrivingQuietly(): boolean {
+  if (morphSlug !== null) return true;
+  const restoredTo = (history.state as { scrollY?: number } | null)?.scrollY ?? 0;
+  return restoredTo > 0;
 }
 
 /**
@@ -114,42 +191,8 @@ function show(el: HTMLElement): void {
  * to paint the hidden state at least once or there is no start value to
  * transition from and the elements simply pop in.
  */
-/**
- * True while the client router is swapping documents.
- *
- * A card's cover and the case study's cover share a view-transition-name, so
- * the browser morphs one into the other across a navigation. That element must
- * stay visible for the morph to land on: hiding it means the snapshot flies to
- * its destination and then vanishes, because the real element underneath was
- * primed for a reveal it will not get until the visitor scrolls.
- *
- * On a first load there is no morph, so the entrance stagger runs as normal.
- */
-let swapping = false;
-
-function isMorphTarget(el: HTMLElement): boolean {
-  return el.matches('[data-morph]') || el.querySelector('[data-morph]') !== null;
-}
-
-/**
- * Whether this page has already played its entrance in this session.
- *
- * The flag is written by the inline priming script, which always runs first.
- */
-function alreadyRevealed(): boolean {
-  try {
-    return sessionStorage.getItem(`mh-seen:${window.location.pathname}`) === '1';
-  } catch {
-    return false;
-  }
-}
-
 function primePage(): void {
-  // Coming back to a page should not replay its entrance. Returning from a
-  // case study, the listing re-ran every row's fade underneath the cover
-  // morphing back into its card — two animations of the same content at once,
-  // which is what made the return feel unsettled rather than smooth.
-  if (alreadyRevealed()) return;
+  if (arrivingQuietly()) return;
 
   const viewportHeight = window.innerHeight || 800;
   const above: HTMLElement[] = [];
@@ -157,13 +200,7 @@ function primePage(): void {
   document.querySelectorAll<HTMLElement>(REVEAL_SELECTOR).forEach((el) => {
     if (el.dataset.shown || el.hasAttribute('data-hidden')) return;
 
-    // Claim it so the later astro:page-load pass does not hide it either.
-    if (swapping && isMorphTarget(el)) {
-      el.dataset.shown = '1';
-      return;
-    }
-
-    const onScreen = triggerFor(el).getBoundingClientRect().top < viewportHeight * 0.94;
+    const onScreen = triggerFor(el).getBoundingClientRect().top < viewportHeight * REVEAL_AT;
 
     // A counting number above the fold is left as it is: hiding it would show
     // a blank where a figure should be, and it has no entrance to gain.
@@ -179,7 +216,7 @@ function primePage(): void {
   if (!above.length) return;
 
   if (reduced) {
-    above.forEach(reveal);
+    revealGroup(above);
     return;
   }
 
@@ -187,7 +224,7 @@ function primePage(): void {
   const run = () => {
     if (done) return;
     done = true;
-    above.forEach(reveal);
+    revealGroup(above);
   };
 
   requestAnimationFrame(() => requestAnimationFrame(run));
@@ -260,23 +297,46 @@ function setUpReveals(): void {
   observer = new IntersectionObserver(
     (entries) => {
       observerReported = true;
+
+      /*
+       * Collected first, revealed second. Everything the browser reports in one
+       * callback crossed the line together — a whole row of cards on arrival,
+       * or a single one part way down a scroll — and revealGroup is what turns
+       * that into a cascade rather than a block appearing at once.
+       */
+      const batch: HTMLElement[] = [];
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
-        (watched.get(entry.target) ?? []).forEach(show);
+        for (const el of watched.get(entry.target) ?? []) {
+          if (claim(el)) batch.push(el);
+        }
         observer?.unobserve(entry.target);
       }
+      revealGroup(batch);
     },
     {
       // Matches the prototype's "reveal once the top passes 94% of the
-      // viewport" threshold.
-      rootMargin: '0px 0px -6% 0px',
+      // viewport" threshold — and the whole viewport on a touch screen, which
+      // scrolls too fast for the entrance to finish otherwise.
+      rootMargin: `0px 0px -${Math.round((1 - REVEAL_AT) * 100)}% 0px`,
       threshold: 0,
     }
   );
 
   for (const trigger of watched.keys()) observer.observe(trigger);
 
-  window.setTimeout(() => {
+  /*
+   * Held so init() can cancel it. An observer that is replaced before its first
+   * callback ever runs leaves this timer behind with `observerReported` still
+   * false, and four seconds later it reveals the entire page at once — no
+   * entrance, no cascade, everything simply on.
+   *
+   * That is not hypothetical: init() runs twice for one navigation, at
+   * after-swap and again at page-load, so the first observer is routinely
+   * disconnected within a frame of being created. Whether it had reported by
+   * then was a race, and on a slow device or a backgrounded tab it lost.
+   */
+  safetyTimer = window.setTimeout(() => {
     if (!observerReported) showAll();
   }, 4000);
 }
@@ -354,7 +414,7 @@ function chromePass(): void {
         : 'rgba(255,255,255,0.74)'
       : 'transparent'
   );
-  styles.setProperty('--nav-blur', `saturate(180%) blur(${condensed ? 20 : 0}px)`);
+  styles.setProperty('--nav-blur', `saturate(180%) blur(${condensed ? NAV_BLUR_PX : 0}px)`);
   styles.setProperty('--nav-shadow', `0 1px 8px rgba(0,0,0,${condensed ? 0.07 : 0})`);
   styles.setProperty('--nav-ink', overDark ? '#ffffff' : '#1d1d1f');
   styles.setProperty('--logo-op', condensed ? '0' : '1');
@@ -366,6 +426,10 @@ function chromePass(): void {
 }
 
 let observer: IntersectionObserver | null = null;
+/** The observer's last-resort timer, cancelled whenever the observer is. */
+let safetyTimer = 0;
+/** Set when after-swap has already initialised the page this navigation. */
+let initedOnSwap = false;
 let listenersBound = false;
 
 let frame = 0;
@@ -404,13 +468,12 @@ function replayLogoDraw(): void {
 
 function init(): void {
   // The client router swaps the whole page, so the previous page's observer is
-  // watching elements that no longer exist. Drop it before building a new one.
+  // watching elements that no longer exist. Drop it — and its safety net —
+  // before building a new one.
   observer?.disconnect();
   observer = null;
-
-  // Before priming: after-swap runs inside the transition, so this is the last
-  // chance to name the element the incoming snapshot will be taken from.
-  applyMorphName(readMorphSlug());
+  window.clearTimeout(safetyTimer);
+  safetyTimer = 0;
 
   primePage();
   setUpReveals();
@@ -420,12 +483,6 @@ function init(): void {
   // page visit would add another copy.
   if (!listenersBound) {
     listenersBound = true;
-    document.addEventListener('pointerdown', armMorph, true);
-    // Keyboard activation never fires pointerdown.
-    document.addEventListener('keydown', (event) => {
-      if ((event as KeyboardEvent).key === 'Enter') armMorph(event);
-    }, true);
-
     window.addEventListener('scroll', scheduleChrome, { passive: true });
     window.addEventListener('resize', remeasure, { passive: true });
 
@@ -447,8 +504,23 @@ function init(): void {
 // paints it, so revealing above-the-fold content there means it is already
 // visible on the first frame. Doing this on `astro:page-load` instead — which
 // runs after paint — showed up as a flash of empty page on every navigation.
-document.addEventListener('astro:before-swap', () => {
-  swapping = true;
+document.addEventListener('astro:before-swap', (event) => {
+
+  /*
+   * The `morphing` class only means anything while a transition is running, and
+   * it must not be left behind: it hides the outgoing snapshot, which the theme
+   * wipe needs to wipe over. The transition object hands us the exact moment.
+   */
+  const transition = (event as unknown as { viewTransition?: { finished: Promise<void> } })
+    .viewTransition;
+  // `finally` passes a rejection through, and the browser rejects `finished`
+  // whenever it abandons a transition — hiding the tab mid-navigation is
+  // enough. The class still has to come off either way.
+  if (transition) {
+    transition.finished.finally(() => root.classList.remove('morphing')).catch(() => {});
+  } else {
+    root.classList.remove('morphing');
+  }
 
   /*
    * `html { scroll-behavior: smooth }` is there for in-page anchors, but the
@@ -463,11 +535,21 @@ document.addEventListener('astro:before-swap', () => {
 });
 
 document.addEventListener('astro:after-swap', () => {
+  /*
+   * Inside the transition's update callback: the last moment at which the
+   * incoming snapshot can be given the name its counterpart is flying to.
+   */
+  if (morphSlug !== null) {
+    applyMorphName(morphSlug);
+    applyMorphRadius(morphSlug);
+  }
+
   // Before init(), so priming measures against the position the visitor will
   // actually be at, and so the destination cover is not still below the fold
   // when the browser decides whether to bother loading it.
   restoreScroll();
   init();
+  initedOnSwap = true;
 
   /*
    * The mark only draws when it is actually on screen.
@@ -482,8 +564,6 @@ document.addEventListener('astro:after-swap', () => {
   const restoredTo = (history.state as { scrollY?: number } | null)?.scrollY ?? 0;
   if (restoredTo <= 90) replayLogoDraw();
   else delete root.dataset.logoDraw;
-
-  swapping = false;
 });
 
 /* ---------------------------------------------------------------------- */
@@ -550,19 +630,44 @@ function restoreScroll(): void {
  * independent entry animation instead of folding it into the page fade — so
  * covers flash in one by one, the big featured one most visibly of all.
  *
- * The name is therefore applied to a single element, at navigation time, and
- * the slug is remembered so the return trip can name the same card again.
+ * Which navigations morph is decided from the two paths, at the moment the
+ * router starts — early enough that the name is in place before the outgoing
+ * snapshot is taken. A listing opening a case study morphs, and so does a case
+ * study returning to one. Everything else — one case study to the next, a case
+ * study to About — deliberately does not: the cover would be named on one side
+ * only, and would then animate on its own alongside the page.
  */
-const MORPH_KEY = 'mh-morph';
 const MORPH_RADIUS_KEY = 'mh-morph-radius';
 
-function readMorphSlug(): string | null {
-  try {
-    return sessionStorage.getItem(MORPH_KEY);
-  } catch {
-    return null;
-  }
+/** The listings that show a project cover: the work index and the home page. */
+function isListing(path: string): boolean {
+  const clean = path.replace(/\/+$/, '') || '/';
+  return clean === '/' || clean === '/work';
 }
+
+/** `/work/<slug>`, and nothing deeper. */
+function caseSlug(path: string): string | null {
+  const match = path.replace(/\/+$/, '').match(/^\/work\/([^/]+)$/);
+  return match ? match[1] : null;
+}
+
+/**
+ * The cover this navigation morphs, or null when it should not morph at all.
+ * It is the same slug on both legs of the trip: the project being opened, or
+ * the project being left.
+ */
+function morphSlugFor(from: string, to: string): string | null {
+  const opening = caseSlug(to);
+  if (opening && isListing(from)) return opening;
+
+  const leaving = caseSlug(from);
+  if (leaving && isListing(to)) return leaving;
+
+  return null;
+}
+
+/** Set for the length of one navigation, by the before-preparation handler. */
+let morphSlug: string | null = null;
 
 function applyMorphName(slug: string | null): void {
   document.querySelectorAll<HTMLElement>('[data-morph]').forEach((el) => {
@@ -582,30 +687,6 @@ function applyMorphName(slug: string | null): void {
      * Opting this one image out of lazy loading is enough: it is the same file
      * the case study just displayed, so it is already in cache.
      */
-    /*
-     * Hand the transition the corner radius at each end of the move, so it can
-     * be interpolated rather than snapped. The radius we are arriving at is
-     * this element's; the one we are leaving was recorded on the way out.
-     */
-    /*
-     * Only while actually swapping. init() also runs on astro:page-load, which
-     * fires again after the swap — and a second pass here would read back the
-     * radius the first pass had just recorded, making both ends of the morph
-     * identical and defeating the interpolation entirely.
-     */
-    if (swapping) {
-      const arriving = getComputedStyle(el).borderRadius;
-      try {
-        const leaving = sessionStorage.getItem(MORPH_RADIUS_KEY) || arriving;
-        root.style.setProperty('--morph-r-from', leaving);
-        root.style.setProperty('--morph-r-to', arriving);
-        // The return trip leaves from here.
-        sessionStorage.setItem(MORPH_RADIUS_KEY, arriving);
-      } catch {
-        /* private mode — the corner simply does not interpolate */
-      }
-    }
-
     const img = el.querySelector<HTMLImageElement>('img');
     if (!img) return;
 
@@ -615,34 +696,71 @@ function applyMorphName(slug: string | null): void {
   });
 }
 
-function rememberMorph(slug: string): void {
+/**
+ * Hands the transition the corner radius at each end of the move, so it can be
+ * interpolated rather than snapped: a row thumbnail is 8px and a case study
+ * cover is 22px, and clipping at one fixed radius means the corner is wrong at
+ * one end and jumps to the right value the instant the transition finishes.
+ */
+function recordMorphRadius(slug: string): void {
+  const el = document.querySelector<HTMLElement>(`[data-morph][data-slug="${CSS.escape(slug)}"]`);
+  if (!el) return;
   try {
-    sessionStorage.setItem(MORPH_KEY, slug);
+    sessionStorage.setItem(MORPH_RADIUS_KEY, getComputedStyle(el).borderRadius);
   } catch {
-    /* private mode — the morph is simply skipped */
+    /* private mode — the corner simply does not interpolate */
+  }
+}
+
+function applyMorphRadius(slug: string): void {
+  const el = document.querySelector<HTMLElement>(`[data-morph][data-slug="${CSS.escape(slug)}"]`);
+  if (!el) return;
+
+  const arriving = getComputedStyle(el).borderRadius;
+  try {
+    const leaving = sessionStorage.getItem(MORPH_RADIUS_KEY) || arriving;
+    root.style.setProperty('--morph-r-from', leaving);
+    root.style.setProperty('--morph-r-to', arriving);
+    // The return trip leaves from here.
+    sessionStorage.setItem(MORPH_RADIUS_KEY, arriving);
+  } catch {
+    root.style.setProperty('--morph-r-from', arriving);
+    root.style.setProperty('--morph-r-to', arriving);
   }
 }
 
 /*
- * pointerdown rather than click: the router starts the transition on click, and
- * the outgoing snapshot has to already carry the name by then.
+ * Fires before the router fetches the next page and well before the outgoing
+ * snapshot is taken, which is the window in which the name has to be set.
+ *
+ * `morphing` on the root switches the page's own blur-and-fade off. Between a
+ * listing and a case study the cover is the transition — running a fade of the
+ * whole page underneath it means two things move at once and neither reads.
  */
-function armMorph(event: Event): void {
-  const link = (event.target as Element | null)?.closest?.('a[href^="/work/"]');
-  const tile = link?.querySelector<HTMLElement>('[data-morph][data-slug]');
-  if (!tile?.dataset.slug) return;
+document.addEventListener('astro:before-preparation', (event) => {
+  const detail = event as unknown as { from?: URL; to?: URL };
+  const from = detail.from?.pathname ?? window.location.pathname;
+  const to = detail.to?.pathname ?? window.location.pathname;
 
-  rememberMorph(tile.dataset.slug);
+  morphSlug = morphSlugFor(from, to);
 
-  // Recorded before we leave, so the far side knows what shape to start from.
-  try {
-    sessionStorage.setItem(MORPH_RADIUS_KEY, getComputedStyle(tile).borderRadius);
-  } catch {
-    /* private mode */
+  // The inline priming script in BaseLayout runs during the swap, before this
+  // module gets another look at the page, and has to make the same call about
+  // whether to replay the entrance.
+  (window as unknown as { __mhMorph?: string | null }).__mhMorph = morphSlug;
+
+  root.classList.toggle('morphing', morphSlug !== null);
+
+  if (morphSlug === null) {
+    // Leave nothing named: a name with a counterpart on one side only gets its
+    // own animation, separate from the page's.
+    applyMorphName(null);
+    return;
   }
 
-  applyMorphName(tile.dataset.slug);
-}
+  recordMorphRadius(morphSlug);
+  applyMorphName(morphSlug);
+});
 
 /*
  * The path the visitor was on before this one.
@@ -668,5 +786,19 @@ document.addEventListener('astro:page-load', () => {
   }, 0);
 });
 
-// Covers the very first load, where after-swap never fires.
-document.addEventListener('astro:page-load', init);
+/*
+ * Covers the very first load, and the fallback path where the router does an
+ * ordinary navigation — in both, after-swap never fires.
+ *
+ * On a client-side navigation both events fire, and init() is not cheap: it
+ * rebuilds the IntersectionObserver over every reveal element and re-measures
+ * every section. Doing that twice for one navigation is a second round of
+ * layout work on the frame the visitor is already waiting on.
+ */
+document.addEventListener('astro:page-load', () => {
+  if (initedOnSwap) {
+    initedOnSwap = false;
+    return;
+  }
+  init();
+});

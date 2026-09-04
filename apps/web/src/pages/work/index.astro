@@ -1,13 +1,31 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
-import { getProjects, getWorkPage } from '../../lib/content';
+import { getProjects, getServices, getWorkPage } from '../../lib/content';
 
-const [work, projects] = await Promise.all([getWorkPage(), getProjects()]);
+const [work, projects, services] = await Promise.all([
+  getWorkPage(),
+  getProjects(),
+  getServices(),
+]);
+
+/*
+ * The chips are the service list, in the order the services are offered — so
+ * the filters read the same way here as they do on the home page and in the
+ * enquiry form, rather than in whatever order the projects happen to be in.
+ *
+ * A service with nothing behind it is left out. An empty filter is a dead end:
+ * the visitor presses it, the grid empties, and the only thing they have learnt
+ * is that the control was pointless. Anything a project claims that is not in
+ * the service list still gets a chip, so a category can never become
+ * unreachable by being mistyped in the CMS.
+ */
+const filled = new Set(projects.flatMap((project) => project.categories));
 
 const categories = [
   work.allFilterLabel,
-  ...Array.from(new Set(projects.map((project) => project.category).filter(Boolean))),
+  ...services.map((service) => service.title).filter((title) => filled.has(title)),
+  ...[...filled].filter((category) => !services.some((service) => service.title === category)),
 ];
 ---
 
@@ -22,7 +40,12 @@ const categories = [
     </section>
 
     <section class="section section--light work-grid" data-lift data-tile="light">
-      <div class="shell work-grid__filters" data-reveal="0">
+      <div
+        class="shell work-grid__filters"
+        data-reveal="0"
+        role="group"
+        aria-label="Filter by the kind of work"
+      >
         {
           categories.map((category, i) => (
             <button
@@ -36,13 +59,16 @@ const categories = [
             </button>
           ))
         }
-        <span class="work-grid__count">
+        {/* Pressing a chip changes nothing else on screen above the fold, so
+            without this a screen reader gets no confirmation that the filter
+            did anything. */}
+        <span class="work-grid__count" aria-live="polite">
           <span data-count>{projects.length}</span>
           {' '}{work.countLabel}
         </span>
       </div>
 
-      <div class="shell work-grid__list" data-grid data-all-label={work.allFilterLabel}>
+      <div class="shell work-grid__list" data-work-grid data-all-label={work.allFilterLabel}>
         {projects.map((project) => <ProjectCard project={project} />)}
       </div>
 
@@ -56,20 +82,27 @@ const categories = [
 <script is:inline>
   (function () {
     function setupFilters() {
-      const grid = document.querySelector('[data-grid]');
+      const grid = document.querySelector('[data-work-grid]');
       const chips = document.querySelectorAll('[data-filter]');
-      const cards = document.querySelectorAll('[data-grid] [data-category]');
+      const cards = document.querySelectorAll('[data-work-grid] [data-categories]');
       // Read from the DOM rather than interpolating CMS text into this script.
       const allLabel = grid ? grid.dataset.allLabel : 'All';
       const counter = document.querySelector('[data-count]');
       const empty = document.querySelector('[data-empty]');
       if (!chips.length || !cards.length) return;
 
+      // A project can answer to several filters, so the card carries a list.
+      // Split once here rather than on every chip press.
+      const filed = new Map();
+      cards.forEach((card) => {
+        filed.set(card, (card.dataset.categories || '').split('|').filter(Boolean));
+      });
+
       function applyFilter(value) {
         let shown = 0;
 
         cards.forEach((card) => {
-          const match = value === allLabel || card.dataset.category === value;
+          const match = value === allLabel || filed.get(card).indexOf(value) !== -1;
           card.hidden = !match;
           if (match) shown += 1;
         });

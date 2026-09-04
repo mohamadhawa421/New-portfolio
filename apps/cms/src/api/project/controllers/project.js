@@ -8,6 +8,7 @@ const { createCoreController } = require('@strapi/strapi').factories;
  * let an explicit ?populate= in the request win if one is given.
  */
 const DEFAULT_POPULATE = {
+  categories: true,
   cover: true,
   approachShot: true,
   gallery: true,

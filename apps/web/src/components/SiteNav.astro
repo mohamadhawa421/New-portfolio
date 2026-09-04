@@ -104,6 +104,8 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
   interface MenuController {
     isOpen: () => boolean;
     setOpen: (next: boolean) => void;
+    /** Puts the menu back to closed without touching the scroll position. */
+    forceClosed: () => void;
     panel: HTMLElement;
     focusable: () => HTMLElement[];
   }
@@ -136,8 +138,15 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
       return;
     }
 
-    // A navigation can land mid-transition; make sure nothing is left locked.
-    document.documentElement.classList.remove('menu-open');
+    /*
+     * A navigation can land with the menu open — going Back does, since nothing
+     * closed it on the way out. Clearing the DOM here is not enough on its own:
+     * the burger, panel and scrim are persisted, so the controller bound to
+     * them survives too, still believing the menu is open. The next press then
+     * "closed" an already-closed menu and did nothing visible.
+     */
+    if (current) current.forceClosed();
+    document.documentElement.classList.remove('menu-open', 'menu-snap');
     document.body.style.position = '';
     document.body.style.top = '';
     document.body.style.width = '';
@@ -174,11 +183,34 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
         // otherwise animate the restore and look like the page jumped away.
         window.scrollTo({ top: scrollY, behavior: 'instant' });
         burger!.focus();
-        // Keep the scrim in the DOM until its fade-out finishes.
-        window.setTimeout(() => {
-          if (!open) scrim!.hidden = true;
-        }, 400);
+        // Keep the scrim in the DOM until its fade-out finishes — or drop it
+        // at once when there is no fade to wait for.
+        if (document.documentElement.classList.contains('menu-snap')) {
+          scrim!.hidden = true;
+        } else {
+          window.setTimeout(() => {
+            if (!open) scrim!.hidden = true;
+          }, 400);
+        }
       }
+    }
+
+    /*
+     * The closing half of setOpen, without the scroll restore. On a navigation
+     * the router is already putting the page where it belongs, and scrolling
+     * back to where the menu happened to be opened would fight it.
+     */
+    function forceClosed() {
+      if (!open) return;
+      open = false;
+      burger!.setAttribute('aria-expanded', 'false');
+      burger!.setAttribute('aria-label', 'Open menu');
+      panel!.setAttribute('inert', '');
+      scrim!.hidden = true;
+      document.documentElement.classList.remove('menu-open');
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
     }
 
     if (burger.dataset.bound) {
@@ -190,13 +222,28 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     burger.addEventListener('click', () => setOpen(!open));
     scrim.addEventListener('click', () => setOpen(false));
 
-    // With the client router the link does not reload the page, so the panel
-    // has to be closed explicitly or it would stay open over the new page.
+    /*
+     * With the client router the link does not reload the page, so the panel
+     * has to be closed explicitly or it would stay open over the new page —
+     * and it has to close instantly.
+     *
+     * Animated, the 520ms slide-out is still running when the router takes its
+     * snapshot of the outgoing page, so the transition captured a sidebar
+     * half way off screen and cross-faded it over the incoming one. That is
+     * the flicker: a menu closing and a page changing are two animations
+     * competing over the same moment, and only one of them is the point.
+     */
     panel.querySelectorAll('a[href]').forEach((link) => {
-      link.addEventListener('click', () => setOpen(false));
+      link.addEventListener('click', () => {
+        document.documentElement.classList.add('menu-snap');
+        setOpen(false);
+        // Long enough for the closed state to be painted, short enough that
+        // the next open still animates.
+        window.setTimeout(() => document.documentElement.classList.remove('menu-snap'), 80);
+      });
     });
 
-    current = { isOpen: () => open, setOpen, panel, focusable };
+    current = { isOpen: () => open, setOpen, forceClosed, panel, focusable };
 
     if (globalsBound) return;
     globalsBound = true;
@@ -410,6 +457,15 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
 
   .scrim[hidden] {
     display: none;
+  }
+
+  /*
+   * The menu is closing because the page is changing. Nothing about that
+   * should be animated — see the link handler above.
+   */
+  :global(html.menu-snap) .panel,
+  :global(html.menu-snap) .scrim {
+    transition: none;
   }
 
   :global(html.menu-open) .scrim {

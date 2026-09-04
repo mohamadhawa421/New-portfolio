@@ -144,7 +144,9 @@ async function main() {
       const data = {
         title: p.title,
         slug: p.slug,
-        category: p.category,
+        // A project can be filed under several services. A single `category`
+        // string is still accepted so older payloads keep importing.
+        categories: (p.categories ?? (p.category ? [p.category] : [])).map((label) => ({ label })),
         discipline: p.discipline,
         role: p.role,
         order: p.order,

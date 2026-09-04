@@ -42,14 +42,14 @@ const config = {
   </div>
 
   <div class="enquiry__row">
-    <div class="enquiry__field enquiry__field--half">
+    <div class="enquiry__field enquiry__field--service">
       <label for={`${id}-service`}>{contact.formServiceLabel}</label>
       <select id={`${id}-service`} name="service">
         {serviceOptions.map((option) => <option value={option}>{option}</option>)}
       </select>
     </div>
 
-    <div class="enquiry__field enquiry__field--half">
+    <div class="enquiry__field enquiry__field--budget">
       <label for={`${id}-budget`}>{contact.formBudgetLabel}</label>
       <select id={`${id}-budget`} name="budget">
         {budgetOptions.map((option) => <option value={option}>{option}</option>)}
@@ -213,8 +213,22 @@ const config = {
     gap: 12px;
   }
 
-  .enquiry__field--half {
-    flex: 1 1 170px;
+  /*
+   * The service names are long — "Landing page / showcase website" needs about
+   * 240px of text — and a <select> clips rather than wraps, so an even split
+   * showed half a service name and no way to see the rest.
+   *
+   * The two bases are what decide the layout: side by side while the form is
+   * wide enough for both at their natural size, and stacked full width the
+   * moment it is not. The service field asks for more of the row in either
+   * case, because it is the one carrying the long text.
+   */
+  .enquiry__field--service {
+    flex: 3 1 260px;
+  }
+
+  .enquiry__field--budget {
+    flex: 1 1 140px;
   }
 
   .enquiry label {
@@ -246,6 +260,14 @@ const config = {
     appearance: none;
     -webkit-appearance: none;
     cursor: pointer;
+    /*
+     * A <select> cannot wrap, and on a phone narrower than about 360px the
+     * longest service name is a few pixels wider than the field. Cut off it
+     * reads as a rendering fault; with an ellipsis it reads as a label that
+     * continues — and the native picker shows the whole thing anyway. Nothing
+     * truncates at any width the layout actually has room for.
+     */
+    text-overflow: ellipsis;
   }
 
   .enquiry textarea {

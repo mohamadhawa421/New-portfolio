@@ -60,6 +60,15 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
     <meta name="twitter:description" content={pageDescription} />
     <meta name="twitter:image" content={shareImageUrl} />
 
+    {/* Safari and Chrome tint their own chrome from this, which is what stops
+        the page ending on a band of browser-default black above the address
+        bar on a phone. Two of them so the system preference is right before a
+        single line of script has run; theme.ts rewrites both the moment the
+        visitor takes the switch off the system. The values are --surface in
+        each palette. */}
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)" />
+
     <link rel="icon" type="image/svg+xml" href={faviconHref} />
     <link rel="apple-touch-icon" href={faviconHref} />
 
@@ -139,8 +148,12 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
 
     <SiteFooter settings={settings} />
 
-    <Cursor transition:persist="site-cursor" />
-    <GridOverlay transition:persist="grid-egg" />
+    {/* Both persist themselves, on their own root elements. A
+        transition:persist here — on the component tag — is accepted and then
+        silently dropped, which is how they came to be replaced on every
+        navigation. */}
+    <Cursor />
+    <GridOverlay />
 
     {/* Runs while the parser is still in <body>, so it executes before the
         first paint but after the layout above it exists. It marks only the
@@ -163,54 +176,33 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
     <script is:inline>
       (function () {
         var vh = window.innerHeight || 800;
+        /* Matches REVEAL_AT in chrome.ts: a touch screen scrolls too fast for
+           an entrance that only starts once the element is well inside the
+           viewport, so there the trigger sits at the edge. */
+        var revealAt = matchMedia('(pointer: coarse)').matches ? 0.995 : 0.94;
         var nodes = document.querySelectorAll('[data-reveal],[data-rise],[data-num]');
         var above = [];
 
         /*
-         * The client router re-runs this script on every navigation, so this is
-         * the first thing that touches the incoming page — before chrome.ts
-         * gets a look at it. The flag lives on window because the router
-         * replaces the <html> element's attributes during a swap.
+         * Two arrivals leave the page exactly as they found it, and only two.
+         * A cover morphing back into its card is already one animation, and
+         * replaying every card's fade underneath it is a second one over the
+         * same content. And an arrival that restores a scroll position lands
+         * mid-page, where an entrance would animate what is already being
+         * looked at.
+         *
+         * Everything else plays it — a reload included. Mirrors
+         * arrivingQuietly() in chrome.ts; `__mhMorph` is set there, at the
+         * start of the navigation that led here.
          */
-        var isSwap = !!window.__mhPrimed;
-        window.__mhPrimed = 1;
-
-        /*
-         * A page plays its entrance once per session, not once per visit.
-         * Coming back from a case study used to replay every row's fade while
-         * the cover was still morphing back into its card — two animations of
-         * the same content at the same time. Leaving the page as it was found
-         * is both calmer and closer to what actually happened: the visitor
-         * never left it.
-         */
-        var seenKey = 'mh-seen:' + location.pathname;
-        var seenBefore = false;
-        try {
-          seenBefore = sessionStorage.getItem(seenKey) === '1';
-          sessionStorage.setItem(seenKey, '1');
-        } catch (e) {
-          /* private mode — every visit animates, which is the old behaviour */
-        }
-        if (seenBefore) return;
+        var restoringTo = (history.state && history.state.scrollY) || 0;
+        if (window.__mhMorph || restoringTo > 0) return;
 
         for (var i = 0; i < nodes.length; i++) {
           var el = nodes[i];
 
-          /*
-           * A project cover and the case study's cover share a
-           * view-transition-name, so the browser morphs one into the other
-           * across a navigation. Hiding the destination means the snapshot
-           * flies to it and then disappears, leaving a gap until the visitor
-           * scrolls far enough to trigger the reveal. Claim it instead, so
-           * nothing hides it later either.
-           */
-          if (isSwap && (el.matches('[data-morph]') || el.querySelector('[data-morph]'))) {
-            el.dataset.shown = '1';
-            continue;
-          }
-
           var trigger = el.hasAttribute('data-rise') && el.parentElement ? el.parentElement : el;
-          var onScreen = trigger.getBoundingClientRect().top < vh * 0.94;
+          var onScreen = trigger.getBoundingClientRect().top < vh * revealAt;
 
           // A counting figure on screen is left alone: hiding it would show a
           // blank where a number belongs, and it has no entrance to gain.
@@ -225,24 +217,34 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
 
         if (!above.length) return;
 
-        function reveal(el) {
+        function reveal(el, extra) {
           if (!el.hasAttribute('data-num')) {
             var isRise = el.hasAttribute('data-rise');
             var index = parseInt(el.getAttribute(isRise ? 'data-rise' : 'data-reveal') || '0', 10);
-            var delay = index * (isRise ? 90 : 70);
+            var delay = index * (isRise ? 90 : 70) + (extra || 0);
             if (delay) {
               el.style.transitionDelay = delay + 'ms';
               // Left in place it would also delay this element's hover.
               setTimeout(function () {
                 el.style.transitionDelay = '';
-              }, delay + 940);
+              }, delay + 760);
             }
           }
           el.removeAttribute('data-hidden');
         }
 
+        /* Cascades whatever asked for it. Mirrors revealGroup in chrome.ts —
+           keep STAGGER_MS there in step with the 85 below. */
+        function revealGroup(els) {
+          var step = 0;
+          for (var n = 0; n < els.length; n++) {
+            var el = els[n];
+            reveal(el, el.hasAttribute('data-stagger') ? step++ * 85 : 0);
+          }
+        }
+
         if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-          above.forEach(reveal);
+          revealGroup(above);
           return;
         }
 
@@ -250,7 +252,7 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         function run() {
           if (done) return;
           done = true;
-          above.forEach(reveal);
+          revealGroup(above);
         }
 
         // Two frames: the hidden state has to be painted once or there is no

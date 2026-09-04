@@ -27,35 +27,13 @@ const {
   writePublicDatabase,
   assertPublicDatabaseIsClean,
 } = require('./db');
+const { ensureBuildEnv } = require('./build-env');
 
 const CMS_ROOT = path.join(__dirname, '..');
 const WEB_ROOT = path.join(CMS_ROOT, '..', 'web');
 const OUT_JSON = path.join(WEB_ROOT, 'src', 'data', 'content.json');
 const OUT_MEDIA = path.join(WEB_ROOT, 'public', 'media');
 const UPLOADS = path.join(CMS_ROOT, 'public', 'uploads');
-
-/**
- * Booting Strapi requires these to be set. Locally they come from .env. On a
- * build machine there is no .env, and it does not matter what they are: nothing
- * is served, no token is issued, and the database is only read. So fill in
- * placeholders rather than making the deploy depend on six secrets.
- */
-function ensureBuildEnv() {
-  const placeholders = {
-    APP_KEYS: 'build-only-key-one,build-only-key-two',
-    API_TOKEN_SALT: 'build-only-salt',
-    ADMIN_JWT_SECRET: 'build-only-secret',
-    TRANSFER_TOKEN_SALT: 'build-only-transfer-salt',
-    JWT_SECRET: 'build-only-jwt-secret',
-    ENCRYPTION_KEY: 'build-only-encryption-key',
-    DATABASE_CLIENT: 'sqlite',
-    DATABASE_FILENAME: 'data/portfolio.db',
-  };
-
-  for (const [key, value] of Object.entries(placeholders)) {
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
 
 /** Everything the site reads, and how to fetch each one. */
 const SINGLE_TYPES = {
@@ -96,6 +74,7 @@ const POPULATE = {
     seo: { populate: ['shareImage'] },
   },
   'api::project.project': {
+    categories: true,
     cover: true,
     approachShot: true,
     gallery: true,

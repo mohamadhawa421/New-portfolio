@@ -111,9 +111,14 @@ const mapExperience = (raw: unknown): Experience[] =>
       period: text(item?.period),
     }));
 
+/**
+ * A repeatable `shared.option` component reduced to its labels. Plain strings
+ * are accepted too, which is what `fallback.ts` writes — there is no reason for
+ * the safety net to mimic Strapi's component shape.
+ */
 const mapOptions = (raw: unknown): string[] =>
   list<any>(raw)
-    .map((item) => text(item?.label))
+    .map((item) => (typeof item === 'string' ? text(item) : text(item?.label)))
     .filter(Boolean);
 
 /* ------------------------------------------------------------------ */
@@ -122,15 +127,29 @@ const mapOptions = (raw: unknown): string[] =>
 
 function mapProject(raw: any, index: number): Project {
   const title = text(raw?.title, 'Untitled project');
+
+  /*
+   * A project can sit under more than one service — a redesign that shipped as
+   * a web app belongs to both — so the filters read a list. `category` stays as
+   * the first of them, which is what the card and the case study label with.
+   *
+   * The single `category` string the model used to carry is still accepted, so
+   * a snapshot taken before the change renders rather than falling over.
+   */
+  const categories = mapOptions(raw?.categories);
+  if (!categories.length) {
+    const legacy = text(raw?.category);
+    if (legacy) categories.push(legacy);
+  }
+
   return {
     title,
     slug: text(raw?.slug, `project-${index + 1}`),
-    category: text(raw?.category, 'Sector'),
+    categories,
+    category: categories[0] ?? '',
     discipline: text(raw?.discipline, 'Discipline'),
     summary: text(raw?.summary),
     role: text(raw?.role, 'UI / UX Design'),
-    timeline: text(raw?.timeline),
-    scope: text(raw?.scope),
     order: typeof raw?.order === 'number' ? raw.order : index,
     featured: bool(raw?.featured, false),
     cover: toMedia(raw?.cover, title),

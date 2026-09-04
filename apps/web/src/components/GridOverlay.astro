@@ -13,27 +13,45 @@
  */
 ---
 
-<div class="grid-egg" data-grid hidden aria-hidden="true">
+<!-- Persisted here, not on <GridOverlay /> in the layout — see Cursor.astro. -->
+<div class="grid-egg" data-grid-overlay hidden aria-hidden="true" transition:persist="grid-egg">
   <div class="grid-egg__baseline"></div>
   <div class="grid-egg__shell">
     {Array.from({ length: 12 }).map(() => <span class="grid-egg__col" />)}
   </div>
 </div>
 
-<div class="grid-egg__readout" data-grid-readout hidden aria-hidden="true"></div>
+<div
+  class="grid-egg__readout"
+  data-grid-readout
+  hidden
+  aria-hidden="true"
+  transition:persist="grid-readout"></div>
 
 <script>
   function setupGrid() {
-    if (document.documentElement.dataset.gridEgg) return;
-    document.documentElement.dataset.gridEgg = '1';
+    /*
+     * Once per tab. The flag lives on window rather than on <html>, whose
+     * attributes the client router replaces wholesale on every navigation —
+     * kept there, this ran again on each page and added another copy of the
+     * keydown and resize listeners, so by the fifth page G toggled the grid
+     * five times and left it exactly where it started.
+     */
+    const w = window as unknown as { __mhGridEgg?: boolean };
+    if (w.__mhGridEgg) return;
+    w.__mhGridEgg = true;
 
-    const gridEl = document.querySelector<HTMLElement>('[data-grid]');
-    const readoutEl = document.querySelector<HTMLElement>('[data-grid-readout]');
-    if (!gridEl || !readoutEl) return;
-
-    // Narrowing does not survive into the nested handlers below.
-    const grid = gridEl;
-    const readout = readoutEl;
+    /*
+     * Looked up per use, not captured once.
+     *
+     * The two elements are persisted across navigations — but a persist that
+     * silently stops working leaves this closure toggling `hidden` on nodes
+     * that are no longer in the document, and the only symptom is that G stops
+     * doing anything until the page is reloaded.
+     */
+    const grid = () => document.querySelector<HTMLElement>('[data-grid-overlay]');
+    const readout = () => document.querySelector<HTMLElement>('[data-grid-readout]');
+    if (!grid() || !readout()) return;
 
     let on = false;
     let introduced = false;
@@ -47,13 +65,18 @@
 
     function paint() {
       if (!on) return;
-      readout.textContent = introduced ? describe() : `${describe()}  —  press G to hide`;
+      const el = readout();
+      if (el) el.textContent = introduced ? describe() : `${describe()}  —  press G to hide`;
     }
 
     function toggle() {
+      const gridEl = grid();
+      const readoutEl = readout();
+      if (!gridEl || !readoutEl) return;
+
       on = !on;
-      grid.hidden = !on;
-      readout.hidden = !on;
+      gridEl.hidden = !on;
+      readoutEl.hidden = !on;
 
       if (on) {
         paint();

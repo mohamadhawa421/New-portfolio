@@ -6,13 +6,34 @@ interface Props {
 }
 
 const { project } = Astro.props;
+
+// Pipe-delimited rather than JSON: the filter script only has to split it, and
+// no service title contains a pipe. Read by the Work page's chips.
+const filterKey = project.categories.join('|');
+
+/*
+ * The placeholder colour is only painted when there is no cover.
+ *
+ * Behind one, it is never meant to be seen — and it was: a rounded, clipped
+ * frame and the picture inside it are rasterised separately, so the corner
+ * pixels blend the two and a pale placeholder under a dark cover surfaces as a
+ * hairline along whichever edge happens to land off the pixel grid. It moved
+ * from project to project with the layout, and re-rasterising the layer on
+ * scroll made it come and go.
+ *
+ * With nothing to bleed through, there is nothing to see.
+ */
+const tileStyle = project.cover
+  ? `color:${project.chipInk}`
+  : `background:${project.chipBg};color:${project.chipInk}`;
 ---
 
 <a
   class="card"
   href={`/work/${project.slug}`}
   data-reveal="0"
-  data-category={project.category}
+  data-stagger
+  data-categories={filterKey}
 >
   <!-- Pairs with the cover on the case study. The browser lifts this element
        out of the page transition and morphs it into its counterpart, so the
@@ -22,7 +43,7 @@ const { project } = Astro.props;
     class="card__tile"
     data-morph
     data-slug={project.slug}
-    style={`background:${project.chipBg};color:${project.chipInk}`}
+    style={tileStyle}
   >
     {
       project.cover ? (
@@ -57,10 +78,10 @@ const { project } = Astro.props;
     border-radius: var(--r-xl);
     overflow: hidden;
     color: inherit;
-    transform: translateZ(0);
-    transition:
-      transform 340ms var(--ease-glide),
-      opacity 520ms var(--ease-smooth);
+    /* The hover fill below sits at z-index -1, which only stays inside the card
+       if the card is a stacking context. `isolation` makes one without asking
+       for a compositor layer, which is what the old translateZ(0) did. */
+    isolation: isolate;
   }
 
   /* Compositor-only hover fill — see ProjectRow.astro for why this is a
@@ -72,22 +93,7 @@ const { project } = Astro.props;
     z-index: -1;
     background: var(--surface-card-hover);
     opacity: 0;
-    /* Promoted up front. A layer that sits at opacity 0 is not rasterised
-       until something needs it, so the very first hover pays for creating and
-       uploading it — that is the hesitation before the first fade, which then
-       disappears once the layer is cached. Declaring the intent lets the
-       browser prepare it during idle time instead. */
-    will-change: opacity;
     transition: opacity 280ms var(--ease-glide);
-  }
-
-  .card:hover {
-    transform: translate3d(0, -6px, 0);
-    color: inherit;
-  }
-
-  .card:hover::after {
-    opacity: 1;
   }
 
   .card__tile {
@@ -105,21 +111,27 @@ const { project } = Astro.props;
      * snapped round at the end of the move.
      */
     border-radius: var(--r-xl) var(--r-xl) 0 0;
-    /* Its own layer, so the 1.03 scale on hover composites the already-decoded
-       image instead of asking the browser to re-rasterise it every frame. */
-    transform: translateZ(0);
-    transition: transform 620ms var(--ease-glide);
-  }
-
-  .card:hover .card__tile {
-    transform: scale(1.03);
   }
 
   .card__tile img {
+    /*
+     * Half a pixel of bleed on every side.
+     *
+     * The tile and the image inside it are rasterised separately, and at a
+     * fractional device-pixel width the rounded clip antialiases against the
+     * tile's own background — a pale hairline down one edge of a card, on
+     * exactly the covers whose layout happens to land off the pixel grid.
+     * Overlapping the frame puts the picture under the seam.
+     *
+     * `max-width` has to be overridden: the global `img { max-width: 100% }`
+     * would otherwise clamp the extra pixel straight back off.
+     */
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    top: -0.5px;
+    left: -0.5px;
+    width: calc(100% + 1px);
+    height: calc(100% + 1px);
+    max-width: none;
     object-fit: cover;
     display: block;
   }
@@ -139,6 +151,15 @@ const { project } = Astro.props;
     flex: 1;
   }
 
+  /*
+   * The primary category only, not the whole list.
+   *
+   * At this tracking a project filed under two services wraps to a second
+   * line, and a wrapped label pushes that one card's title below its
+   * neighbours' — the titles across a row stop lining up. The case study has a
+   * column to itself and lists every category there; here the filter chips are
+   * what surface the rest.
+   */
   .card__meta {
     font-size: 13px;
     letter-spacing: 0.14em;
@@ -166,5 +187,53 @@ const { project } = Astro.props;
     font-size: 17px;
     letter-spacing: -0.022em;
     color: var(--blue);
+  }
+
+  /*
+   * Everything below this line exists for the hover state, and every line of it
+   * costs a compositor layer per card.
+   *
+   * Twelve cards on a phone meant twelve promoted cards, twelve promoted cover
+   * images and twelve pre-rasterised hover fills — thirty-six layers for an
+   * interaction a touch screen cannot perform. Past the browser's layer budget
+   * it starts recycling them mid-scroll, which is the stutter that showed up
+   * as cards flickering while dragging through the grid.
+   */
+  @media (hover: hover) and (pointer: fine) {
+    .card {
+      transform: translateZ(0);
+      transition:
+        transform 340ms var(--ease-glide),
+        opacity 520ms var(--ease-smooth);
+    }
+
+    .card:hover {
+      transform: translate3d(0, -6px, 0);
+      color: inherit;
+    }
+
+    .card:hover::after {
+      opacity: 1;
+    }
+
+    .card:hover .card__tile {
+      transform: scale(1.03);
+    }
+
+    .card__tile {
+      /* Its own layer, so the 1.03 scale on hover composites the
+         already-decoded image instead of re-rasterising it every frame. */
+      transform: translateZ(0);
+      transition: transform 620ms var(--ease-glide);
+    }
+
+    .card::after {
+      /* Promoted up front. A layer that sits at opacity 0 is not rasterised
+         until something needs it, so the very first hover pays for creating and
+         uploading it — that is the hesitation before the first fade, which then
+         disappears once the layer is cached. Declaring the intent lets the
+         browser prepare it during idle time instead. */
+      will-change: opacity;
+    }
   }
 </style>

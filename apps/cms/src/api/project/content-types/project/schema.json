@@ -22,10 +22,13 @@
       "targetField": "title",
       "required": true
     },
-    "category": {
-      "type": "string",
+    "categories": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.option",
       "required": true,
-      "description": "Sector, e.g. Education or Logistics. Doubles as the filter chip on the Work page."
+      "min": 1,
+      "description": "Every service this project belongs to, e.g. \"Web app\". Each one becomes a filter chip on the Work page, and a chip no project matches is not shown. The first is the primary and leads the card label."
     },
     "discipline": {
       "type": "string",
@@ -41,14 +44,6 @@
     "role": {
       "type": "string",
       "default": "UI / UX Design"
-    },
-    "timeline": {
-      "type": "string",
-      "description": "e.g. \"One Week\". Shown in the case study facts row when set."
-    },
-    "scope": {
-      "type": "string",
-      "description": "e.g. \"44+ Screens\". Shown in the case study facts row when set."
     },
     "order": {
       "type": "integer",

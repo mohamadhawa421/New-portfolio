@@ -4,8 +4,10 @@
     {
       "slug": "kanz",
       "title": "Kanz",
-      "category": "Fintech",
-      "discipline": "Product Design",
+      "categories": [
+        "Mobile app"
+      ],
+      "discipline": "Mobile app design",
       "role": "UI / UX Design",
       "order": 0,
       "featured": true,
@@ -63,8 +65,11 @@
     {
       "slug": "rowad",
       "title": "Rowad",
-      "category": "Financial Education",
-      "discipline": "Web Experience Design",
+      "categories": [
+        "Redesign web / mobile",
+        "Web app"
+      ],
+      "discipline": "Web app redesign",
       "role": "UI / UX Design",
       "order": 1,
       "featured": false,
@@ -122,8 +127,11 @@
     {
       "slug": "lebanese-prime-minister",
       "title": "Lebanese Prime Minister",
-      "category": "Government & Public Sector",
-      "discipline": "Web Experience Design",
+      "categories": [
+        "Redesign web / mobile",
+        "Web app"
+      ],
+      "discipline": "Web app redesign",
       "role": "UI / UX Design",
       "order": 2,
       "featured": false,
@@ -181,8 +189,10 @@
     {
       "slug": "apamea",
       "title": "Apamea",
-      "category": "Asset Management",
-      "discipline": "Product Design",
+      "categories": [
+        "Web app"
+      ],
+      "discipline": "Web app design",
       "role": "UI / UX Design",
       "order": 3,
       "featured": false,

@@ -77,15 +77,20 @@ const maskId = `theme-crescent-${crypto.randomUUID().slice(0, 8)}`;
     overflow: visible;
   }
 
+  /*
+   * The icon's own timings track the wave in theme.ts. They used to outlast it,
+   * which showed on a run of quick presses: the disc was still growing into a
+   * crescent when the next press asked it to go back.
+   */
   .theme-toggle__disc {
     fill: currentColor;
-    transition: r 520ms var(--ease-glide);
+    transition: r 380ms var(--ease-glide);
   }
 
   .theme-toggle__bite {
     /* Parked off to the side in light mode so the disc stays a full sun. */
     transform: translateX(0);
-    transition: transform 520ms var(--ease-glide);
+    transition: transform 380ms var(--ease-glide);
   }
 
   .theme-toggle__rays {
@@ -93,8 +98,8 @@ const maskId = `theme-crescent-${crypto.randomUUID().slice(0, 8)}`;
     stroke-width: 1.7;
     transform-origin: 12px 12px;
     transition:
-      opacity 380ms var(--ease-glide),
-      transform 620ms var(--ease-glide);
+      opacity 300ms var(--ease-glide),
+      transform 440ms var(--ease-glide);
   }
 
   /* Dark: rays spin away and shrink, the bite slides in to carve the crescent. */
