@@ -1,4 +1,17 @@
 ---
+/**
+ * The loading curtain.
+ *
+ * The wordmark is inlined rather than referenced as an <img> for two reasons:
+ * an <img> cannot be recoloured, so the black artwork stayed black on the dark
+ * theme's near-black curtain, and it cannot be animated, so the mark could only
+ * fade in while the small mark in the corner draws itself.
+ *
+ * Inlined, it does both — it paints with currentColor and draws its own
+ * contour, the same gesture as the corner mark at full size.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
 import type { Media } from '../lib/types';
 
 interface Props {
@@ -6,13 +19,50 @@ interface Props {
 }
 
 const { logo } = Astro.props;
+
+let viewBox = '';
+let paths: string[] = [];
+
+if (logo) {
+  try {
+    const file = path.join(process.cwd(), 'public', logo.url.replace(/^\//, ''));
+    const raw = fs
+      .readFileSync(file, 'utf8')
+      // Design tools embed a provenance manifest larger than the artwork.
+      .replace(/<metadata>[\s\S]*?<\/metadata>/g, '');
+
+    viewBox = raw.match(/viewBox="([^"]+)"/)?.[1] ?? '';
+    paths = [...raw.matchAll(/<path[^>]*\sd="([^"]+)"/g)].map((m) => m[1]);
+  } catch {
+    // Unreadable or not an SVG — the <img> fallback below still renders.
+  }
+}
+
+const canDraw = Boolean(viewBox) && paths.length > 0;
 ---
 
 {
   logo && (
     <div class="intro" data-intro role="button" tabindex="0" aria-label="Skip intro">
       <div class="intro__logo">
-        <img src={logo.url} alt={logo.alt} />
+        {canDraw ? (
+          <svg class="intro-logo" viewBox={viewBox} role="img" aria-label={logo.alt}>
+            {paths.map((d) => (
+              <path class="intro-logo__fill" d={d} fill="currentColor" />
+            ))}
+            {paths.map((d) => (
+              <path
+                class="intro-logo__stroke"
+                d={d}
+                pathLength="1"
+                fill="none"
+                stroke="currentColor"
+              />
+            ))}
+          </svg>
+        ) : (
+          <img src={logo.url} alt={logo.alt} />
+        )}
       </div>
     </div>
   )
@@ -132,10 +182,70 @@ const { logo } = Astro.props;
     transform: none;
   }
 
-  .intro__logo img {
+  .intro__logo img,
+  .intro-logo {
     width: 100%;
     height: auto;
     display: block;
+    /* Follows the theme ink, so the wordmark is black on the light curtain and
+       white on the dark one. */
+    color: var(--ink);
+    overflow: visible;
+  }
+
+  .intro-logo__stroke {
+    stroke-width: 5;
+    stroke-linejoin: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+
+  .intro-logo__fill {
+    opacity: 0;
+  }
+
+  /*
+   * Keyed off the curtain's own entrance so the line starts drawing exactly as
+   * the wordmark becomes visible, rather than part-drawn behind an opacity of
+   * zero. The three glyph groups are offset slightly so it writes rather than
+   * appearing all at once.
+   */
+  .intro--in .intro-logo__stroke {
+    animation:
+      mh-intro-draw 1150ms var(--ease-glide) forwards,
+      mh-intro-lift 320ms var(--ease-out) 1120ms forwards;
+  }
+
+  .intro--in .intro-logo__stroke:nth-of-type(2) {
+    animation-delay: 90ms, 1210ms;
+  }
+
+  .intro--in .intro-logo__stroke:nth-of-type(3) {
+    animation-delay: 170ms, 1290ms;
+  }
+
+  .intro--in .intro-logo__fill {
+    animation: mh-intro-ink 380ms var(--ease-out) 1000ms forwards;
+  }
+
+  @keyframes mh-intro-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* The contour hands off to the solid wordmark rather than sitting on top of
+     it, which would leave the glyphs heavier than they are drawn. */
+  @keyframes mh-intro-lift {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes mh-intro-ink {
+    to {
+      opacity: 1;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

@@ -244,8 +244,22 @@ function setUpReveals(): void {
 
   if (!watched.size) return;
 
+  /*
+   * Safety net for the case where the observer never reports at all.
+   *
+   * Everything below the fold is hidden on the assumption that something will
+   * later reveal it. If that never happens the page is not merely unanimated,
+   * it is empty — the content is there but invisible, with no way for the
+   * visitor to get at it. An observer callback fires once per observed element
+   * as soon as it is observed, whatever its state, so this flag is set almost
+   * immediately in any browser where the mechanism works at all; it stays
+   * false only when the page is genuinely not being rendered.
+   */
+  let observerReported = false;
+
   observer = new IntersectionObserver(
     (entries) => {
+      observerReported = true;
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
         (watched.get(entry.target) ?? []).forEach(show);
@@ -261,6 +275,10 @@ function setUpReveals(): void {
   );
 
   for (const trigger of watched.keys()) observer.observe(trigger);
+
+  window.setTimeout(() => {
+    if (!observerReported) showAll();
+  }, 4000);
 }
 
 /**
@@ -394,8 +412,6 @@ function init(): void {
   // chance to name the element the incoming snapshot will be taken from.
   applyMorphName(readMorphSlug());
 
-  replayLogoDraw();
-
   primePage();
   setUpReveals();
   remeasure();
@@ -447,8 +463,26 @@ document.addEventListener('astro:before-swap', () => {
 });
 
 document.addEventListener('astro:after-swap', () => {
-  init();
+  // Before init(), so priming measures against the position the visitor will
+  // actually be at, and so the destination cover is not still below the fold
+  // when the browser decides whether to bother loading it.
   restoreScroll();
+  init();
+
+  /*
+   * The mark only draws when it is actually on screen.
+   *
+   * The nav hides the logo once the page is scrolled, so replaying the draw
+   * after returning to a restored scroll position meant it animated and then
+   * vanished as the page jumped down to where it had been.
+   *
+   * The restored offset is read from history rather than from window.scrollY,
+   * which has not caught up yet at this point.
+   */
+  const restoredTo = (history.state as { scrollY?: number } | null)?.scrollY ?? 0;
+  if (restoredTo <= 90) replayLogoDraw();
+  else delete root.dataset.logoDraw;
+
   swapping = false;
 });
 
@@ -531,7 +565,28 @@ function readMorphSlug(): string | null {
 
 function applyMorphName(slug: string | null): void {
   document.querySelectorAll<HTMLElement>('[data-morph]').forEach((el) => {
-    el.style.viewTransitionName = el.dataset.slug && el.dataset.slug === slug ? `cover-${slug}` : '';
+    const isTarget = Boolean(el.dataset.slug) && el.dataset.slug === slug;
+    el.style.viewTransitionName = isTarget ? `cover-${slug}` : '';
+
+    if (!isTarget) return;
+
+    /*
+     * The cover has to be painted before the browser snapshots this page, or
+     * the morph lands on an empty tile and the picture appears afterwards —
+     * which is the white flash on the way back from a project.
+     *
+     * Listing covers are lazy, and on arrival the page is still at the top
+     * with the card far below the fold, so the browser has every reason not to
+     * have loaded it. Scroll is restored moments later and it finally loads.
+     * Opting this one image out of lazy loading is enough: it is the same file
+     * the case study just displayed, so it is already in cache.
+     */
+    const img = el.querySelector<HTMLImageElement>('img');
+    if (!img) return;
+
+    img.loading = 'eager';
+    img.fetchPriority = 'high';
+    if (typeof img.decode === 'function') void img.decode().catch(() => {});
   });
 }
 

@@ -346,9 +346,19 @@ figure {
  * `root` has to opt back out — the universal selector matches it too, and a
  * clipped, rounded root would round off the whole page during a transition.
  */
+/*
+ * The morphing cover. Slower than the page fade on purpose — it is the thing
+ * being followed, and at the browser's default quarter second it arrives
+ * before the eye has tracked it.
+ *
+ * Ordering matters below: `root` and `*` select with equal specificity, so the
+ * root overrides have to come after to win.
+ */
 ::view-transition-group(*) {
   border-radius: var(--r-xl);
   overflow: clip;
+  animation-duration: 640ms;
+  animation-timing-function: var(--ease-glide);
 }
 
 @supports (corner-shape: squircle) {
@@ -364,6 +374,13 @@ figure {
   overflow: clip;
 }
 
+/* The cross-fade between the two covers, matched to the group's own move. */
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: 640ms;
+  animation-timing-function: var(--ease-glide);
+}
+
 ::view-transition-group(root),
 ::view-transition-image-pair(root) {
   border-radius: 0;
@@ -371,11 +388,11 @@ figure {
 }
 
 ::view-transition-old(root) {
-  animation: mh-page-out 170ms var(--ease-in) both;
+  animation: mh-page-out 200ms var(--ease-in) both;
 }
 
 ::view-transition-new(root) {
-  animation: mh-page-in 260ms var(--ease-out) 130ms both;
+  animation: mh-page-in 320ms var(--ease-out) 160ms both;
 }
 
 @media (prefers-reduced-motion: reduce) {

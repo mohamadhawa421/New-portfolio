@@ -35,10 +35,25 @@ function current(): Theme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
+function systemTheme(): Theme {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
 function apply(theme: Theme): void {
   document.documentElement.dataset.theme = theme;
   try {
-    localStorage.setItem(STORAGE_KEY, theme);
+    /*
+     * The override is deliberately session-scoped, and is dropped entirely
+     * once it agrees with the system again.
+     *
+     * Stored in localStorage it outlived its usefulness: one press of the
+     * switch pinned the site to that theme on every future visit, and it then
+     * ignored the system setting for good — including someone whose machine
+     * moves between light and dark through the day. The system is the default;
+     * the switch is a departure from it, not a replacement for it.
+     */
+    if (theme === systemTheme()) sessionStorage.removeItem(STORAGE_KEY);
+    else sessionStorage.setItem(STORAGE_KEY, theme);
   } catch {
     // Private mode. The choice just will not survive a reload.
   }
@@ -159,11 +174,43 @@ document.addEventListener('astro:page-load', setup);
  */
 document.addEventListener('astro:after-swap', () => {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = sessionStorage.getItem(STORAGE_KEY);
     if (saved === 'dark' || saved === 'light') {
       document.documentElement.dataset.theme = saved;
     }
   } catch {
     /* private mode — falls back to the system preference */
   }
+});
+
+/*
+ * Changing the system theme is a deliberate act, so it wins: the override is
+ * dropped and the page follows. With no data-theme attribute the palette comes
+ * straight from the prefers-color-scheme block in tokens.css.
+ */
+/*
+ * The preference used to live in localStorage, where it pinned the theme
+ * permanently. It is session-scoped now, so clear the old key rather than
+ * leaving a value behind that nothing reads.
+ */
+try {
+  localStorage.removeItem(STORAGE_KEY);
+} catch {
+  /* nothing to clear */
+}
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* nothing stored to clear */
+  }
+
+  delete document.documentElement.dataset.theme;
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-theme-toggle]')
+    .forEach((b) => b.setAttribute('aria-pressed', String(systemTheme() === 'dark')));
+
+  window.dispatchEvent(new CustomEvent('mh:themechange'));
 });

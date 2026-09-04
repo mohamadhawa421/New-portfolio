@@ -44,7 +44,6 @@
     let ringX = targetX;
     let ringY = targetY;
     let visible = false;
-    let raf = 0;
 
     const INTERACTIVE = 'a, button, [role="button"], input, select, textarea, label, summary';
 
@@ -79,6 +78,9 @@
       left: number;
       w: number;
       h: number;
+      /** Ceilings for this control, per axis — see measureMagnets. */
+      maxLeanX: number;
+      maxLeanY: number;
     }
 
     let magnets: Magnet[] = [];
@@ -97,8 +99,66 @@
       const sy = window.scrollY;
       magnets = Array.from(document.querySelectorAll<HTMLElement>(MAGNETIC)).map((el) => {
         const r = el.getBoundingClientRect();
-        return { el, top: r.top + sy, left: r.left + sx, w: r.width, h: r.height };
+        return {
+          el,
+          top: r.top + sy,
+          left: r.left + sx,
+          w: r.width,
+          h: r.height,
+          maxLeanX: LEAN_MAX,
+          maxLeanY: LEAN_MAX,
+        };
       });
+
+      /*
+       * Each control leans at most half the distance to whatever sits beside
+       * it, so it can never reach its neighbour.
+       *
+       * Without this the lean is a flat maximum, and a flat maximum is wrong
+       * wherever controls are close together: the hero's two buttons sit in a
+       * 10px gap, so a 10px lean slid one straight into the other and read as
+       * a second button appearing underneath. Filter chips have the same
+       * problem at 8px.
+       */
+      for (const m of magnets) {
+        let nearestX = Infinity;
+        let nearestY = Infinity;
+
+        for (const other of magnets) {
+          if (other === m) continue;
+
+          // Side by side: constrains sideways movement only.
+          if (m.top < other.top + other.h && other.top < m.top + m.h) {
+            const gap =
+              other.left >= m.left + m.w
+                ? other.left - (m.left + m.w)
+                : m.left >= other.left + other.w
+                  ? m.left - (other.left + other.w)
+                  : 0;
+            if (gap < nearestX) nearestX = gap;
+          }
+
+          // Stacked: constrains vertical movement only.
+          if (m.left < other.left + other.w && other.left < m.left + m.w) {
+            const gap =
+              other.top >= m.top + m.h
+                ? other.top - (m.top + m.h)
+                : m.top >= other.top + other.h
+                  ? m.top - (other.top + other.h)
+                  : 0;
+            if (gap < nearestY) nearestY = gap;
+          }
+        }
+
+        // Per axis, because a row of buttons is crowded sideways and free
+        // vertically — capping both by the tightest gap in either direction
+        // would flatten the effect for no reason. A pixel of slack so
+        // neighbours never quite touch.
+        const cap = (gap: number) => Math.max(0, Math.min(LEAN_MAX, gap / 2 - 1));
+        if (nearestX !== Infinity) m.maxLeanX = cap(nearestX);
+        if (nearestY !== Infinity) m.maxLeanY = cap(nearestY);
+      }
+
       magnet = null;
     }
 
@@ -144,7 +204,6 @@
       if (magnet) {
         if (next) magnet.el.style.translate = '';
         else releasing = magnet.el;
-        magnet.el.style.willChange = '';
       }
 
       magnet = next;
@@ -152,8 +211,14 @@
       if (next) {
         leanX = 0;
         leanY = 0;
-        next.el.style.willChange = 'translate';
       }
+
+      /*
+       * Deliberately no will-change here. Promoting the control to its own
+       * compositor layer for the duration of the hover left a repainted copy
+       * of it behind at its original position as it moved. A translate is
+       * cheap enough to composite without the hint.
+       */
     }
 
     function frame() {
@@ -167,8 +232,8 @@
         const cx = magnet.left + magnet.w / 2 - window.scrollX;
         const cy = magnet.top + magnet.h / 2 - window.scrollY;
 
-        wantX = clamp((targetX - cx) * LEAN, LEAN_MAX);
-        wantY = clamp((targetY - cy) * LEAN, LEAN_MAX);
+        wantX = clamp((targetX - cx) * LEAN, magnet.maxLeanX);
+        wantY = clamp((targetY - cy) * LEAN, magnet.maxLeanY);
 
         // The ring drifts toward the control's centre; the dot never does.
         // Keeping the dot honest is what stops this feeling like input lag —
@@ -198,7 +263,7 @@
       ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`;
       dot.style.transform = `translate3d(${targetX}px, ${targetY}px, 0) translate(-50%, -50%)`;
 
-      raf = requestAnimationFrame(frame);
+      requestAnimationFrame(frame);
     }
 
     function onMove(event: PointerEvent) {
@@ -239,7 +304,7 @@
     document.addEventListener('mouseleave', () => root.classList.remove('cursor--on'));
     document.addEventListener('mouseenter', () => root.classList.add('cursor--on'));
 
-    raf = requestAnimationFrame(frame);
+    requestAnimationFrame(frame);
 
     /*
      * The pointer is leaving with the old page: drop the magnet so the control

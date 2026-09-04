@@ -84,7 +84,8 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
     <script is:inline>
       (function () {
         try {
-          var saved = localStorage.getItem('mh-theme');
+          // Session-scoped: a new visit starts from the system preference.
+          var saved = sessionStorage.getItem('mh-theme');
           if (saved === 'dark' || saved === 'light') {
             document.documentElement.dataset.theme = saved;
           }
@@ -93,13 +94,23 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         }
 
         /*
-         * The mark draws itself on arrival at every page. Set here, before the
-         * first paint, so it is never briefly solid and then restarted as a
-         * line. Client-side navigations are handled in chrome.ts, which has to
-         * replay it by hand — the logo is a persisted element, so it does not
-         * get re-created and its animation would otherwise only ever run once.
+         * The mark draws itself on arrival, but only when it will be on screen
+         * to be seen. The nav hides the logo as soon as the page is scrolled,
+         * so drawing it while returning to a restored position meant it
+         * animated and then vanished.
+         *
+         * This script re-runs on every client-side navigation, which is why
+         * the check lives here as well as in chrome.ts: setting the flag
+         * unconditionally here would undo that decision moments after it was
+         * made. The offset is read from history because the scroll has not
+         * been restored yet at this point.
          */
-        document.documentElement.dataset.logoDraw = '1';
+        var restoringTo = (history.state && history.state.scrollY) || 0;
+        if (restoringTo <= 90) {
+          document.documentElement.dataset.logoDraw = '1';
+        } else {
+          delete document.documentElement.dataset.logoDraw;
+        }
       })();
     </script>
 

@@ -156,6 +156,11 @@
   --line-dark: #33333a;
 
   --error-on-dark: #ff9f9f;
+
+  /* chrome.ts drives this per section, but it has to start correct: the logo
+     and nav links paint from it, and until that module runs they would
+     otherwise be near-black on a near-black page. */
+  --nav-ink: #f5f5f7;
 }
 
 /* Follow the system until the visitor picks a side. */
@@ -194,5 +199,8 @@
     --line-light: #1f1f24;
     --line-parchment: #26262c;
     --line-dark: #33333a;
+
+    /* See the note in the data-theme block above. */
+    --nav-ink: #f5f5f7;
   }
 }
