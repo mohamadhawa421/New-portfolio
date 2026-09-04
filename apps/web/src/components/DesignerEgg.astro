@@ -228,6 +228,21 @@
 
     // Leaving the page mid-sequence would otherwise carry it to the next one.
     document.addEventListener('astro:before-swap', () => dismiss());
+
+    /*
+     * A reload mid-storm has to take the sound with it.
+     *
+     * `dismiss` fades and lets the voices ring off, which is right when the
+     * page is staying. It is not enough when the document is being replaced:
+     * sources scheduled seconds into the future carry on regardless of the
+     * document that scheduled them, so refreshing part way through left the
+     * blast playing over the new page. pagehide covers a reload, a navigation
+     * away and a tab being put into the back-forward cache alike.
+     */
+    window.addEventListener('pagehide', () => {
+      dismiss();
+      sound.shutdown();
+    });
   }
 
   document.addEventListener('astro:page-load', setupEgg);

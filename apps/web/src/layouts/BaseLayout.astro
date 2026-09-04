@@ -350,20 +350,56 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
       const CASE_STUDY = /^\/work\/[^/]+\/?$/;
       const narrow = window.matchMedia('(max-width: 767px)');
 
+      /** Watches the case study's own back link, so the logo can take over. */
+      let watcher: IntersectionObserver | null = null;
+
+      function setLogo(logo: HTMLAnchorElement, back: boolean) {
+        logo.classList.toggle('site-logo--back', back);
+        logo.href = back ? '/work' : '/';
+        logo.setAttribute(
+          'aria-label',
+          back ? 'Back to all work' : logo.dataset.homeLabel || 'Home'
+        );
+      }
+
+      /*
+       * The logo only becomes the way back once the way back has scrolled away.
+       *
+       * At the top of a project the case study's own "All work" link is right
+       * there, and replacing the logo while it is on screen puts two of the
+       * same control a centimetre apart. So the logo stays the logo until that
+       * link leaves, and takes the job over at exactly the moment it is lost —
+       * which is also the moment the visitor would otherwise have to scroll
+       * back up to find it.
+       *
+       * Watching the link itself rather than a scroll offset means the handover
+       * happens where the link actually is, whatever the hero's height on the
+       * device in hand.
+       */
       function setupLogoBack() {
         const logo = document.querySelector<HTMLAnchorElement>('[data-logo]');
         if (!logo) return;
 
-        const back = CASE_STUDY.test(window.location.pathname) && narrow.matches;
-        logo.classList.toggle('site-logo--back', back);
+        watcher?.disconnect();
+        watcher = null;
 
-        if (back) {
-          logo.href = '/work';
-          logo.setAttribute('aria-label', 'Back to all work');
-        } else {
-          logo.href = '/';
-          logo.setAttribute('aria-label', logo.dataset.homeLabel || 'Home');
+        if (!CASE_STUDY.test(window.location.pathname) || !narrow.matches) {
+          setLogo(logo, false);
+          return;
         }
+
+        const link = document.querySelector('[data-back]');
+        if (!link || typeof IntersectionObserver === 'undefined') {
+          // No link to hand over from, so the logo carries it for the whole page.
+          setLogo(logo, true);
+          return;
+        }
+
+        watcher = new IntersectionObserver(
+          (entries) => setLogo(logo, !entries[entries.length - 1].isIntersecting),
+          { threshold: 0 }
+        );
+        watcher.observe(link);
       }
 
       /*
@@ -478,6 +514,26 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
 
       .site-logo--back .site-logo__back {
         display: inline-flex;
+        /* It arrives rather than appearing: the handover happens mid-scroll,
+           and a control that blinks into existence there reads as a glitch. */
+        animation: site-logo-back 240ms var(--ease-out) both;
+      }
+
+      @keyframes site-logo-back {
+        from {
+          opacity: 0;
+          transform: translateX(4px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .site-logo--back .site-logo__back {
+          animation: none;
+        }
       }
 
       /* The mark steps aside rather than being removed, so nothing it is in the

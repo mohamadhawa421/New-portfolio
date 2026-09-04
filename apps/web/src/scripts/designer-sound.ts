@@ -279,6 +279,44 @@ export function end(): void {
 }
 
 /**
+ * Tears the whole thing down, for a page that is going away.
+ *
+ * end() fades and lets the voices ring off, which is right when the sequence is
+ * being dismissed and the page is staying. It is wrong when the document is
+ * being replaced: a reload mid-storm left several seconds of scheduled blast
+ * still queued on a context nothing was holding any more, and it played on
+ * over the top of the new page. Sources scheduled into the future do not care
+ * that the document that scheduled them is gone.
+ *
+ * So this stops rather than fades, and closes the context outright. Everything
+ * is nulled behind it so that a page restored from the back-forward cache
+ * builds a fresh one on the next press instead of reaching for a closed one.
+ */
+export function shutdown(): void {
+  stopped = true;
+  opened = false;
+
+  for (const voice of voices) {
+    try {
+      voice.stop();
+    } catch {
+      // Already stopped, or never started.
+    }
+  }
+  voices = [];
+
+  const dying = ctx;
+  ctx = null;
+  master = null;
+  arcBus = null;
+  waveBuf = null;
+  backBuf = null;
+  strikeBuf = null;
+
+  if (dying && dying.state !== 'closed') void dying.close().catch(() => {});
+}
+
+/**
  * One strike, fired by the field each time it draws an arc.
  *
  * Split from the wave on purpose. The lightning is not on the clock: the field
