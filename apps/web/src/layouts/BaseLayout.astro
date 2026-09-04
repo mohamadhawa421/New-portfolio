@@ -169,9 +169,22 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
       here too rather than in the deferred module — waiting for that module
       leaves the heading blank for a beat on arrival.
 
-      Client-side navigations do not re-run this; primePage() in chrome.ts
-      mirrors it on astro:after-swap. Keep the two in step — the stagger
-      numbers below match the ones there.
+      It does run again on a client-side navigation, which this used to say it
+      did not. The router re-executes the scripts it swapped in, and it does so
+      from `updateCallbackDone.finally` — after the update callback, and so
+      after the new page has been painted. primePage() in chrome.ts has by then
+      already primed that page from astro:after-swap, which is inside the
+      callback and before the paint.
+
+      Priming a second time is what made the featured project flicker on the
+      way back to the home page and not on a reload: the first pass hid it and
+      revealed it, the paint landed, and this pass hid everything again and
+      revealed it a second time. Below the fold it simply went out and stayed
+      out until the observer caught it on scroll. Hence the guard in the loop —
+      anything already spoken for is left alone, so on a swap this finds nothing
+      to do and primePage owns the arrival.
+
+      Keep the two in step — the stagger numbers below match the ones there.
     -->
     <script is:inline>
       (function () {
@@ -200,6 +213,11 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
 
         for (var i = 0; i < nodes.length; i++) {
           var el = nodes[i];
+
+          // Already primed — by primePage() on a swap, or by an earlier run of
+          // this script. Setting the hidden state again would take back a
+          // reveal that has already been paid for and played.
+          if (el.dataset.shown || el.hasAttribute('data-hidden')) continue;
 
           var trigger = el.hasAttribute('data-rise') && el.parentElement ? el.parentElement : el;
           var onScreen = trigger.getBoundingClientRect().top < vh * revealAt;
@@ -234,13 +252,28 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
           el.removeAttribute('data-hidden');
         }
 
-        /* Cascades whatever asked for it. Mirrors revealGroup in chrome.ts —
-           keep STAGGER_MS there in step with the 85 below. */
+        /*
+         * Cascades whatever asked for it. Mirrors revealGroup in chrome.ts —
+         * keep STAGGER_MS and CASCADE_MS there in step with the 85 and 420
+         * below.
+         *
+         * The step divides to fit the budget once there are enough items to
+         * overrun it, so a cascade takes about the same time however long it
+         * is. A fixed 85ms apiece is right for a row of three and wrong for a
+         * grid of twelve, where the last one waited most of a second before it
+         * began.
+         */
         function revealGroup(els) {
+          var queued = 0;
+          for (var q = 0; q < els.length; q++) {
+            if (els[q].hasAttribute('data-stagger')) queued++;
+          }
+          var gap = queued > 1 ? Math.min(85, 420 / (queued - 1)) : 0;
+
           var step = 0;
           for (var n = 0; n < els.length; n++) {
             var el = els[n];
-            reveal(el, el.hasAttribute('data-stagger') ? step++ * 85 : 0);
+            reveal(el, el.hasAttribute('data-stagger') ? step++ * gap : 0);
           }
         }
 

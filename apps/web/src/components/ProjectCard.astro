@@ -3,9 +3,27 @@ import type { Project } from '../lib/types';
 
 interface Props {
   project: Project;
+  /** Position in the grid, counting from zero. */
+  index?: number;
 }
 
-const { project } = Astro.props;
+const { project, index = 0 } = Astro.props;
+
+/*
+ * The first covers are not lazy.
+ *
+ * Every cover carried loading="lazy", including the ones the visitor opens the
+ * page looking at. A lazy image is invisible to the preload scanner and is not
+ * fetched until layout has decided where it goes, so the cards at the top of
+ * the grid — the largest thing on the page and the one the visitor is waiting
+ * for — were the last images to be asked for.
+ *
+ * Three covers the eager path: one column on a phone, two on a tablet and
+ * three on a desktop, which is the most that can be above the fold in any of
+ * the layouts. The first also declares itself the priority, since on this page
+ * it is what the largest paint is going to be.
+ */
+const eager = index < 3;
 
 // Pipe-delimited rather than JSON: the filter script only has to split it, and
 // no service title contains a pipe. Read by the Work page's chips.
@@ -47,7 +65,13 @@ const tileStyle = project.cover
   >
     {
       project.cover ? (
-        <img src={project.cover.url} alt={project.cover.alt} loading="lazy" decoding="async" />
+        <img
+          src={project.cover.url}
+          alt={project.cover.alt}
+          loading={eager ? 'eager' : 'lazy'}
+          fetchpriority={index === 0 ? 'high' : undefined}
+          decoding="async"
+        />
       ) : (
         <span class="card__initials">{project.initials}</span>
       )
