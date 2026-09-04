@@ -563,9 +563,15 @@ document.addEventListener('astro:before-swap', (event) => {
   // whenever it abandons a transition — hiding the tab mid-navigation is
   // enough. The class still has to come off either way.
   if (transition) {
-    transition.finished.finally(() => root.classList.remove('morphing')).catch(() => {});
+    transition.finished
+      .finally(() => {
+        root.classList.remove('morphing');
+        releaseMorphNames();
+      })
+      .catch(() => {});
   } else {
     root.classList.remove('morphing');
+    releaseMorphNames();
   }
 
   /*
@@ -745,6 +751,29 @@ function applyMorphName(slug: string | null): void {
     img.loading = 'eager';
     img.fetchPriority = 'high';
     if (typeof img.decode === 'function') void img.decode().catch(() => {});
+  });
+}
+
+/**
+ * Takes the name back off once the move is over.
+ *
+ * A `view-transition-name` was only ever cleared by the next navigation that
+ * did not want it, so a cover kept its name for as long as the visitor stayed
+ * on the page it landed on. That is not inert. Every transition the browser
+ * starts captures every named element and hides the original underneath its
+ * snapshot for the duration — so the next one to run, whether that is the
+ * theme wipe or the fade into the following page, lifted the cover out and put
+ * it back, and an aborted transition could leave a frame with neither the
+ * snapshot nor the element painted. Which is a cover that flickers and
+ * disappears while the block around it stays exactly where it is.
+ *
+ * The name is only needed between before-preparation and the end of the
+ * transition. After that it is a claim on an animation nobody asked for.
+ */
+function releaseMorphNames(): void {
+  document.querySelectorAll<HTMLElement>('[data-morph]').forEach((el) => {
+    el.style.viewTransitionName = '';
+    if (!el.getAttribute('style')) el.removeAttribute('style');
   });
 }
 
