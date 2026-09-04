@@ -25,8 +25,12 @@ interface Props {
   height: number;
   /** What he is doing, not what he looks like — he is the aside, not content. */
   alt: string;
-  /** Exactly what he says. */
-  message: string;
+  /**
+   * What he says, in order. The first is what he arrives with; every press
+   * takes the next, and the last wraps round to the second — the opening line
+   * only makes sense as an opening.
+   */
+  lines: string[];
   /**
    * Which set of surfaces the bubble is built from. The home page's last
    * section is a dark panel in both themes and needs the on-dark set, the
@@ -35,14 +39,25 @@ interface Props {
   tone?: 'page' | 'dark';
 }
 
-const { src, alt, message, width, height, tone = 'page' } = Astro.props;
+const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
 ---
 
-<aside class="aside" class:list={[`aside--${tone}`]} data-character>
+<aside
+  class="aside"
+  class:list={[`aside--${tone}`]}
+  data-character
+  data-lines={JSON.stringify(lines)}
+>
   <div class="aside__inner">
-    <p class="aside__bubble">{message}</p>
+    <p class="aside__bubble">
+      {/* The bolt that crosses the bubble as one line becomes the next. Its own
+          clipping box, because the bubble cannot have one — the tail hangs
+          outside it. */}
+      <span class="aside__bolt" aria-hidden="true"></span>
+      <span class="aside__say" data-say aria-live="polite">{lines[0]}</span>
+    </p>
 
-    <div class="aside__figure">
+    <button class="aside__figure" type="button" data-say-more aria-label="Ask him again">
       {/* The flicker. One element, behind him, that blooms and goes out. */}
       <span class="aside__spark" aria-hidden="true"></span>
       <img
@@ -54,7 +69,7 @@ const { src, alt, message, width, height, tone = 'page' } = Astro.props;
         loading="lazy"
         decoding="async"
       />
-    </div>
+    </button>
   </div>
 </aside>
 
@@ -67,6 +82,8 @@ const { src, alt, message, width, height, tone = 'page' } = Astro.props;
    * the cost is a handful of rect reads spread across one scroll and nothing
    * at all afterwards.
    */
+  import * as sound from '../scripts/designer-sound';
+
   function setupCharacters() {
     const nodes = Array.from(document.querySelectorAll<HTMLElement>('[data-character]'));
     if (!nodes.length) return;
@@ -81,9 +98,72 @@ const { src, alt, message, width, height, tone = 'page' } = Astro.props;
     });
     if (!pending.length) return;
 
-    function arrive(el: HTMLElement) {
+    /**
+     * Brings him in. `heard` is false when he was already on screen before
+     * anyone scrolled anywhere.
+     *
+     * That distinction is the whole of it. Arriving on a page already scrolled
+     * to where he stands — coming back from a project, or a restored position —
+     * he is simply there, and a strike at that moment is a sound with no cause,
+     * landing a beat after whatever was clicked to get here. It reads as the
+     * card having made it, or the back button. He only strikes when the visitor
+     * actually reaches him.
+     */
+    function arrive(el: HTMLElement, heard: boolean) {
       // Reduced motion gets him without the entrance rather than without him.
       el.classList.add(reduced ? 'aside--instant' : 'aside--here');
+      // Quiet, and only if the page is already making sound. A reduced-motion
+      // visitor still gets it: a sound is not something that moves.
+      if (heard) sound.spark(0.16);
+    }
+
+    /**
+     * Hands over the next line, under a bolt.
+     *
+     * The text is swapped while it is hidden, a third of the way through, so
+     * the two lines are never both legible and the change reads as the flash
+     * doing it rather than as a word replacement. Reduced motion swaps
+     * straight over; the bolt is the animation, so there is nothing to soften.
+     */
+    function speak(el: HTMLElement) {
+      const say = el.querySelector<HTMLElement>('[data-say]');
+      const script: string[] = JSON.parse(el.dataset.lines || '[]');
+      if (!say || script.length < 2) return;
+
+      const at = Number(el.dataset.line || 0);
+      // Round to the second line, never the first: the opener only opens.
+      const next = at + 1 >= script.length ? 1 : at + 1;
+      el.dataset.line = String(next);
+
+      /*
+       * Pressing him is what gives him a voice.
+       *
+       * The easter egg opens the audio device on the first press anywhere, but
+       * it only exists on the home page — so on the work page nothing had ever
+       * created a context and he was mute however many times he was pressed.
+       * This is a press on a control that makes a sound, which is exactly the
+       * gesture the autoplay policy is asking for, and it means his arrival can
+       * be heard from then on too.
+       */
+      sound.unlock();
+      sound.spark(0.28);
+
+      if (reduced) {
+        say.textContent = script[next];
+        return;
+      }
+
+      el.classList.remove('aside--zap');
+      // Reading a layout property flushes the removal, so a second press
+      // restarts the bolt instead of being swallowed by the running one.
+      void el.offsetWidth;
+      el.classList.add('aside--zap');
+
+      window.setTimeout(() => {
+        say.textContent = script[next];
+      }, 130);
+
+      window.setTimeout(() => el.classList.remove('aside--zap'), 480);
     }
 
     /*
@@ -99,10 +179,10 @@ const { src, alt, message, width, height, tone = 'page' } = Astro.props;
     let waiting = pending;
     let last = 0;
 
-    function pass() {
+    function pass(scrolled: boolean) {
       waiting = waiting.filter((el) => {
         if (!due(el)) return true;
-        arrive(el);
+        arrive(el, scrolled);
         return false;
       });
 
@@ -113,14 +193,20 @@ const { src, alt, message, width, height, tone = 'page' } = Astro.props;
       const now = Date.now();
       if (now - last < 120) return;
       last = now;
-      pass();
+      pass(true);
+    }
+
+    for (const el of pending) {
+      el.querySelector<HTMLElement>('[data-say-more]')?.addEventListener('click', () =>
+        speak(el)
+      );
     }
 
     window.addEventListener('scroll', onScroll, { passive: true });
 
     // The trigger may already be met on arrival — a short page, or a restored
-    // scroll position that lands past it.
-    pass();
+    // scroll position that lands past it. Silently, in that case: see arrive().
+    pass(false);
   }
 
   document.addEventListener('astro:page-load', setupCharacters);
@@ -150,7 +236,14 @@ const { src, alt, message, width, height, tone = 'page' } = Astro.props;
   /* The character                                                       */
   /* ------------------------------------------------------------------ */
 
+  /* A button, and it has to say so: this is the only thing on the page that
+     asks to be pressed twice. */
   .aside__figure {
+    appearance: none;
+    border: 0;
+    padding: 0;
+    background: none;
+    cursor: pointer;
     position: relative;
     flex: none;
     width: clamp(88px, 11vw, 124px);
@@ -160,7 +253,18 @@ const { src, alt, message, width, height, tone = 'page' } = Astro.props;
     align-items: flex-end;
   }
 
+  .aside__figure:focus-visible {
+    outline: 2px solid var(--dm-core);
+    outline-offset: 4px;
+    border-radius: 10px;
+  }
+
+  .aside__figure:active .aside__art {
+    scale: 0.97;
+  }
+
   .aside__art {
+    transition: scale 180ms var(--ease-out);
     display: block;
     width: 100%;
     height: auto;
@@ -205,6 +309,92 @@ const { src, alt, message, width, height, tone = 'page' } = Astro.props;
   /* ------------------------------------------------------------------ */
   /* The bubble                                                          */
   /* ------------------------------------------------------------------ */
+
+  /*
+   * The bolt that crosses the bubble as the line changes.
+   *
+   * It needs a clipping box and the bubble cannot be one — the tail hangs
+   * outside it — so this is a layer of its own, inset to the bubble's shape,
+   * with the light swept across inside it.
+   */
+  .aside__bolt {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  .aside__bolt::before {
+    content: '';
+    position: absolute;
+    top: -40%;
+    bottom: -40%;
+    left: 0;
+    width: 38%;
+    rotate: 8deg;
+    filter: blur(1px);
+    translate: -160% 0;
+    background: linear-gradient(
+      100deg,
+      transparent 0%,
+      color-mix(in srgb, var(--dm-arc) 42%, transparent) 38%,
+      color-mix(in srgb, var(--dm-core) 82%, transparent) 50%,
+      color-mix(in srgb, var(--dm-arc) 42%, transparent) 62%,
+      transparent 100%
+    );
+  }
+
+  .aside--zap .aside__bolt {
+    opacity: 1;
+  }
+
+  .aside--zap .aside__bolt::before {
+    animation: aside-bolt 420ms var(--ease-out) both;
+  }
+
+  @keyframes aside-bolt {
+    from {
+      translate: -160% 0;
+    }
+    to {
+      translate: 420% 0;
+    }
+  }
+
+  /*
+   * The text is gone while the bolt is over it and comes back lit, so the
+   * change reads as the flash having done it rather than as a word being
+   * swapped. The swap itself happens at 130ms, inside the dark stretch.
+   */
+  .aside--zap .aside__say {
+    animation: aside-say 460ms var(--ease-out) both;
+  }
+
+  @keyframes aside-say {
+    0% {
+      opacity: 1;
+      color: var(--aside-ink);
+    }
+    20% {
+      opacity: 0;
+      color: var(--aside-ink);
+    }
+    42% {
+      opacity: 0;
+    }
+    58% {
+      opacity: 1;
+      color: var(--dm-arc);
+      text-shadow: 0 0 14px color-mix(in srgb, var(--dm-core) 65%, transparent);
+    }
+    100% {
+      opacity: 1;
+      color: var(--aside-ink);
+      text-shadow: none;
+    }
+  }
 
   .aside__bubble {
     position: relative;

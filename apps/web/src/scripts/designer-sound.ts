@@ -284,6 +284,39 @@ export function end(): void {
 }
 
 /**
+ * A single strike, for something other than the storm.
+ *
+ * The characters use this — once as they arrive, once whenever they are asked
+ * to say something else. Quieter and quicker than the field's own arcs, and
+ * routed straight to the output rather than through the buses the sequence
+ * automates, because those are ramped to nothing when the storm ends and
+ * anything left on them would be silent for the rest of the visit.
+ *
+ * It refuses rather than builds. If the visitor has not pressed anything yet
+ * there is no context to play through and no right to create one, so the
+ * character simply arrives without a sound — which is the correct outcome, not
+ * a degraded one. In practice the first press anywhere on the page has already
+ * opened the device long before anyone scrolls this far.
+ */
+export function spark(level = 0.3): void {
+  if (!ctx || ctx.state !== 'running' || !strikeBuf) return;
+
+  const t = ctx.currentTime;
+  const src = ctx.createBufferSource();
+  src.buffer = strikeBuf;
+  // Faster than the storm's, so it reads as a tick rather than a strike.
+  src.playbackRate.value = 1.15 + Math.random() * 0.5;
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(level, t);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+
+  src.connect(gain).connect(ctx.destination);
+  src.start(t);
+  src.stop(t + 0.4);
+}
+
+/**
  * Tears the whole thing down, for a page that is going away.
  *
  * end() fades and lets the voices ring off, which is right when the sequence is
