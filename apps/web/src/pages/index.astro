@@ -3,7 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import FeaturedProject from '../components/FeaturedProject.astro';
 import ProjectRow from '../components/ProjectRow.astro';
 import ContactBlock from '../components/ContactBlock.astro';
-import AvatarEyes from '../components/AvatarEyes.astro';
+import DesignerCard from '../components/DesignerCard.astro';
 import DesignerEgg from '../components/DesignerEgg.astro';
 import {
   getContactPage,
@@ -65,9 +65,23 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
                 />
               )
             }
-            <AvatarEyes />
+            {/* The same drawing with purple eyes, cross-faded in while designer
+                mode runs. A second <img> rather than a swapped src: swapping
+                the source would blank the portrait for however long the new
+                file took to decode, and the whole effect is meant to land in
+                one beat. */}
+            <img
+              class="hero__portrait-alt"
+              src="/avatar-designer.webp"
+              alt=""
+              width="1024"
+              height="1024"
+              loading="lazy"
+              decoding="async"
+              aria-hidden="true"
+            />
           </div>
-          <DesignerEgg />
+          <DesignerCard />
         </div>
       </div>
     </section>
@@ -234,6 +248,11 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
         formId="home"
       />
     </section>
+
+    {/* Outside every [data-lift] section on purpose: the wave is fixed to the
+        viewport, and a transformed ancestor would become its containing block
+        and clip it to that section. */}
+    <DesignerEgg />
   </main>
 </BaseLayout>
 
@@ -318,6 +337,51 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+
+  /* Stacked exactly over the portrait, and invisible until the egg runs. */
+  .hero__portrait-alt {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 420ms var(--ease-glide);
+  }
+
+  :global(:root[data-designer]) .hero__portrait-alt {
+    opacity: 1;
+  }
+
+  /*
+   * The picture takes the hit.
+   *
+   * A press that only changes colour somewhere else does not feel like it
+   * landed on the thing that was pressed. The spring curve is the one the
+   * buttons already use, so the recoil belongs to the same site.
+   */
+  :global(.hero__portrait-frame.is-hit) {
+    animation: portrait-hit 520ms var(--spring) both;
+  }
+
+  @keyframes portrait-hit {
+    0% {
+      transform: scale(1);
+    }
+    22% {
+      transform: scale(0.945);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.hero__portrait-frame.is-hit) {
+      animation: none;
+    }
+
+    .hero__portrait-alt {
+      transition: none;
+    }
   }
 
   /* ---- Selected work ------------------------------------------------- */

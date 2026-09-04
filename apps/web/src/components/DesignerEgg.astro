@@ -2,71 +2,40 @@
 /**
  * Designer mode. An easter egg behind the portrait.
  *
- * Click the picture and the site borrows the avatar's purple as its accent for
- * a few seconds, a ring of it crosses the page from wherever the click landed,
- * a small card totals up the designer's personality, and the eyes start
- * following the pointer. Then everything eases back to normal.
+ * Click the picture and it takes the hit, a ring of purple leaves the point of
+ * the click and crosses the page, every section flinches as the ring passes
+ * through it, the site borrows that purple as its accent, and a card totals up
+ * the designer's personality. A few seconds later it all eases back.
  *
  * Nothing announces it. There is no label, no hover state and no cursor change:
  * the portrait is a picture, and a picture that turns out to do something is
  * only a surprise if you were not told to expect one. It is the same bargain as
  * the layout grid on the G key.
  *
- * The accent itself is four custom properties swapping value. Registering them
+ * The accent itself is three custom properties swapping value. Registering them
  * with @property is what lets a colour interpolate at all — without it the
  * whole site would snap from blue to purple and back, which is the difference
  * between a wink and a glitch.
+ *
+ * This component holds the wave and the behaviour; the card is
+ * DesignerCard.astro, which sits inside the portrait. They are apart for a
+ * reason: the wave is fixed to the viewport, and the flinch puts a transform on
+ * every section — including the hero — which would make the hero the wave's
+ * containing block and clip it to the top of the page.
  */
 
-/** The joke, in one place. */
-const TRAITS = [
-  { label: 'Curiosity', value: 94 },
-  { label: 'Pixel perfectionism', value: 97 },
-  { label: 'Coffee dependency', value: 89 },
-  { label: 'Deadline avoidance', value: 12 },
-];
-
-/** How long designer mode lasts before it lets go on its own. */
-const HOLD_MS = 9000;
 ---
 
-<div class="pulse" data-egg-pulse aria-hidden="true"></div>
+<div class="ring" data-egg-ring aria-hidden="true"></div>
+<div class="ring ring--trail" data-egg-ring-trail aria-hidden="true"></div>
 <div class="wash" data-egg-wash aria-hidden="true"></div>
 
-<aside class="card" data-egg-card data-hold={HOLD_MS} hidden>
-  <p class="card__eyebrow">Designer personality unlocked</p>
-
-  <dl class="card__traits">
-    {
-      TRAITS.map((trait, i) => (
-        <div class="trait" style={`--i:${i}`}>
-          <dt class="trait__label">{trait.label}</dt>
-          <dd class="trait__value">
-            <span data-trait-to={String(trait.value)}>{trait.value}</span>%
-          </dd>
-          <div class="trait__track">
-            <div class="trait__fill" style={`--to:${trait.value}%`} />
-          </div>
-        </div>
-      ))
-    }
-  </dl>
-</aside>
-
 <script>
-  /**
-   * How far the iris may slide, in the portrait's own 1024px units.
-   *
-   * Past its own corner the iris is clipped by the aperture rather than
-   * stopped, so it can be given more room than the sclera strictly has and
-   * still look right — an eye looking hard left really does lose part of its
-   * iris under the lid.
-   */
-  const TRAVEL_X = 13;
-  const TRAVEL_Y = 4;
+  /** How long the ring takes to cross the page. Must match the CSS. */
+  const RING_MS = 720;
 
-  /** How far the pointer has to be from the portrait for a full look. */
-  const GAZE_RADIUS = 520;
+  /** How long a section's flinch lasts. Must match `.is-struck`. */
+  const SHAKE_MS = 420;
 
   /**
    * Whatever will shut the egg down, or nothing if it is not on this page.
@@ -81,66 +50,24 @@ const HOLD_MS = 9000;
 
   function setupEgg() {
     const card = document.querySelector<HTMLElement>('[data-egg-card]');
-    const pulse = document.querySelector<HTMLElement>('[data-egg-pulse]');
+    const ring = document.querySelector<HTMLElement>('[data-egg-ring]');
+    const trail = document.querySelector<HTMLElement>('[data-egg-ring-trail]');
     const wash = document.querySelector<HTMLElement>('[data-egg-wash]');
     const trigger = document.querySelector<HTMLElement>('[data-egg-trigger]');
-    const eyes = document.querySelector<SVGSVGElement>('[data-avatar-eyes]');
-    if (!card || !pulse || !wash || !trigger) {
+    if (!card || !ring || !trail || !wash || !trigger) {
       dismiss = () => {};
       return;
     }
 
     const root = document.documentElement;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-    const holdFor = Number(card.dataset.hold) || 9000;
+    const holdFor = Number(card.dataset.hold) || 5200;
 
     let on = false;
     let releaseTimer = 0;
     let countFrame = 0;
-
-    /* ---------------------------------------------------------------- */
-    /* The eyes                                                          */
-    /* ---------------------------------------------------------------- */
-
-    /**
-     * Points the eyes at a spot on the screen.
-     *
-     * The portrait's box gives both the centre to measure from and the scale
-     * to answer in: the offset is written in the drawing's units, so it stays
-     * correct whether the portrait is 230px wide on a phone or 420 on a
-     * desktop, and nothing has to be recalculated when the window resizes.
-     */
-    function gaze(clientX: number, clientY: number): void {
-      if (!eyes) return;
-
-      const box = eyes.getBoundingClientRect();
-      if (!box.width) return;
-
-      const dx = clientX - (box.left + box.width / 2);
-      const dy = clientY - (box.top + box.height / 2);
-
-      // Normalised, then eased so the eyes reach the corner of their travel
-      // well before the pointer reaches the corner of the screen.
-      const distance = Math.hypot(dx, dy) || 1;
-      const reach = Math.min(1, distance / GAZE_RADIUS);
-      const pull = Math.sqrt(reach);
-
-      const x = (dx / distance) * pull * TRAVEL_X;
-      const y = (dy / distance) * pull * TRAVEL_Y;
-
-      eyes.style.setProperty('--eye-x', `${x.toFixed(2)}px`);
-      eyes.style.setProperty('--eye-y', `${y.toFixed(2)}px`);
-    }
-
-    function onPointerMove(event: PointerEvent) {
-      gaze(event.clientX, event.clientY);
-    }
-
-    function restEyes(): void {
-      eyes?.style.setProperty('--eye-x', '0px');
-      eyes?.style.setProperty('--eye-y', '0px');
-    }
+    let struck: HTMLElement[] = [];
+    let clearStruckTimer = 0;
 
     /* ---------------------------------------------------------------- */
     /* The card                                                          */
@@ -161,7 +88,7 @@ const HOLD_MS = 9000;
       }
 
       const started = performance.now();
-      const duration = 900;
+      const duration = 860;
 
       const step = (now: number) => {
         const k = Math.min(1, (now - started) / duration);
@@ -178,18 +105,71 @@ const HOLD_MS = 9000;
     }
 
     /* ---------------------------------------------------------------- */
-    /* The wave                                                          */
+    /* The shockwave                                                     */
     /* ---------------------------------------------------------------- */
 
-    function ripple(originX: number, originY: number): void {
+    /**
+     * Flinches each section as the ring reaches it.
+     *
+     * Same idea as the theme wave's lift, and the same reason it works: the
+     * delay for a given block is how long the ring takes to travel the distance
+     * to its nearest edge, so a tall section starts moving when the ring hits
+     * its edge rather than when it reaches its middle. Without that the whole
+     * page shudders at once, which reads as a rendering fault rather than as
+     * something passing through.
+     *
+     * Transform only. This runs over the entire page at once, and anything that
+     * touched layout here would drop frames on the spot.
+     */
+    function strike(originX: number, originY: number, reach: number): void {
+      releaseStruck();
       if (reduced) return;
 
+      const targets = Array.from(document.querySelectorAll<HTMLElement>('[data-lift]'));
+      let last = 0;
+
+      for (const el of targets) {
+        const rect = el.getBoundingClientRect();
+        // Nothing off screen: it cannot be seen flinching, and promoting it
+        // costs a layer for no one.
+        if (rect.bottom < -200 || rect.top > window.innerHeight + 200) continue;
+
+        const dx = Math.max(rect.left - originX, 0, originX - rect.right);
+        const dy = Math.max(rect.top - originY, 0, originY - rect.bottom);
+        const distance = Math.hypot(dx, dy);
+
+        const delay = Math.round(Math.min(1, distance / reach) * RING_MS);
+        last = Math.max(last, delay);
+
+        el.style.setProperty('--strike-delay', `${delay}ms`);
+        el.classList.add('is-struck');
+        struck.push(el);
+      }
+
+      // Held until the furthest one has finished, not until the ring has.
+      // Pulling the class off mid-animation snaps a section back to where it
+      // started, which is the one thing a flinch must not do.
+      clearStruckTimer = window.setTimeout(releaseStruck, last + SHAKE_MS + 60);
+    }
+
+    function releaseStruck(): void {
+      window.clearTimeout(clearStruckTimer);
+      clearStruckTimer = 0;
+      for (const el of struck) {
+        el.classList.remove('is-struck');
+        el.style.removeProperty('--strike-delay');
+      }
+      struck = [];
+    }
+
+    function ripple(originX: number, originY: number): number {
       const reach = Math.hypot(
         Math.max(originX, window.innerWidth - originX),
         Math.max(originY, window.innerHeight - originY)
       );
+      if (reduced) return reach;
 
-      for (const el of [pulse!, wash!]) {
+      for (const el of [ring!, trail!, wash!]) {
         el.style.setProperty('--egg-x', `${originX}px`);
         el.style.setProperty('--egg-y', `${originY}px`);
         el.style.setProperty('--egg-reach', `${Math.ceil(reach)}px`);
@@ -200,6 +180,16 @@ const HOLD_MS = 9000;
         void el.offsetWidth;
         el.classList.add('is-rippling');
       }
+
+      return reach;
+    }
+
+    /** The picture recoils from the press that landed on it. */
+    function hit(): void {
+      if (reduced) return;
+      trigger!.classList.remove('is-hit');
+      void trigger!.offsetWidth;
+      trigger!.classList.add('is-hit');
     }
 
     /* ---------------------------------------------------------------- */
@@ -208,7 +198,9 @@ const HOLD_MS = 9000;
 
     function open(originX: number, originY: number): void {
       window.clearTimeout(releaseTimer);
-      ripple(originX, originY);
+
+      hit();
+      strike(originX, originY, ripple(originX, originY));
 
       if (!on) {
         on = true;
@@ -224,18 +216,6 @@ const HOLD_MS = 9000;
         void card!.offsetWidth;
         card!.classList.add('is-on');
         countUp();
-
-        /*
-         * `nearest` scrolls the minimum, and only when the card would be off
-         * screen — which it is whenever the portrait was tapped while sitting
-         * at the bottom of a phone.
-         */
-        card!.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
-
-        if (fine && !reduced) {
-          window.addEventListener('pointermove', onPointerMove, { passive: true });
-          gaze(originX, originY);
-        }
       }
 
       releaseTimer = window.setTimeout(close, holdFor);
@@ -247,9 +227,8 @@ const HOLD_MS = 9000;
 
       window.clearTimeout(releaseTimer);
       cancelAnimationFrame(countFrame);
-      window.removeEventListener('pointermove', onPointerMove);
+      releaseStruck();
 
-      restEyes();
       delete root.dataset.designer;
       card!.classList.remove('is-on');
 
@@ -263,6 +242,25 @@ const HOLD_MS = 9000;
     /* Wiring                                                            */
     /* ---------------------------------------------------------------- */
 
+    /*
+     * Warm the purple-eyed portrait on the way down, not on the way up.
+     *
+     * It is lazy — most visitors never trigger this, and it is not worth 28KB
+     * on every home page load for them. But a cross-fade to a picture that has
+     * not arrived yet is a blank square, so pointerdown, which lands a moment
+     * before the click, is where it gets fetched and decoded.
+     */
+    const alt = document.querySelector<HTMLImageElement>('.hero__portrait-alt');
+    trigger.addEventListener(
+      'pointerdown',
+      () => {
+        if (!alt || alt.complete) return;
+        alt.loading = 'eager';
+        if (typeof alt.decode === 'function') void alt.decode().catch(() => {});
+      },
+      { once: true }
+    );
+
     trigger.addEventListener('click', (event) => {
       const point = event as MouseEvent;
       // A keyboard-driven click reports 0,0; put the wave on the portrait.
@@ -270,8 +268,9 @@ const HOLD_MS = 9000;
       const x = point.clientX || box.left + box.width / 2;
       const y = point.clientY || box.top + box.height / 2;
 
-      if (on) close();
-      else open(x, y);
+      // Clicking again while it runs re-strikes rather than closing: the wave
+      // is the fun part, and the mode lets go on its own soon enough.
+      open(x, y);
     });
 
     card.addEventListener('click', close);
@@ -296,11 +295,11 @@ const HOLD_MS = 9000;
   /* ------------------------------------------------------------------ */
   /* The wave                                                            */
   /*                                                                     */
-  /* A ring and a wash, both from the point of the click, both purely    */
-  /* transform and opacity. This runs over the whole page at once and    */
-  /* anything that touched layout here would drop frames immediately.    */
+  /* Two rings and a wash, all from the point of the click, all purely    */
+  /* transform and opacity. This runs over the whole page at once and     */
+  /* anything that touched layout here would drop frames immediately.     */
   /* ------------------------------------------------------------------ */
-  .pulse,
+  .ring,
   .wash {
     position: fixed;
     left: var(--egg-x, 50%);
@@ -317,34 +316,66 @@ const HOLD_MS = 9000;
     margin-left: calc(var(--egg-reach, 600px) * -1);
   }
 
-  .pulse {
-    border: 2px solid var(--egg-purple);
+  .ring {
+    border: 3px solid var(--egg-purple);
+    /* A little bloom either side of the line, so it reads as energy rather
+       than as an outlined circle scaling up. */
+    box-shadow:
+      0 0 22px color-mix(in srgb, var(--egg-purple) 55%, transparent),
+      inset 0 0 22px color-mix(in srgb, var(--egg-purple) 45%, transparent);
+  }
+
+  /* A second, thinner ring a beat behind the first. One ring is an outline;
+     two are a pulse. */
+  .ring--trail {
+    border-width: 1.5px;
+    box-shadow: none;
+    opacity: 0;
   }
 
   .wash {
     background: radial-gradient(
       circle,
-      color-mix(in srgb, var(--egg-purple) 26%, transparent) 0%,
-      transparent 70%
+      color-mix(in srgb, var(--egg-purple) 34%, transparent) 0%,
+      color-mix(in srgb, var(--egg-purple) 14%, transparent) 45%,
+      transparent 72%
     );
   }
 
-  .pulse.is-rippling {
-    animation: egg-ring 780ms var(--ease-out) both;
+  .ring.is-rippling {
+    animation: egg-ring 720ms cubic-bezier(0.16, 0.72, 0.24, 1) both;
+  }
+
+  .ring--trail.is-rippling {
+    animation: egg-ring-trail 820ms cubic-bezier(0.16, 0.72, 0.24, 1) 90ms both;
   }
 
   .wash.is-rippling {
-    animation: egg-wash 900ms var(--ease-out) both;
+    animation: egg-wash 860ms var(--ease-out) both;
   }
 
   @keyframes egg-ring {
     from {
-      opacity: 0.65;
-      transform: scale(0.01);
+      opacity: 1;
+      transform: scale(0.012);
     }
     to {
       opacity: 0;
-      transform: scale(1.04);
+      transform: scale(1.06);
+    }
+  }
+
+  @keyframes egg-ring-trail {
+    0% {
+      opacity: 0;
+      transform: scale(0.012);
+    }
+    18% {
+      opacity: 0.7;
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.06);
     }
   }
 
@@ -353,141 +384,49 @@ const HOLD_MS = 9000;
       opacity: 0;
       transform: scale(0.02);
     }
-    35% {
+    28% {
       opacity: 1;
     }
     100% {
       opacity: 0;
-      transform: scale(1.1);
+      transform: scale(1.12);
     }
   }
 
   /* ------------------------------------------------------------------ */
-  /* The card                                                            */
+  /* The flinch                                                          */
+  /*                                                                     */
+  /* Applied to every [data-lift] block — the same set the theme wave     */
+  /* lifts — each with its own delay, so the shudder tracks the ring      */
+  /* outward instead of hitting the whole page at once.                   */
   /* ------------------------------------------------------------------ */
-  /*
-   * Hung off the portrait rather than off the window.
-   *
-   * The picture is what was clicked, and a card pinned to the bottom of the
-   * screen reads as an unrelated notification — worse, on a phone the bottom of
-   * the screen is usually where the portrait is, so the card covered the eyes
-   * it had just brought to life.
-   */
-  .card {
-    position: absolute;
-    z-index: 9991;
-    top: calc(100% + 14px);
-    left: 0;
-    right: 0;
-    padding: 18px 20px 20px;
-    border-radius: var(--r-xl);
-    background: var(--surface-card);
-    color: var(--ink);
-    box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.06),
-      0 18px 44px rgba(0, 0, 0, 0.16);
-    /* The same hairline the rest of the site uses to separate a raised
-       surface from the one behind it, which matters most in dark mode where
-       the shadow alone does almost nothing. */
-    outline: 1px solid var(--line);
-    outline-offset: -1px;
-    cursor: pointer;
-
-    opacity: 0;
-    translate: 0 14px;
-    transition:
-      opacity 380ms var(--ease-out),
-      translate 460ms var(--ease-out);
+  :global(.is-struck) {
+    animation: egg-strike 420ms var(--ease-out) both;
+    animation-delay: var(--strike-delay, 0ms);
+    will-change: transform;
   }
 
-  .card[hidden] {
-    display: none;
-  }
-
-  .card.is-on {
-    opacity: 1;
-    translate: 0 0;
-  }
-
-  /* Wide enough to sit under one corner of the picture rather than all of it. */
-  @media (min-width: 768px) {
-    .card {
-      left: auto;
-      width: 320px;
+  @keyframes egg-strike {
+    0% {
+      transform: translate3d(0, 0, 0) scale(1);
     }
-  }
-
-  .card__eyebrow {
-    font-size: 13px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--blue);
-    transition: color 620ms var(--ease-glide);
-  }
-
-  .card__traits {
-    margin: 16px 0 0;
-    display: flex;
-    flex-direction: column;
-    gap: 13px;
-  }
-
-  .trait {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: baseline;
-    gap: 7px 12px;
-  }
-
-  .trait__label {
-    font-size: 15px;
-    letter-spacing: -0.016em;
-    color: var(--ink-muted);
-  }
-
-  .trait__value {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: -0.016em;
-    color: var(--ink);
-    /* So the figure does not jostle its own label while it counts. */
-    font-variant-numeric: tabular-nums;
-  }
-
-  .trait__track {
-    grid-column: 1 / -1;
-    height: 3px;
-    border-radius: var(--r-pill);
-    background: var(--surface-chip);
-    overflow: hidden;
-  }
-
-  .trait__fill {
-    height: 100%;
-    width: 0;
-    border-radius: inherit;
-    background: var(--blue);
-    transition:
-      width 760ms var(--ease-out),
-      background-color 620ms var(--ease-glide);
-    /* Each bar starts a beat after the one above it, so the card fills in
-       reading order rather than all at once. */
-    transition-delay: calc(var(--i) * 90ms);
-  }
-
-  .card.is-on .trait__fill {
-    width: var(--to);
+    18% {
+      transform: translate3d(0, 5px, 0) scale(0.9925);
+    }
+    46% {
+      transform: translate3d(0, -3px, 0) scale(1.004);
+    }
+    74% {
+      transform: translate3d(0, 1.5px, 0) scale(0.999);
+    }
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .card {
-      transition: none;
-    }
-
-    .trait__fill {
-      transition: none;
-      transition-delay: 0ms;
+    :global(.is-struck) {
+      animation: none;
     }
   }
 </style>

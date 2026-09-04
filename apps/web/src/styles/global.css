@@ -568,8 +568,9 @@ figure {
 }
 
 :root {
-  /* The avatar's own background, sampled off the drawing. */
-  --egg-purple: #6d5ac5;
+  /* Deeper than the avatar's background it came from — the wave and the accent
+     both have to hold their own against the page, not blend into a portrait. */
+  --egg-purple: #6848d8;
 
   transition:
     --blue 620ms var(--ease-glide),
@@ -583,23 +584,23 @@ figure {
  * selection highlight, the meters on the card itself.
  */
 :root[data-designer] {
-  --blue: #6d5ac5;
-  --blue-hover: #7d6cd2;
-  --blue-on-dark: #a78bfa;
+  --blue: #6848d8;
+  --blue-hover: #7959e4;
+  --blue-on-dark: #9c86f2;
 }
 
 /* Lifted on a dark ground for the same reason the blue is. */
 :root[data-designer][data-theme='dark'] {
-  --egg-purple: #a78bfa;
-  --blue: #a78bfa;
-  --blue-hover: #b9a2fd;
+  --egg-purple: #9c86f2;
+  --blue: #9c86f2;
+  --blue-hover: #ac99f6;
 }
 
 @media (prefers-color-scheme: dark) {
   :root[data-designer]:not([data-theme='light']) {
-    --egg-purple: #a78bfa;
-    --blue: #a78bfa;
-    --blue-hover: #b9a2fd;
+    --egg-purple: #9c86f2;
+    --blue: #9c86f2;
+    --blue-hover: #ac99f6;
   }
 }
 
