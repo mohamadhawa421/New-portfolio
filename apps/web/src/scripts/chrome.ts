@@ -554,6 +554,7 @@ function restoreScroll(): void {
  * the slug is remembered so the return trip can name the same card again.
  */
 const MORPH_KEY = 'mh-morph';
+const MORPH_RADIUS_KEY = 'mh-morph-radius';
 
 function readMorphSlug(): string | null {
   try {
@@ -581,6 +582,30 @@ function applyMorphName(slug: string | null): void {
      * Opting this one image out of lazy loading is enough: it is the same file
      * the case study just displayed, so it is already in cache.
      */
+    /*
+     * Hand the transition the corner radius at each end of the move, so it can
+     * be interpolated rather than snapped. The radius we are arriving at is
+     * this element's; the one we are leaving was recorded on the way out.
+     */
+    /*
+     * Only while actually swapping. init() also runs on astro:page-load, which
+     * fires again after the swap — and a second pass here would read back the
+     * radius the first pass had just recorded, making both ends of the morph
+     * identical and defeating the interpolation entirely.
+     */
+    if (swapping) {
+      const arriving = getComputedStyle(el).borderRadius;
+      try {
+        const leaving = sessionStorage.getItem(MORPH_RADIUS_KEY) || arriving;
+        root.style.setProperty('--morph-r-from', leaving);
+        root.style.setProperty('--morph-r-to', arriving);
+        // The return trip leaves from here.
+        sessionStorage.setItem(MORPH_RADIUS_KEY, arriving);
+      } catch {
+        /* private mode — the corner simply does not interpolate */
+      }
+    }
+
     const img = el.querySelector<HTMLImageElement>('img');
     if (!img) return;
 
@@ -608,6 +633,14 @@ function armMorph(event: Event): void {
   if (!tile?.dataset.slug) return;
 
   rememberMorph(tile.dataset.slug);
+
+  // Recorded before we leave, so the far side knows what shape to start from.
+  try {
+    sessionStorage.setItem(MORPH_RADIUS_KEY, getComputedStyle(tile).borderRadius);
+  } catch {
+    /* private mode */
+  }
+
   applyMorphName(tile.dataset.slug);
 }
 

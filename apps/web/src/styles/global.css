@@ -355,23 +355,46 @@ figure {
  * root overrides have to come after to win.
  */
 ::view-transition-group(*) {
-  border-radius: var(--r-xl);
-  overflow: clip;
   animation-duration: 640ms;
   animation-timing-function: var(--ease-glide);
 }
 
-@supports (corner-shape: squircle) {
-  ::view-transition-group(*) {
-    corner-shape: squircle;
+/*
+ * The corner is drawn on the image-pair, and interpolated.
+ *
+ * The two ends of the morph are not the same shape: a row thumbnail is 12px
+ * and a case study cover is 22px. Clipping at one fixed radius meant the
+ * corner was right at one end of the move and wrong at the other, snapping to
+ * the correct value the instant the transition finished.
+ *
+ * The pair is used rather than the group because the group already carries the
+ * UA's own animation for position and size — giving it an animation-name here
+ * would replace that and the morph would stop moving altogether. The pair is
+ * free, and it is where the two snapshots actually live, so clipping it is
+ * what shapes the visible corner anyway.
+ *
+ * chrome.ts sets the two custom properties from the real elements before the
+ * transition starts.
+ */
+::view-transition-image-pair(*) {
+  overflow: clip;
+  animation: mh-morph-radius 640ms var(--ease-glide) both;
+}
+
+@keyframes mh-morph-radius {
+  from {
+    border-radius: var(--morph-r-from, var(--r-xl));
+  }
+  to {
+    border-radius: var(--morph-r-to, var(--r-xl));
   }
 }
 
-/* The two snapshots live in the image-pair, so it has to clip as well or the
-   corner is only enforced on the outer box. */
-::view-transition-image-pair(*) {
-  border-radius: inherit;
-  overflow: clip;
+@supports (corner-shape: squircle) {
+  ::view-transition-group(*),
+  ::view-transition-image-pair(*) {
+    corner-shape: squircle;
+  }
 }
 
 /* The cross-fade between the two covers, matched to the group's own move. */
@@ -385,6 +408,7 @@ figure {
 ::view-transition-image-pair(root) {
   border-radius: 0;
   overflow: visible;
+  animation-name: none;
 }
 
 ::view-transition-old(root) {
