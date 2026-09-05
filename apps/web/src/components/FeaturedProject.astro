@@ -77,7 +77,21 @@ const { project } = Astro.props;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 420ms var(--ease-out);
+    /*
+     * The hover curve, not the entrance one.
+     *
+     * global.css says it plainly — one curve for everything that enters the
+     * page and the same curve the hover states use — and the work card's cover
+     * was moved onto it a day later. This one was missed, so the same gesture
+     * on the same object ran on a different easing depending on which page you
+     * were looking at: --ease-out is nearly finished in its first third, which
+     * next to the card's glide reads as a pop rather than a swell.
+     *
+     * Only the curve changes. The 420ms and the 1.02 stay: this tile is far
+     * larger than a card, and the smaller scale is what keeps the edge
+     * travelling the same distance as the card's 1.03.
+     */
+    transition: transform 420ms var(--ease-glide);
   }
 
   .featured:hover .featured__tile {
