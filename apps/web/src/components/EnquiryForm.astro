@@ -788,8 +788,16 @@ const config = {
     }
   }
 
+  /*
+   * The form is a dark panel in both themes, so its quiet text belongs to the
+   * on-dark scale, not the page scale. It was reading --ink-softer, which is a
+   * grey chosen to sit on white — 4.4:1 here, and it would have gone to 2.9:1
+   * the moment that token was darkened for the light grounds it is actually
+   * for. The on-dark token is what this always wanted: 8.5:1 in light, 7:1 in
+   * dark.
+   */
   .enquiry ::placeholder {
-    color: var(--ink-softer);
+    color: var(--ink-on-dark-muted);
   }
 
   .enquiry__error {
@@ -855,6 +863,7 @@ const config = {
     font-size: 13px;
     line-height: 1.45;
     letter-spacing: -0.01em;
-    color: var(--ink-softer);
+    /* On the dark panel, so the on-dark scale. See ::placeholder above. */
+    color: var(--ink-on-dark-muted);
   }
 </style>

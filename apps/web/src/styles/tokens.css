@@ -24,8 +24,22 @@
   /* ---- Ink ----------------------------------------------------------- */
   --ink: #1d1d1f;
   --ink-muted: #6e6e73;
-  --ink-soft: #86868b;
-  --ink-softer: #8e8e93;
+  /*
+   * The two quiet greys, and the same correction --ink-faint already had.
+   *
+   * They were #86868b and #8e8e93, which are 3.6:1 and 3.3:1 on white and only
+   * 3.0:1 on the parchment — and everything wearing them is small: the service
+   * numbers at 12px, the footer and menu locations at 13px, the project row
+   * tags and the work count at 14px. None of it is large enough for the relaxed
+   * threshold, so all of it was decoration pretending to be text.
+   *
+   * #707075 is the lightest value that clears 4.5:1 on all three grounds these
+   * actually meet — white, the parchment and the card — so they stay the
+   * lightest greys in the palette and the hierarchy below --ink-muted survives,
+   * narrowly. Dark and void keep their own values, which already pass.
+   */
+  --ink-soft: #707075;
+  --ink-softer: #707075;
   /*
    * The quietest grey that is still text. It was #a1a1a6, which is 2.6:1 on
    * white — the numbered labels over every card and case study were decorative
