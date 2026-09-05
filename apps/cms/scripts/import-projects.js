@@ -30,6 +30,31 @@ const ignoreKnexTeardown = (error) => {
 process.on('unhandledRejection', ignoreKnexTeardown);
 process.on('uncaughtException', ignoreKnexTeardown);
 
+/**
+ * A meta description that ends on a word.
+ *
+ * This used to be `.slice(0, 200)`, which cut the Lebanese Prime Minister
+ * project mid-word — "...into a clearer and more accessible experie" — and
+ * shipped it to Google and to every share card. A character count knows nothing
+ * about where a sentence can stop.
+ *
+ * 160 rather than 200 because that is roughly what Google renders and rather
+ * less than what a social card shows; the cut falls back to the last sentence
+ * end if there is one, and otherwise to the last space, with an ellipsis so the
+ * break reads as deliberate.
+ */
+function describe(summary) {
+  const text = (summary || '').trim();
+  if (text.length <= 160) return text;
+
+  const window = text.slice(0, 160);
+  const sentence = Math.max(window.lastIndexOf('. '), window.lastIndexOf('! '), window.lastIndexOf('? '));
+  if (sentence > 80) return window.slice(0, sentence + 1);
+
+  const space = window.lastIndexOf(' ');
+  return `${window.slice(0, space > 0 ? space : 160).replace(/[,;:]$/, '')}…`;
+}
+
 const args = process.argv.slice(2);
 const argOf = (flag) => {
   const i = args.indexOf(flag);
@@ -184,7 +209,7 @@ async function main() {
         gallery: galleryIds,
         seo: {
           metaTitle: `${p.title} — Mohamad Hawa`,
-          metaDescription: (p.summary || '').slice(0, 200),
+          metaDescription: describe(p.summary),
         },
       };
 

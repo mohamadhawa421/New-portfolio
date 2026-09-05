@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T06:24:00.049Z",
+  "generatedAt": "2026-09-05T22:42:06.021Z",
   "siteSetting": {
     "id": 1,
     "siteName": "Mohamad Hawa",
@@ -18,7 +18,7 @@
     "portrait": {
       "id": 1,
       "name": "mohamad-avatar",
-      "alternativeText": "mohamad-avatar",
+      "alternativeText": "Mohamad Hawa",
       "caption": "",
       "focalPoint": null,
       "width": 1024,
@@ -570,7 +570,7 @@
       }
     },
     {
-      "id": 96,
+      "id": 106,
       "title": "Lebanese Prime Minister",
       "slug": "lebanese-prime-minister",
       "discipline": "Web app redesign",
@@ -591,11 +591,11 @@
       "reflectionBody": "It was to make a complex institutional system easier to understand by giving different types of information the hierarchy, navigation, and interaction patterns they require.",
       "categories": [
         {
-          "id": 75,
+          "id": 92,
           "label": "Redesign web / mobile"
         },
         {
-          "id": 76,
+          "id": 93,
           "label": "Web app"
         }
       ],
@@ -643,36 +643,36 @@
       ],
       "constraints": [
         {
-          "id": 370,
+          "id": 400,
           "title": "Large volumes of information were presented with weak visual hierarchy.",
           "body": ""
         },
         {
-          "id": 371,
+          "id": 401,
           "title": "The navigation structure made it difficult to understand how sections and institutions were connected.",
           "body": ""
         },
         {
-          "id": 372,
+          "id": 402,
           "title": "Content-heavy experiences such as the Official Gazette and Grand Serail relied on static presentation instead of discovery and storytelling.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 370,
+          "id": 400,
           "eyebrow": "Outcome",
           "title": "Clearer Navigation",
           "body": "A simplified structure makes government information easier to reach and understand."
         },
         {
-          "id": 371,
+          "id": 401,
           "eyebrow": "Outcome",
           "title": "Better Reading",
           "body": "The Official Gazette is organized around browsing, filtering, and document access."
         },
         {
-          "id": 372,
+          "id": 402,
           "eyebrow": "Outcome",
           "title": "Narrative History",
           "body": "The Grand Serail becomes a visual timeline connecting places, moments, and history."
@@ -680,28 +680,28 @@
       ],
       "metrics": [
         {
-          "id": 388,
+          "id": 418,
           "value": "Government & Institutions",
           "label": "A clearer structure for ministries, institutions, and government information.",
           "animate": false
         },
         {
-          "id": 389,
+          "id": 419,
           "value": "Official Gazette",
           "label": "A redesigned experience for discovering issues, dates, categories, and documents.",
           "animate": false
         },
         {
-          "id": 390,
+          "id": 420,
           "value": "Grand Serail",
           "label": "A narrative-driven history experience built around visual moments and chronology.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 150,
+        "id": 170,
         "metaTitle": "Lebanese Prime Minister — Mohamad Hawa",
-        "metaDescription": "A redesigned digital home for the Lebanese Prime Minister's Office, bringing government information, legislation, institutional content, and national history into a clearer and more accessible experie",
+        "metaDescription": "A redesigned digital home for the Lebanese Prime Minister's Office, bringing government information, legislation and national history into one accessible place.",
         "shareImage": null
       }
     },
@@ -1102,11 +1102,11 @@
       }
     },
     {
-      "id": 93,
+      "id": 107,
       "title": "Wise Academy",
       "slug": "wise-academy",
       "discipline": "Web app design",
-      "summary": "WISE Academy a high standard school based in the US promoting academic excellence in a faith based and safe environment for our students.",
+      "summary": "An admin system for a private school in the US: one place to follow enrolments, search student and parent records, schedule interviews, and send the messages that go with them.",
       "role": "UI / UX Design",
       "order": 6,
       "featured": false,
@@ -1123,14 +1123,14 @@
       "reflectionBody": "Wise Academy expressed interest in extending the platform for managing other aspects of school operations.",
       "categories": [
         {
-          "id": 66,
+          "id": 94,
           "label": "Web app"
         }
       ],
       "cover": {
         "id": 60,
         "name": "wise-academy-cover-v2",
-        "alternativeText": "wise-academy",
+        "alternativeText": "Wise Academy",
         "caption": "",
         "focalPoint": null,
         "width": 1440,
@@ -1171,36 +1171,36 @@
       ],
       "constraints": [
         {
-          "id": 361,
+          "id": 403,
           "title": "Staff struggled with locating and updating student data quickly.",
           "body": ""
         },
         {
-          "id": 362,
+          "id": 404,
           "title": "New enrollments required multiple manual steps, leading to delays.",
           "body": ""
         },
         {
-          "id": 363,
+          "id": 405,
           "title": "A lack of filtering options for student records made tracking alumni difficult.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 361,
+          "id": 403,
           "eyebrow": "Outcome",
           "title": "Improved Efficiency",
           "body": "Reduced time spent managing student data by 40%."
         },
         {
-          "id": 362,
+          "id": 404,
           "eyebrow": "Outcome",
           "title": "Streamlined Enrollment",
           "body": "Created a path to view and find student records within seconds."
         },
         {
-          "id": 363,
+          "id": 405,
           "eyebrow": "Outcome",
           "title": "Enhanced Usability",
           "body": "A clean layout with intuitive navigation ensured ease of use for all staff levels."
@@ -1208,28 +1208,28 @@
       ],
       "metrics": [
         {
-          "id": 379,
+          "id": 421,
           "value": "Dashboard Analytics",
           "label": "Visualized enrollment trends across active and pending applications.",
           "animate": false
         },
         {
-          "id": 380,
+          "id": 422,
           "value": "Student Management",
           "label": "Easy-to-use interface for adding, editing, and searching student records.",
           "animate": false
         },
         {
-          "id": 381,
+          "id": 423,
           "value": "Automated Notifications",
           "label": "Reminds parents about upcoming payments, deadlines and interviews.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 147,
+        "id": 172,
         "metaTitle": "Wise Academy — Mohamad Hawa",
-        "metaDescription": "WISE Academy a high standard school based in the US promoting academic excellence in a faith based and safe environment for our students.",
+        "metaDescription": "An admin system for a private school in the US — enrolments, student and parent records, interviews and messaging, in one place.",
         "shareImage": null
       }
     },
@@ -1262,7 +1262,7 @@
       "cover": {
         "id": 55,
         "name": "kabbara-office-cover-v2",
-        "alternativeText": "kabbara-office",
+        "alternativeText": "Kabbara Office",
         "caption": "",
         "focalPoint": null,
         "width": 1440,
@@ -1373,7 +1373,7 @@
       "cover": {
         "id": 56,
         "name": "coding-lebanon-cover-v2",
-        "alternativeText": "coding-lebanon",
+        "alternativeText": "CodingCLebanon",
         "caption": "",
         "focalPoint": null,
         "width": 1440,
@@ -1484,7 +1484,7 @@
       "cover": {
         "id": 57,
         "name": "wfk-law-firm-cover-v2",
-        "alternativeText": "wfk-law-firm",
+        "alternativeText": "WFK Law Firm",
         "caption": "",
         "focalPoint": null,
         "width": 1440,
@@ -1626,7 +1626,7 @@
       "cover": {
         "id": 58,
         "name": "shipment-share-cover-v2",
-        "alternativeText": "shipment-share",
+        "alternativeText": "Shipment Share",
         "caption": "",
         "focalPoint": null,
         "width": 1440,
@@ -1737,7 +1737,7 @@
       "cover": {
         "id": 59,
         "name": "shareb-cover-v2",
-        "alternativeText": "shareb",
+        "alternativeText": "Shareb",
         "caption": "",
         "focalPoint": null,
         "width": 1440,

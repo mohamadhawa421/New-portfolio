@@ -443,7 +443,23 @@ const coverStyle = project.cover
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 1000ms var(--ease-out);
+    /*
+     * The last cover still on the entrance curve.
+     *
+     * Three surfaces on this site scale under the pointer — the work card's
+     * tile, the featured tile and this one — and global.css states that hover
+     * belongs to --ease-glide. The card was moved onto it, the featured tile
+     * followed, and this was the one left behind on --ease-out at a full
+     * second, which is nearly finished in its first third and then crawls.
+     *
+     * 620ms to match the card tile, its closest analogue: an image scaling
+     * inside a rounded frame. A second of --ease-glide would have been the
+     * wrong answer on its own — that curve is slow to leave the mark, and on
+     * hover-in the delay is felt — so the duration moves with the easing.
+     * scale(1.014) stays: this surface is the largest of the three, and the
+     * smaller amount is what keeps its edge travelling the same distance.
+     */
+    transition: transform 620ms var(--ease-glide);
   }
 
   .case-cover:hover {

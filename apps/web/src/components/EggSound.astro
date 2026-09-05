@@ -146,6 +146,24 @@
     }
   }
 
+  /*
+   * The `hidden` attribute needs help here, and this is the fourth place on
+   * the site that has needed it.
+   *
+   * An author `display` declaration outranks the browser's own
+   * `[hidden] { display: none }`, so the rule above was quietly keeping this
+   * button laid out whenever it was supposed to be gone — invisible at
+   * opacity 0, but still hit-testing and, worse, still in the tab order. A
+   * keyboard visitor to the home page reached a 44px control they could not
+   * see and could not identify.
+   *
+   * The picker button, the filtered-out cards and the nav scrim all carry the
+   * same guard for the same reason.
+   */
+  .egg-sound[hidden] {
+    display: none;
+  }
+
   .egg-sound[data-shown] {
     opacity: 1;
     transform: translate3d(0, 0, 0);

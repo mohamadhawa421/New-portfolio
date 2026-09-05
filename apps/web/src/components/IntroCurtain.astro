@@ -71,6 +71,26 @@ const canDraw = Boolean(viewBox) && paths.length > 0;
   )
 }
 
+{/*
+  Without JavaScript, this is the whole site.
+
+  The curtain is server-rendered on every page and is a fixed, opaque,
+  full-viewport panel; the only thing that ever takes it away is the script
+  below. So with scripting off — a blocked bundle, a text-mode browser, a proxy
+  that strips modules — every URL renders as a logo on a blank ground with all
+  of the content sitting in the DOM behind it, unreachable.
+
+  `!important` because the rule it has to beat is the component's own scoped
+  `display: flex`, which carries a higher specificity than a bare class.
+*/}
+<noscript>
+  <style>
+    .intro {
+      display: none !important;
+    }
+  </style>
+</noscript>
+
 {/* Runs inline, immediately after the markup, so a repeat visit inside the same
     session removes the curtain before the browser paints it. */}
 <script is:inline>

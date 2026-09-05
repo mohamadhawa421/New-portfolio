@@ -489,6 +489,26 @@ const config = {
         };
       }
 
+      /*
+       * Enter, in the name field, must not navigate.
+       *
+       * This form has no action and no method, so its default is a GET to the
+       * current URL — and it has exactly one text input, which is precisely the
+       * condition the HTML spec uses to decide a form submits on Enter without
+       * needing a submit button. So the most ordinary keyboard reflex there is
+       * put the visitor's name, budget and brief into the address bar, their
+       * history and the server's access log, and threw away what they had
+       * typed on the way. On a form whose own hint says nothing is stored or
+       * sent from this page, that is the one thing it must never do.
+       *
+       * Cancelled, and then routed to the first send button rather than merely
+       * swallowed, so the reflex does the useful thing instead of nothing.
+       */
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        form.querySelector<HTMLButtonElement>('[data-send]')?.click();
+      });
+
       form.querySelectorAll<HTMLButtonElement>('[data-send]').forEach((button) => {
         button.addEventListener('click', () => {
           const message = compose();
@@ -723,7 +743,20 @@ const config = {
     transform: translateY(4px);
   }
 
-  .picker--open .picker__menu {
+  /*
+   * `[data-place]` is here to win, not to select.
+   *
+   * The two placement rules above name an attribute as well as two classes, so
+   * they outranked this one — and the rule that sets the resting offset beat
+   * the rule that is supposed to remove it. Opening downward happened to work
+   * because `below` sets no transform; opening upward, which is what a phone
+   * does whenever the form is near the bottom of the screen, left the menu
+   * stuck at its 4px start offset and fading in with no movement at all.
+   *
+   * `place()` always writes either 'above' or 'below', so this matches in both
+   * cases, and the tie on specificity is settled by this rule coming later.
+   */
+  .picker--open[data-place] .picker__menu {
     opacity: 1;
     transform: translateY(0);
   }
