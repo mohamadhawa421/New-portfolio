@@ -338,6 +338,32 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
          * guarantees the content appears whether or not the entrance ever runs.
          */
         setTimeout(run, 500);
+
+        /*
+         * And the net under that one, for the case where chrome.ts never
+         * arrives at all.
+         *
+         * Everything above the fold is handled by `run` a few lines up, but
+         * below it the hidden state is only ever lifted from inside chrome.ts —
+         * by its observer, its no-IntersectionObserver fallback, or its own
+         * four-second timer. All three are in the module, so one blocked or
+         * failed fetch of that file leaves most of a long page at opacity 0
+         * permanently, with the content sitting in the DOM.
+         *
+         * It waits on the flag chrome.ts sets in init() rather than firing on a
+         * timer regardless: revealing everything after a few seconds would take
+         * the scroll reveal away from anyone who reads slowly, which is most
+         * people. Three seconds is far longer than the module needs on any
+         * connection where it is coming at all.
+         */
+        setTimeout(function () {
+          if (document.documentElement.dataset.chrome) return;
+          var stranded = document.querySelectorAll('[data-hidden]');
+          for (var s = 0; s < stranded.length; s++) {
+            stranded[s].removeAttribute('data-hidden');
+            stranded[s].setAttribute('data-shown', '');
+          }
+        }, 3000);
       })();
     </script>
 

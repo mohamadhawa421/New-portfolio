@@ -519,6 +519,19 @@ function replayLogoDraw(): void {
 }
 
 function init(): void {
+  /*
+   * Tells the inline priming script that this module arrived.
+   *
+   * That script hides everything below the fold before the first paint, and
+   * every route back out of that state — the observer, the no-observer
+   * fallback, the four-second timer — lives in here. So if this file never
+   * loads, all of it stays at opacity 0 for good. The fallback that covers
+   * that is in BaseLayout and waits on this flag, because a fallback that
+   * simply revealed everything on a timer would undo the scroll reveal for
+   * anyone who reads slowly.
+   */
+  root.dataset.chrome = 'on';
+
   // The client router swaps the whole page, so the previous page's observer is
   // watching elements that no longer exist. Drop it — and its safety net —
   // before building a new one.

@@ -251,7 +251,17 @@ figure {
   /* translate3d rather than translateY: the z keeps the element on its own
      compositor layer for the whole move, so the fade never asks the browser to
      re-rasterise a card and its cover mid-scroll. That re-raster is what read
-     as flicker while dragging a phone through the grid. */
+     as flicker while dragging a phone through the grid.
+
+     Read the built CSS before trusting that: the minifier rewrites this to
+     `translateY(14px)`, here and in the two rules below, because in 2D they
+     compute the same thing — and a 2D transform does not promote anything. So
+     what actually ships is the plain translate, and the promotion this asks for
+     is not happening. It has been left as it is rather than forced back with a
+     0.01px z or a will-change, because the elements carrying this are every
+     waiting reveal on the page and handing each of them its own layer is the
+     other failure mode. Restoring it is a decision to make against a real
+     phone, not from here. */
   transform: translate3d(0, 14px, 0);
 }
 
