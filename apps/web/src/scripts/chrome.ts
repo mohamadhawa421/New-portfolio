@@ -420,9 +420,15 @@ let lastOverDark: boolean | null = null;
  * In dark mode every surface is dark, so the nav ink and the logo have to
  * invert everywhere — not only over the sections tagged as dark tiles. Without
  * this the black logo mark sits on a near-black page and disappears.
+ *
+ * The 404 is dark whatever the theme, so asking the theme is not enough there:
+ * in light mode this would answer false, and the moment the nav probe left the
+ * dark tile — over the footer, which carries no `data-tile` — the ink would
+ * revert to near-black over a near-black page. Same failure, one page, and
+ * invisible in dark mode.
  */
 function isDarkTheme(): boolean {
-  return resolvedTheme() === 'dark';
+  return resolvedTheme() === 'dark' || root.dataset.surface === 'void';
 }
 
 function chromePass(): void {

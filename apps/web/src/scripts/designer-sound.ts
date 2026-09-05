@@ -85,6 +85,23 @@ const WAVE_SECONDS = 4;
 
 let ctx: Ctx | null = null;
 let master: GainNode | null = null;
+/**
+ * The mute gate, and the last thing before the speakers.
+ *
+ * A separate node rather than turning `master` down, because master carries the
+ * sequence's own automation — it is set to LEVEL at the launch and ramped away
+ * by end(). Muting by writing to that param would cancel the schedule, and
+ * unmuting would then have to guess what the level was supposed to be at that
+ * instant. A gate multiplying the finished mix has nothing to guess: the
+ * schedule runs underneath it either way, so lifting the gate mid-storm lands
+ * on exactly the level the storm had reached.
+ *
+ * Only the storm passes through here. The characters' strikes go straight to
+ * the output (see spark) and stay audible: this control is only on screen while
+ * the egg is running, and a mute that outlived it would leave them silenced by
+ * a switch the visitor can no longer see.
+ */
+let gate: GainNode | null = null;
 /** Strike level, automated across the run so the arcs follow the storm. */
 let arcBus: GainNode | null = null;
 let stopped = true;
@@ -92,6 +109,29 @@ let voices: AudioScheduledSourceNode[] = [];
 let lastStrike = 0;
 /** Whether the output device has been forced open yet. */
 let opened = false;
+
+/* ---------------------------------------------------------------------- */
+/* Mute                                                                    */
+/* ---------------------------------------------------------------------- */
+
+/**
+ * Session-scoped, like the theme and the intro curtain: a choice about this
+ * visit rather than a setting. Someone who silenced the storm once does not
+ * want it back on the second activation, and does not need it remembered next
+ * week either.
+ */
+const MUTE_KEY = 'mh-egg-muted';
+
+let muted = readMuted();
+
+function readMuted(): boolean {
+  try {
+    return sessionStorage.getItem(MUTE_KEY) === '1';
+  } catch {
+    // Private mode or storage disabled. Sound on, which is the default.
+    return false;
+  }
+}
 
 let waveBuf: AudioBuffer | null = null;
 let backBuf: AudioBuffer | null = null;
@@ -112,15 +152,51 @@ function context(): Ctx | null {
     return null;
   }
 
+  gate = ctx.createGain();
+  // Whatever the visitor settled on earlier in the session, before a sample
+  // plays — an unmute ramp on the first storm of a muted session would be the
+  // one thing the mute was meant to prevent.
+  gate.gain.value = muted ? 0 : 1;
+  gate.connect(ctx.destination);
+
   master = ctx.createGain();
   master.gain.value = 0;
-  master.connect(ctx.destination);
+  master.connect(gate);
 
   arcBus = ctx.createGain();
   arcBus.gain.value = 1;
   arcBus.connect(master);
 
   return ctx;
+}
+
+/** Whether the storm is currently silenced. */
+export function isMuted(): boolean {
+  return muted;
+}
+
+/**
+ * Silences or restores the storm, without touching what it is playing.
+ *
+ * Ramped over 120ms rather than set: a gain step lands on whatever part of a
+ * waveform happens to be passing and that discontinuity is a click. Short
+ * enough to read as instant, long enough to be inaudible as a move of its own.
+ */
+export function setMuted(next: boolean): void {
+  muted = next;
+
+  try {
+    if (next) sessionStorage.setItem(MUTE_KEY, '1');
+    else sessionStorage.removeItem(MUTE_KEY);
+  } catch {
+    // Not fatal — the choice simply does not outlive this page.
+  }
+
+  if (!ctx || !gate) return;
+  const t = ctx.currentTime;
+  gate.gain.cancelScheduledValues(t);
+  gate.gain.setValueAtTime(gate.gain.value, t);
+  gate.gain.linearRampToValueAtTime(next ? 0 : 1, t + 0.12);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -354,6 +430,7 @@ export function shutdown(): void {
   const dying = ctx;
   ctx = null;
   master = null;
+  gate = null;
   arcBus = null;
   waveBuf = null;
   backBuf = null;

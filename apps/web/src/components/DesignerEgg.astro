@@ -22,12 +22,14 @@
  * are fixed to the viewport, and a transformed ancestor would become their
  * containing block and clip the whole thing to one part of the page.
  */
+import EggSound from './EggSound.astro';
 ---
 
 <div class="ring" data-egg-ring aria-hidden="true"></div>
 <div class="ring ring--trail" data-egg-ring-trail aria-hidden="true"></div>
 <div class="wash" data-egg-wash aria-hidden="true"></div>
 <canvas class="dm-field" data-egg-field aria-hidden="true"></canvas>
+<EggSound />
 
 <script>
   import * as mode from '../scripts/designer-mode';
@@ -50,6 +52,8 @@
     const wash = document.querySelector<HTMLElement>('[data-egg-wash]');
     const field = document.querySelector<HTMLCanvasElement>('[data-egg-field]');
     const trigger = document.querySelector<HTMLElement>('[data-egg-trigger]');
+    const toggle = document.querySelector<HTMLButtonElement>('[data-egg-sound]');
+    const label = document.querySelector<HTMLElement>('[data-egg-sound-label]');
     if (!ring || !trail || !wash || !field || !trigger) {
       dismiss = () => {};
       return;
@@ -89,10 +93,81 @@
       trigger!.classList.add('is-hit');
     }
 
+    /* ------------------------------------------------------------------ */
+    /* The mute switch                                                     */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * Puts the control in the state the session already settled on.
+     *
+     * Called on every setup, not only on the first: the button is markup and is
+     * replaced on each client-side navigation, while the preference lives in the
+     * sound module and outlives it.
+     */
+    function paintSwitch(): void {
+      if (!toggle) return;
+      const off = sound.isMuted();
+      toggle.setAttribute('aria-pressed', off ? 'true' : 'false');
+      toggle.setAttribute(
+        'aria-label',
+        off ? 'Unmute easter egg sounds' : 'Mute easter egg sounds'
+      );
+      if (label) label.textContent = off ? 'Easter egg sounds off' : 'Easter egg sounds';
+    }
+
+    /** Timers for the control's own arrival and departure, cancelled on teardown. */
+    let switchTimers: number[] = [];
+
+    function clearSwitchTimers(): void {
+      for (const id of switchTimers) window.clearTimeout(id);
+      switchTimers = [];
+    }
+
+    /**
+     * Brings the control in once the shock has already crossed.
+     *
+     * Not on the click. The first half second is the loudest thing the site
+     * does and a control sliding in underneath it is one more moving object in
+     * a frame that has plenty; by 700ms the wave has passed, the field has
+     * taken hold, and there is somewhere quiet for it to arrive.
+     */
+    function showSwitch(): void {
+      if (!toggle) return;
+      clearSwitchTimers();
+      paintSwitch();
+      toggle.hidden = false;
+      switchTimers.push(
+        window.setTimeout(() => toggle!.setAttribute('data-shown', ''), 700)
+      );
+    }
+
+    /**
+     * Takes it away with the last of the sound rather than on the last frame.
+     *
+     * The storm's picture finishes before its audio does — end() fades the
+     * master over 350ms after the final piece has landed — so a control that
+     * left on the same frame would be gone while there was still something to
+     * mute. It holds through that fade and then goes on its own 520ms.
+     */
+    function hideSwitch(): void {
+      if (!toggle) return;
+      clearSwitchTimers();
+      switchTimers.push(
+        window.setTimeout(() => toggle!.removeAttribute('data-shown'), 620)
+      );
+      switchTimers.push(
+        window.setTimeout(() => {
+          toggle!.hidden = true;
+          toggle!.removeAttribute('data-said');
+        }, 1240)
+      );
+    }
+
     function stop(): void {
       mode.setArcListener(null);
       mode.teardown();
       sound.end();
+      hideSwitch();
       root.style.removeProperty('--dm-fx');
       root.style.removeProperty('--dm-fy');
       trigger!.classList.remove('is-hit');
@@ -189,6 +264,7 @@
         fieldDecay: mode.FIELD_DECAY_MS,
       });
       mode.setArcListener(sound.tick);
+      showSwitch();
 
       mode.run({
         originX: x,
@@ -197,6 +273,32 @@
         field: field!,
         onEnd: stop,
       });
+    });
+
+    /*
+     * Toggling touches the sound and nothing else.
+     *
+     * No part of this reaches the sequence: the picture does not know the sound
+     * exists, the schedule is already placed on the audio clock, and the gate
+     * the mute moves sits after everything that was scheduled. So a press
+     * mid-storm silences it without the storm noticing — which is the point,
+     * since the moment anyone wants this is the moment it is already running.
+     */
+    toggle?.addEventListener('click', () => {
+      sound.setMuted(!sound.isMuted());
+      paintSwitch();
+
+      /*
+       * Says what it just did, then stops saying it.
+       *
+       * On a phone there is no hover, so without this a press changes an icon
+       * and offers no words for what the icon now means. Two seconds is long
+       * enough to read four words and short enough not to become a label.
+       */
+      toggle!.setAttribute('data-said', '');
+      switchTimers.push(
+        window.setTimeout(() => toggle!.removeAttribute('data-said'), 2000)
+      );
     });
 
     dismiss = stop;

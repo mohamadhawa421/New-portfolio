@@ -348,9 +348,12 @@ figure {
   .footer__logo,
   .site-logo,
   /* A squircle at a 50% radius is a rounded square, which is what the two
-     pointer shapes turned into. They are circles. */
+     pointer shapes turned into. They are circles. The 404's rings are the
+     same trap, and worse: four soft squares around a point is not a
+     gravitational field, it is a diagram. */
   .cursor__dot,
-  .cursor__ring {
+  .cursor__ring,
+  .void-ring {
     corner-shape: round;
   }
 }

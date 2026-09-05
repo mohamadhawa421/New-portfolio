@@ -1,65 +1,738 @@
 ---
+/**
+ * You went too far.
+ *
+ * The rest of the site is bright, structured and controlled. This is the
+ * opposite of it, and it is the only page that is dark in both themes — a
+ * visitor who lands here should feel they have gone somewhere outside the
+ * portfolio rather than to a page of it.
+ *
+ * The composition is one gravitational point and four small objects scattered
+ * around it. The point — the well — is never drawn as an object: it is a patch
+ * of the page darker than the ground, with the purple thickening at its rim
+ * rather than glowing from its middle, which is what makes it read as a hole
+ * instead of a light. Everything else is arranged on a radius from it. The 404
+ * is the nearest body and is crushed tightest; the character is on the far side
+ * at a greater distance; the button is the furthest point out and the only
+ * thing on the page still wearing the site's own blue, because it is the one
+ * piece of the normal universe still working.
+ *
+ * The subject of the composition is the empty space between the type and the
+ * character, because that is where the hole is.
+ */
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Page not found — Mohamad Hawa" description="That page does not exist.">
+<BaseLayout
+  title="Page not found — Mohamad Hawa"
+  description="That page does not exist."
+  surface="void"
+>
   <main id="main" data-shell="1">
-    <section class="section section--light notfound" data-lift data-tile="light">
-      <div class="shell--narrow">
-        <div class="eyebrow">404</div>
-        <h1 class="notfound__heading"><span data-rise="0">That page does not exist.</span></h1>
-        <p class="notfound__body">
-          The link may be old, or the project may have moved. The work index is the best
-          place to pick things back up.
-        </p>
-        <div class="notfound__actions">
-          <a class="btn btn--primary" href="/work">See the work</a>
-          <a class="btn btn--secondary" href="/">Back home</a>
+    <section class="section void" data-lift data-tile="dark">
+      <div class="shell--narrow void__grid">
+        {/*
+          He comes first in the markup because that is his order on a phone,
+          where he has to be met before he can be furniture. On a desktop the
+          grid places him by area, so the DOM never needs reordering.
+        */}
+        <div class="void__him" data-void-part="him" data-void-keep>
+          <div class="void__him-tilt">
+            <img
+              class="void__art"
+              src="/character-lost.webp"
+              width="560"
+              height="523"
+              alt="Mohamad's character, shrugging, unsure where he has ended up"
+              fetchpriority="high"
+              decoding="async"
+            />
+          </div>
+        </div>
+
+        <div class="void__stack" data-void-keep>
+          {/* A real paragraph, not decoration: the page reads out as "404. Well…
+              this wasn't supposed to happen. You somehow wandered a little too
+              far. Take me home." — the four lines, in order. */}
+          <p class="void__code" data-void-part="code">404</p>
+
+          <h1 class="void__say" data-void-part="say">Well… this wasn't supposed to happen.</h1>
+
+          <p class="void__note body" data-void-part="note">
+            You somehow wandered a little too far.
+          </p>
+
+          <a class="btn btn--primary void__out" data-void-part="out" href="/">
+            Take me home&nbsp;→
+          </a>
         </div>
       </div>
     </section>
+
+    {/*
+      The atmosphere, at the end of <main> and outside the section on purpose.
+
+      All three are fixed to the viewport, and the section carries `data-lift` —
+      which takes a transform during the theme wave. A transformed ancestor
+      becomes the containing block for a fixed child, which would clip the whole
+      void to one band of the page at exactly the moment someone changes theme.
+    */}
+    <div class="void-haze" aria-hidden="true"></div>
+    <div class="void-ring void-ring--near" aria-hidden="true"></div>
+    <div class="void-ring void-ring--far" aria-hidden="true"></div>
+    <canvas class="void-field" data-void-field aria-hidden="true"></canvas>
   </main>
 </BaseLayout>
 
 <style>
-  .notfound {
+  /* ------------------------------------------------------------------ */
+  /* The well                                                            */
+  /*                                                                     */
+  /* Two numbers, and everything on the page is built from them: the      */
+  /* shadow, the halo, the rings, and the point the motes fall towards.   */
+  /* The canvas reads these same properties, so the picture and the       */
+  /* physics cannot drift apart.                                          */
+  /*                                                                     */
+  /* On a desktop the well sits inside column one's own right-hand        */
+  /* emptiness, so the column gap between the type and the character IS   */
+  /* the hole. On a phone it moves into the right-hand margin.            */
+  /* ------------------------------------------------------------------ */
+  :global(:root[data-surface='void']) {
+    --wx: 47;
+    --wy: 38;
+  }
+
+  @media (max-width: 767px) {
+    :global(:root[data-surface='void']) {
+      --wx: 78;
+      --wy: 47;
+    }
+  }
+
+  .void {
+    position: relative;
+    z-index: 1;
+    min-height: 100svh;
+    display: grid;
+    align-content: center;
+    /* The existing 404's padding idiom, kept. */
     padding-top: clamp(120px, min(22vh, 33vw), 240px);
-    padding-bottom: clamp(68px, min(14vh, 19vw), 160px);
+    padding-bottom: clamp(72px, min(14vh, 19vw), 160px);
   }
 
-  .notfound__heading {
-    /* Clips the rising text until it slides into place. The padding stops
-       descenders being shaved off by the same clip. */
-    overflow: hidden;
+  .void__grid {
+    display: grid;
+    gap: 0;
     /*
-     * Room for the descenders inside the clip, cancelled again by the margin so
-     * the heading occupies exactly the space it did before. A tight
-     * line-height puts the line box above the bottom of the glyphs, and the
-     * same overflow that hides the rising text was shaving them.
+     * Stated, because this shell is a grid item and every other one on the site
+     * is not.
+     *
+     * .shell--narrow is `max-width` plus `margin: 0 auto`. In a block container
+     * that fills the line and then caps. As a grid item the auto margins take
+     * the free space, which switches the item off stretch and onto shrink-to-
+     * fit — so it sized to its own content, 784px instead of 1080, and pulled
+     * both columns in with it. The character ended up 274px from the well
+     * instead of 428, which is the whole of his position in the composition.
      */
-    padding-bottom: 0.16em;
-    margin-bottom: -0.1em;
-    margin-top: 16px;
-    max-width: 18ch;
-    font-size: clamp(33px, 5.6vw, 76px);
-    line-height: 1.04;
-    letter-spacing: -0.019em;
+    width: 100%;
+  }
+
+  @media (min-width: 1024px) {
+    .void__grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 0.82fr);
+      column-gap: clamp(24px, 6vw, 96px);
+      align-items: center;
+    }
+
+    /* He is authored first for the phone; on a desktop the grid puts him
+       back on the right without touching the document order. */
+    .void__him {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .void__stack {
+      grid-column: 1;
+      grid-row: 1;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The type                                                            */
+  /*                                                                     */
+  /* The four left edges do not align. They curve — 26 / 16 / 7 / 0 — a   */
+  /* decelerating falloff, so a straight left margin has visibly been     */
+  /* bent by something sitting off to its right. The largest, nearest     */
+  /* element is displaced most; the button, furthest out, is straight.    */
+  /* Row gaps expand going down while the indents contract: the page      */
+  /* loosens as you get further from the mass.                            */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * The number, and the one place on this site where type is compressed past
+   * its optical value.
+   *
+   * .h2 runs -0.016em topping out at 54px; scaling that optically to 196px
+   * already wants about -0.03em, and the rest is the gravity — roughly five
+   * pixels out of every gap, so the zeros nearly touch the four. It is an
+   * over-tightening on purpose rather than a default.
+   *
+   * Nothing else happens to it: no glow, no gradient, no outline, no stroke,
+   * no text-shadow and no purple. It is full ink, matte, and the tracking is
+   * the only thing the number does. Anything added here would turn the one
+   * deliberate gesture on the page into an effect.
+   */
+  .void__code {
+    margin: 0 0 0 26px;
+    font-size: clamp(88px, 13vw, 196px);
     font-weight: 600;
+    line-height: 0.88;
+    letter-spacing: -0.055em;
+    /* Proportional, never tabular — tabular figures would undo the crush. */
+    font-variant-numeric: proportional-nums;
+    color: var(--ink);
   }
 
-  .notfound__body {
-    margin-top: 20px;
-    max-width: 46ch;
-    font-size: 17px;
-    line-height: 1.52;
-    letter-spacing: -0.022em;
-    color: var(--ink-muted);
+  /*
+   * .lead's scale, carrying full ink at weight 400 rather than .lead's 300 in
+   * --ink-muted. It has to be the second-strongest thing on the page, and a
+   * light grey under a huge white number is a third tier, not a second.
+   */
+  .void__say {
+    margin: 18px 0 0 16px;
+    max-width: 20ch;
+    font-size: clamp(19px, 2vw, 24px);
+    font-weight: 400;
+    line-height: 1.32;
+    letter-spacing: -0.021em;
+    color: var(--ink);
+    text-wrap: balance;
   }
 
-  .notfound__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: clamp(26px, 4vh, 38px);
+  /* .body verbatim, at a measure. */
+  .void__note {
+    margin: 22px 0 0 7px;
+    max-width: 32ch;
+  }
+
+  /*
+   * .btn .btn--primary, untouched — same radius, type, padding, spring and
+   * press. In the void --blue-fill is #0f6ad0, so it is the only object on the
+   * page that is neither purple nor grey. That is the design: the way home is
+   * the colour of the rest of the site.
+   */
+  .void__out {
+    margin: 36px 0 0 0;
+    justify-self: start;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The character                                                       */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * Two wrappers so that translate, transform and filter never collide: the
+   * outer one floats (on the independent `translate` property, the same reason
+   * .site-logo uses it), the inner one lists, and the image carries the light.
+   */
+  .void__him {
+    justify-self: end;
+    align-self: start;
+    width: clamp(196px, 22vw, 320px);
+    margin-top: -6svh;
+  }
+
+  .void__art {
+    display: block;
+    width: 100%;
+    height: auto;
+    /*
+     * The rim light. Two stacked drop-shadows, because drop-shadow follows the
+     * cut-out edge and a box-shadow would light a rectangle.
+     *
+     * It is not decoration. His jacket is near-black and so is the page; on the
+     * void he would otherwise be a silhouette with nothing separating him from
+     * the ground. The negative x puts the tight glow on his left — the side
+     * facing the well — so the thing lighting him is the mass.
+     *
+     * Static, never animated: animating a filter repaints him every frame.
+     */
+    filter:
+      drop-shadow(-4px 1px 10px color-mix(in srgb, var(--dm-glow) 26%, transparent))
+      drop-shadow(0 0 26px color-mix(in srgb, var(--dm-wave) 11%, transparent));
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The atmosphere                                                      */
+  /* ------------------------------------------------------------------ */
+
+  .void-haze,
+  .void-ring,
+  .void-field {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /*
+   * Three gradients: the mass, its halo, and one off-axis lift so the void is
+   * not perfectly radial.
+   *
+   * (a) is BLACK, not purple, and it is darker than the page it sits on. That
+   * is the whole trick — a subtraction reads as a hole where an addition reads
+   * as a lamp. (b) starts outside it so the centre stays clean, and peaks at
+   * 7%: the storm's own wash runs 20%, so this is about a third of it.
+   */
+  .void-haze {
+    background:
+      radial-gradient(
+        circle at calc(var(--wx) * 1vw) calc(var(--wy) * 1svh),
+        color-mix(in srgb, var(--dm-field) 7%, transparent) 14%,
+        color-mix(in srgb, var(--dm-deep) 5%, transparent) 34%,
+        transparent 62%
+      ),
+      radial-gradient(
+        circle at calc(var(--wx) * 1vw) calc(var(--wy) * 1svh),
+        rgba(0, 0, 0, 0.34) 0%,
+        rgba(0, 0, 0, 0.24) 9%,
+        rgba(0, 0, 0, 0) 26%
+      ),
+      radial-gradient(
+        ellipse 120% 90% at 88% 92%,
+        color-mix(in srgb, var(--dm-deep) 4%, transparent) 0%,
+        transparent 60%
+      );
+    opacity: 0;
+    transition: opacity 1100ms var(--ease-out);
+  }
+
+  /*
+   * Two rings, and both are far larger than the frame.
+   *
+   * Sized so that neither is ever seen whole: what reaches the screen is an
+   * arc curving out through a corner, not a circle centred in view. Concentric
+   * circles around a point are a targeting reticle, and the geometry is worth
+   * keeping while the target is not — so the fix is the crop rather than the
+   * alpha.
+   */
+  .void-ring {
+    inset: auto;
+    left: calc(var(--wx) * 1vw);
+    top: calc(var(--wy) * 1svh);
+    translate: -50% -50%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    transform: rotate(-8deg) scaleY(0.88);
+    opacity: 0;
+    transition: opacity 1400ms var(--ease-out) 220ms;
+  }
+
+  .void-ring--near {
+    width: 96vmax;
+    border-color: color-mix(in srgb, var(--dm-field) 3.5%, transparent);
+  }
+
+  /*
+   * The outer one is broken rather than closed: only the lower-left quadrant
+   * carries any colour, facing the type. The corner fade between a coloured
+   * and a transparent side gives the taper for free.
+   */
+  /*
+   * 118vmax, not 148: measured, the larger one never touched the frame at all
+   * on any viewport — a ring drawn entirely outside the screen. This one
+   * crosses the left edge low and the right edge lower still, so what reaches
+   * the page is a single shallow arc sweeping under the type, which is where
+   * its two coloured borders are.
+   */
+  .void-ring--far {
+    width: 118vmax;
+    border-bottom-color: color-mix(in srgb, var(--dm-glow) 4%, transparent);
+    border-left-color: color-mix(in srgb, var(--dm-deep) 3%, transparent);
+  }
+
+  .void-field {
+    contain: layout size style;
+    opacity: 0;
+    transition: opacity 900ms var(--ease-out);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The entrance                                                        */
+  /*                                                                     */
+  /* Bespoke, and deliberately outside the site's reveal system: no       */
+  /* data-reveal, data-rise or data-num appears on this page, which is    */
+  /* the whole of the opt-out — those attributes are the only query that  */
+  /* system makes. The start states are server-rendered here rather than  */
+  /* written by script, so nothing is ever painted and then hidden.       */
+  /*                                                                     */
+  /* Darkness first, and the darkness is the part that was designed.      */
+  /* ------------------------------------------------------------------ */
+  [data-void-part] {
+    opacity: 0;
+  }
+
+  .void__him[data-void-part] {
+    translate: 0 22px;
+    scale: 0.965;
+    transition:
+      opacity 720ms var(--ease-glide),
+      translate 720ms var(--ease-glide),
+      scale 720ms var(--ease-glide);
+  }
+
+  /*
+   * The number does not fade up from below like the rest. It condenses: it
+   * arrives loose and visibly crushes tight as it settles, which states the
+   * page's whole idea in one gesture instead of describing it.
+   */
+  .void__code[data-void-part] {
+    letter-spacing: -0.012em;
+    translate: 10px 0;
+    transition:
+      opacity 760ms var(--ease-glide),
+      letter-spacing 760ms var(--ease-glide),
+      translate 760ms var(--ease-glide);
+  }
+
+  .void__say[data-void-part],
+  .void__note[data-void-part] {
+    translate: 0 12px;
+    transition:
+      opacity 620ms var(--ease-glide),
+      translate 620ms var(--ease-glide);
+  }
+
+  .void__out[data-void-part] {
+    translate: 0 10px;
+    /* No entrance scale: on this site scale belongs to :active and --spring. */
+    transition:
+      opacity 560ms var(--ease-glide),
+      translate 560ms var(--ease-glide);
+  }
+
+  /*
+   * Written out per part rather than as one `[data-void-part][data-in]`.
+   *
+   * That shorter selector carries exactly the same specificity as the start
+   * states above it — one class and two attributes either way — so which of
+   * them won came down to source order alone, and the 404 kept the ten pixels
+   * it was supposed to arrive from. Naming the element in each makes the
+   * settled state strictly stronger, and nothing here depends on the order the
+   * rules happen to be written in.
+   */
+  .void__him[data-void-part][data-in],
+  .void__code[data-void-part][data-in],
+  .void__say[data-void-part][data-in],
+  .void__note[data-void-part][data-in],
+  .void__out[data-void-part][data-in] {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+
+  .void__code[data-void-part][data-in] {
+    letter-spacing: -0.055em;
+  }
+
+  :global(:root[data-void='atmosphere']) .void-haze,
+  :global(:root[data-void='atmosphere']) .void-ring,
+  :global(:root[data-void='settled']) .void-haze,
+  :global(:root[data-void='settled']) .void-ring {
+    opacity: 1;
+  }
+
+  :global(:root[data-void='field']) .void-haze,
+  :global(:root[data-void='field']) .void-ring,
+  :global(:root[data-void='field']) .void-field,
+  :global(:root[data-void='settled']) .void-field {
+    opacity: 1;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The life in him                                                     */
+  /*                                                                     */
+  /* Two loops on coprime periods so the pair never visibly repeats, plus */
+  /* one discrete event. He drifts fractionally off balance and slowly     */
+  /* rights himself, and every so often he glances — which is the whole of */
+  /* "where did we end up?" without a bounce or a wiggle anywhere.        */
+  /* ------------------------------------------------------------------ */
+  :global(:root[data-void='settled']) .void__him {
+    animation: void-float 14s var(--ease-smooth) infinite;
+  }
+
+  :global(:root[data-void='settled']) .void__him-tilt {
+    animation: void-list 23s ease-in-out infinite alternate;
+  }
+
+  @keyframes void-float {
+    0% {
+      translate: 0 0;
+    }
+    26% {
+      translate: 1.5px -5px;
+    }
+    51% {
+      translate: -1px -8px;
+    }
+    74% {
+      translate: 2px -3px;
+    }
+    100% {
+      translate: 0 0;
+    }
+  }
+
+  @keyframes void-list {
+    from {
+      transform: rotate(-3deg);
+    }
+    to {
+      transform: rotate(-1.4deg);
+    }
+  }
+
+  /* The glance. A single blip, fired from script every seven to thirteen
+     seconds, never a loop — a loop would be a mannerism. */
+  .void__him-tilt[data-glance] {
+    animation:
+      void-list 23s ease-in-out infinite alternate,
+      void-glance 900ms var(--ease-glide);
+  }
+
+  @keyframes void-glance {
+    0% {
+      translate: 0 0;
+    }
+    42% {
+      translate: var(--glance, -3px) 0;
+    }
+    62% {
+      translate: var(--glance, -3px) 0;
+    }
+    100% {
+      translate: 0 0;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* A phone                                                             */
+  /*                                                                     */
+  /* A different composition on a different axis rather than a narrowed   */
+  /* desktop: one column, the well moved into the right-hand margin, and  */
+  /* the character met first. The indent curve leans the other way with   */
+  /* it, and so does the light on him.                                    */
+  /* ------------------------------------------------------------------ */
+  @media (max-width: 767px) {
+    .void {
+      padding-top: clamp(96px, 15svh, 132px);
+      padding-bottom: clamp(40px, 7svh, 64px);
+    }
+
+    .void__him {
+      justify-self: center;
+      /*
+       * Off the centre axis, and a little into the gutter, so the frame reads
+       * as too small for the space he is in.
+       *
+       * `left` rather than `translate`, which is already spoken for twice over:
+       * the entrance animates it, the settled state resets it to zero, and the
+       * float loop owns it after that. Offsetting him with it put him back on
+       * the axis the moment he arrived.
+       */
+      position: relative;
+      left: 34px;
+      width: clamp(148px, 43vw, 190px);
+      margin-top: 0;
+    }
+
+    .void__art {
+      filter:
+        drop-shadow(4px 1px 10px color-mix(in srgb, var(--dm-glow) 26%, transparent))
+        drop-shadow(0 0 26px color-mix(in srgb, var(--dm-wave) 11%, transparent));
+    }
+
+    .void__code {
+      margin: 26px 0 0 14px;
+      font-size: clamp(76px, 21vw, 104px);
+    }
+
+    .void__say {
+      margin: 14px 0 0 9px;
+      max-width: 17ch;
+      line-height: 1.28;
+    }
+
+    .void__note {
+      margin: 18px 0 0 4px;
+      max-width: 28ch;
+    }
+
+    .void__out {
+      margin-top: 30px;
+    }
+
+    @keyframes void-list {
+      from {
+        transform: rotate(2deg);
+      }
+      to {
+        transform: rotate(0.6deg);
+      }
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Reduced motion                                                      */
+  /*                                                                     */
+  /* Everything is where it belongs, and none of it moves. The global     */
+  /* reset only zeroes durations, so the loops have to be cleared by name */
+  /* or they keep running at nought seconds.                              */
+  /* ------------------------------------------------------------------ */
+  @media (prefers-reduced-motion: reduce) {
+    .void__him,
+    .void__him-tilt,
+    .void__him-tilt[data-glance] {
+      animation: none;
+    }
+
+    [data-void-part] {
+      transition-duration: 0.001ms;
+    }
   }
 </style>
+
+
+<script>
+  /**
+   * The choreography.
+   *
+   * Every start state is already in the CSS above and server-rendered, so this
+   * paints nothing and hides nothing — all it does is set one attribute on
+   * <html> and one on each part as its moment comes. The stylesheet owns every
+   * duration and every curve.
+   *
+   * It is deliberately outside the site's reveal system. That system is one
+   * query for [data-reveal],[data-rise],[data-num]; this page carries none of
+   * those attributes, which is the whole of the opt-out. Nothing here claims an
+   * element the observer might also claim.
+   */
+  import { startField, stopField } from '../scripts/void-field';
+
+  let timers: number[] = [];
+  let glanceTimer = 0;
+
+  function clear(): void {
+    for (const id of timers) window.clearTimeout(id);
+    timers = [];
+    window.clearTimeout(glanceTimer);
+    glanceTimer = 0;
+  }
+
+  function at(ms: number, fn: () => void): void {
+    timers.push(window.setTimeout(fn, ms));
+  }
+
+  function stage(name: string): void {
+    document.documentElement.dataset.void = name;
+  }
+
+  function show(part: string): void {
+    document.querySelector(`[data-void-part="${part}"]`)?.setAttribute('data-in', '');
+  }
+
+  /**
+   * He looks about, every seven to thirteen seconds.
+   *
+   * From a timer rather than a keyframe loop: a glance on a fixed cycle stops
+   * being a glance and becomes a tic. This is the only discrete thing he does —
+   * the float and the list are continuous and are the CSS's business.
+   */
+  function glance(): void {
+    const tilt = document.querySelector<HTMLElement>('.void__him-tilt');
+    if (!tilt) return;
+    tilt.style.setProperty('--glance', `${Math.random() < 0.5 ? -3.4 : 3.4}px`);
+    tilt.setAttribute('data-glance', '');
+    window.setTimeout(() => tilt.removeAttribute('data-glance'), 940);
+    glanceTimer = window.setTimeout(glance, 7000 + Math.random() * 6000);
+  }
+
+  function settle(): void {
+    stage('settled');
+    for (const part of ['him', 'code', 'say', 'note', 'out']) show(part);
+    // chrome.ts measured the dark tile before the page had finished arriving.
+    window.dispatchEvent(new Event('resize'));
+  }
+
+  function run(): void {
+    const field = document.querySelector<HTMLCanvasElement>('[data-void-field]');
+    if (!field) {
+      // Some other page. Make sure nothing of this one is left running.
+      clear();
+      stopField();
+      delete document.documentElement.dataset.void;
+      return;
+    }
+
+    clear();
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /*
+     * Arriving mid-page — a restored scroll offset, or a cover still morphing —
+     * means the entrance would animate something already being looked at. The
+     * same test chrome.ts makes before it primes.
+     */
+    const restoring = ((history.state && history.state.scrollY) || 0) > 0;
+    if (reduced || (window as unknown as { __mhMorph?: boolean }).__mhMorph || restoring) {
+      settle();
+      startField(field);
+      return;
+    }
+
+    stage('idle');
+
+    /*
+     * On a cold first visit the intro curtain covers the page for about two and
+     * a half seconds. Running underneath it would spend the entrance where
+     * nobody can see it and hand over a finished page the moment the curtain
+     * lifted, so the whole table waits for it.
+     */
+    let offset = 0;
+    try {
+      if (document.querySelector('[data-intro]') && sessionStorage.getItem('mh-intro-seen') !== '1') {
+        offset = 1500;
+      }
+    } catch {
+      /* storage refused — assume the curtain is not playing */
+    }
+
+    at(offset + 420, () => stage('atmosphere'));
+    at(offset + 980, () => {
+      stage('field');
+      startField(field);
+    });
+    at(offset + 1360, () => show('him'));
+    at(offset + 1720, () => show('code'));
+    at(offset + 2200, () => show('say'));
+    at(offset + 2440, () => show('note'));
+    at(offset + 2760, () => show('out'));
+    at(offset + 3320, () => {
+      settle();
+      glanceTimer = window.setTimeout(glance, 7000 + Math.random() * 6000);
+    });
+
+    // If any of the above is lost, the page still finishes.
+    at(offset + 4600, settle);
+  }
+
+  function leave(): void {
+    clear();
+    stopField();
+    delete document.documentElement.dataset.void;
+  }
+
+  document.addEventListener('astro:page-load', run);
+  document.addEventListener('astro:before-swap', leave);
+  window.addEventListener('pagehide', leave);
+</script>

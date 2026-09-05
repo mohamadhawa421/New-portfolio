@@ -288,6 +288,8 @@
     let overDarkTile = false;
 
     function pageIsDark(): boolean {
+      // The void is dark in both themes, so it answers before the theme does.
+      if (document.documentElement.dataset.surface === 'void') return true;
       const set = document.documentElement.dataset.theme;
       if (set === 'dark') return true;
       if (set === 'light') return false;

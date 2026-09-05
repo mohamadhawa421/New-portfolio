@@ -1,0 +1,286 @@
+---
+/**
+ * The mute switch for the storm.
+ *
+ * It exists only while the easter egg is running. That is the whole idea: the
+ * site has no audio anywhere else, so a permanent speaker icon would be a
+ * control for nothing, and worse, it would advertise the egg to someone who has
+ * not found it. This arrives once the wave has already crossed and leaves with
+ * the last of the sound.
+ *
+ * Built from the enquiry form's menu construction rather than a new one: a
+ * surface a step away from its ground, a hairline of caught light, and two
+ * shadows — a wide one for the distance and a tight one to describe the edge
+ * where the wide one is too faint. Both are things that float above a page
+ * rather than sit in it, which is the problem that construction solves.
+ *
+ * One speaker, two states. The waves are the only part that changes and the
+ * slash is drawn over them, so muting reads as something being struck through
+ * rather than as two icons crossfading — the same reasoning as the theme
+ * switch's single morphing sun.
+ */
+---
+
+<button
+  class="egg-sound"
+  type="button"
+  data-egg-sound
+  hidden
+  aria-label="Mute easter egg sounds"
+  aria-pressed="false"
+>
+  <svg class="egg-sound__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    {/* The cone. Constant across both states — it is the same speaker. */}
+    <path
+      class="egg-sound__cone"
+      d="M4 9.2h3.3L11.6 5.4a.7.7 0 0 1 1.2.5v12.2a.7.7 0 0 1-1.2.5L7.3 14.8H4a.9.9 0 0 1-.9-.9v-3.8A.9.9 0 0 1 4 9.2Z"
+    />
+
+    {/* Two arcs of sound, retracting inward when it goes quiet. */}
+    <g class="egg-sound__waves" fill="none" stroke-linecap="round">
+      <path class="egg-sound__wave egg-sound__wave--near" d="M16.1 9.3a3.8 3.8 0 0 1 0 5.4" />
+      <path class="egg-sound__wave egg-sound__wave--far" d="M18.9 6.6a7.7 7.7 0 0 1 0 10.8" />
+    </g>
+
+    {/* Drawn over the waves as they go, so the strike-through is what silenced
+        them. Revealed by its own dash offset rather than by opacity — a line
+        that draws itself reads as a gesture, and a line that fades in reads as
+        a state that was always there. */}
+    <line class="egg-sound__slash" x1="4.6" y1="19.4" x2="19.4" y2="4.6" stroke-linecap="round" />
+  </svg>
+
+  <span class="egg-sound__label" data-egg-sound-label aria-hidden="true">Easter egg sounds</span>
+</button>
+
+<style>
+  .egg-sound {
+    /*
+     * Bottom left.
+     *
+     * The right is spoken for on both sizes: the phone's sidebar is dragged out
+     * of that edge and holds there for most of the sequence, and on a desktop
+     * the wave leaves the portrait and travels rightward across the page. The
+     * bottom left is the one corner nothing in the sequence uses, and it is
+     * where a thumb already is.
+     */
+    position: fixed;
+    left: max(18px, env(safe-area-inset-left, 0px));
+    bottom: max(18px, env(safe-area-inset-bottom, 0px));
+    z-index: 9995;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+
+    border: 1px solid var(--egg-sound-line);
+    border-radius: var(--r-pill);
+    background: var(--egg-sound-bg);
+    color: var(--egg-sound-ink);
+    cursor: pointer;
+
+    /* The wide one carries the distance off the page; the tight one describes
+       the edge, which the wide one is too diffuse to do on a dark ground. */
+    box-shadow: var(--egg-sound-shadow);
+
+    /* Held off the page until the storm asks for it. Both are animated in, so
+       neither is a starting value the button ever paints at rest. */
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+
+    transition:
+      opacity 520ms var(--ease-glide),
+      transform 520ms var(--ease-glide),
+      border-color 300ms var(--ease-glide),
+      background 300ms var(--ease-glide);
+  }
+
+  /*
+   * The surfaces, one set per theme.
+   *
+   * The storm turns the site's accent purple but it does not darken the page:
+   * in the light theme the ground under this is still near-white, and a
+   * near-black control on it would be the heaviest thing on the screen at the
+   * one moment nothing should compete with the picture. So it follows the
+   * theme, the way every other control on the site does.
+   *
+   * What does not change is the purple. It is a cast rather than a colour —
+   * --dm-wave at a twentieth in the surface and a fifth in the line — which is
+   * enough to say the control belongs to the energy without making it a purple
+   * button. The hot end of the palette is spent on the border alone, and only
+   * on hover.
+   */
+  .egg-sound {
+    --egg-sound-bg: color-mix(in srgb, var(--dm-wave) 5%, #fdfdff);
+    --egg-sound-line: color-mix(in srgb, var(--dm-wave) 22%, transparent);
+    --egg-sound-ink: #241c33;
+    --egg-sound-bg-hover: color-mix(in srgb, var(--dm-wave) 11%, #fdfdff);
+    --egg-sound-line-hover: color-mix(in srgb, var(--dm-wave) 42%, transparent);
+    --egg-sound-shadow: 0 8px 24px rgba(35, 20, 70, 0.16), 0 1px 3px rgba(35, 20, 70, 0.12);
+    --egg-sound-ring: var(--dm-wave);
+  }
+
+  :global(:root[data-theme='dark']) .egg-sound {
+    --egg-sound-bg: color-mix(in srgb, var(--dm-deep) 22%, #0d0c11);
+    --egg-sound-line: color-mix(in srgb, var(--dm-arc) 24%, transparent);
+    --egg-sound-ink: #ece9f6;
+    --egg-sound-bg-hover: color-mix(in srgb, var(--dm-wave) 30%, #0d0c11);
+    --egg-sound-line-hover: color-mix(in srgb, var(--dm-arc) 44%, transparent);
+    --egg-sound-shadow: 0 8px 26px rgba(0, 0, 0, 0.42), 0 1px 3px rgba(0, 0, 0, 0.34);
+    --egg-sound-ring: var(--dm-arc);
+  }
+
+  /* Follows the system until the visitor picks a side, matching tokens.css. */
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .egg-sound {
+      --egg-sound-bg: color-mix(in srgb, var(--dm-deep) 22%, #0d0c11);
+      --egg-sound-line: color-mix(in srgb, var(--dm-arc) 24%, transparent);
+      --egg-sound-ink: #ece9f6;
+      --egg-sound-bg-hover: color-mix(in srgb, var(--dm-wave) 30%, #0d0c11);
+      --egg-sound-line-hover: color-mix(in srgb, var(--dm-arc) 44%, transparent);
+      --egg-sound-shadow: 0 8px 26px rgba(0, 0, 0, 0.42), 0 1px 3px rgba(0, 0, 0, 0.34);
+    --egg-sound-ring: var(--dm-arc);
+    }
+  }
+
+  .egg-sound[data-shown] {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .egg-sound:hover {
+    background: var(--egg-sound-bg-hover);
+    border-color: var(--egg-sound-line-hover);
+  }
+
+  /* The site's own press: every .btn does this, and the control should feel
+     like the same hand made it. */
+  .egg-sound:active {
+    transform: translate3d(0, 0, 0) scale(0.93);
+    transition-duration: 120ms;
+  }
+
+  /* The site's ring, in the storm's colour. Two values because #c084fc is
+     the wrong end of the palette to outline a near-white surface with. */
+  .egg-sound:focus-visible {
+    outline: 2px solid var(--egg-sound-ring);
+    outline-offset: 3px;
+  }
+
+  .egg-sound__icon {
+    width: 19px;
+    height: 19px;
+    overflow: visible;
+  }
+
+  .egg-sound__cone {
+    fill: currentColor;
+  }
+
+  .egg-sound__waves {
+    stroke: currentColor;
+    stroke-width: 1.7;
+  }
+
+  /*
+   * Muted: the arcs pull back into the cone and the slash draws across them.
+   *
+   * The far one goes first and travels further, so the sound reads as
+   * retreating rather than as two shapes disappearing together.
+   */
+  .egg-sound__wave {
+    transform-origin: 11px 12px;
+    transition:
+      opacity 260ms var(--ease-glide),
+      scale 340ms var(--ease-glide);
+  }
+
+  .egg-sound__wave--far {
+    transition-delay: 0ms;
+  }
+
+  .egg-sound__wave--near {
+    transition-delay: 60ms;
+  }
+
+  .egg-sound[aria-pressed='true'] .egg-sound__wave {
+    opacity: 0;
+    scale: 0.55;
+  }
+
+  .egg-sound[aria-pressed='true'] .egg-sound__wave--far {
+    transition-delay: 0ms;
+  }
+
+  .egg-sound[aria-pressed='true'] .egg-sound__wave--near {
+    transition-delay: 40ms;
+  }
+
+  .egg-sound__slash {
+    stroke: currentColor;
+    stroke-width: 1.7;
+    /* The line's own length, so it can be drawn on rather than faded on. */
+    stroke-dasharray: 21;
+    stroke-dashoffset: 21;
+    transition: stroke-dashoffset 300ms var(--ease-glide);
+  }
+
+  .egg-sound[aria-pressed='true'] .egg-sound__slash {
+    stroke-dashoffset: 0;
+    transition-delay: 80ms;
+  }
+
+  /*
+   * The label.
+   *
+   * Not a title attribute: the browser's own tooltip takes about a second to
+   * appear, is drawn in the operating system's typeface, and never appears at
+   * all on a touch screen. This is the site's type at the site's smallest size,
+   * and it doubles as the confirmation of a press — which is what makes it
+   * worth having on a phone, where there is no hover to trigger it.
+   */
+  .egg-sound__label {
+    position: absolute;
+    left: calc(100% + 9px);
+    white-space: nowrap;
+    font-size: 13px;
+    letter-spacing: -0.01em;
+    color: var(--egg-sound-ink);
+    opacity: 0;
+    transform: translate3d(-4px, 0, 0);
+    pointer-events: none;
+    transition:
+      opacity 240ms var(--ease-glide),
+      transform 240ms var(--ease-glide);
+  }
+
+  .egg-sound:hover .egg-sound__label,
+  .egg-sound:focus-visible .egg-sound__label,
+  .egg-sound[data-said] .egg-sound__label {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  /*
+   * On a phone the label would run into the edge of the screen from a control
+   * this close to it, so it sits above instead.
+   */
+  @media (max-width: 520px) {
+    .egg-sound__label {
+      left: 0;
+      bottom: calc(100% + 8px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .egg-sound,
+    .egg-sound__wave,
+    .egg-sound__slash,
+    .egg-sound__label {
+      transition-duration: 0.001ms;
+    }
+  }
+</style>

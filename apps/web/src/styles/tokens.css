@@ -275,3 +275,118 @@
     --nav-ink: #f5f5f7;
   }
 }
+
+/* ===================================================================== */
+/* The void                                                              */
+/*                                                                       */
+/* One page is dark in both themes: the 404. It is meant to read as       */
+/* somewhere outside the site rather than a page of it, and a bright      */
+/* white "page not found" would say the opposite.                        */
+/*                                                                       */
+/* This is not a hack. It is the same move the enquiry form already makes */
+/* — a surface that carries its own ground and takes the accent from the  */
+/* dark palette because it is dark whatever the theme — applied at the    */
+/* root instead of to one component. Every component below keeps reading  */
+/* the same tokens and needs no page-specific rule.                       */
+/*                                                                       */
+/* Set from a `surface="void"` prop on BaseLayout, server-rendered onto   */
+/* <html>, so it is right in the first paint and the router adds and      */
+/* removes it on navigation for free.                                    */
+/*                                                                       */
+/* MUST stay below both dark blocks above. `[data-surface='void']` and    */
+/* `[data-theme='dark']` have identical specificity, so source order is   */
+/* the only thing that decides which wins — and the wrong order silently  */
+/* un-voids the page in dark mode, which is the half nobody checks.       */
+/* ===================================================================== */
+:root[data-surface='void'] {
+  /*
+   * Stated, and it is the inverse of the bug the note at the top of this
+   * file describes: a phone set to light, on a page that is dark anyway,
+   * paints its own white band behind the address bar unless it is told.
+   */
+  color-scheme: dark;
+
+  --surface: #0e0b16;
+  --surface-parchment: #120e1c;
+  --surface-dark: #0a0810;
+  --surface-card: #141020;
+  --surface-card-hover: #191426;
+  --surface-chip: #191426;
+  --surface-chip-hover: #211a30;
+  --surface-placeholder: #191426;
+
+  --ink: #f2f0f6;
+  --ink-muted: #a29ab0;
+  --ink-soft: #8f87a0;
+  --ink-softer: #8f87a0;
+  --ink-faint: #8f87a0;
+  --ink-on-dark: #f2f0f6;
+  --ink-on-dark-muted: #a29ab0;
+
+  --line: #1e192b;
+  --line-light: #1a1526;
+  --line-parchment: #221c30;
+  --line-dark: #2a2338;
+
+  /* Taken from the dark palette wholesale, because the ground is dark in
+     both themes and the light accent would go muddy on it. */
+  --blue: #2997ff;
+  --blue-hover: #47a6ff;
+  --blue-on-dark: #2997ff;
+  --blue-fill: #0f6ad0;
+  --blue-fill-hover: #1573d8;
+
+  /* Right before chrome.ts runs, so the mark is never black on black. */
+  --nav-ink: #f5f5f7;
+}
+
+/*
+ * Deeper and cooler in dark mode: further out than the site's own darkest
+ * page. Written twice, like every palette block in this file — once for the
+ * explicit choice and once for the system preference.
+ */
+:root[data-surface='void'][data-theme='dark'] {
+  --surface: #07060b;
+  --surface-parchment: #0b0910;
+  --surface-dark: #060509;
+  --surface-card: #0e0c14;
+  --surface-card-hover: #14111c;
+  --surface-chip: #14111c;
+  --surface-chip-hover: #1b1725;
+  --surface-placeholder: #14111c;
+
+  --ink: #f5f5f7;
+  --ink-muted: #9a94a6;
+  --ink-soft: #8a8496;
+  --ink-softer: #8a8496;
+  --ink-faint: #8a8496;
+
+  --line: #1b1726;
+  --line-light: #17131f;
+  --line-parchment: #1f1a2b;
+  --line-dark: #262032;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-surface='void']:not([data-theme='light']) {
+    --surface: #07060b;
+    --surface-parchment: #0b0910;
+    --surface-dark: #060509;
+    --surface-card: #0e0c14;
+    --surface-card-hover: #14111c;
+    --surface-chip: #14111c;
+    --surface-chip-hover: #1b1725;
+    --surface-placeholder: #14111c;
+
+    --ink: #f5f5f7;
+    --ink-muted: #9a94a6;
+    --ink-soft: #8a8496;
+    --ink-softer: #8a8496;
+    --ink-faint: #8a8496;
+
+    --line: #1b1726;
+    --line-light: #17131f;
+    --line-parchment: #1f1a2b;
+    --line-dark: #262032;
+  }
+}

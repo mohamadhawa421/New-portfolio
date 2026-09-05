@@ -17,9 +17,20 @@ interface Props {
   /** Falls back to the site SEO defaults when a page has none of its own. */
   title?: string;
   description?: string;
+  /**
+   * Puts the page on a palette of its own. Only the 404 uses it: the void is
+   * dark in both themes, and that has to be true in the first paint rather
+   * than a frame later, so it is an attribute in the markup and not something
+   * a script writes. The router carries <html> attributes across a client-side
+   * navigation, so it arrives and leaves on its own.
+   */
+  surface?: 'void';
 }
 
-const { seo, title, description } = Astro.props;
+const { seo, title, description, surface } = Astro.props;
+
+// The values are --surface in each void palette (tokens.css).
+const chrome = surface === 'void' ? { light: '#0e0b16', dark: '#07060b' } : { light: '#ffffff', dark: '#0b0b0d' };
 
 const settings = await getSiteSettings();
 
@@ -37,7 +48,7 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-surface={surface}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -66,8 +77,8 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         single line of script has run; theme.ts rewrites both the moment the
         visitor takes the switch off the system. The values are --surface in
         each palette. */}
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content={chrome.light} media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content={chrome.dark} media="(prefers-color-scheme: dark)" />
 
     <link rel="icon" type="image/svg+xml" href={faviconHref} />
     <link rel="apple-touch-icon" href={faviconHref} />
