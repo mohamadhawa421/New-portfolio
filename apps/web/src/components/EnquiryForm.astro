@@ -462,13 +462,29 @@ const config = {
       function showError(message: string, focus?: HTMLElement, pressed?: HTMLElement) {
         errorBox.textContent = message;
         errorBox.hidden = false;
+
+        /*
+         * The field is marked invalid rather than merely outlined.
+         *
+         * `aria-invalid` is what a screen reader announces on landing there, so
+         * this is the accessible half of the refusal — and it is also the hook
+         * the purple hangs off, which means the two cannot drift apart. It
+         * stays until the visitor types.
+         */
+        focus?.setAttribute('aria-invalid', 'true');
         focus?.focus();
+
+        // The pointer takes the arcs, and so does the field that caused them.
         punish(pressed);
+        if (focus) punish(focus);
       }
 
       function clearError() {
         errorBox.textContent = '';
         errorBox.hidden = true;
+        form.querySelectorAll('[aria-invalid]').forEach((field) => {
+          field.removeAttribute('aria-invalid');
+        });
       }
 
       form.addEventListener('input', clearError);
@@ -844,6 +860,37 @@ const config = {
    */
   .enquiry ::placeholder {
     color: var(--ink-on-dark-muted);
+  }
+
+  /*
+   * A field that has just been refused.
+   *
+   * Purple, because everywhere else on this site purple means the character
+   * behind designer mode is involved — and a form that has just turned you
+   * down is the one moment in the ordinary interface where he should be
+   * visible.
+   *
+   * The ring is a box-shadow rather than a border so the field does not change
+   * size, and rather than an outline because the zap animates the outline —
+   * this way the arcs fire over the ring instead of overwriting it.
+   */
+  .enquiry [aria-invalid='true'] {
+    box-shadow:
+      inset 0 0 0 1.5px var(--dm-core),
+      0 0 18px -2px color-mix(in srgb, var(--dm-core) 60%, transparent);
+    transition: box-shadow 260ms var(--ease-out);
+  }
+
+  .enquiry [aria-invalid='true']::placeholder {
+    color: color-mix(in srgb, var(--dm-core) 42%, var(--ink-on-dark-muted));
+  }
+
+  /* The browser's own focus ring would sit on top of the purple one and say
+     something duller than it does. This says the same thing, in the same
+     language. */
+  .enquiry [aria-invalid='true']:focus-visible {
+    outline: 2px solid var(--dm-arc);
+    outline-offset: 2px;
   }
 
   .enquiry__error {

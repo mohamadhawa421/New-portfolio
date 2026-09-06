@@ -40,18 +40,38 @@ const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matc
  * On a touch screen there is no pointer to punish, so the control that refused
  * takes it instead: the same arcs, the same shake, the same length.
  */
+/** Whether this is something the visitor types into rather than presses. */
+function isField(el: HTMLElement): boolean {
+  return el.matches('input, textarea, select');
+}
+
+/** Runs the arcs on one element. */
+function strike(el: HTMLElement): void {
+  el.classList.remove('is-punished');
+  // Flushed, so a second refusal restarts the animation rather than being
+  // swallowed by the one still running.
+  void el.offsetWidth;
+  el.classList.add('is-punished');
+  window.setTimeout(() => el.classList.remove('is-punished'), PUNISH_MS + 60);
+}
+
 export function punish(target?: Element | null): void {
   const shakes = !reduced();
 
+  /*
+   * The pointer is punished once; anything handed in is punished as well.
+   *
+   * The form passes both the button that was pressed and the field that was
+   * refused, so on a desktop the pointer takes the arcs and the field is
+   * electrified with it, and on a touch screen — where there is no pointer —
+   * the control that was pressed takes them instead. Passing the same element
+   * twice is harmless: the class is removed and re-added.
+   */
   if (drawnPointer()) {
     document.dispatchEvent(new CustomEvent('mh:punish', { detail: { shakes } }));
+    if (target instanceof HTMLElement && isField(target)) strike(target);
   } else if (target instanceof HTMLElement) {
-    target.classList.remove('is-punished');
-    // Flushed, so a second refusal restarts the animation rather than being
-    // swallowed by the one still running.
-    void target.offsetWidth;
-    target.classList.add('is-punished');
-    window.setTimeout(() => target.classList.remove('is-punished'), PUNISH_MS + 60);
+    strike(target);
   }
 
   /*
