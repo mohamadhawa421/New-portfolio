@@ -273,14 +273,107 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
       pass(now - settledAt > OWN_SCROLL_AFTER);
     }
 
+    /**
+     * Holds the bubble at the height of its longest line, from the start.
+     *
+     * Every line is a different length, so swapping one for another resized the
+     * bubble under the visitor's finger — and on a phone, where he sits just
+     * above the footer and the lines wrap to three or four, that moved the
+     * whole end of the page every time he was pressed. It read as the layout
+     * breaking rather than as him talking.
+     *
+     * Measured on a probe rather than on the live element: the line he is
+     * showing is inside an aria-live region, and writing five more into it to
+     * find out how tall they are would announce all five.
+     */
+    function reserve(el: HTMLElement) {
+      const say = el.querySelector<HTMLElement>('[data-say]');
+      const script: string[] = JSON.parse(el.dataset.lines || '[]');
+      if (!say || script.length < 2) return;
+
+      say.style.minHeight = '';
+
+      /*
+       * offsetWidth and offsetHeight, not a bounding rect.
+       *
+       * The bubble is permanently scaled to 0.98, so a rect inside it reports
+       * visual pixels — two percent short of the layout pixels `min-height` is
+       * set in. Reserving 64 of those against a line that needed 65.25 of
+       * these left exactly one line's worth of drift on the longest line,
+       * which is the footer moving again with more arithmetic behind it.
+       * These two properties are in layout pixels and no transform touches
+       * them.
+       */
+      const width = say.offsetWidth;
+      if (!width) return;
+
+      /*
+       * A clone of the element itself, not a span dressed to look like it.
+       *
+       * Copying the font properties across by hand left the probe a pixel
+       * short of the real thing — there is always one more inherited property
+       * than you listed, and a pixel is enough for the footer to move. A
+       * clone carries the same class into the same bubble, so the cascade
+       * gives it exactly what it gives the original.
+       */
+      const probe = say.cloneNode(false) as HTMLElement;
+      probe.removeAttribute('data-say');
+      probe.removeAttribute('aria-live');
+      probe.setAttribute('aria-hidden', 'true');
+      probe.style.cssText =
+        'position:absolute;visibility:hidden;pointer-events:none;left:0;top:0;min-height:0;';
+      probe.style.width = width + 'px';
+
+      say.parentElement?.appendChild(probe);
+
+      let tallest = 0;
+      for (const line of script) {
+        probe.textContent = line;
+        tallest = Math.max(tallest, probe.offsetHeight);
+      }
+
+      probe.remove();
+      // A pixel of slack, because offsetHeight is rounded to the nearest whole
+      // one and may land under the real height by half of it. A pixel of empty
+      // space at the foot of a bubble is invisible; half a pixel of reflow is
+      // the thing being fixed.
+      say.style.minHeight = tallest + 1 + 'px';
+    }
+
     for (const el of pending) {
       el.querySelector<HTMLElement>('[data-say-more]')?.addEventListener('click', () =>
         speak(el)
       );
+      reserve(el);
+      /*
+       * And again once the webfont has landed. Measured against the fallback,
+       * the reservation is wrong by however much the two faces differ — which
+       * on a line that wraps is a whole line of height.
+       */
+      if (document.fonts?.ready) void document.fonts.ready.then(() => reserve(el));
     }
 
+    /*
+     * A different width wraps the lines differently, so the tallest one changes
+     * with the viewport — including when a phone is turned on its side.
+     */
+    let remeasure = 0;
+    const onResize = () => {
+      window.clearTimeout(remeasure);
+      remeasure = window.setTimeout(() => {
+        for (const el of pending) {
+          if (el.isConnected) reserve(el);
+        }
+      }, 160);
+    };
+    window.addEventListener('resize', onResize, { passive: true });
+
     window.addEventListener('scroll', onScroll, { passive: true });
-    detach = () => window.removeEventListener('scroll', onScroll);
+    detach = () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+      window.clearTimeout(remeasure);
+    };
 
     // The trigger may already be met on arrival — a short page, or a restored
     // scroll position that lands past it. Silently: see arrive().
@@ -452,6 +545,17 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
    * change reads as the flash having done it rather than as a word being
    * swapped. The swap itself happens at 130ms, inside the dark stretch.
    */
+  /*
+   * A block, so it can be given a height.
+   *
+   * As an inline it had no box to reserve — the bubble simply grew and shrank
+   * with the text. It is the only thing in the bubble apart from the bolt,
+   * which is positioned, so nothing else notices.
+   */
+  .aside__say {
+    display: block;
+  }
+
   .aside--zap .aside__say {
     animation: aside-say 460ms var(--ease-out) both;
   }
