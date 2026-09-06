@@ -132,7 +132,18 @@ const WAVE_MS = 380;
  * on the way up. At the 110 it was before, the bend was still a third of the
  * way in when it was overrun, which is why it could not be seen.
  */
-const PRELOAD_MS = 235;
+const PRELOAD_MS = 340;
+
+/**
+ * And how long the bend itself takes.
+ *
+ * Derived, not chosen: the theme wipe's curve peaks at 38% of its length, and
+ * the force has to land on the frame the bend is furthest — so the length is
+ * whatever makes 38% of it equal the preload above. Stretching the two
+ * together is what keeps the shape of the theme's cue while giving the eye
+ * long enough to see it happen.
+ */
+const LIFT_MS = Math.round(PRELOAD_MS / 0.38);
 
 const BLAST_MS = 380;
 
@@ -868,8 +879,17 @@ export function run(options: DesignerModeOptions): Beat {
       // How hard the field has to work to hold it, which is the inverse of
       // how much there is to hold.
       grip: 1 - heft,
-      nx,
-      ny,
+      /*
+       * The way it is actually going, not the way the source lies.
+       *
+       * The bend is about the axis across the direction of travel, so it has
+       * to be the travel — the throw carries the run's swirl and lean and this
+       * piece's own share of chaos on top of the radius, and bending along the
+       * radius while being thrown somewhere else is two forces disagreeing for
+       * no reason.
+       */
+      nx: dx / (Math.hypot(dx, dy) || 1),
+      ny: dy / (Math.hypot(dx, dy) || 1),
       coast,
     };
 
@@ -1001,8 +1021,18 @@ export function run(options: DesignerModeOptions): Beat {
       const box = el.getBoundingClientRect();
       const wx = box.left + box.width / 2 - originX;
       const wy = box.top + box.height / 2 - originY;
-      const reachHere = Math.hypot(wx, wy) || 1;
-      const lifted = lift(el, struckAt[w], wx / reachHere, wy / reachHere);
+      const span = Math.hypot(wx, wy) || 1;
+      /*
+       * The block bends the way its letters are about to go.
+       *
+       * Each letter has its own share of chaos on top, but the run's swirl and
+       * lean are common to all of them — so this is where the word as a whole
+       * is headed, and the bend and the scatter pull the same way.
+       */
+      const bx = wx / span - (wy / span) * swirl + lean.x;
+      const by = wy / span + (wx / span) * swirl + lean.y;
+      const aim = Math.hypot(bx, by) || 1;
+      const lifted = lift(el, struckAt[w], bx / aim, by / aim);
       if (lifted) returning.push(lifted);
     });
 
@@ -1589,31 +1619,26 @@ function lift(el: HTMLElement, at: number, nx = 0, ny = 0): Animation | null {
   if (!CAN_LAYER) return null;
 
   /*
-   * Up, along, and bent.
+   * Up, along, and bent — hard enough to be the thing you notice.
    *
-   * The theme wipe's cue is a rise, and a rise alone is invisible at this
-   * speed against everything else happening — it was there and nobody saw it.
    * What a front does to a flat panel is not lift it, it flexes it: the edge
    * the pressure reaches first tips away before the rest of the sheet knows
    * anything has happened, and the whole thing springs back as the front
    * passes through.
    *
-   * So the tilt is about the axis lying across the front — (-ny, nx), which is
-   * perpendicular to the way the wave is travelling — and it is what makes
-   * this read as glass bending rather than as a card hopping. The perspective
-   * is what makes a rotation a bend at all; without it the same numbers are a
-   * squash.
-   *
-   * Everything else is the theme's, scaled up until it can be seen: its 620ms,
-   * its curve, its 38% peak, and its proportions between the rise and the
-   * scale.
+   * The tilt is about the axis lying across the direction of travel — so the
+   * element bends *towards where it is about to be thrown*, and the preload
+   * and the blast are visibly the same force arriving twice rather than two
+   * unrelated gestures. The perspective is what makes a rotation a bend at
+   * all; without it these numbers are a squash, and 700px is close enough to
+   * the page to make the far edge genuinely recede.
    */
-  const px = nx * 12;
-  const py = -26 + ny * 12;
+  const px = nx * 20;
+  const py = -40 + ny * 20;
 
   const peak =
-    `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0) scale(1.02) ` +
-    `perspective(900px) rotate3d(${(-ny).toFixed(3)}, ${nx.toFixed(3)}, 0, 9deg)`;
+    `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0) scale(1.03) ` +
+    `perspective(700px) rotate3d(${(-ny).toFixed(3)}, ${nx.toFixed(3)}, 0, 15deg)`;
 
   return el.animate(
     [
@@ -1622,7 +1647,7 @@ function lift(el: HTMLElement, at: number, nx = 0, ny = 0): Animation | null {
       { transform: 'translate3d(0, 0, 0) scale(1)', offset: 1 },
     ],
     {
-      duration: 620,
+      duration: LIFT_MS,
       delay: at,
       easing: 'cubic-bezier(0.33, 0.02, 0.18, 1)',
       composite: 'add',

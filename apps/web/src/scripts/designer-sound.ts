@@ -681,7 +681,7 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
   const press = audio.createOscillator();
   press.type = 'sine';
   press.frequency.setValueAtTime(96, t0);
-  press.frequency.exponentialRampToValueAtTime(34, t0 + 0.24);
+  press.frequency.exponentialRampToValueAtTime(31, t0 + 0.34);
 
   const pressGain = audio.createGain();
   pressGain.gain.setValueAtTime(0.0001, t0);
@@ -693,18 +693,18 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
    * bent, and it should be cut off by the crack rather than finish politely
    * ahead of it.
    */
-  pressGain.gain.exponentialRampToValueAtTime(0.34, t0 + 0.2);
-  pressGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.3);
+  pressGain.gain.exponentialRampToValueAtTime(0.38, t0 + 0.3);
+  pressGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.42);
 
   press.connect(pressGain).connect(master);
   press.start(t0);
-  press.stop(t0 + 0.34);
+  press.stop(t0 + 0.46);
 
   // The air moving with it, rather than a tone on its own.
   if (strikeBuf) {
     const air = audio.createBufferSource();
     air.buffer = strikeBuf;
-    air.playbackRate.value = 0.22;
+    air.playbackRate.value = 0.17;
 
     const airLow = audio.createBiquadFilter();
     airLow.type = 'lowpass';
@@ -713,11 +713,11 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
     const airGain = audio.createGain();
     airGain.gain.setValueAtTime(0.0001, t0);
     airGain.gain.exponentialRampToValueAtTime(0.22, t0 + 0.01);
-    airGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.26);
+    airGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.36);
 
     air.connect(airLow).connect(airGain).connect(master);
     air.start(t0);
-    air.stop(t0 + 0.3);
+    air.stop(t0 + 0.42);
   }
 
   /* ---- The wave, and time closing around it -------------------------- */
