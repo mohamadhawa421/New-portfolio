@@ -308,8 +308,8 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     padding: var(--nav-pad, 2px 12px);
     border-radius: var(--r-pill);
     background: var(--nav-bg, rgba(255, 255, 255, 0));
-    backdrop-filter: var(--nav-blur, saturate(180%) blur(0px));
-    -webkit-backdrop-filter: var(--nav-blur, saturate(180%) blur(0px));
+    backdrop-filter: var(--nav-blur, saturate(100%) blur(0px));
+    -webkit-backdrop-filter: var(--nav-blur, saturate(100%) blur(0px));
     box-shadow: var(--nav-shadow, 0 1px 8px rgba(0, 0, 0, 0));
     max-width: calc(100vw - 20px);
     transition:
@@ -369,8 +369,8 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     height: 68px;
     z-index: 199;
     background: var(--nav-bg, rgba(255, 255, 255, 0));
-    backdrop-filter: var(--nav-blur, saturate(180%) blur(0px));
-    -webkit-backdrop-filter: var(--nav-blur, saturate(180%) blur(0px));
+    backdrop-filter: var(--nav-blur, saturate(100%) blur(0px));
+    -webkit-backdrop-filter: var(--nav-blur, saturate(100%) blur(0px));
     box-shadow: var(--nav-shadow, 0 1px 8px rgba(0, 0, 0, 0));
     transition:
       background 520ms ease,

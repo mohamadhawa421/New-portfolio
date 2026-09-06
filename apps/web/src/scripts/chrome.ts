@@ -483,7 +483,21 @@ function chromePass(): void {
           : 'rgba(255,255,255,0.74)'
       : 'transparent'
   );
-  styles.setProperty('--nav-blur', `saturate(180%) blur(${condensed ? NAV_BLUR_PX : 0}px)`);
+  /*
+   * The saturation goes with the blur, and that was the whole bug.
+   *
+   * `saturate(180%)` was left on at rest, with only the blur going to zero — a
+   * backdrop-filter that is still doing something. Over white and over
+   * near-black it does nothing anyone can see, because neither has any
+   * saturation to push, so it survived both other modes unnoticed. Over the
+   * violet ground of super designer mode it lit a pill-shaped patch of the
+   * page, which is exactly the "background before it is scrolled" it should
+   * not have had. 100% is the identity, and it still interpolates.
+   */
+  styles.setProperty(
+    '--nav-blur',
+    condensed ? `saturate(180%) blur(${NAV_BLUR_PX}px)` : 'saturate(100%) blur(0px)'
+  );
   styles.setProperty('--nav-shadow', `0 1px 8px rgba(0,0,0,${condensed ? 0.07 : 0})`);
   styles.setProperty('--nav-ink', overDark ? '#ffffff' : '#1d1d1f');
   styles.setProperty('--logo-op', condensed ? '0' : '1');

@@ -404,6 +404,20 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     margin-inline: auto;
   }
 
+  /*
+   * On a phone the hero is one column, and a portrait centred inside it by the
+   * auto margins was the only thing on the page not lining up with anything —
+   * indented from the copy above it on the left and short of the gutter on the
+   * right. Below the wrap it takes the column: same left edge as the heading,
+   * same right edge as everything else.
+   */
+  @media (max-width: 767px) {
+    .hero__portrait {
+      max-width: none;
+      margin-inline: 0;
+    }
+  }
+
   .hero__portrait-frame {
     position: relative;
     width: 100%;
