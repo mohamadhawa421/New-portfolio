@@ -108,7 +108,10 @@ const categories = [
       grid.dataset.filtersBound = '1';
 
       const chips = document.querySelectorAll('[data-filter]');
-      const cards = document.querySelectorAll('[data-work-grid] [data-categories]');
+      // An array, not the live NodeList: everything below filters and maps it.
+      const cards = Array.prototype.slice.call(
+        document.querySelectorAll('[data-work-grid] [data-categories]')
+      );
       // Read from the DOM rather than interpolating CMS text into this script.
       const allLabel = grid.dataset.allLabel || 'All';
       const counter = document.querySelector('[data-count]');
@@ -122,22 +125,255 @@ const categories = [
         filed.set(card, (card.dataset.categories || '').split('|').filter(Boolean));
       });
 
-      function applyFilter(value) {
-        let shown = 0;
+      /* ---- The rearrangement ------------------------------------------ */
 
-        cards.forEach((card) => {
-          const match = value === allLabel || filed.get(card).indexOf(value) !== -1;
-          card.hidden = !match;
-          if (match) shown += 1;
-        });
+      /*
+       * FLIP, with the moving cards taken out of flow for the length of it.
+       *
+       * First and Last are the two measurements; Invert and Play are one
+       * Web Animations call per card. The part that is not in the textbook is
+       * the absolute positioning: while cards are being moved they are laid
+       * out against the grid rather than against each other, so a card that
+       * changes width cannot push the row it is in around while the row is
+       * still being animated. The grid's own height is animated over the same
+       * stretch, which is what stops the page below jumping when a row goes.
+       *
+       * The Web Animations API rather than inline transforms and a transition:
+       * the card already owns `transform` for its hover lift and owns the
+       * transition on it. An animation composites over that and hands it back
+       * untouched at the end, so nothing has to be turned off and on.
+       *
+       * Widths are animated rather than scaled. The track sizing is never
+       * touched — `auto-fit` already collapses the empty tracks, so one
+       * survivor is in a full-width track and two are in half-width ones — and
+       * a card given an explicit width simply grows into the track it is
+       * already in. A scale would have stretched the type and the covers.
+       */
+      const MOVE_MS = 460;
+      const LEAVE_MS = 190;
+      const ENTER_DELAY = 130;
+      const EASE = 'cubic-bezier(0.33, 0.02, 0.18, 1)';
 
+      /** Bumped by every run, so a callback can tell if it is still wanted. */
+      let run = 0;
+      /** Lands the run in flight, or null. See settle(). */
+      let finish = null;
+
+      const still = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function paint(shown) {
         if (counter) counter.textContent = String(shown);
         if (empty) empty.hidden = shown !== 0;
-
         // Reveals are handled by IntersectionObserver, which picks the newly
         // visible cards up on its own. The nav still needs to know the page got
         // shorter or taller.
         window.dispatchEvent(new Event('scroll'));
+      }
+
+      /** Takes every mark a run leaves off the DOM. Safe to call twice. */
+      function strip() {
+        grid.style.position = '';
+        grid.style.height = '';
+        cards.forEach((card) => {
+          card.style.position = '';
+          card.style.left = '';
+          card.style.top = '';
+          card.style.width = '';
+          card.style.margin = '';
+        });
+      }
+
+      /*
+       * Ends whatever is running, on the state it was heading for.
+       *
+       * Not a cancel. A run that is abandoned half way has cards out of flow
+       * and a grid pinned to a height, and the only safe place to leave that is
+       * the arrangement it was going to. Pressing a second chip mid-flight
+       * therefore starts from something settled rather than from a guess — this
+       * is the whole of what used to empty the grid.
+       */
+      function settle() {
+        if (finish) finish();
+      }
+
+      window.__mhWorkSettle = settle;
+
+      function applyFilter(value, animate) {
+        const wanted = new Map();
+        let shown = 0;
+        cards.forEach((card) => {
+          const match = value === allLabel || filed.get(card).indexOf(value) !== -1;
+          wanted.set(card, match);
+          if (match) shown += 1;
+        });
+
+        settle();
+
+        if (!animate || still() || typeof grid.animate !== 'function') {
+          cards.forEach((card) => {
+            card.hidden = !wanted.get(card);
+          });
+          paint(shown);
+          return;
+        }
+
+        const token = ++run;
+        const playing = [];
+
+        const before = cards.filter((card) => !card.hidden);
+        const leaving = before.filter((card) => !wanted.get(card));
+        const staying = before.filter((card) => wanted.get(card));
+        const entering = cards.filter((card) => card.hidden && wanted.get(card));
+
+        if (!leaving.length && !entering.length) {
+          paint(shown);
+          return;
+        }
+
+        finish = function () {
+          finish = null;
+          run += 1;
+          playing.forEach((animation) => {
+            try {
+              animation.cancel();
+            } catch (error) {
+              /* Already gone with the element. */
+            }
+          });
+          playing.length = 0;
+          cards.forEach((card) => {
+            card.hidden = !wanted.get(card);
+          });
+          strip();
+          paint(shown);
+        };
+
+        /* First. */
+        const from = new Map();
+        before.forEach((card) => from.set(card, card.getBoundingClientRect()));
+        const heightBefore = grid.offsetHeight;
+
+        /*
+         * The ones that go, fading where they stand.
+         *
+         * Nothing moves during this — the layout is still the old one — so the
+         * grid empties in place before anything rearranges, which is the order
+         * it reads in: these are leaving, and then the rest close the gap.
+         */
+        leaving.forEach((card) => {
+          playing.push(
+            card.animate([{ opacity: 1 }, { opacity: 0 }], {
+              duration: LEAVE_MS,
+              easing: 'ease-out',
+              fill: 'forwards',
+            })
+          );
+        });
+
+        window.setTimeout(function () {
+          if (token !== run) return;
+
+          /* Last. */
+          leaving.forEach((card) => {
+            card.hidden = true;
+          });
+          entering.forEach((card) => {
+            card.hidden = false;
+          });
+          // Before measuring: a card that has never been on screen is revealed
+          // by the observer, and the reveal moves it.
+          paint(shown);
+
+          const movers = staying.concat(entering);
+          const to = new Map();
+          movers.forEach((card) => to.set(card, card.getBoundingClientRect()));
+          const heightAfter = grid.offsetHeight;
+
+          const box = grid.getBoundingClientRect();
+          const style = window.getComputedStyle(grid);
+          // The containing block is the padding box, so the origin is the grid's
+          // own corner plus whatever border and padding it carries.
+          const originX = box.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft);
+          const originY = box.top + parseFloat(style.borderTopWidth) + parseFloat(style.paddingTop);
+
+          if (style.position === 'static') grid.style.position = 'relative';
+          grid.style.height = heightBefore + 'px';
+
+          movers.forEach((card) => {
+            const end = to.get(card);
+            card.style.position = 'absolute';
+            card.style.margin = '0';
+            card.style.left = end.left - originX + 'px';
+            card.style.top = end.top - originY + 'px';
+            card.style.width = end.width + 'px';
+          });
+
+          /* Invert, and Play. */
+          movers.forEach((card) => {
+            const end = to.get(card);
+            const start = from.get(card);
+
+            if (start) {
+              playing.push(
+                card.animate(
+                  [
+                    {
+                      transform:
+                        'translate(' + (start.left - end.left) + 'px, ' + (start.top - end.top) + 'px)',
+                      width: start.width + 'px',
+                    },
+                    { transform: 'translate(0px, 0px)', width: end.width + 'px' },
+                  ],
+                  { duration: MOVE_MS, easing: EASE }
+                )
+              );
+              return;
+            }
+
+            /*
+             * A card arriving. It is already where it belongs, so it only has
+             * to appear — a beat after the others have set off, so it lands in
+             * a gap rather than on top of a card still moving out of one.
+             *
+             * `backwards` holds the first frame through the delay. Setting the
+             * opacity inline instead would have to be cleared afterwards, and
+             * the frame between the animation ending and the clearing is a
+             * flash of nothing.
+             */
+            playing.push(
+              card.animate(
+                [
+                  { opacity: 0, transform: 'scale(0.965)' },
+                  { opacity: 1, transform: 'scale(1)' },
+                ],
+                { duration: MOVE_MS, delay: ENTER_DELAY, easing: EASE, fill: 'backwards' }
+              )
+            );
+          });
+
+          if (heightBefore !== heightAfter) {
+            playing.push(
+              grid.animate(
+                [{ height: heightBefore + 'px' }, { height: heightAfter + 'px' }],
+                { duration: MOVE_MS, easing: EASE }
+              )
+            );
+          } else {
+            grid.style.height = heightAfter + 'px';
+          }
+
+          /*
+           * Landed on a timer rather than on the animations' own promises.
+           *
+           * Cancelling an animation rejects `finished`, and a rejection that
+           * arrives after the next run has already decided what is visible is
+           * how the grid came to be emptied by a chip press. A timer that
+           * checks the token cannot arrive late for anything.
+           */
+          window.setTimeout(function () {
+            if (token === run && finish) finish();
+          }, MOVE_MS + ENTER_DELAY + 80);
+        }, LEAVE_MS);
       }
 
       /** Presses a chip and filters the grid. */
@@ -148,7 +384,7 @@ const categories = [
           chip.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
 
-        applyFilter(value);
+        applyFilter(value, writeUrl);
 
         if (!writeUrl) return;
 
@@ -206,6 +442,19 @@ const categories = [
       window.__mhWorkFilters = true;
       document.addEventListener('astro:page-load', function () {
         setupFilters();
+      });
+
+      /*
+       * A card is out of flow while it is being moved, and the case study
+       * morphs out of the card. Opening a project mid-rearrangement would hand
+       * the transition an absolutely positioned element halfway to somewhere.
+       *
+       * Read off `window` rather than captured: this script runs again on every
+       * swap, so the settle held in a closure here would be the one belonging
+       * to a page that has already been thrown away.
+       */
+      document.addEventListener('astro:before-preparation', function () {
+        if (typeof window.__mhWorkSettle === 'function') window.__mhWorkSettle();
       });
     }
   })();
