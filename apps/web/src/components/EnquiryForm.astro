@@ -505,22 +505,67 @@ const config = {
        * focus() scrolls on its own, but it scrolls the *field* to the nearest
        * edge — which on the way up leaves the section above still filling most
        * of the screen and the form arriving from the bottom, so the visitor is
-       * looking at the wrong section with their answer at the edge of it. This
-       * puts the top of the contact section under the nav instead, the way
-       * following a link to it would.
+       * looking at the wrong section with their answer at the edge of it. On a
+       * wide screen this puts the top of the contact section under the nav
+       * instead, the way following a link to it would; on a phone it puts the
+       * field itself there, because the keyboard is about to take the rest.
        *
        * The nav is measured rather than assumed: it is a floating pill whose
        * height changes with the viewport, and a hardcoded offset either hid the
        * heading behind it or left a band of the previous section showing.
        */
       function reveal(field: HTMLElement) {
+        /*
+         * Whatever is actually fixed to the top of this viewport.
+         *
+         * The desktop pill and the mobile top bar are different elements and
+         * only one of them is ever displayed — asking for the pill alone gave
+         * a bottom of 0 on a phone, so the field was being scrolled to sit
+         * behind the bar it was supposed to clear.
+         */
+        const bars = document.querySelectorAll<HTMLElement>('.nav, .topbar');
+        let clear = 0;
+        for (const bar of bars) {
+          const box = bar.getBoundingClientRect();
+          if (box.height) clear = Math.max(clear, box.bottom);
+        }
+        clear = (clear || 76) + 18;
+
+        /*
+         * How much of the window the visitor can actually see.
+         *
+         * On a phone the focus opens the keyboard, which takes the bottom half
+         * of the screen without changing innerHeight — so anything measured
+         * against that is measured against a window half of which is behind
+         * the keyboard. visualViewport is the part that is left.
+         */
+        const seen = window.visualViewport?.height ?? window.innerHeight;
         const here = field.getBoundingClientRect();
-        const nav = document.querySelector('.nav');
-        const clear = (nav ? nav.getBoundingClientRect().bottom : 76) + 18;
 
         // Already comfortably on screen: moving the page would be the only
         // thing the visitor noticed, and it would not be an answer.
-        if (here.top > clear && here.bottom < window.innerHeight - 12) return;
+        if (here.top > clear && here.bottom < seen - 12) return;
+
+        /*
+         * A phone and a desktop want different things here.
+         *
+         * On a wide screen the whole section fits, so putting its top under the
+         * nav shows the refusal in its context — the heading, the form, the
+         * message, all of it. On a phone that same scroll puts the field itself
+         * halfway down a screen whose bottom half is about to be a keyboard,
+         * which is how the answer ended up hidden behind it. There the field
+         * goes to the top instead, with its label, and the keyboard can have
+         * everything below.
+         */
+        const narrow = window.matchMedia('(max-width: 767px)').matches;
+
+        if (narrow) {
+          // The label belongs with it: the field alone is an unmarked box.
+          const group = field.closest<HTMLElement>('.enquiry__field') ?? field;
+          const top = group.getBoundingClientRect().top + window.scrollY - clear;
+          window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+          return;
+        }
 
         const section = form.closest('section') ?? form;
         const top = section.getBoundingClientRect().top + window.scrollY - clear;
@@ -532,8 +577,8 @@ const config = {
          */
         const after = here.top + window.scrollY - top;
         const target =
-          after > window.innerHeight - 90
-            ? here.top + window.scrollY - (window.innerHeight - here.height) / 2
+          after > seen - 90
+            ? here.top + window.scrollY - (seen - here.height) / 2
             : top;
 
         window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
