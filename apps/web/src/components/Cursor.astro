@@ -623,6 +623,27 @@
   html.has-custom-cursor * {
     cursor: none !important;
   }
+
+  /*
+   * And hidden over the transition, which is not part of that tree.
+   *
+   * A view transition paints its snapshot in the top layer, above the whole
+   * document — so for the length of one, what is under the pointer is not any
+   * descendant of <html> and inherits nothing from it. The native cursor came
+   * back for those few hundred milliseconds and sat on top of the drawn one,
+   * which is why it showed on exactly the two things that start a transition:
+   * the theme toggle's wipe, and any link or button that navigates.
+   *
+   * The pseudo-elements have to be named directly for the same reason. They
+   * are addressed off the root, and `*` above never reaches them.
+   */
+  html.has-custom-cursor::view-transition,
+  html.has-custom-cursor::view-transition-group(*),
+  html.has-custom-cursor::view-transition-image-pair(*),
+  html.has-custom-cursor::view-transition-old(*),
+  html.has-custom-cursor::view-transition-new(*) {
+    cursor: none !important;
+  }
 </style>
 
 <style>
