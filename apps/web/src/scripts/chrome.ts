@@ -417,6 +417,43 @@ let lastCondensed: boolean | null = null;
 let lastOverDark: boolean | null = null;
 
 /**
+ * True from the moment a swap begins until the new page has settled.
+ *
+ * While it is set the nav wears nothing, whatever the scroll position says.
+ * That position is not yet the one the visitor will land on: the router has
+ * not finished with it, and reading it mid-flight is how the pill ended up
+ * being told to appear on a page that turned out to be at the top. Held, it
+ * cannot be told anything; at the settle below it is asked once, and whatever
+ * it answers is what it wears.
+ *
+ * Only the three properties the visitor sees as "a background" are held. The
+ * ink and the logo are not: they depend on which tile is under the nav, and
+ * that is right from the first frame of the new page.
+ */
+let navHeld = false;
+
+/**
+ * Stops the nav animating, and holds it bare, for the length of a navigation.
+ *
+ * Called twice on purpose. The router replaces every attribute on <html> with
+ * the incoming document's — inline custom properties included — so a value set
+ * before the swap is gone by the time it matters most.
+ */
+function holdNav(): void {
+  navHeld = true;
+  styles.setProperty('--nav-anim', '0ms');
+}
+
+/** Asks once, now that the page it is answering about has stopped moving. */
+function releaseNav(): void {
+  navHeld = false;
+  lastCondensed = null;
+  lastOverDark = null;
+  chromePass();
+  styles.removeProperty('--nav-anim');
+}
+
+/**
  * In dark mode every surface is dark, so the nav ink and the logo have to
  * invert everywhere — not only over the sections tagged as dark tiles. Without
  * this the black logo mark sits on a near-black page and disappears.
@@ -457,6 +494,10 @@ function chromePass(): void {
   lastCondensed = condensed;
   lastOverDark = overDark;
 
+  // What the nav is dressed in, as opposed to what the page is doing. See
+  // navHeld: during a navigation these two are allowed to disagree.
+  const dressed = condensed && !navHeld;
+
   styles.setProperty('--nav-top', condensed ? '10px' : '18px');
   /*
    * The links carry their own padding in both states rather than being spaced
@@ -475,7 +516,7 @@ function chromePass(): void {
    */
   styles.setProperty(
     '--nav-bg',
-    condensed
+    dressed
       ? root.hasAttribute('data-super')
         ? 'rgba(22,8,42,0.78)'
         : overDark
@@ -503,11 +544,8 @@ function chromePass(): void {
    * it still interpolates: an empty filter list animates from the identity of
    * whatever it is going to, so the blur fades in on scroll exactly as before.
    */
-  styles.setProperty(
-    '--nav-blur',
-    condensed ? `saturate(180%) blur(${NAV_BLUR_PX}px)` : 'none'
-  );
-  styles.setProperty('--nav-shadow', `0 1px 8px rgba(0,0,0,${condensed ? 0.07 : 0})`);
+  styles.setProperty('--nav-blur', dressed ? `saturate(180%) blur(${NAV_BLUR_PX}px)` : 'none');
+  styles.setProperty('--nav-shadow', `0 1px 8px rgba(0,0,0,${dressed ? 0.07 : 0})`);
   styles.setProperty('--nav-ink', overDark ? '#ffffff' : '#1d1d1f');
   styles.setProperty('--logo-op', condensed ? '0' : '1');
   styles.setProperty('--logo-y', condensed ? '-10px' : '0px');
@@ -617,23 +655,7 @@ function init(): void {
 // visible on the first frame. Doing this on `astro:page-load` instead — which
 // runs after paint — showed up as a flash of empty page on every navigation.
 document.addEventListener('astro:before-swap', (event) => {
-  /*
-   * The nav corrects itself across a navigation instead of animating.
-   *
-   * Everything the nav's chrome is computed from is thrown in the air by a
-   * swap: the router wipes the inline custom properties off <html> along with
-   * every other attribute, the scroll position moves to wherever the next page
-   * starts, and chromePass runs again on the other side. Any of that can leave
-   * the pill briefly holding the wrong answer — and with a 520ms transition on
-   * it, "briefly wrong" is a background fading in and back out again, which is
-   * the flicker. Zeroed here and restored once the page has settled, so a
-   * correction is a frame rather than a fade.
-   *
-   * It is not a state to be in for long: `page-load` puts it back, and so does
-   * a failed navigation, because the next one starts from `before-preparation`
-   * either way.
-   */
-  styles.setProperty('--nav-anim', '0ms');
+  holdNav();
 
 
   /*
@@ -700,6 +722,10 @@ document.addEventListener('astro:after-swap', () => {
    * off <html>, and the nav ink is decided from the theme.
    */
   restoreTheme();
+
+  // And the hold, for the same reason: it was set before the swap and the wipe
+  // has just taken it off again, one line above the passes that depend on it.
+  holdNav();
 
   /*
    * Inside the transition's update callback: the last moment at which the
@@ -1038,22 +1064,25 @@ document.addEventListener('astro:page-load', () => {
   }, 0);
 
   /*
-   * And the nav gets its transition back, one frame later.
+   * And the nav is asked, once, two frames later.
    *
-   * A frame, not immediately: the scroll restore above lands on this turn of
-   * the loop, and giving the transition back before the position it is
-   * responding to has settled is the flicker again with a smaller window. By
-   * the next frame the pill is already on the right answer, so what comes back
-   * is only what happens the next time the visitor scrolls.
+   * Not immediately: the scroll restore above lands on this turn of the loop,
+   * and asking before the position it is responding to has settled is the
+   * whole bug. By the second frame the answer is the real one, it is written
+   * with no transition, and only then does the transition come back — so what
+   * it covers from that point on is the visitor's own scrolling and nothing
+   * else.
    */
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      lastCondensed = null;
-      lastOverDark = null;
-      chromePass();
-      styles.removeProperty('--nav-anim');
-    });
-  });
+  requestAnimationFrame(() => requestAnimationFrame(releaseNav));
+  /*
+   * And on a timer as well, because rAF does not run in a background tab.
+   *
+   * A navigation finished behind another tab would otherwise leave the nav
+   * held — bare, and with no transition — until the visitor came back and the
+   * frames started again. releaseNav is safe to run twice: it resets the cache,
+   * asks once, and removes a property that may already be gone.
+   */
+  window.setTimeout(releaseNav, 500);
 });
 
 /*
