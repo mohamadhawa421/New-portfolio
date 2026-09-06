@@ -878,10 +878,11 @@ const config = {
    * down is the one moment in the ordinary interface where he should be
    * visible.
    *
-   * It is a jolt, not a state: the ring strikes, the text flickers through the
-   * arc colour the way his speech does when he is charged, and then all of it
-   * drains back to the field the visitor was already looking at. The error
-   * message above is what persists — the purple is only how it arrives.
+   * It is a jolt, not a state: the focus ring the browser has just drawn goes
+   * purple, the text flickers through the arc colour the way his speech does
+   * when he is charged, and then all of it drains back to the field the
+   * visitor was already looking at. The error message above is what persists —
+   * the purple is only how it arrives.
    *
    * No fill mode, so once it has run the field is back on the stylesheet's own
    * values with nothing left to unwind. Re-triggering is handled in showError,
@@ -896,19 +897,25 @@ const config = {
   }
 
   /*
-   * The ring is an inset box-shadow: the field does not change size, and the
-   * zap's own outline fires over it rather than overwriting it.
+   * The ring is the focus ring, not a second one beside it.
+   *
+   * showError focuses the field, so the browser draws its own blue outline
+   * there the moment the refusal lands. Adding a purple ring inside it left
+   * the field wearing two. This overrides that same outline for the length of
+   * the jolt and then lets go of it — with no fill mode the browser's own ring
+   * comes straight back, so it reads as the blue one turning purple and
+   * returning. The glow is the only thing drawn outside it.
    */
   @keyframes enquiry-refused {
     0% {
-      box-shadow:
-        inset 0 0 0 1.5px transparent,
-        0 0 22px -2px transparent;
+      outline: 2px solid transparent;
+      outline-offset: 0;
+      box-shadow: 0 0 22px -4px transparent;
     }
     10% {
-      box-shadow:
-        inset 0 0 0 1.5px var(--dm-core),
-        0 0 22px -2px color-mix(in srgb, var(--dm-core) 70%, transparent);
+      outline: 2px solid var(--dm-core);
+      outline-offset: 0;
+      box-shadow: 0 0 22px -4px color-mix(in srgb, var(--dm-core) 70%, transparent);
       color: transparent;
       text-shadow: none;
     }
@@ -921,16 +928,16 @@ const config = {
       text-shadow: none;
     }
     40% {
-      box-shadow:
-        inset 0 0 0 1.5px var(--dm-core),
-        0 0 22px -2px color-mix(in srgb, var(--dm-core) 70%, transparent);
+      outline: 2px solid var(--dm-core);
+      outline-offset: 0;
+      box-shadow: 0 0 22px -4px color-mix(in srgb, var(--dm-core) 70%, transparent);
       color: var(--dm-arc);
       text-shadow: 0 0 14px color-mix(in srgb, var(--dm-core) 65%, transparent);
     }
     100% {
-      box-shadow:
-        inset 0 0 0 1.5px transparent,
-        0 0 22px -2px transparent;
+      outline: 2px solid transparent;
+      outline-offset: 0;
+      box-shadow: 0 0 22px -4px transparent;
       color: var(--ink-on-dark);
       text-shadow: none;
     }
@@ -978,14 +985,12 @@ const config = {
     @keyframes enquiry-refused-quiet {
       0%,
       100% {
-        box-shadow:
-          inset 0 0 0 1.5px transparent,
-          0 0 22px -2px transparent;
+        outline: 2px solid transparent;
+        outline-offset: 0;
       }
       30% {
-        box-shadow:
-          inset 0 0 0 1.5px var(--dm-core),
-          0 0 22px -2px color-mix(in srgb, var(--dm-core) 70%, transparent);
+        outline: 2px solid var(--dm-core);
+        outline-offset: 0;
       }
     }
   }
