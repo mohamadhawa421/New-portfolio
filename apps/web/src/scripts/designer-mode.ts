@@ -462,16 +462,24 @@ export function run(options: DesignerModeOptions): void {
     el.style.setProperty('--pr', `${rotation.toFixed(2)}deg`);
     el.style.setProperty('--ps', scale.toFixed(3));
     el.style.setProperty('--pd', `${delay}ms`);
-    // The held state breathes rather than sitting dead still.
     /*
-     * Held, but never quite still — and further than a tremor. What is being
-     * described is something caught in a current, so the drift is slow and
-     * wide enough to see rather than a vibration.
+     * Held, but never still. What is being described is something caught in a
+     * current, so the drift has to be wide enough and quick enough to see.
+     *
+     * These numbers are sized to the window they live in, which is the whole
+     * of what was wrong with them: the pieces are held from `freeze` to
+     * `drift` and that is under two seconds. Nine pixels over a 3800ms
+     * half-cycle is under five pixels a second, and a piece whose delay ran to
+     * 1400ms of it barely set off at all — so most of the page hung there
+     * looking frozen, which is exactly what it was. Twenty-six pixels over
+     * 1100ms is a piece that visibly moves out and comes back inside the hold,
+     * and the delay is now short enough that everything is under way while
+     * still nothing is in step.
      */
-    el.style.setProperty('--jx', `${(Math.random() * 2 - 1) * 9}px`);
-    el.style.setProperty('--jy', `${(Math.random() * 2 - 1) * 9}px`);
-    el.style.setProperty('--jr', `${(Math.random() * 2 - 1) * 2.4}deg`);
-    el.style.setProperty('--jd', `${Math.round(Math.random() * 1400)}ms`);
+    el.style.setProperty('--jx', `${(Math.random() * 2 - 1) * 26}px`);
+    el.style.setProperty('--jy', `${(Math.random() * 2 - 1) * 26}px`);
+    el.style.setProperty('--jr', `${(Math.random() * 2 - 1) * 5.5}deg`);
+    el.style.setProperty('--jd', `${Math.round(Math.random() * 260)}ms`);
     /*
      * The way back is staggered too, but inward-out rather than outward-in:
      * the field lets go at the character first and the furthest piece is the

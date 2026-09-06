@@ -681,27 +681,44 @@ const config = {
 </script>
 
 <style>
+  /*
+   * The rhythm of the form, and the focus ring is part of it.
+   *
+   * The site's focus ring is a 2px outline at 3px of offset, so a focused
+   * field is five pixels bigger than it looks in every direction. Against an
+   * eight-pixel gap that put the ring three pixels under its own label — the
+   * label stopped reading as belonging to the field and started reading as
+   * something the field had bumped into.
+   *
+   * Twelve inside a field and twenty between them. The ring clears the label
+   * by seven and the field below it by eight, and the two numbers stay far
+   * enough apart that a label still binds to its own input rather than
+   * floating between two. Fixing this by tightening the ring was the other
+   * option and the worse one: the ring is the same everywhere on the site, and
+   * one form is not a reason to make it a special case.
+   */
   .enquiry {
     background: var(--surface-form);
     border-radius: var(--r-xl);
-    padding: clamp(20px, 2.4vw, 30px);
+    padding: clamp(22px, 2.4vw, 32px);
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
     color: var(--ink-on-dark);
   }
 
   .enquiry__field {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
     min-width: 0;
   }
 
+  /* Side by side, so the ring on one has to clear the field beside it too. */
   .enquiry__row {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 14px;
   }
 
   /*
@@ -1127,8 +1144,8 @@ const config = {
     align-items: baseline;
     justify-content: space-between;
     gap: 12px;
-    margin: 0 0 4px;
-    padding-top: 14px;
+    margin: 0;
+    padding-top: 16px;
     border-top: 1px solid var(--line-menu);
     font-size: 14px;
     letter-spacing: -0.016em;
@@ -1197,6 +1214,9 @@ const config = {
   }
 
   .enquiry__hint {
+    /* Pulled back against the wider rhythm: it is a footnote to the buttons
+       above it, not a paragraph of its own. */
+    margin-top: -4px;
     font-size: 13px;
     line-height: 1.45;
     letter-spacing: -0.01em;

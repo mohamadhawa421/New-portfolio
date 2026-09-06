@@ -744,8 +744,16 @@ figure {
  * and a page of genuinely motionless elements looks like a paused video rather
  * than like something under tension. Two or three pixels is enough.
  */
+/*
+ * The drift while the field holds them.
+ *
+ * 1100ms out and 1100ms back, against a hold that lasts under two seconds —
+ * so a piece completes the movement while it is being watched. At the old
+ * 3800ms nothing finished even a quarter of a stroke before the power dropped,
+ * and the storm's most-looked-at moment was a still image.
+ */
 .dm-piece.dm-held {
-  animation: dm-hold 3800ms var(--ease-glide) var(--jd) infinite alternate;
+  animation: dm-hold 1100ms var(--ease-glide) var(--jd) infinite alternate;
 }
 
 @keyframes dm-hold {
