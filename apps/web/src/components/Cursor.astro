@@ -603,6 +603,22 @@
    * navigation — keeping it there re-ran this on each page and stacked up
    * another copy of every window listener.
    */
+  /*
+   * The class goes back on before the new page is painted, not after it.
+   *
+   * The router replaces every attribute on <html> with the incoming
+   * document's, and this one is only ever set at runtime — so following any
+   * link dropped it, and it was not put back until astro:page-load, which is
+   * after the transition has already been drawn. For those few hundred
+   * milliseconds nothing was hiding the native cursor and it sat on top of the
+   * drawn one. That is the arrow that kept appearing on the buttons that
+   * navigate.
+   *
+   * astro:after-swap is the first moment after the wipe and still inside the
+   * update callback, so the class is there before anything is on screen.
+   */
+  document.addEventListener('astro:after-swap', claimCursor);
+
   document.addEventListener('astro:page-load', () => {
     const w = window as unknown as { __mhCursor?: boolean };
     if (w.__mhCursor) {
