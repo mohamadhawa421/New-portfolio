@@ -669,27 +669,36 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
    * The picture now lifts everything a tenth of a second before it throws it —
    * the air ahead of the front arriving before the front does — and a lift
    * with no sound is a lift nobody notices. This is what pressure sounds like:
-   * a sine falling from 96Hz to 38 in a seventh of a second, with the attack
-   * inside two milliseconds so it lands rather than swells, and a breath of
-   * filtered noise over it so it has air in it and is not a test tone.
+   * a sine falling from 96Hz to 34 across the length of the bend, with the
+   * attack inside two milliseconds so it lands rather than swells, and a
+   * breath of filtered noise over it so it has air in it and is not a test
+   * tone.
    *
-   * It has to stay under the blast, not compete with it. Everything about it
-   * is over before the crack arrives, which is the point: the ear reads two
-   * events in an order, exactly as the eye does.
+   * It has to stay under the blast, not compete with it — but it does have to
+   * last as long as the bend does, so it is still there when the crack cuts
+   * it off. The ear reads two events in an order, exactly as the eye does.
    */
   const press = audio.createOscillator();
   press.type = 'sine';
   press.frequency.setValueAtTime(96, t0);
-  press.frequency.exponentialRampToValueAtTime(38, t0 + 0.14);
+  press.frequency.exponentialRampToValueAtTime(34, t0 + 0.24);
 
   const pressGain = audio.createGain();
   pressGain.gain.setValueAtTime(0.0001, t0);
   pressGain.gain.exponentialRampToValueAtTime(0.5, t0 + 0.002);
-  pressGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.17);
+  /*
+   * It swells into the blast rather than dying before it. The bend now takes
+   * 235ms to reach its furthest and the force lands there, so the pressure has
+   * to still be audible at that moment — it is the sound of the thing being
+   * bent, and it should be cut off by the crack rather than finish politely
+   * ahead of it.
+   */
+  pressGain.gain.exponentialRampToValueAtTime(0.34, t0 + 0.2);
+  pressGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.3);
 
   press.connect(pressGain).connect(master);
   press.start(t0);
-  press.stop(t0 + 0.2);
+  press.stop(t0 + 0.34);
 
   // The air moving with it, rather than a tone on its own.
   if (strikeBuf) {
@@ -704,11 +713,11 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
     const airGain = audio.createGain();
     airGain.gain.setValueAtTime(0.0001, t0);
     airGain.gain.exponentialRampToValueAtTime(0.22, t0 + 0.01);
-    airGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.15);
+    airGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.26);
 
     air.connect(airLow).connect(airGain).connect(master);
     air.start(t0);
-    air.stop(t0 + 0.2);
+    air.stop(t0 + 0.3);
   }
 
   /* ---- The wave, and time closing around it -------------------------- */

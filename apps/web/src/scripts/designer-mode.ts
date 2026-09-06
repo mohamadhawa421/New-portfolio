@@ -123,13 +123,16 @@ const WAVE_MS = 380;
  * How long the pressure front is felt before the force behind it lands.
  *
  * A shockwave is not a wall: the air ahead of it arrives first, and what it
- * does is nudge. So the lift starts on the frame the front reaches an element
- * and the blast waits this long behind it — long enough that the eye reads two
- * events in an order, short enough that it never reads as a pause. The lift is
- * still rising when the blast lands, which is right; it is a preload, not a
- * gesture that finishes and hands over.
+ * does is bend things. So the lift starts on the frame the front reaches an
+ * element and the blast waits this long behind it.
+ *
+ * The number is not free. It is 38% of the lift's own 620ms, which is where
+ * that curve peaks — so the force lands on the exact frame the bend is at its
+ * furthest, and the blast takes the element at the top of its flex rather than
+ * on the way up. At the 110 it was before, the bend was still a third of the
+ * way in when it was overrun, which is why it could not be seen.
  */
-const PRELOAD_MS = 110;
+const PRELOAD_MS = 235;
 
 const BLAST_MS = 380;
 
@@ -147,15 +150,28 @@ const FIGHT_MS = 1500;
 
 /** From the front reaching a piece to that piece's speed reaching zero. */
 const OUT_MS = BLAST_MS + FIGHT_MS;
+
+/**
+ * How long it is held at the far point before the pull starts.
+ *
+ * The one still moment in the sequence, and it has to be earned: the piece has
+ * spent a second and a half getting away and has finally been stopped, so this
+ * is the grip closing on something that has just lost. Nothing carries it here
+ * — the flight contributes no movement at all across this stretch — and the
+ * only thing that moves is the shudder, which is why these two numbers are the
+ * same number. Longer than a beat and shorter than a pause.
+ */
+const GRIP_MS = 700;
+const GRIP_LETTER_MS = 540;
 /** And the way home: the shortest of them, and how much longer the longest is. */
 const HOME_MS = 2600;
 const HOME_SPREAD = 1200;
 
 /** The nearest piece turns for home the moment its momentum is finally spent. */
-const homewardAt = (impact: number) => impact + PRELOAD_MS + OUT_MS;
+const homewardAt = (impact: number) => impact + PRELOAD_MS + OUT_MS + GRIP_MS;
 /** The furthest lands a whole wave crossing and the longest way home later. */
 const landedAt = (impact: number) =>
-  impact + WAVE_MS + PRELOAD_MS + OUT_MS + HOME_MS + HOME_SPREAD;
+  impact + WAVE_MS + PRELOAD_MS + OUT_MS + GRIP_MS + HOME_MS + HOME_SPREAD;
 
 const BEAT: Beat = {
   /*
@@ -1115,11 +1131,11 @@ export function run(options: DesignerModeOptions): Beat {
        * where something that light and that large belongs.
        */
       const weight = Math.min(1, Math.max(0.55, 20 / sized[i]));
-      const shake = buzz(letter, flight.cd + PRELOAD_MS + LETTER_OUT, 2.6 * weight, BUZZ_LETTER_MS);
+      const shake = buzz(letter, flight.cd + PRELOAD_MS + LETTER_OUT, 2.6 * weight, GRIP_LETTER_MS);
       if (shake) returning.push(shake);
 
       // When this block is whole again: the last of its letters, plus a frame.
-      const ends = flight.cd + PRELOAD_MS + LETTER_OUT + flight.home;
+      const ends = flight.cd + PRELOAD_MS + LETTER_OUT + GRIP_LETTER_MS + flight.home;
       if (ends > lastLetter[block[i]]) lastLetter[block[i]] = ends;
     });
 
@@ -1147,7 +1163,7 @@ export function run(options: DesignerModeOptions): Beat {
        * perfectly still — a cover that did not move at all read as the one
        * object the field had no trouble with, which is the opposite of true.
        */
-      const shake = buzz(el, flight.wave + PRELOAD_MS + OUT_MS, 1.55 * (0.28 + 0.72 * flight.grip), BUZZ_MS);
+      const shake = buzz(el, flight.wave + PRELOAD_MS + OUT_MS, 1.55 * (0.28 + 0.72 * flight.grip), GRIP_MS);
       if (shake) returning.push(shake);
 
       const lifted = lift(el, flight.wave, flight.nx, flight.ny);
@@ -1280,12 +1296,14 @@ export function run(options: DesignerModeOptions): Beat {
  * like a reversed throw.
  */
 function launch(el: HTMLElement, f: Flight): Animation {
-  const total = f.wave + PRELOAD_MS + OUT_MS + f.home;
+  const total = f.wave + PRELOAD_MS + OUT_MS + GRIP_MS + f.home;
   const at = (ms: number) => ms / total;
   // The pressure gets here first; the force is behind it.
   const hit = f.wave + PRELOAD_MS;
   const struck = hit + BLAST_MS;
   const neutral = hit + OUT_MS;
+  // And it is held there while the grip closes, before anything pulls.
+  const released = neutral + GRIP_MS;
 
   const span = Math.hypot(f.ax, f.ay) || 1;
   const bowX = (-f.ay / span) * f.bow;
@@ -1339,6 +1357,18 @@ function launch(el: HTMLElement, f: Flight): Animation {
       {
         transform: `translate3d(${f.ax.toFixed(1)}px, ${f.ay.toFixed(1)}px, 0) rotate(${f.ar.toFixed(2)}deg) scale(${f.as.toFixed(3)})`,
         offset: at(neutral),
+        easing: 'linear',
+      },
+      /*
+       * Held. The same position as the frame above, so across this stretch the
+       * flight contributes nothing at all and everything you see is the
+       * shudder — the grip closing on something that has just stopped getting
+       * away. It is the only still moment in the sequence and it is the one
+       * the whole fight was for.
+       */
+      {
+        transform: `translate3d(${f.ax.toFixed(1)}px, ${f.ay.toFixed(1)}px, 0) rotate(${f.ar.toFixed(2)}deg) scale(${f.as.toFixed(3)})`,
+        offset: at(released),
         // From nothing, and still building at the far end: the pull is
         // strongest in the middle of the way home, not at either end of it.
         easing: 'cubic-bezier(0.55, 0, 0.75, 0.6)',
@@ -1357,7 +1387,7 @@ function launch(el: HTMLElement, f: Flight): Animation {
         transform:
           `translate3d(${(f.ax * 0.5 + bowX).toFixed(1)}px, ${(f.ay * 0.5 + bowY).toFixed(1)}px, 0) ` +
           `rotate(${(f.ar * 0.42).toFixed(2)}deg) scale(${(1 + (f.as - 1) * 0.42).toFixed(3)})`,
-        offset: at(neutral + f.home * 0.5),
+        offset: at(released + f.home * 0.5),
         // Handed 1.6 and running out to nothing: it arrives by slowing, not by
         // being stopped there.
         easing: 'cubic-bezier(0.15, 0.24, 0.35, 1)',
@@ -1413,9 +1443,7 @@ const BUZZ_EDGE = 110;
  */
 const BUZZ_STEP = window.innerWidth < 768 ? 92 : 74;
 
-/** How long the grip takes to close, on a piece and on a letter. */
-const BUZZ_MS = 560;
-const BUZZ_LETTER_MS = 430;
+
 
 function buzz(el: HTMLElement, from: number, amp: number, span: number): Animation | null {
   if (!CAN_LAYER || amp <= 0) return null;
@@ -1510,12 +1538,13 @@ interface Throw {
  * dropped and the glyphs are drawn the way they are drawn everywhere else.
  */
 function launchLetter(el: HTMLElement, t: Throw): Animation {
-  const total = t.cd + PRELOAD_MS + LETTER_OUT + t.home;
+  const total = t.cd + PRELOAD_MS + LETTER_OUT + GRIP_LETTER_MS + t.home;
   const at = (ms: number) => ms / total;
   // Its block has been lifted by the pressure; this is the force arriving.
   const hit = t.cd + PRELOAD_MS;
   const struck = hit + LETTER_BLAST;
   const neutral = hit + LETTER_OUT;
+  const released = neutral + GRIP_LETTER_MS;
 
   // Where the shove alone put it, and where its momentum carried it after.
   const shove =
@@ -1530,8 +1559,10 @@ function launchLetter(el: HTMLElement, t: Throw): Animation {
       { transform: 'none', offset: at(hit), easing: 'cubic-bezier(0.03, 0.85, 0.72, 0.958)' },
       // The end of the shove, and still going.
       { transform: shove, offset: at(struck), easing: 'cubic-bezier(0.3, 0.28, 0.55, 1)' },
-      // Losing speed the whole way, and out of it here. One frame, not a phase.
-      { transform: far, offset: at(neutral), easing: 'cubic-bezier(0.5, 0, 0.3, 1)' },
+      // Losing speed the whole way, and out of it here.
+      { transform: far, offset: at(neutral), easing: 'linear' },
+      // Held while the grip closes. Only the shudder moves it.
+      { transform: far, offset: at(released), easing: 'cubic-bezier(0.5, 0, 0.3, 1)' },
       { transform: 'none', offset: 1 },
     ],
     { duration: total, fill: 'both' }
@@ -1541,14 +1572,14 @@ function launchLetter(el: HTMLElement, t: Throw): Animation {
 /**
  * The kick the front gives a thing as it passes under it.
  *
- * The theme wipe's movement, aimed. Its fourteen pixels, its 620ms, its curve
- * and its hair of scale — because someone who has switched the theme should
- * half-recognise this before the force arrives and think *that language again,
- * and much more of it* — with six pixels along the front's own direction on
- * top, so it belongs to a wave that is going somewhere rather than to a wipe.
- * Deliberately not scaled by weight either, for once: the pressure ahead of a
- * front does not care what it is pushing, and it is the blast behind it that
- * does.
+ * The theme wipe's cue, aimed and turned into a bend. Its 620ms, its curve and
+ * its 38% peak are kept exactly — someone who has switched the theme should
+ * half-recognise this a beat before the force arrives and think *that language
+ * again, and much more of it* — and everything else about it is scaled up
+ * until it can actually be seen.
+ *
+ * Deliberately not scaled by weight, for once: the pressure ahead of a front
+ * does not care what it is pushing, and it is the blast behind it that does.
  *
  * It runs on the frame the front arrives and the blast is a tenth of a second
  * behind it, so the order is legible: pressure, then force. Added on top of
@@ -1558,26 +1589,36 @@ function lift(el: HTMLElement, at: number, nx = 0, ny = 0): Animation | null {
   if (!CAN_LAYER) return null;
 
   /*
-   * The theme's fourteen pixels up, plus six along the way the front is
-   * travelling.
+   * Up, along, and bent.
    *
-   * Straight up is the theme wipe's own cue and it is kept, because the
-   * vertical is what makes this read as a separate beat from the blast — a
-   * preload purely outward is just a slow start to the throw, and the two stop
-   * being two things. The outward six is what stops it reading as a bob: the
-   * pressure that lifts it is also going somewhere, and it is going the way
-   * everything else is about to go.
+   * The theme wipe's cue is a rise, and a rise alone is invisible at this
+   * speed against everything else happening — it was there and nobody saw it.
+   * What a front does to a flat panel is not lift it, it flexes it: the edge
+   * the pressure reaches first tips away before the rest of the sheet knows
+   * anything has happened, and the whole thing springs back as the front
+   * passes through.
+   *
+   * So the tilt is about the axis lying across the front — (-ny, nx), which is
+   * perpendicular to the way the wave is travelling — and it is what makes
+   * this read as glass bending rather than as a card hopping. The perspective
+   * is what makes a rotation a bend at all; without it the same numbers are a
+   * squash.
+   *
+   * Everything else is the theme's, scaled up until it can be seen: its 620ms,
+   * its curve, its 38% peak, and its proportions between the rise and the
+   * scale.
    */
-  const px = nx * 6;
-  const py = -14 + ny * 6;
+  const px = nx * 12;
+  const py = -26 + ny * 12;
+
+  const peak =
+    `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0) scale(1.02) ` +
+    `perspective(900px) rotate3d(${(-ny).toFixed(3)}, ${nx.toFixed(3)}, 0, 9deg)`;
 
   return el.animate(
     [
       { transform: 'translate3d(0, 0, 0) scale(1)', offset: 0 },
-      {
-        transform: `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0) scale(1.012)`,
-        offset: 0.38,
-      },
+      { transform: peak, offset: 0.38 },
       { transform: 'translate3d(0, 0, 0) scale(1)', offset: 1 },
     ],
     {
