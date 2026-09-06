@@ -73,7 +73,7 @@ const RAGE_AT = 6;
 const RAGE_WINDOW_MS = 10_000;
 
 /** How much of the page comes off its hooks. Enough to be felt. */
-const RATTLE_REACH = 9;
+const RATTLE_REACH = 21;
 const RATTLE_MAX = 34;
 const RATTLE_MS = 1500;
 
@@ -141,7 +141,7 @@ function rattle(): void {
     const reach = RATTLE_REACH * (0.45 + Math.random() * 0.55);
     el.style.setProperty('--rx', `${(Math.cos(angle) * reach).toFixed(1)}px`);
     el.style.setProperty('--ry', `${(Math.sin(angle) * reach).toFixed(1)}px`);
-    el.style.setProperty('--rr', `${((Math.random() * 2 - 1) * 1.6).toFixed(2)}deg`);
+    el.style.setProperty('--rr', `${((Math.random() * 2 - 1) * 3.4).toFixed(2)}deg`);
     el.style.setProperty('--rd', `${Math.round(Math.random() * 90)}ms`);
     el.classList.add('is-rattled');
     taken += 1;

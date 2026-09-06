@@ -949,9 +949,10 @@ figure {
 /*
  * A piece of the page, knocked loose and coming back.
  *
- * Small range on purpose: the egg throws the page across the screen because
- * the page is what it is about, and this is a footnote to a form error. Nine
- * pixels is enough to be felt and not enough to be read as a fault.
+ * Still a smaller range than the egg's, which throws the page clear across the
+ * screen because the page is what it is about — but far enough now to read as
+ * a shock rather than as a wobble. Every piece comes back to exactly where it
+ * started, so nothing can be left crooked.
  *
  * One animation, not a throw and a later return — the whole thing has to be
  * finished before the flash is, and nothing should be left holding state for

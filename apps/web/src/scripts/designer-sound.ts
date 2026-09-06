@@ -422,33 +422,78 @@ export function thunder(level = 0.55): void {
   out.gain.value = level;
   out.connect(ctx.destination);
 
+  /*
+   * The distance, which is the whole difference between a bang and thunder.
+   *
+   * A delay with its own lowpass inside the feedback path: each repeat is
+   * darker and quieter than the one before it, which is what air does to sound
+   * on the way back from whatever it bounced off. Without the filter in the
+   * loop it is a slapback and it sounds like a room; with it, the tail rolls
+   * away rather than repeating.
+   */
+  const echo = ctx.createDelay(1);
+  echo.delayTime.value = 0.34;
+  const back = ctx.createGain();
+  back.gain.value = 0.46;
+  const dark = ctx.createBiquadFilter();
+  dark.type = 'lowpass';
+  dark.frequency.value = 620;
+  const send = ctx.createGain();
+  send.gain.value = 0.75;
+  echo.connect(dark).connect(back).connect(echo);
+  echo.connect(out);
+  send.connect(echo);
+
   // The strike. Slow enough that the gaps in the arc are audible as breaks.
   const crack = ctx.createBufferSource();
   crack.buffer = strikeBuf;
-  crack.playbackRate.value = 0.4 + Math.random() * 0.08;
+  crack.playbackRate.value = 0.36 + Math.random() * 0.07;
   const cg = ctx.createGain();
   cg.gain.setValueAtTime(1, t);
-  cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
-  crack.connect(cg).connect(out);
+  cg.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+  crack.connect(cg);
+  cg.connect(out);
+  cg.connect(send);
   crack.start(t);
-  crack.stop(t + 1.1);
+  crack.stop(t + 1.4);
 
-  // The roll. It arrives with the crack rather than after it — distance is
-  // what separates the two in the sky, and this one is directly overhead.
+  /*
+   * The roll. It arrives with the crack rather than after it — distance is
+   * what separates the two in the sky, and this one is directly overhead — and
+   * then takes three seconds to leave, with the lowpass closing the whole way
+   * so it is losing its top end as it goes rather than simply getting quieter.
+   */
   const roll = ctx.createBufferSource();
   roll.buffer = waveBuf;
-  roll.playbackRate.value = 0.2;
+  roll.playbackRate.value = 0.14;
   const lp = ctx.createBiquadFilter();
   lp.type = 'lowpass';
   lp.frequency.setValueAtTime(1100, t);
-  lp.frequency.exponentialRampToValueAtTime(170, t + 1.7);
+  lp.frequency.exponentialRampToValueAtTime(140, t + 2.6);
   const rg = ctx.createGain();
   rg.gain.setValueAtTime(0.0001, t);
   rg.gain.exponentialRampToValueAtTime(0.95, t + 0.05);
-  rg.gain.exponentialRampToValueAtTime(0.0001, t + 1.9);
-  roll.connect(lp).connect(rg).connect(out);
+  // Held most of the way out and then let go, rather than decaying from the
+  // start: thunder does not fade evenly, it keeps arriving and then stops.
+  rg.gain.exponentialRampToValueAtTime(0.34, t + 1.5);
+  rg.gain.exponentialRampToValueAtTime(0.0001, t + 3.2);
+  roll.connect(lp).connect(rg);
+  rg.connect(out);
+  rg.connect(send);
   roll.start(t);
-  roll.stop(t + 2);
+  roll.stop(t + 3.4);
+
+  // The echo is let go of after the tail is inaudible, or the feedback loop
+  // would sit in the graph for the rest of the visit going quietly round.
+  window.setTimeout(() => {
+    try {
+      back.gain.value = 0;
+      out.disconnect();
+      echo.disconnect();
+    } catch {
+      // Already torn down with the context.
+    }
+  }, 5200);
 }
 
 /**
