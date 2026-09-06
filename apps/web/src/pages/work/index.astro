@@ -125,27 +125,23 @@ const categories = [
       });
 
       /*
-       * The grid rearranges in phases, and only one of them runs at a time.
+       * Filtering is one movement.
        *
-       *   hold      the layout is left alone long enough to be read
-       *   remove    the cards that do not belong are taken out, at once, with
-       *             no fade — the survivors do not move, so their spaces are
-       *             briefly, visibly empty
-       *   reorder   the survivors close those gaps
-       *   resize    and only then, if one or two are left, they widen
+       * The cards that no longer belong fade out where they stand, the ones
+       * that stay travel to their new places, and the ones arriving fade in at
+       * theirs — all at once, on the curve the cover morph and the hover states
+       * already use. A card whose width changes carries that with it, so
+       * growing to fill the row is part of getting there rather than something
+       * that happens afterwards.
        *
-       * Reversed when the filter is cleared: the wide cards narrow first, and
-       * the rest come back after.
-       *
-       * Nothing fades, nothing scales, nothing bounces. The only things that
-       * move are the cards that stayed, and they only ever travel — which is
-       * what makes it read as a layout being rearranged rather than as a set
-       * of effects being played.
+       * Positions come from the browser's own layout, read either side of the
+       * change, so this stays right at any column count, any viewport and any
+       * ordering. Nothing is placed by hand and no card is ever moved to a
+       * position it is not going to.
        */
-      const HOLD_MS = 160;
-      const GAP_MS = 190;
-      const MOVE_MS = 480;
-      const SIZE_MS = 420;
+      const MOVE_MS = 460;
+      const LEAVE_MS = 200;
+      const ENTER_MS = 320;
       const GLIDE = 'cubic-bezier(0.33, 0.02, 0.18, 1)';
 
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -166,93 +162,31 @@ const categories = [
         window.dispatchEvent(new Event('scroll'));
       }
 
-      const wait = (ms) => new Promise((go) => window.setTimeout(go, ms));
       const boxes = (list) => new Map(list.map((card) => [card, card.getBoundingClientRect()]));
 
-      /** The width of the first column, which is what tells the two layouts apart. */
-      function trackWidth(tracks) {
-        return parseFloat(tracks) || 0;
+      /** Puts a card that was lifted out of the grid back the way it was found. */
+      function release(card) {
+        card.style.position = '';
+        card.style.left = '';
+        card.style.top = '';
+        card.style.width = '';
+        card.style.height = '';
+        card.style.margin = '';
+        card.style.pointerEvents = '';
       }
 
       /**
        * The rearrangement in the air, or null.
        *
-       * A chip pressed while one is still running has to land it first —
-       * otherwise the next measurement reads positions from halfway through a
-       * move and the grid animates out of a place nothing is in. It is also
-       * what a timer holds on to: a backgrounded tab stops advancing
-       * animations, so the promises that would have tidied up never settle.
+       * A chip pressed while one is still running lands it first, so the next
+       * measurement never reads a position from halfway through a move. It is
+       * also what the timer holds: a backgrounded tab stops advancing
+       * animations, and the promises that would have tidied up never settle.
        */
       let flight = null;
 
-      /**
-       * Moves cards from where they are to where the grid has just put them.
-       *
-       * Everything below is this: change the layout, then hand each card the
-       * difference so it starts from where it was, and let it travel. The
-       * positions are the browser's own at both ends, so this stays correct at
-       * any column count, any viewport and any ordering.
-       */
-      function travel(from, cards, ms) {
-        const to = boxes(cards);
-        const moves = [];
-
-        cards.forEach((card) => {
-          const here = from.get(card);
-          const there = to.get(card);
-          if (!here) return;
-
-          const dx = here.left - there.left;
-          const dy = here.top - there.top;
-          const sized = Math.abs(here.width - there.width) > 0.5;
-          if (!dx && !dy && !sized) return;
-
-          const a = { transform: 'translate(' + dx + 'px, ' + dy + 'px)' };
-          const b = { transform: 'none' };
-
-          /*
-           * An explicit width on a grid item only makes it narrower than the
-           * track it already sits in, so this never feeds back into the layout.
-           * The track is the new one from the first frame and the card grows
-           * into it.
-           */
-          if (sized) {
-            a.width = here.width + 'px';
-            b.width = there.width + 'px';
-          }
-
-          moves.push(card.animate([a, b], { duration: ms, easing: GLIDE }));
-        });
-
-        return moves;
-      }
-
-      /**
-       * The grid's own height, so the page below it never jumps.
-       *
-       * The height is pinned for the whole sequence, which means asking the
-       * grid how tall it is returns the pin rather than the answer. Letting it
-       * go for the length of one measurement is the only way to read what the
-       * new layout actually wants — without it the pin simply measured itself,
-       * every phase agreed there was nothing to do, and the height stayed at
-       * its original value until the end and then dropped in one frame.
-       */
-      function stretch(fromHeight, ms) {
-        grid.style.height = '';
-        const to = grid.getBoundingClientRect().height;
-        grid.style.height = to + 'px';
-        if (Math.abs(fromHeight - to) < 0.5) return [];
-        return [
-          grid.animate([{ height: fromHeight + 'px' }, { height: to + 'px' }], {
-            duration: ms,
-            easing: GLIDE,
-          }),
-        ];
-      }
-
       function applyFilter(value, animate) {
-        const wanted = cards.filter((card) => belongs(card, value));
-        const shown = wanted.length;
+        const shown = cards.filter((card) => belongs(card, value)).length;
 
         if (!animate || reduced || !canAnimate) {
           cards.forEach((card) => {
@@ -267,176 +201,154 @@ const categories = [
         const onScreen = cards.filter((card) => !card.hidden);
         const staying = onScreen.filter((card) => belongs(card, value));
         const leaving = onScreen.filter((card) => !belongs(card, value));
-        const returning = wanted.filter((card) => card.hidden);
+        const entering = cards.filter((card) => card.hidden && belongs(card, value));
 
-        if (!leaving.length && !returning.length) {
+        if (!leaving.length && !entering.length) {
           settle(shown);
           return;
         }
 
-        /* ---- What the two layouts are ---------------------------------- */
+        /* ---- Where everything is now ---------------------------------- */
 
-        const tracksNow = getComputedStyle(grid).gridTemplateColumns;
+        const gridBox = grid.getBoundingClientRect();
+        const from = boxes(onScreen);
+        const height = gridBox.height;
 
-        // Measured rather than predicted: put the grid in its final state,
-        // read it, and put it back. Nothing paints in between.
-        const wasHidden = new Map(cards.map((card) => [card, card.hidden]));
-        cards.forEach((card) => {
-          card.hidden = !belongs(card, value);
+        // Held open at the height it has, so the page below does not jump when
+        // the cards that are leaving come out of the flow a moment from now.
+        grid.dataset.reflowing = '';
+        grid.style.height = height + 'px';
+
+        /* ---- Change what is in the grid -------------------------------- */
+
+        // Lifted out where they stand, so the rest can close the gap at once
+        // while these fade from the positions they already held.
+        leaving.forEach((card) => {
+          const box = from.get(card);
+          card.style.position = 'absolute';
+          card.style.left = box.left - gridBox.left + 'px';
+          card.style.top = box.top - gridBox.top + 'px';
+          card.style.width = box.width + 'px';
+          card.style.height = box.height + 'px';
+          card.style.margin = '0';
+          card.style.pointerEvents = 'none';
         });
-        const tracksNext = getComputedStyle(grid).gridTemplateColumns;
-        cards.forEach((card) => {
-          card.hidden = wasHidden.get(card);
+
+        entering.forEach((card) => {
+          card.hidden = false;
         });
 
-        /*
-         * Which side of the sequence the resize belongs on.
-         *
-         * Cards that are about to get wider do it last, once they have found
-         * their places. Cards that are about to get narrower do it first, so
-         * they are already the right size for the grid they are rejoining.
-         */
-        const resizes = tracksNow !== tracksNext;
-        const narrowing = trackWidth(tracksNext) < trackWidth(tracksNow);
+        /* ---- And where the browser has just put it --------------------- */
 
-        let alive = true;
-        let timer = 0;
+        // Measured with the pin off: a grid holding a height that disagrees
+        // with its contents distributes the difference across its rows, and
+        // every destination read while that is true is wrong in proportion.
+        grid.style.height = '';
+        const to = boxes(staying);
+        const tall = grid.getBoundingClientRect().height;
+        grid.style.height = height + 'px';
+
+        /* ---- One movement ---------------------------------------------- */
+
+        let landed = false;
         const running = [];
 
         const land = () => {
-          if (!alive) return;
-          alive = false;
+          if (landed) return;
+          landed = true;
           window.clearTimeout(timer);
           if (flight && flight.land === land) flight = null;
 
           running.forEach((a) => a.cancel());
           cards.forEach((card) => {
             card.hidden = !belongs(card, value);
-            card.style.zIndex = '';
+            release(card);
           });
           grid.style.height = '';
-          grid.style.gridTemplateColumns = '';
           delete grid.dataset.reflowing;
           settle(shown);
         };
 
-        /*
-         * The net under the promises. An animation in a backgrounded tab does
-         * not advance, so `finished` never settles and the grid would be left
-         * holding an inline height and a half-finished layout for as long as
-         * the visitor stayed away.
-         *
-         * Every phase counted, and generously: the resize adds a pause of its
-         * own on whichever side it falls, and a first attempt that only counted
-         * one pause cut the sequence off mid-way on the way back to the full
-         * grid — the cards were restored by this timer rather than by the phase
-         * that should have done it. It is a bound on a failure, not a schedule,
-         * so it is worth being nowhere near.
-         */
-        const budget =
-          HOLD_MS + GAP_MS * 2 + MOVE_MS + (resizes ? SIZE_MS + GAP_MS : 0) + 1200;
-        timer = window.setTimeout(land, budget);
-        flight = { land: land };
-
-        const run = (list) =>
-          Promise.all(list.map((a) => a.finished)).then(
-            () => {},
-            () => {}
+        if (Math.abs(tall - height) > 0.5) {
+          running.push(
+            grid.animate([{ height: height + 'px' }, { height: tall + 'px' }], {
+              duration: MOVE_MS,
+              easing: GLIDE,
+            })
           );
+        }
 
-        (async function sequence() {
-          grid.dataset.reflowing = '';
-          grid.style.height = grid.getBoundingClientRect().height + 'px';
+        staying.forEach((card) => {
+          const here = from.get(card);
+          const there = to.get(card);
+          const dx = here.left - there.left;
+          const dy = here.top - there.top;
+          const sized = Math.abs(here.width - there.width) > 0.5;
+          if (!dx && !dy && !sized) return;
 
-          /* ---- Phase one: hold ---------------------------------------- */
-
-          // Nothing moves. The layout that is about to change gets a moment to
-          // be the thing on screen first.
-          await wait(HOLD_MS);
-          if (!alive) return;
-
-          /* ---- Narrowing happens before anything else ------------------ */
-
-          if (resizes && narrowing) {
-            const before = boxes(staying);
-            const height = grid.getBoundingClientRect().height;
-            grid.style.gridTemplateColumns = tracksNext;
-            running.push.apply(running, travel(before, staying, SIZE_MS));
-            running.push.apply(running, stretch(height, SIZE_MS));
-            await run(running);
-            if (!alive) return;
-            await wait(GAP_MS);
-            if (!alive) return;
-          } else {
-            grid.style.gridTemplateColumns = tracksNow;
-          }
-
-          /* ---- Phase two: the ones that do not belong are removed ------- */
-
-          const before = boxes(staying);
-          const height = grid.getBoundingClientRect().height;
-
-          // No fade and no travel: they are simply not in the grid any more.
-          leaving.forEach((card) => {
-            card.hidden = true;
-          });
-          returning.forEach((card) => {
-            card.hidden = false;
-          });
+          const a = { transform: 'translate(' + dx + 'px, ' + dy + 'px)' };
+          const b = { transform: 'none' };
 
           /*
-           * The survivors are put straight back where they were, so the only
-           * thing the removal changes on screen is that some cards are gone.
-           * The gaps they leave stay open for a beat before anyone moves into
-           * them, which is the whole point of doing this in phases.
+           * An explicit width on a grid item only makes it narrower than the
+           * track it is already in, so this never feeds back into the layout:
+           * the track is the new one from the first frame and the card grows
+           * into it.
            */
-          const held = [];
-          staying.forEach((card) => {
-            const here = before.get(card);
-            const there = card.getBoundingClientRect();
-            const dx = here.left - there.left;
-            const dy = here.top - there.top;
-            if (!dx && !dy) return;
-            card.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
-            card.style.zIndex = '1';
-            held.push(card);
-          });
-
-          await wait(GAP_MS);
-          if (!alive) return;
-
-          /* ---- Phase three: the survivors close the gaps ---------------- */
-
-          held.forEach((card) => {
-            card.style.transform = '';
-          });
-          const moves = travel(before, staying, MOVE_MS);
-          running.push.apply(running, moves);
-          running.push.apply(running, stretch(height, MOVE_MS));
-          await run(moves);
-          if (!alive) return;
-
-          staying.forEach((card) => {
-            card.style.zIndex = '';
-          });
-
-          /* ---- Phase four: and only now, the width ---------------------- */
-
-          if (resizes && !narrowing) {
-            await wait(GAP_MS);
-            if (!alive) return;
-
-            const settled = boxes(staying);
-            const tall = grid.getBoundingClientRect().height;
-            grid.style.gridTemplateColumns = '';
-            const grow = travel(settled, staying, SIZE_MS);
-            running.push.apply(running, grow);
-            running.push.apply(running, stretch(tall, SIZE_MS));
-            await run(grow);
+          if (sized) {
+            a.width = here.width + 'px';
+            b.width = there.width + 'px';
           }
 
-          land();
-        })();
+          running.push(card.animate([a, b], { duration: MOVE_MS, easing: GLIDE }));
+        });
+
+        leaving.forEach((card) => {
+          const gone = card.animate([{ opacity: 1 }, { opacity: 0 }], {
+            duration: LEAVE_MS,
+            easing: 'linear',
+            fill: 'forwards',
+          });
+          running.push(gone);
+
+          const finish = () => {
+            // Once the whole thing has landed this has already been done, and
+            // doing it again would hide a card the next filter has just asked
+            // for — cancelling rejects the promise, so this runs on every
+            // interruption too.
+            if (landed) return;
+            card.hidden = true;
+            release(card);
+            gone.cancel();
+          };
+          gone.finished.then(finish, finish);
+        });
+
+        entering.forEach((card) => {
+          // One that has never been revealed is at opacity 0 under the
+          // entrance's own rules and the observer is about to bring it in.
+          // Fading it here would be two things doing the same job.
+          if (card.hasAttribute('data-hidden')) return;
+
+          running.push(
+            card.animate([{ opacity: 0 }, { opacity: 1 }], {
+              duration: ENTER_MS,
+              easing: GLIDE,
+              delay: MOVE_MS - ENTER_MS,
+              fill: 'backwards',
+            })
+          );
+        });
+
+        /*
+         * The net under the promises. An animation in a backgrounded tab does
+         * not advance, so `finished` never settles, and the grid would be left
+         * holding an inline height and a half-finished layout for as long as
+         * the visitor stayed away.
+         */
+        const timer = window.setTimeout(land, MOVE_MS + 600);
+        flight = { land: land };
+        Promise.all(running.map((a) => a.finished)).then(land, land);
 
         // The count and the empty state belong to the filter rather than to the
         // animation, so they change on the press.
@@ -631,6 +543,23 @@ const categories = [
    */
   .work-grid__list[data-reflowing] {
     overflow: clip;
+    /*
+     * And the rows keep their own heights while it is.
+     *
+     * The height is pinned for the length of the rearrangement so the page
+     * below never jumps, which leaves the grid with a definite height that
+     * disagrees with its contents — and a grid resolves that by distributing
+     * the difference across its rows. Every row then sits somewhere other than
+     * where it will end up, so every destination measured during the
+     * rearrangement is wrong in proportion: with twelve cards in a box still
+     * the height of one, a card bound for 1664px was measured at 1028, which is
+     * 894/2114 of the way there, exactly the ratio of the two heights.
+     *
+     * `start` takes the rows out of that negotiation. They are laid out from
+     * the top at the size their content asks for, whatever the box is doing,
+     * and the overflow above keeps the difference from painting over the page.
+     */
+    align-content: start;
   }
 
   .work-grid__empty {
