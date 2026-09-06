@@ -828,6 +828,71 @@ figure {
 }
 
 /* --------------------------------------------------------------------- */
+/* The punishment, where there is no pointer to punish                     */
+/* --------------------------------------------------------------------- */
+
+/*
+ * A touch screen has no cursor, so the control that refused takes it instead —
+ * the same arcs, the same length, on the thing that was actually pressed. Set
+ * by scripts/punish.ts and taken off again a moment later.
+ *
+ * `outline` rather than a border or a shadow spread: it is drawn outside the
+ * box without being part of it, so a button in the middle of a row cannot
+ * nudge its neighbours by being told off.
+ */
+.is-punished {
+  animation: punished 380ms var(--ease-out) both;
+}
+
+@keyframes punished {
+  0% {
+    translate: 0 0;
+    outline: 2px solid color-mix(in srgb, var(--dm-core) 0%, transparent);
+    outline-offset: 0;
+  }
+  14% {
+    translate: -5px 0;
+    outline: 2px solid color-mix(in srgb, var(--dm-core) 85%, transparent);
+    outline-offset: 3px;
+  }
+  32% {
+    translate: 4px 0;
+    outline-color: color-mix(in srgb, var(--dm-arc) 45%, transparent);
+  }
+  50% {
+    translate: -3px 0;
+    outline-color: color-mix(in srgb, var(--dm-core) 80%, transparent);
+  }
+  70% {
+    translate: 2px 0;
+  }
+  100% {
+    translate: 0 0;
+    outline: 2px solid color-mix(in srgb, var(--dm-core) 0%, transparent);
+    outline-offset: 6px;
+  }
+}
+
+/* The telling-off stays; only the shaking goes. */
+@media (prefers-reduced-motion: reduce) {
+  .is-punished {
+    animation-name: punished-quiet;
+  }
+
+  @keyframes punished-quiet {
+    0%,
+    100% {
+      outline: 2px solid color-mix(in srgb, var(--dm-core) 0%, transparent);
+      outline-offset: 3px;
+    }
+    40% {
+      outline: 2px solid color-mix(in srgb, var(--dm-core) 85%, transparent);
+      outline-offset: 3px;
+    }
+  }
+}
+
+/* --------------------------------------------------------------------- */
 /* Theme wave                                                             */
 /* --------------------------------------------------------------------- */
 

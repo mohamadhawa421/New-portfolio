@@ -181,6 +181,8 @@ const config = {
 </form>
 
 <script>
+  import { punish } from '../scripts/punish';
+
   interface EnquiryConfig {
     whatsapp: string;
     email: string;
@@ -449,10 +451,19 @@ const config = {
       // After the preset, so the button opens showing the right choice.
       form.querySelectorAll<HTMLElement>('[data-picker]').forEach(setupPicker);
 
-      function showError(message: string, focus?: HTMLElement) {
+      /**
+       * The refusal, said properly — and then paid for.
+       *
+       * The message, the focus and everything a screen reader is told happen
+       * exactly as they did. The zap is a layer on top and carries no meaning
+       * of its own: someone who never sees it, because their pointer is a
+       * finger or they have asked for less motion, has lost nothing.
+       */
+      function showError(message: string, focus?: HTMLElement, pressed?: HTMLElement) {
         errorBox.textContent = message;
         errorBox.hidden = false;
         focus?.focus();
+        punish(pressed);
       }
 
       function clearError() {
@@ -463,16 +474,16 @@ const config = {
       form.addEventListener('input', clearError);
 
       /** Builds the message, or reports what is missing and returns null. */
-      function compose(): { subject: string; body: string } | null {
+      function compose(pressed?: HTMLElement): { subject: string; body: string } | null {
         const name = nameInput.value.trim();
         const brief = briefInput.value.trim();
 
         if (!name) {
-          showError(config.errorName, nameInput);
+          showError(config.errorName, nameInput, pressed);
           return null;
         }
         if (brief.length < 10) {
-          showError(config.errorBrief, briefInput);
+          showError(config.errorBrief, briefInput, pressed);
           return null;
         }
 
@@ -511,7 +522,9 @@ const config = {
 
       form.querySelectorAll<HTMLButtonElement>('[data-send]').forEach((button) => {
         button.addEventListener('click', () => {
-          const message = compose();
+          // The button is handed over so a touch screen, which has no pointer
+          // to punish, can punish the thing that was actually pressed.
+          const message = compose(button);
           if (!message) return;
 
           if (button.dataset.send === 'whatsapp') {
