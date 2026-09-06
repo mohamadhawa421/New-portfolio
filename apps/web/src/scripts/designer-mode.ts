@@ -479,7 +479,17 @@ export function run(options: DesignerModeOptions): void {
     el.style.setProperty('--jx', `${(Math.random() * 2 - 1) * 26}px`);
     el.style.setProperty('--jy', `${(Math.random() * 2 - 1) * 26}px`);
     el.style.setProperty('--jr', `${(Math.random() * 2 - 1) * 5.5}deg`);
-    el.style.setProperty('--jd', `${Math.round(Math.random() * 260)}ms`);
+    /*
+     * When this piece starts drifting: the moment its own throw ends.
+     *
+     * `delay` is how long the shock front takes to reach it and 560 is the
+     * throw's own duration, so the sum is the frame the shove finishes on.
+     * The drift is handed the exact position the throw left it in — the two
+     * share --px/--py/--pr/--ps — so there is no seam and, more to the point,
+     * no pause. The last few milliseconds are a per-piece scatter, or the
+     * whole page would breathe in time with itself.
+     */
+    el.style.setProperty('--jd', `${delay + 560 + Math.round(Math.random() * 90)}ms`);
     /*
      * The way back is staggered too, but inward-out rather than outward-in:
      * the field lets go at the character first and the furthest piece is the
@@ -550,7 +560,21 @@ export function run(options: DesignerModeOptions): void {
    * Both now wait on the same per-element delay: the moment the ring arrives.
    */
   after(beat.impact, () => {
-    for (const { el } of placed) el.classList.add('dm-thrown');
+    /*
+     * Thrown and drifting are set together, not one after the other.
+     *
+     * They used to be two acts: the shove landed, the piece stopped where it
+     * was put, and a beat later the drift began — so at the top of the storm
+     * the page was a still photograph of itself for as long as half a second.
+     * The drift now waits out each piece's own throw (see --jd in the style
+     * block above) and takes over on the frame the shove ends, from exactly
+     * the position it ends at. Nothing stops.
+     *
+     * The class going on early costs nothing before then: an animation with no
+     * fill mode is not in effect during its delay, so the throw's transition
+     * is what governs until the moment it is done.
+     */
+    for (const { el } of placed) el.classList.add('dm-thrown', 'dm-held');
 
     const budget = { left: narrow ? 90 : MAX_LETTERS };
     for (const el of document.querySelectorAll<HTMLElement>(SHATTER)) {
@@ -589,8 +613,16 @@ export function run(options: DesignerModeOptions): void {
 
   /* ---- Act four: held ------------------------------------------------- */
 
+  /*
+   * The field takes hold of what is already moving.
+   *
+   * This used to be where the drift started, which made the freeze the moment
+   * things began rather than the moment they were caught. They have been
+   * adrift since the shove; what happens here is that the room lights up and
+   * the current they are in becomes visible — which is the beat the sound is
+   * written against, and it has not moved.
+   */
   after(beat.freeze, () => {
-    for (const { el } of placed) el.classList.add('dm-held');
     root.classList.add('dm-charged');
     undo(() => root.classList.remove('dm-charged'));
   });

@@ -745,12 +745,18 @@ figure {
  * than like something under tension. Two or three pixels is enough.
  */
 /*
- * The drift while the field holds them.
+ * The drift, which begins the instant the throw ends.
  *
- * 1100ms out and 1100ms back, against a hold that lasts under two seconds —
- * so a piece completes the movement while it is being watched. At the old
- * 3800ms nothing finished even a quarter of a stroke before the power dropped,
- * and the storm's most-looked-at moment was a still image.
+ * --jd is not a stagger: it is that piece's own throw — how long the shock
+ * front took to reach it, plus the length of the shove — so the animation
+ * comes in on the frame the transition goes out, from the position the
+ * transition put it in. Both are written against --px/--py/--pr/--ps, so
+ * there is no seam and nothing stops in between.
+ *
+ * 1100ms out and 1100ms back, against a hold that lasts under two seconds, so
+ * a piece completes the movement while it is being watched. At the old 3800ms
+ * nothing finished even a quarter of a stroke before the power dropped and the
+ * storm's most-looked-at moment was a still image.
  */
 .dm-piece.dm-held {
   animation: dm-hold 1100ms var(--ease-glide) var(--jd) infinite alternate;
