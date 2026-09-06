@@ -111,24 +111,31 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
           The heading still counts every project, because that is the true
           number and the claim the section is making. What follows it is the
           first few — the featured one and four more — and the way to the rest
-          is at the end, where somebody who has read them is actually looking.
-
-          The link used to sit at the top right of the heading, which is the
-          one place it could not do its job: it asks you to leave before you
-          have been given a reason to stay, and it competes with the heading
-          for the same glance. At the foot of the list it is the next thing
-          after the last project rather than an alternative to the first.
+          comes after them, where somebody who has read them is looking.
         */}
         <div class="work__list">
           {split.lead && <FeaturedProject project={split.lead} />}
           {shown.map((project, i) => <ProjectRow project={project} index={i} />)}
           <div class="work__rule"></div>
-
-          <a class="work__more" href="/work" data-reveal={String(shown.length)}>
-            <span>{home.workLinkLabel}</span>
-            <span class="work__more-arrow" aria-hidden="true">›</span>
-          </a>
         </div>
+
+        {/*
+          Outside the list, and made to look it.
+
+          Built as another row it sat on the rows' rhythm and inherited their
+          hover, which made it the sixth thing in a list of five — and it is
+          not a project. It is what the section asks you to do next. So it is
+          out of the list entirely, with a clear gap above it, and wearing the
+          same button the hero uses rather than a project's typography.
+        */}
+        <a
+          class="btn btn--secondary work__more"
+          href="/work"
+          data-reveal={String(shown.length + 1)}
+        >
+          <span>{home.workLinkLabel}</span>
+          <span class="work__more-arrow" aria-hidden="true">›</span>
+        </a>
       </div>
     </section>
 
@@ -506,45 +513,28 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   }
 
   /*
-   * The way to the rest, built as the row after the last row.
+   * The way to the rest. A control, not the last item.
    *
-   * It takes the projects' own padding and inset so its hover fills to exactly
-   * the same edges, and it is the one thing in the list with no thumbnail —
-   * which is what keeps it from reading as a thirteenth project.
+   * The gap above it is the whole point: it has to clear the rule that closes
+   * the list by more than the list's own rows are spaced from each other, or
+   * it reads as another row however it is styled.
    *
-   * It carries no count. The heading above it already says how many there are,
-   * and repeating that at the foot of the list was the same sentence twice on
-   * one screen.
+   * It carries no count. The heading already says how many there are, and
+   * repeating that at the foot of the list was the same sentence twice on one
+   * screen.
    */
   .work__more {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: clamp(10px, 1.4vw, 18px);
-    padding: clamp(22px, 3vh, 32px) clamp(10px, 1.4vw, 18px);
-    margin: 0 calc(-1 * clamp(10px, 1.4vw, 18px));
-    border-radius: var(--r-sm);
-    color: var(--blue);
-    font-size: clamp(20px, 2.2vw, 28px);
-    line-height: 1.14;
-    letter-spacing: -0.017em;
-    font-weight: 600;
-    transition: background 280ms var(--ease-glide);
-  }
-
-  .work__more:hover {
-    background: var(--surface-row-hover);
-    color: var(--blue);
+    margin-top: clamp(30px, 4.4vh, 52px);
+    gap: 10px;
   }
 
   .work__more-arrow {
-    font-size: 1em;
     /* Travels on hover the way the project rows' own arrow does. */
     transition: translate 320ms var(--ease-glide);
   }
 
   .work__more:hover .work__more-arrow {
-    translate: 5px 0;
+    translate: 4px 0;
   }
 
 

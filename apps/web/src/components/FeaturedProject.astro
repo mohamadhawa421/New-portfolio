@@ -131,7 +131,13 @@ const { project } = Astro.props;
     flex-wrap: wrap;
     align-items: baseline;
     gap: clamp(14px, 2.6vw, 40px);
-    padding-top: clamp(20px, 2.6vh, 28px);
+    /*
+     * The cover is the largest thing on the page and the title sits directly
+     * under it, so the gap between them has to be read against the tile rather
+     * than against a line of text. At the old value the title was close enough
+     * to look attached to the picture instead of introduced by it.
+     */
+    padding-top: clamp(28px, 4vh, 46px);
   }
 
   .featured__num {
