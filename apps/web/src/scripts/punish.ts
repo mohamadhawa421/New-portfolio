@@ -76,8 +76,15 @@ const RAGE_WINDOW_MS = 10_000;
 const RATTLE_REACH = 44;
 const RATTLE_MAX = 52;
 const RATTLE_MS = 1500;
-/** How long the pressed control stays hot before it is back to itself. */
-const OVERLOAD_MS = 1150;
+/**
+ * How long the pressed control stays hot before it is back to itself.
+ *
+ * Much longer than anything else here, and longer than the storm that caused
+ * it. The flash, the thunder and the shaking are an event; this is what the
+ * event left behind, and heat leaves slowly or it was never heat. Matched to
+ * the animation in global.css.
+ */
+const OVERLOAD_MS = 2750;
 
 let streak = 0;
 let lastRefusal = 0;
@@ -128,6 +135,10 @@ function rage(at: { x: number; y: number }, pressed?: HTMLElement): void {
   document.dispatchEvent(new CustomEvent('mh:rage'));
   if (!sound.isMuted()) sound.thunder();
 
+  // And something visibly arrives on the control itself, which is the thing
+  // the visitor is looking at and the thing that asked for this.
+  if (pressed && !reduced()) strikeDown(pressed);
+
   if (!reduced()) rattle();
 
   window.setTimeout(() => {
@@ -136,6 +147,102 @@ function rage(at: { x: number; y: number }, pressed?: HTMLElement): void {
     root.style.removeProperty('--rage-x');
     root.style.removeProperty('--rage-y');
   }, RATTLE_MS);
+}
+
+/** How long the strike keeps flickering on the thing it hit. */
+const STRIKE_MS = 620;
+
+/**
+ * A bolt out of the top of the screen, onto the thing that was pressed.
+ *
+ * The pointer already gets one, and on a desktop it is over the button anyway
+ * — but a bolt that lands on the drawn cursor is a bolt that lands on a
+ * twenty-pixel ring, and on a touch screen there is no drawn cursor for it to
+ * land on at all, so the loudest moment in the sequence had nothing visibly
+ * arriving. This one is aimed at the control's own centre and is the width of
+ * the page.
+ *
+ * Built and thrown away rather than living in the markup: it exists for six
+ * hundred milliseconds roughly once in the life of a visit, and the alternative
+ * is three empty SVG nodes on every page for everyone who never earns it.
+ */
+function strikeDown(el: HTMLElement): void {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'rage-bolt');
+  svg.setAttribute('aria-hidden', 'true');
+
+  const paths = ['rage-bolt__glow', 'rage-bolt__fork', 'rage-bolt__core'].map((name) => {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('class', name);
+    svg.appendChild(path);
+    return path;
+  });
+
+  document.body.appendChild(svg);
+
+  /*
+   * The bends are taken along the normal of the line and scaled by sin(pi·t),
+   * which is zero at both ends — so the bolt is wild in the middle and its last
+   * point is exactly on the control, however far across the page it has come.
+   */
+  const draw = (x0: number, y0: number, x1: number, y1: number, spread: number) => {
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len;
+    const ny = dx / len;
+
+    let d = `M${x0.toFixed(1)} ${y0.toFixed(1)}`;
+    for (let i = 1; i <= 10; i += 1) {
+      const t = i / 10;
+      const o = (Math.random() * 2 - 1) * Math.sin(Math.PI * t) * spread;
+      d += ` L${(x0 + dx * t + nx * o).toFixed(1)} ${(y0 + dy * t + ny * o).toFixed(1)}`;
+    }
+    return d;
+  };
+
+  // Where in the sky it comes from, fixed for the length of the strike.
+  const start = el.getBoundingClientRect();
+  const from = start.left + start.width / 2 + (Math.random() * 2 - 1) * window.innerWidth * 0.28;
+
+  let timer = 0;
+  const flicker = () => {
+    /*
+     * Re-aimed on every flash, because the thing it hit does not stay still.
+     *
+     * The same strike knocks the page loose, so the control is thrown about
+     * for the whole of the six hundred milliseconds this is on screen — and a
+     * bolt drawn once to where it used to be ends up pointing at nothing. A
+     * hundred and forty pixels of nothing, measured. It holds on instead.
+     */
+    const box = el.getBoundingClientRect();
+    const tx = box.left + box.width / 2;
+    const ty = box.top + box.height / 2;
+
+    // Wandering a little between flashes: a real one does not come down the
+    // same channel twice.
+    const head = from + (Math.random() * 2 - 1) * 70;
+    const main = draw(head, -40, tx, ty, 46);
+    paths[0].setAttribute('d', main);
+    paths[2].setAttribute('d', main);
+
+    const t = 0.35 + Math.random() * 0.3;
+    const bx = head + (tx - head) * t;
+    const by = -40 + (ty + 40) * t;
+    paths[1].setAttribute(
+      'd',
+      draw(bx, by, bx + (Math.random() * 2 - 1) * 200, by + 70 + Math.random() * 150, 30)
+    );
+
+    timer = window.setTimeout(flicker, 46);
+  };
+
+  flicker();
+
+  window.setTimeout(() => {
+    window.clearTimeout(timer);
+    svg.remove();
+  }, STRIKE_MS);
 }
 
 /**

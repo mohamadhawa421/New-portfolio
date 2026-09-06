@@ -987,6 +987,68 @@ figure {
 }
 
 /*
+ * The bolt that lands on the control.
+ *
+ * A full-viewport layer, so its user units are viewport pixels and the script
+ * that draws it needs no mapping. Three strokes over each other — a wide soft
+ * one for the light it throws, a fork that goes nowhere, and a hot core down
+ * the middle — because that is what a bolt is, and one flat purple line never
+ * looks like one.
+ *
+ * Above everything including the pointer: it is the loudest thing that happens
+ * on this site and nothing should be in front of it.
+ */
+.rage-bolt {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  pointer-events: none;
+  overflow: visible;
+  animation: rage-bolt-out 620ms var(--ease-out) both;
+}
+
+.rage-bolt__glow,
+.rage-bolt__fork,
+.rage-bolt__core {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rage-bolt__glow {
+  stroke: var(--dm-core);
+  stroke-width: 11;
+  opacity: 0.4;
+  filter: drop-shadow(0 0 20px color-mix(in srgb, var(--dm-core) 85%, transparent));
+}
+
+.rage-bolt__fork {
+  stroke: var(--dm-arc);
+  stroke-width: 2.6;
+  opacity: 0.78;
+}
+
+.rage-bolt__core {
+  stroke: color-mix(in srgb, var(--dm-arc) 35%, #fff);
+  stroke-width: 2.6;
+  filter: drop-shadow(0 0 9px var(--dm-arc));
+}
+
+/* Full strength for most of it and then gone. A bolt that fades out slowly is
+   a light being turned down. */
+@keyframes rage-bolt-out {
+  0%,
+  62% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/*
  * The control that took the current.
  *
  * When he loses his temper the thing that was pressed goes purple and then
@@ -1002,19 +1064,35 @@ figure {
  * sequence that has none.
  */
 .is-overloaded {
-  animation: overloaded 1150ms var(--ease-out) both;
+  /*
+   * Slow, because cooling is slow.
+   *
+   * At a second it read as a colour change with a purple frame on the front of
+   * it. Metal that has been hit with that much current does not go back in a
+   * second — it sits there hot while the noise dies and then gives it up over
+   * several. Two and three quarters, held at full heat for the first fifth so
+   * the storm and the glow are at their loudest together, and then almost all
+   * of the rest of it spent on the way down.
+   */
+  animation: overloaded 2750ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 @keyframes overloaded {
-  0% {
+  0%,
+  /* Held while the thunder is still going. */ 18% {
     background-color: var(--dm-core);
     box-shadow: 0 0 26px -2px color-mix(in srgb, var(--dm-core) 75%, transparent);
     color: #fff;
   }
-  /* Held hot while the storm is at its loudest, then cooling for the rest. */
-  34% {
+  /* Off the hottest colour, and most of the glow still there. */
+  42% {
     background-color: var(--dm-wave);
-    box-shadow: 0 0 22px -3px color-mix(in srgb, var(--dm-core) 55%, transparent);
+    box-shadow: 0 0 24px -3px color-mix(in srgb, var(--dm-core) 58%, transparent);
+  }
+  /* Nearly its own colour, with the last of the light going. */
+  74% {
+    background-color: color-mix(in srgb, var(--dm-deep) 34%, var(--was-bg, var(--blue-fill)));
+    box-shadow: 0 0 22px -3px color-mix(in srgb, var(--dm-core) 22%, transparent);
   }
   100% {
     background-color: var(--was-bg, var(--blue-fill));
@@ -1022,10 +1100,10 @@ figure {
   }
 }
 
-/* The current stays; nothing about it moves. */
+/* The current stays; it simply does not take as long to leave. */
 @media (prefers-reduced-motion: reduce) {
   .is-overloaded {
-    animation-duration: 700ms;
+    animation-duration: 1200ms;
   }
 }
 
