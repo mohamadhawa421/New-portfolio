@@ -26,6 +26,16 @@ const [home, settings, services, steps, projects, contact, split] = await Promis
   getHomeProjectSplit(),
 ]);
 
+/*
+ * How much of the work the home page shows.
+ *
+ * Five, counting the featured one: enough to establish what the work is and
+ * how it is presented, and short enough that the section is still a section
+ * rather than the index with a different heading. The work page is the index.
+ */
+const HOME_PROJECTS = 5;
+const shown = split.rest.slice(0, Math.max(0, HOME_PROJECTS - (split.lead ? 1 : 0)));
+
 const leadWords = home.manifestoLead.split(/\s+/).filter(Boolean);
 const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
 ---
@@ -91,17 +101,33 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     <section class="section section--light work" data-lift data-tile="light">
       <div class="shell">
         <div class="work__header" data-reveal="0">
-          <div>
-            <div class="eyebrow">{home.workEyebrow}</div>
-            <h2 class="h2 work__heading">{projects.length} {home.workHeadingSuffix}</h2>
-          </div>
-          <a class="text-link" href="/work">{home.workLinkLabel}&nbsp;›</a>
+          <div class="eyebrow">{home.workEyebrow}</div>
+          <h2 class="h2 work__heading">{projects.length} {home.workHeadingSuffix}</h2>
         </div>
 
+        {/*
+          A selection, not the archive.
+
+          The heading still counts every project, because that is the true
+          number and the claim the section is making. What follows it is the
+          first few — the featured one and four more — and the way to the rest
+          is at the end, where somebody who has read them is actually looking.
+
+          The link used to sit at the top right of the heading, which is the
+          one place it could not do its job: it asks you to leave before you
+          have been given a reason to stay, and it competes with the heading
+          for the same glance. At the foot of the list it is the next thing
+          after the last project rather than an alternative to the first.
+        */}
         <div class="work__list">
           {split.lead && <FeaturedProject project={split.lead} />}
-          {split.rest.map((project, i) => <ProjectRow project={project} index={i} />)}
+          {shown.map((project, i) => <ProjectRow project={project} index={i} />)}
           <div class="work__rule"></div>
+
+          <a class="work__more" href="/work" data-reveal={String(shown.length)}>
+            <span>{home.workLinkLabel}</span>
+            <span class="work__more-arrow" aria-hidden="true">›</span>
+          </a>
         </div>
       </div>
     </section>
@@ -463,11 +489,6 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   }
 
   .work__header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 20px;
     padding-bottom: clamp(24px, 3.6vh, 34px);
   }
 
@@ -483,6 +504,50 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   .work__rule {
     border-top: 1px solid var(--line);
   }
+
+  /*
+   * The way to the rest, built as the row after the last row.
+   *
+   * It takes the projects' own padding and inset so its hover fills to exactly
+   * the same edges, and it is the one thing in the list with no thumbnail —
+   * which is what keeps it from reading as a thirteenth project.
+   *
+   * It carries no count. The heading above it already says how many there are,
+   * and repeating that at the foot of the list was the same sentence twice on
+   * one screen.
+   */
+  .work__more {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: clamp(10px, 1.4vw, 18px);
+    padding: clamp(22px, 3vh, 32px) clamp(10px, 1.4vw, 18px);
+    margin: 0 calc(-1 * clamp(10px, 1.4vw, 18px));
+    border-radius: var(--r-sm);
+    color: var(--blue);
+    font-size: clamp(20px, 2.2vw, 28px);
+    line-height: 1.14;
+    letter-spacing: -0.017em;
+    font-weight: 600;
+    transition: background 280ms var(--ease-glide);
+  }
+
+  .work__more:hover {
+    background: var(--surface-row-hover);
+    color: var(--blue);
+  }
+
+  .work__more-arrow {
+    font-size: 1em;
+    /* Travels on hover the way the project rows' own arrow does. */
+    transition: translate 320ms var(--ease-glide);
+  }
+
+  .work__more:hover .work__more-arrow {
+    translate: 5px 0;
+  }
+
+
 
   /* ---- Services ------------------------------------------------------ */
   .services {
