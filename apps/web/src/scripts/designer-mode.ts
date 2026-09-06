@@ -113,32 +113,37 @@ const DECAY_MS = 3000;
 const WAVE_MS = 380;
 
 /**
- * How long the shove and the momentum after it last, together.
+ * How long the shove lasts.
  *
  * Shorter than it reads: the whole point of a blast is that it is over before
- * you have registered it, and what you watch is the momentum running out. Most
- * of this is the running out.
+ * you have registered it. What you watch afterwards is not the shove, it is
+ * what the shove left behind.
  */
-const OUT_MS = 820;
+const BLAST_MS = 380;
+
 /**
- * And how long they are held out there before they are brought back.
+ * And how long the field takes to work that off.
  *
- * This is not a floating phase and the difference is the whole point: nothing
- * drifts, nothing bobs, nothing loops. A piece arrives at the apex with no
- * speed left and is held there, shuddering against the grip — see buzz() — for
- * long enough that you can see the field is doing work. The only movement in
- * it is the struggle, which is a force with a name.
+ * The piece is still going the way it was thrown for the whole of this — the
+ * distance it has travelled keeps growing — while its speed dies against the
+ * grip. That is the difference between this and the hold it replaces, and it
+ * is the whole physical story: the field does not stop the thing, it out-lasts
+ * it. The shudder is the evidence of the two forces disagreeing, and it stops
+ * when the disagreement is settled.
  */
-const HOLD_MS = 1500;
+const FIGHT_MS = 1500;
+
+/** From the front reaching a piece to that piece's speed reaching zero. */
+const OUT_MS = BLAST_MS + FIGHT_MS;
 /** And the way home: the shortest of them, and how much longer the longest is. */
 const HOME_MS = 2600;
 const HOME_SPREAD = 1200;
 
-/** The nearest piece turns for home as soon as its own momentum is spent. */
-const homewardAt = (impact: number) => impact + OUT_MS + HOLD_MS;
+/** The nearest piece turns for home the moment its momentum is finally spent. */
+const homewardAt = (impact: number) => impact + OUT_MS;
 /** The furthest lands a whole wave crossing and the longest way home later. */
 const landedAt = (impact: number) =>
-  impact + WAVE_MS + OUT_MS + HOLD_MS + HOME_MS + HOME_SPREAD;
+  impact + WAVE_MS + OUT_MS + HOME_MS + HOME_SPREAD;
 
 const BEAT: Beat = {
   /*
@@ -343,6 +348,8 @@ interface Flight {
   bow: number;
   /** How hard the field has to work to hold it. 0 for a cover, 1 for a chip. */
   grip: number;
+  /** How much further than the shove alone the momentum carried it. */
+  coast: number;
 }
 
 let running = false;
@@ -816,6 +823,7 @@ export function run(options: DesignerModeOptions): Beat {
       // How hard the field has to work to hold it, which is the inverse of
       // how much there is to hold.
       grip: 1 - heft,
+      coast,
     };
 
     undo(() => {
@@ -1018,9 +1026,11 @@ export function run(options: DesignerModeOptions): Beat {
       }
 
       const journey = 2100 + Math.round(Math.random() * 900);
+      const letterCoast = 1.2 + Math.random() * 0.1;
       const flight: Throw = {
-        cx: (nx - ny * tangent + lean.x) * strength,
-        cy: (ny + nx * tangent + lean.y) * strength,
+        coast: letterCoast,
+        cx: (nx - ny * tangent + lean.x) * strength * letterCoast,
+        cy: (ny + nx * tangent + lean.y) * strength * letterCoast,
         // Torque, like everything else: it turns the way it was swung, and only
         // that way. A letter has no mass to resist it, so it turns further.
         cr: tangent * 20,
@@ -1057,11 +1067,11 @@ export function run(options: DesignerModeOptions): Beat {
        * where something that light and that large belongs.
        */
       const weight = Math.min(1, Math.max(0.55, 20 / sized[i]));
-      const shake = buzz(letter, flight.cd + LETTER_OUT, 3.2 * weight);
+      const shake = buzz(letter, flight.cd + LETTER_BLAST, 3.2 * weight, LETTER_FIGHT);
       if (shake) returning.push(shake);
 
       // When this block is whole again: the last of its letters, plus a frame.
-      const ends = flight.cd + LETTER_OUT + HOLD_MS + flight.home;
+      const ends = flight.cd + LETTER_OUT + flight.home;
       if (ends > lastLetter[block[i]]) lastLetter[block[i]] = ends;
     });
 
@@ -1089,7 +1099,7 @@ export function run(options: DesignerModeOptions): Beat {
        * perfectly still — a cover that did not move at all read as the one
        * object the field had no trouble with, which is the opposite of true.
        */
-      const shake = buzz(el, flight.wave + OUT_MS, 1.9 * (0.28 + 0.72 * flight.grip));
+      const shake = buzz(el, flight.wave + BLAST_MS, 1.9 * (0.28 + 0.72 * flight.grip));
       if (shake) returning.push(shake);
 
       const lifted = lift(el, flight);
@@ -1222,14 +1232,18 @@ export function run(options: DesignerModeOptions): Beat {
  * like a reversed throw.
  */
 function launch(el: HTMLElement, f: Flight): Animation {
-  const total = f.wave + OUT_MS + HOLD_MS + f.home;
+  const total = f.wave + OUT_MS + f.home;
   const at = (ms: number) => ms / total;
-  const apex = f.wave + OUT_MS;
-  const away = apex + HOLD_MS;
+  const struck = f.wave + BLAST_MS;
+  const neutral = f.wave + OUT_MS;
 
   const span = Math.hypot(f.ax, f.ay) || 1;
   const bowX = (-f.ay / span) * f.bow;
   const bowY = (f.ax / span) * f.bow;
+
+  // Where the shove alone would have put it, before the field started arguing.
+  const bx = f.ax / f.coast;
+  const by = f.ay / f.coast;
 
   return el.animate(
     [
@@ -1238,28 +1252,37 @@ function launch(el: HTMLElement, f: Flight): Animation {
       {
         transform: 'none',
         offset: at(f.wave),
-        // Opening slope 28, closing slope 0: gone before you see it leave,
-        // and then a long time running out.
-        easing: 'cubic-bezier(0.03, 0.85, 0.2, 1)',
+        /*
+         * Opening slope 28, closing slope 0.15: gone before you see it leave,
+         * and still travelling when the shove ends. That closing number is the
+         * whole of the handover — the field takes hold of something moving,
+         * not of something that has already stopped.
+         */
+        easing: 'cubic-bezier(0.03, 0.85, 0.72, 0.958)',
       },
-      // Carried as far as it goes, and caught.
+      // The end of the shove. Still going, and now being argued with.
       {
-        transform: `translate3d(${f.ax.toFixed(1)}px, ${f.ay.toFixed(1)}px, 0) rotate(${f.ar.toFixed(2)}deg) scale(${f.as.toFixed(3)})`,
-        offset: at(apex),
-        easing: 'linear',
+        transform: `translate3d(${bx.toFixed(1)}px, ${by.toFixed(1)}px, 0) rotate(${(f.ar * 0.72).toFixed(2)}deg) scale(${f.as.toFixed(3)})`,
+        offset: at(struck),
+        /*
+         * Opening slope 2.7, closing slope 0. In absolute terms that opening
+         * is the speed the segment above ends at: this stretch covers a fifth
+         * of the distance in four times the duration, so the two numbers have
+         * to differ by that much to mean the same speed. From there it runs
+         * down to nothing.
+         */
+        easing: 'cubic-bezier(0.2, 0.54, 0.35, 1)',
       },
       /*
-       * Held, and only held.
+       * The neutral point: the frame the outward speed reaches zero.
        *
-       * The same position as the frame above it, so across this stretch the
-       * flight contributes no movement at all — everything you see here is the
-       * shudder from buzz(), added on top. That is the distinction this whole
-       * sequence turns on: it is not floating, because nothing is carrying it.
-       * It has been stopped and it is being fought over.
+       * A keyframe, not a phase. The piece has been slowing for a second and a
+       * half and has been moving outward the whole of it — this is only where
+       * it finally stops, and it is the same frame it starts back on.
        */
       {
         transform: `translate3d(${f.ax.toFixed(1)}px, ${f.ay.toFixed(1)}px, 0) rotate(${f.ar.toFixed(2)}deg) scale(${f.as.toFixed(3)})`,
-        offset: at(away),
+        offset: at(neutral),
         // From nothing, and still building at the far end: the pull is
         // strongest in the middle of the way home, not at either end of it.
         easing: 'cubic-bezier(0.55, 0, 0.75, 0.6)',
@@ -1271,20 +1294,16 @@ function launch(el: HTMLElement, f: Flight): Animation {
        * on purpose. It is the only way the handover can be checked by eye: the
        * curve above ends at 1.6 and the one below starts at 1.6, so the speed
        * across the join is unchanged and the bow is a bend in the path rather
-       * than a beat in the timing.
-       *
-       * They meet at the fastest point of the return, so the whole of the way
-       * home is one rise and one fall — quickest through the middle, slowest
-       * as it arrives. Matching them at a slow speed instead put a dip at the
-       * bend and a second surge after it, which reads as two pulls.
+       * than a beat in the timing. They meet at the fastest point of the
+       * return, so the way home is one rise and one fall.
        */
       {
         transform:
           `translate3d(${(f.ax * 0.5 + bowX).toFixed(1)}px, ${(f.ay * 0.5 + bowY).toFixed(1)}px, 0) ` +
           `rotate(${(f.ar * 0.42).toFixed(2)}deg) scale(${(1 + (f.as - 1) * 0.42).toFixed(3)})`,
-        offset: at(away + f.home * 0.5),
-        // Handed 1.6 and running out to nothing: it arrives by slowing, not
-        // by being stopped there.
+        offset: at(neutral + f.home * 0.5),
+        // Handed 1.6 and running out to nothing: it arrives by slowing, not by
+        // being stopped there.
         easing: 'cubic-bezier(0.15, 0.24, 0.35, 1)',
       },
       { transform: 'none', offset: 1 },
@@ -1309,16 +1328,19 @@ const CAN_LAYER = (() => {
 })();
 
 /**
- * How the shudder is shaped, and it is shaped by the hold and nothing else.
+ * How the shudder is shaped, and it is shaped by the fight and nothing else.
  *
  * It used to start before the apex and fade well into the return, which put
  * trembling on the way out and on the way home — two places where the thing
  * moving it is momentum, not a grip. The buzz is evidence of a grip. It cannot
  * be anywhere the grip is not.
  *
- * So it begins on the frame the piece stops and ends on the frame it is let
- * go. The edges are 90ms of ramp so it arrives and leaves without a click, and
- * that ramp lives inside the hold rather than either side of it.
+ * So it begins on the frame the shove ends — the moment the field has hold of
+ * something still travelling — and it ends on the frame the argument is
+ * settled. Outside that the piece is being moved by one force only and has
+ * nothing to shudder about: the shove, and then the way home. The edges are
+ * 90ms of ramp so it arrives and leaves without a click, and that ramp lives
+ * inside the fight rather than either side of it.
  */
 const BUZZ_EDGE = 90;
 /*
@@ -1328,10 +1350,9 @@ const BUZZ_EDGE = 90;
  */
 const BUZZ_STEP = window.innerWidth < 768 ? 76 : 52;
 
-function buzz(el: HTMLElement, apex: number, amp: number): Animation | null {
+function buzz(el: HTMLElement, from: number, amp: number, span = FIGHT_MS): Animation | null {
   if (!CAN_LAYER || amp <= 0) return null;
 
-  const span = HOLD_MS;
   const steps = Math.max(2, Math.round(span / BUZZ_STEP));
   const frames: Keyframe[] = [];
 
@@ -1365,19 +1386,30 @@ function buzz(el: HTMLElement, apex: number, amp: number): Animation | null {
   frames[0] = { offset: 0, transform: 'translate3d(0, 0, 0)' };
   frames[frames.length - 1] = { offset: 1, transform: 'translate3d(0, 0, 0)' };
 
-  return el.animate(frames, { duration: span, delay: apex, composite: 'add', fill: 'both' });
+  return el.animate(frames, { duration: span, delay: from, composite: 'add', fill: 'both' });
 }
 
 /**
- * How long a letter's own momentum takes to run out.
+ * How long a letter's shove lasts.
  *
  * Shorter than a piece's. There is less to a letter, so there is less to keep
- * it going, and the field has it sooner.
+ * it going, and the field has hold of it sooner.
  */
-const LETTER_OUT = 620;
+const LETTER_BLAST = 260;
+/**
+ * And how long the field takes to work its momentum off.
+ *
+ * Shorter than a piece's fight for the same reason the shove is shorter: there
+ * is less of it, so there is less to argue with. The shape is identical —
+ * still going outward, slowing the whole way, shuddering while the two forces
+ * disagree.
+ */
+const LETTER_FIGHT = 1180;
+const LETTER_OUT = LETTER_BLAST + LETTER_FIGHT;
 
 /** Where a letter is aimed, and when. */
 interface Throw {
+  coast: number;
   cx: number;
   cy: number;
   cr: number;
@@ -1409,21 +1441,26 @@ interface Throw {
  * dropped and the glyphs are drawn the way they are drawn everywhere else.
  */
 function launchLetter(el: HTMLElement, t: Throw): Animation {
-  const total = t.cd + LETTER_OUT + HOLD_MS + t.home;
+  const total = t.cd + LETTER_OUT + t.home;
   const at = (ms: number) => ms / total;
-  const apex = t.cd + LETTER_OUT;
+  const struck = t.cd + LETTER_BLAST;
+  const neutral = t.cd + LETTER_OUT;
 
-  const out = `translate3d(${t.cx.toFixed(2)}px, ${t.cy.toFixed(2)}px, 0) rotate(${t.cr.toFixed(2)}deg)`;
+  // Where the shove alone put it, and where its momentum carried it after.
+  const shove =
+    `translate3d(${(t.cx / t.coast).toFixed(2)}px, ${(t.cy / t.coast).toFixed(2)}px, 0) ` +
+    `rotate(${(t.cr * 0.72).toFixed(2)}deg)`;
+  const far = `translate3d(${t.cx.toFixed(2)}px, ${t.cy.toFixed(2)}px, 0) rotate(${t.cr.toFixed(2)}deg)`;
 
   return el.animate(
     [
       { transform: 'none', offset: 0, easing: 'linear' },
       // Untouched. The front arrives on this frame.
-      { transform: 'none', offset: at(t.cd), easing: 'cubic-bezier(0.03, 0.85, 0.2, 1)' },
-      // Struck, and carried until there is nothing left.
-      { transform: out, offset: at(apex), easing: 'linear' },
-      // Held. The same position, so the only movement here is the shudder.
-      { transform: out, offset: at(apex + HOLD_MS), easing: 'cubic-bezier(0.5, 0, 0.3, 1)' },
+      { transform: 'none', offset: at(t.cd), easing: 'cubic-bezier(0.03, 0.85, 0.72, 0.958)' },
+      // The end of the shove, and still going.
+      { transform: shove, offset: at(struck), easing: 'cubic-bezier(0.2, 0.54, 0.35, 1)' },
+      // Losing speed the whole way, and out of it here. One frame, not a phase.
+      { transform: far, offset: at(neutral), easing: 'cubic-bezier(0.5, 0, 0.3, 1)' },
       { transform: 'none', offset: 1 },
     ],
     { duration: total, fill: 'both' }
