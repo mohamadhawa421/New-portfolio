@@ -297,7 +297,18 @@ const SHELLS = '.btn, .chip, .text-link, .enquiry__send, .footer__links a';
 const MAX_PIECES_WIDE = 84;
 const MAX_PIECES_NARROW = 34;
 const MAX_LETTERS = 460;
-const MAX_LETTERS_NARROW = 170;
+/*
+ * A phone gets fewer than a desktop, but not so few that a paragraph cannot
+ * fit.
+ *
+ * At 170 the hero's own intro is 178 characters and could never be shattered
+ * even with the whole allowance to itself — so on a phone it was skipped, fell
+ * through to the piece list, and sailed off as a rigid rectangle while every
+ * word around it came apart. The number has to be larger than the longest
+ * block the page actually has, or the rule quietly becomes "prose does not
+ * shatter on mobile".
+ */
+const MAX_LETTERS_NARROW = 360;
 /** And no single block may take more than this much of it. */
 const MAX_ONE_BLOCK = 240;
 
@@ -423,11 +434,28 @@ function measureLetters(el: HTMLElement): DOMRect[] {
  * that needs each letter's position on screen and reading those one element at
  * a time is a layout per heading.
  */
-function shatterText(el: HTMLElement): HTMLElement[] {
+function shatterText(el: HTMLElement): { letters: HTMLElement[]; restore: () => void } {
   const original = el.innerHTML;
-  undo(() => {
+  let restored = false;
+
+  /*
+   * The way back, which can be asked for early.
+   *
+   * Every element used to be put back at the same instant, at the end of the
+   * whole sequence — one page-wide swap from letters to text, which is the
+   * most visible moment such a swap can possibly have. Each block now goes
+   * back the moment its own last letter has landed, so the swaps are spread
+   * across a second and a half and none of them coincides with anything.
+   * Guarded, because teardown will ask for it again and setting innerHTML a
+   * second time would throw away a restored DOM the visitor is already using.
+   */
+  const restore = () => {
+    if (restored) return;
+    restored = true;
     el.innerHTML = original;
-  });
+  };
+
+  undo(restore);
 
   /*
    * The element keeps the box it had, whatever happens inside it.
@@ -524,7 +552,7 @@ function shatterText(el: HTMLElement): HTMLElement[] {
     node.parentNode?.replaceChild(holder, node);
   }
 
-  return letters;
+  return { letters, restore };
 }
 
 /* ---------------------------------------------------------------------- */
@@ -910,13 +938,19 @@ export function run(options: DesignerModeOptions): Beat {
     const struck: number[] = [];
     const before: DOMRect[] = [];
     const sized: number[] = [];
+    /** Which block each letter came out of, so it can be put back with it. */
+    const block: number[] = [];
+    const restores = words.map(() => () => {});
+    const lastLetter: number[] = words.map(() => 0);
     words.forEach((el, w) => {
       const made = shatterText(el);
-      made.forEach((letter, i) => {
+      restores[w] = made.restore;
+      made.letters.forEach((letter, i) => {
         letters.push(letter);
         struck.push(struckAt[w]);
         before.push(wasAt[w][i]);
         sized.push(blockSize[w]);
+        block.push(w);
       });
     });
 
@@ -965,10 +999,26 @@ export function run(options: DesignerModeOptions): Beat {
       const ny = ly / distance;
       const tangent = swirl + (Math.random() * 2 - 1) * 0.75;
 
+      /*
+       * The kerning correction, as position rather than as transform.
+       *
+       * `relative` shifts what is painted without moving anything else, so the
+       * letter sits exactly where its character was and the page around it is
+       * untouched — and the animation is then free to end on `none`, which is
+       * what keeps the glyphs off a composited layer and drawn like text.
+       */
+      if (was) {
+        const dx = was.left - spot.left;
+        const dy = was.top - spot.top;
+        if (dx || dy) {
+          letter.style.position = 'relative';
+          letter.style.left = `${dx.toFixed(2)}px`;
+          letter.style.top = `${dy.toFixed(2)}px`;
+        }
+      }
+
       const journey = 2100 + Math.round(Math.random() * 900);
       const flight: Throw = {
-        ox: was ? was.left - spot.left : 0,
-        oy: was ? was.top - spot.top : 0,
         cx: (nx - ny * tangent + lean.x) * strength,
         cy: (ny + nx * tangent + lean.y) * strength,
         // Torque, like everything else: it turns the way it was swung, and only
@@ -1009,6 +1059,23 @@ export function run(options: DesignerModeOptions): Beat {
       const weight = Math.min(1, Math.max(0.55, 20 / sized[i]));
       const shake = buzz(letter, flight.cd + LETTER_OUT, 3.2 * weight);
       if (shake) returning.push(shake);
+
+      // When this block is whole again: the last of its letters, plus a frame.
+      const ends = flight.cd + LETTER_OUT + HOLD_MS + flight.home;
+      if (ends > lastLetter[block[i]]) lastLetter[block[i]] = ends;
+    });
+
+    /*
+     * And each block goes back to being text the moment its own letters have
+     * stopped, rather than every block going back at once at the end.
+     *
+     * Split text and real text are not rasterised identically — inline-blocks
+     * lose the kerning and the ligatures — so the swap can be seen however
+     * exactly the boxes line up. Spreading them out is what stops that being a
+     * single visible event across the whole page.
+     */
+    restores.forEach((restore, w) => {
+      after(beat.impact + lastLetter[w] + 40, restore);
     });
 
     root.classList.add('dm-shattered');
@@ -1254,7 +1321,12 @@ const CAN_LAYER = (() => {
  * that ramp lives inside the hold rather than either side of it.
  */
 const BUZZ_EDGE = 90;
-const BUZZ_STEP = 52;
+/*
+ * How often the shudder is re-rolled. Coarser on a phone: the step is the only
+ * thing deciding how many keyframes three hundred letters ask for, and there
+ * it is worth spending a little of the texture to keep the frames.
+ */
+const BUZZ_STEP = window.innerWidth < 768 ? 76 : 52;
 
 function buzz(el: HTMLElement, apex: number, amp: number): Animation | null {
   if (!CAN_LAYER || amp <= 0) return null;
@@ -1306,8 +1378,6 @@ const LETTER_OUT = 620;
 
 /** Where a letter is aimed, and when. */
 interface Throw {
-  ox: number;
-  oy: number;
   cx: number;
   cy: number;
   cr: number;
@@ -1325,30 +1395,36 @@ interface Throw {
  * system, and the same shape as everything else on the page: still, struck,
  * carried, held, brought home.
  *
- * Home is --ox/--oy and not zero. A line split into inline-blocks loses every
- * kerning pair, so a letter's span does not sit where its character was drawn;
- * this is the difference, measured before anything was touched.
+ * It ends on `transform: none`, and that is not a detail.
+ *
+ * The kerning correction — a letter's span does not sit where its character
+ * was drawn, because a line split into inline-blocks loses every pair — used
+ * to live in the last keyframe, so every letter came to rest holding a
+ * fractional translate. An element on a fractional transform stays on its own
+ * composited layer and has its text drawn with greyscale antialiasing rather
+ * than the subpixel kind, so the moment the real text came back it visibly
+ * changed: not a jump, a re-rasterisation, and at a button's label that is
+ * exactly what a snap looks like. The correction is a layout offset now — see
+ * the write pass — and the transform resolves to nothing, so the layer is
+ * dropped and the glyphs are drawn the way they are drawn everywhere else.
  */
 function launchLetter(el: HTMLElement, t: Throw): Animation {
   const total = t.cd + LETTER_OUT + HOLD_MS + t.home;
   const at = (ms: number) => ms / total;
   const apex = t.cd + LETTER_OUT;
 
-  const rest = `translate3d(${t.ox.toFixed(2)}px, ${t.oy.toFixed(2)}px, 0)`;
-  const out =
-    `translate3d(${(t.ox + t.cx).toFixed(2)}px, ${(t.oy + t.cy).toFixed(2)}px, 0) ` +
-    `rotate(${t.cr.toFixed(2)}deg)`;
+  const out = `translate3d(${t.cx.toFixed(2)}px, ${t.cy.toFixed(2)}px, 0) rotate(${t.cr.toFixed(2)}deg)`;
 
   return el.animate(
     [
-      { transform: rest, offset: 0, easing: 'linear' },
+      { transform: 'none', offset: 0, easing: 'linear' },
       // Untouched. The front arrives on this frame.
-      { transform: rest, offset: at(t.cd), easing: 'cubic-bezier(0.03, 0.85, 0.2, 1)' },
+      { transform: 'none', offset: at(t.cd), easing: 'cubic-bezier(0.03, 0.85, 0.2, 1)' },
       // Struck, and carried until there is nothing left.
       { transform: out, offset: at(apex), easing: 'linear' },
       // Held. The same position, so the only movement here is the shudder.
       { transform: out, offset: at(apex + HOLD_MS), easing: 'cubic-bezier(0.5, 0, 0.3, 1)' },
-      { transform: rest, offset: 1 },
+      { transform: 'none', offset: 1 },
     ],
     { duration: total, fill: 'both' }
   );
