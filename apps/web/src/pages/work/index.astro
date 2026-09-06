@@ -179,6 +179,7 @@ const categories = [
           card.style.left = '';
           card.style.top = '';
           card.style.width = '';
+          card.style.height = '';
           card.style.margin = '';
         });
       }
@@ -299,6 +300,17 @@ const categories = [
           if (style.position === 'static') grid.style.position = 'relative';
           grid.style.height = heightBefore + 'px';
 
+          /*
+           * Height as well as width, and it is not optional.
+           *
+           * The grid stretches every card in a row to the tallest one, and the
+           * card spends that height: the body is `flex: 1` and the CTA is
+           * pushed down by `margin-top: auto`. Out of flow with height auto, a
+           * card is only as tall as its content — so on any card whose summary
+           * is short of the row, "View project" sat up under the description
+           * and dropped to the bottom the moment the card went back into the
+           * grid. Stating the height is what the grid was doing for it.
+           */
           movers.forEach((card) => {
             const end = to.get(card);
             card.style.position = 'absolute';
@@ -306,6 +318,7 @@ const categories = [
             card.style.left = end.left - originX + 'px';
             card.style.top = end.top - originY + 'px';
             card.style.width = end.width + 'px';
+            card.style.height = end.height + 'px';
           });
 
           /* Invert, and Play. */
@@ -321,8 +334,13 @@ const categories = [
                       transform:
                         'translate(' + (start.left - end.left) + 'px, ' + (start.top - end.top) + 'px)',
                       width: start.width + 'px',
+                      height: start.height + 'px',
                     },
-                    { transform: 'translate(0px, 0px)', width: end.width + 'px' },
+                    {
+                      transform: 'translate(0px, 0px)',
+                      width: end.width + 'px',
+                      height: end.height + 'px',
+                    },
                   ],
                   { duration: MOVE_MS, easing: EASE }
                 )
