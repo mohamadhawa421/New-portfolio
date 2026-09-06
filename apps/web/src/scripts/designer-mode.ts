@@ -211,11 +211,25 @@ interface Anchor {
   y: number;
 }
 
-/** How one piece comes home: when it is let go, and the shape of its path. */
-interface Settle {
-  delay: number;
-  duration: number;
-  /** How far it bows off the straight line, and which way. */
+/**
+ * One piece's whole journey, from the wave reaching it to it being back.
+ *
+ * Every number here is decided before anything moves and none of it is written
+ * to the element: the sequence is one animation per piece, and this is what it
+ * is built from. There is deliberately no field for a held position, because
+ * there is no moment at which a piece is being held. The apex is where its
+ * momentum runs out, and it leaves again on the same frame it arrives.
+ */
+interface Flight {
+  /** Where the shove and the momentum after it carry it, arriving with none left. */
+  ax: number;
+  ay: number;
+  ar: number;
+  as: number;
+  /** How long the front takes to reach it, and how long the way back takes. */
+  wave: number;
+  home: number;
+  /** How far the path home bows off the straight line, and which way. */
   bow: number;
 }
 
@@ -338,9 +352,12 @@ function shatterText(
         // Off the mark when the wave gets to this heading, then letter by
         // letter along it — so a word comes apart from where it was standing.
         letter.style.setProperty('--cd', `${arrival + index * 9}ms`);
-        // And its own, unrelated moment to come back — not the reverse of the
-        // order it left in.
-        letter.style.setProperty('--lr', `${Math.round(Math.random() * 900)}ms`);
+        /*
+         * How long this letter's whole journey takes. Its own number, so the
+         * word does not come back in the order it left in — and long enough
+         * that the way home is unmistakably slower than the way out.
+         */
+        letter.style.setProperty('--lt', `${2300 + Math.round(Math.random() * 900)}ms`);
         word.appendChild(letter);
         index += 1;
       }
@@ -438,7 +455,7 @@ export function run(options: DesignerModeOptions): void {
    */
   const swirl = (Math.random() * 2 - 1) * 0.8;
   const lean = { x: (Math.random() * 2 - 1) * 0.35, y: (Math.random() * 2 - 1) * 0.28 };
-  const placed: Array<{ el: HTMLElement; anchor: Anchor; settle: Settle }> = [];
+  const placed: Array<{ el: HTMLElement; anchor: Anchor; flight: Flight }> = [];
 
   for (const el of chosen) {
     const rect = el.getBoundingClientRect();
@@ -504,14 +521,11 @@ export function run(options: DesignerModeOptions): void {
      * Where the momentum takes it after the shove, and where the field stops it.
      *
      * The shove is over in 560ms but the piece is still travelling, so it
-     * carries on along the same line — --k* is further out and turned a little
-     * further the same way. Then the field opposes it: --h* is back down the
-     * line it came along, which is what being caught looks like from outside.
-     * The rotation does not come back with it. A thing that spins one way and
-     * then unspins is a thing on a spring, and this one is being held.
+     * carries on along the same line and arrives at the apex with nothing
+     * left. That is the moment the field has it, and it is a moment and not a
+     * phase: the way home starts on the same frame.
      */
     const coast = 1.19 + Math.random() * 0.07;
-    const held = 1.07;
 
     /*
      * The whole attribute, saved and put back.
@@ -529,57 +543,27 @@ export function run(options: DesignerModeOptions): void {
     el.style.setProperty('--pr', `${rotation.toFixed(2)}deg`);
     el.style.setProperty('--ps', scale.toFixed(3));
     el.style.setProperty('--pd', `${delay}ms`);
-    // Where the momentum is still carrying it when the field arrives.
-    el.style.setProperty('--kx', `${(dx * coast).toFixed(1)}px`);
-    el.style.setProperty('--ky', `${(dy * coast).toFixed(1)}px`);
-    el.style.setProperty('--kr', `${(rotation * 1.4).toFixed(2)}deg`);
-
-    // And where it is stopped: short of where it was going, against the way it
-    // was travelling.
-    el.style.setProperty('--hx', `${(dx * held).toFixed(1)}px`);
-    el.style.setProperty('--hy', `${(dy * held).toFixed(1)}px`);
-
     /*
-     * The last two pixels, and the only movement in the held state.
+     * The whole journey, decided here and played as one animation.
      *
-     * Something being held by a force is not perfectly still, but it is not
-     * floating either — it settles against whatever is holding it and then
-     * stops. So this is a few pixels, once, in a direction of its own, at the
-     * end of the carry and never repeated. It is the difference between held
-     * and parked, and it is deliberately almost too small to notice.
+     * Nothing is written to the element now. What this piece does from the
+     * moment the wave reaches it to the moment it is home is a single list of
+     * positions and the times it passes through them, and it is handed to
+     * el.animate() at impact. That is the difference between a thing being
+     * moved by forces and a thing playing three animations in a row: there is
+     * no point in this sequence where one movement ends and another has to be
+     * started, so there is no point where it can hang.
      */
-    const settleAngle = Math.random() * Math.PI * 2;
-    el.style.setProperty('--sx', `${(dx * held + Math.cos(settleAngle) * 2.6).toFixed(1)}px`);
-    el.style.setProperty('--sy', `${(dy * held + Math.sin(settleAngle) * 2.6).toFixed(1)}px`);
-
-    /*
-     * When the carry takes over: the moment this piece's own shove ends.
-     *
-     * `delay` is how long the shock front took to reach it and 560 is the
-     * shove's own duration, so the sum is the frame the transition finishes
-     * on. The carry starts from exactly the position it finishes at — both are
-     * written against --px/--py/--pr/--ps — so there is no seam and no pause.
-     * The last few milliseconds are a per-piece scatter, or the whole page
-     * would be caught in one movement.
-     */
-    el.style.setProperty('--kd', `${delay + 560 + Math.round(Math.random() * 90)}ms`);
-    /*
-     * The way back is staggered too, but inward-out rather than outward-in:
-     * the field lets go at the character first and the furthest piece is the
-     * last to settle, so the page reassembles from the middle instead of
-     * everything arriving at once.
-     */
-    /*
-     * How this particular piece comes home, decided now and used much later.
-     *
-     * Nearer the character is released sooner — the field lets go from the
-     * middle outward — but every piece also gets its own slice of randomness on
-     * top, so no two set off together and nothing arrives in formation.
-     */
-    const settle = {
-      delay: Math.round(Math.min(1, distance / reach) * 620 + Math.random() * 620),
-      duration: Math.round(1900 + Math.random() * 1100),
-      // Which way it bows on the way back, and how far.
+    const flight: Flight = {
+      // Where the shove and the momentum after it take it.
+      ax: dx * coast,
+      ay: dy * coast,
+      ar: rotation * 1.4,
+      as: scale,
+      // When the wave gets here, and how long it takes to come back.
+      wave: delay,
+      home: Math.round(2600 + Math.random() * 1200),
+      // Which way the path bows on the way in, and how far.
       bow: (Math.random() < 0.5 ? -1 : 1) * (10 + Math.random() * 18),
     };
 
@@ -594,7 +578,7 @@ export function run(options: DesignerModeOptions): void {
     });
 
     el.classList.add('dm-piece');
-    placed.push({ el, anchor: { x: cx + dx, y: cy + dy }, settle });
+    placed.push({ el, anchor: { x: cx + dx, y: cy + dy }, flight });
   }
 
   /* ---- The nav stops being a pill ------------------------------------- */
@@ -633,21 +617,7 @@ export function run(options: DesignerModeOptions): void {
    * Both now wait on the same per-element delay: the moment the ring arrives.
    */
   after(beat.impact, () => {
-    /*
-     * Thrown and drifting are set together, not one after the other.
-     *
-     * They used to be two acts: the shove landed, the piece stopped where it
-     * was put, and a beat later the drift began — so at the top of the storm
-     * the page was a still photograph of itself for as long as half a second.
-     * The drift now waits out each piece's own throw (see --jd in the style
-     * block above) and takes over on the frame the shove ends, from exactly
-     * the position it ends at. Nothing stops.
-     *
-     * The class going on early costs nothing before then: an animation with no
-     * fill mode is not in effect during its delay, so the throw's transition
-     * is what governs until the moment it is done.
-     */
-    for (const { el } of placed) el.classList.add('dm-thrown', 'dm-held');
+    for (const { el, flight } of placed) returning.push(launch(el, flight));
 
     const budget = { left: narrow ? 90 : MAX_LETTERS };
     for (const el of document.querySelectorAll<HTMLElement>(SHATTER)) {
@@ -728,66 +698,17 @@ export function run(options: DesignerModeOptions): void {
     undo(() => root.classList.remove('dm-quiet'));
   });
 
-  /* ---- Act six: debris settles ---------------------------------------- */
+  /* ---- Act six: the field lets go ------------------------------------- */
 
   /*
-   * Each piece takes its own way home, and none of them retraces how it got
-   * there.
+   * There is nothing to send home here any more.
    *
-   * The path bows: out of the current, sideways, and only then in — which is
-   * how something released from a force actually travels, and nothing like the
-   * straight line a reversed throw would draw. It drifts a few pixels past its
-   * mark and eases back, so the last thing each piece does is settle rather
-   * than stop.
-   *
-   * Reads are batched ahead of the writes, so the fourteen matrices cost one
-   * layout pass between them.
+   * Every piece has been on its way back since its own momentum ran out
+   * against the field — see launch(). This beat is what it always claimed to
+   * be and never was: the moment control is released, which is now only true
+   * of the sidebar, because it is the one thing the field is still holding.
    */
   after(beat.drift, () => {
-    const frozen = placed.map(({ el }) => getComputedStyle(el).transform);
-
-    placed.forEach(({ el, settle }, i) => {
-      const m = new DOMMatrix(frozen[i]);
-      const fx = m.m41;
-      const fy = m.m42;
-      const spin = (Math.atan2(m.b, m.a) * 180) / Math.PI;
-      const size = Math.hypot(m.a, m.b);
-
-      const span = Math.hypot(fx, fy) || 1;
-      // Perpendicular to the way home, which is what makes the path a curve.
-      const bowX = (-fy / span) * settle.bow;
-      const bowY = (fx / span) * settle.bow;
-
-      const animation = el.animate(
-        [
-          {
-            transform: `translate(${fx}px, ${fy}px) rotate(${spin}deg) scale(${size})`,
-            easing: 'cubic-bezier(0.36, 0, 0.5, 0.6)',
-          },
-          {
-            transform:
-              `translate(${(fx * 0.54 + bowX).toFixed(1)}px, ${(fy * 0.54 + bowY).toFixed(1)}px) ` +
-              `rotate(${(spin * 0.42).toFixed(2)}deg) scale(${(1 + (size - 1) * 0.42).toFixed(3)})`,
-            offset: 0.5,
-            easing: 'cubic-bezier(0.3, 0.1, 0.2, 1)',
-          },
-          {
-            // A few pixels past the mark, so it arrives by settling.
-            transform: `translate(${(-fx * 0.022).toFixed(1)}px, ${(-fy * 0.022).toFixed(1)}px)`,
-            offset: 0.86,
-            easing: 'cubic-bezier(0.4, 0, 0.3, 1)',
-          },
-          { transform: 'none' },
-        ],
-        { duration: settle.duration, delay: settle.delay, fill: 'both' }
-      );
-
-      returning.push(animation);
-
-      // The CSS states can go now; the animation is what is driving it.
-      el.classList.remove('dm-held', 'dm-thrown');
-    });
-
     /*
      * The sidebar is let go with everything else rather than after it. Held to
      * the end it sat out alone for a second and a half and then slid away by
@@ -808,16 +729,106 @@ export function run(options: DesignerModeOptions): void {
 
   /* ---- Act eight: the words find each other --------------------------- */
 
-  after(beat.letters, () => {
-    root.classList.remove('dm-shattered');
-    root.classList.add('dm-settling');
-    undo(() => root.classList.remove('dm-settling'));
-  });
+  /*
+   * The letters need no beat of their own either. Each one is on a single
+   * animation that carries it out and brings it back — see the dm-letter
+   * keyframes — so there is no moment at which the word has to be told to
+   * reassemble. It has been reassembling since it came apart.
+   */
 
   after(beat.done, () => {
     teardown();
     options.onEnd?.();
   });
+}
+
+/** How long the shove and the momentum after it last, together. */
+const OUT_MS = 1020;
+
+/**
+ * One piece, one animation, from struck to home.
+ *
+ * The offsets say where it goes. The easings say how fast, and they are the
+ * harder half: an animation is only continuous if the speed a segment ends at
+ * is the speed the next one starts at. Give every segment an ease-in-out — the
+ * obvious thing to do — and the piece stops dead at every keyframe, which is
+ * three animations in a row again with the joins hidden inside one. The first
+ * attempt at this did exactly that and stalled four times on the way home.
+ *
+ * So the speed at each boundary is chosen, not defaulted:
+ *
+ *   0 → wave      Nothing. The front has not reached it.
+ *   wave → apex   One movement, not two. It leaves fast — the curve's opening
+ *                 slope is twelve — and decays the whole way, so the shove and
+ *                 the momentum after it are the same gesture running out. It
+ *                 arrives with no speed left, and that is the catch.
+ *   apex → bow    The only place velocity is allowed to reach zero, because it
+ *                 is the place the force changes sign. It leaves slowly and
+ *                 builds: being pulled, not rebounding.
+ *   bow → home    Handed exactly the speed the half before it ends at — both
+ *                 halves are the same length and the same duration, so the
+ *                 join can be checked by eye. They meet at the fastest point,
+ *                 so the way home is one rise and one fall: quickest through
+ *                 the middle, slowest as it arrives.
+ *
+ * The path bows sideways on the way back rather than retracing the line it
+ * came out on, which is how something carried by a force travels and nothing
+ * like a reversed throw.
+ */
+function launch(el: HTMLElement, f: Flight): Animation {
+  const total = f.wave + OUT_MS + f.home;
+  const at = (ms: number) => ms / total;
+  const apex = f.wave + OUT_MS;
+
+  const span = Math.hypot(f.ax, f.ay) || 1;
+  const bowX = (-f.ay / span) * f.bow;
+  const bowY = (f.ax / span) * f.bow;
+
+  return el.animate(
+    [
+      { transform: 'none', offset: 0, easing: 'linear' },
+      // Untouched. The wave arrives on this frame and everything starts here.
+      {
+        transform: 'none',
+        offset: at(f.wave),
+        // Opening slope 12, closing slope 0: hit hard, run out completely.
+        easing: 'cubic-bezier(0.06, 0.72, 0.28, 1)',
+      },
+      // Carried as far as it goes, and caught.
+      {
+        transform: `translate3d(${f.ax.toFixed(1)}px, ${f.ay.toFixed(1)}px, 0) rotate(${f.ar.toFixed(2)}deg) scale(${f.as.toFixed(3)})`,
+        offset: at(apex),
+        // From nothing, and still building at the far end: the pull is
+        // strongest in the middle of the way home, not at either end of it.
+        easing: 'cubic-bezier(0.55, 0, 0.75, 0.6)',
+      },
+      /*
+       * Halfway home in half the time, and out of the line it came along.
+       *
+       * The two halves of the return are the same length and the same duration
+       * on purpose. It is the only way the handover can be checked by eye: the
+       * curve above ends at 1.6 and the one below starts at 1.6, so the speed
+       * across the join is unchanged and the bow is a bend in the path rather
+       * than a beat in the timing.
+       *
+       * They meet at the fastest point of the return, so the whole of the way
+       * home is one rise and one fall — quickest through the middle, slowest
+       * as it arrives. Matching them at a slow speed instead put a dip at the
+       * bend and a second surge after it, which reads as two pulls.
+       */
+      {
+        transform:
+          `translate3d(${(f.ax * 0.5 + bowX).toFixed(1)}px, ${(f.ay * 0.5 + bowY).toFixed(1)}px, 0) ` +
+          `rotate(${(f.ar * 0.42).toFixed(2)}deg) scale(${(1 + (f.as - 1) * 0.42).toFixed(3)})`,
+        offset: at(apex + f.home * 0.5),
+        // Handed 1.6 and running out to nothing: it arrives by slowing, not
+        // by being stopped there.
+        easing: 'cubic-bezier(0.15, 0.24, 0.35, 1)',
+      },
+      { transform: 'none', offset: 1 },
+    ],
+    { duration: total, fill: 'both' }
+  );
 }
 
 /* ---------------------------------------------------------------------- */
