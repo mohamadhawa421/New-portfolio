@@ -1656,6 +1656,58 @@ function lift(el: HTMLElement, at: number, nx = 0, ny = 0): Animation | null {
   );
 }
 
+/**
+ * What the storm feels like through a phone.
+ *
+ * The Vibration API has no amplitude — only on and off, in milliseconds — so
+ * weight has to be spelled with duration and density. A long unbroken pulse is
+ * heavy; short ones spaced out are light; short ones packed together are a
+ * texture rather than a hit. That is the whole vocabulary, and it turns out to
+ * be enough for the four things this sequence actually does.
+ *
+ * Built from the same constants the picture is, so retiming the storm retimes
+ * the hand holding it. The one liberty is the tail: the way home has no haptic
+ * at all. Nothing is hitting the phone by then — the field is carrying things
+ * carefully back — and buzzing through that would say the opposite of what the
+ * picture says.
+ */
+export function shockPattern(): number[] {
+  const out: number[] = [];
+
+  /*
+   * The pressure. Four faint taps across the bend, which is as close as this
+   * API gets to something building: each is barely long enough to register on
+   * its own, and together they read as a rise.
+   */
+  const taps = 4;
+  const gap = Math.max(4, Math.round(PRELOAD_MS / taps) - 8);
+  for (let i = 0; i < taps; i += 1) out.push(8, gap);
+
+  // The blast. One long pulse, and by a distance the longest thing here.
+  out.push(110, 60);
+
+  /*
+   * The fight, decaying. Eleven pulses that get shorter and further apart as
+   * the momentum is worked off — the same shape the speed graph has, told with
+   * the only two numbers this API has.
+   */
+  const beats = 11;
+  for (let i = 0; i < beats; i += 1) {
+    const left = 1 - i / beats;
+    out.push(Math.max(6, Math.round(34 * left * left)), Math.round(FIGHT_MS / beats));
+  }
+
+  /*
+   * The grip closing. A fine tremor: very short, very close together, so it
+   * reads as a texture rather than as a series of taps — the hand's version of
+   * the shudder on screen, and exactly as long as it.
+   */
+  const shivers = Math.round(GRIP_MS / 44);
+  for (let i = 0; i < shivers; i += 1) out.push(7, 37);
+
+  return out;
+}
+
 /* ---------------------------------------------------------------------- */
 /* Teardown                                                                 */
 /* ---------------------------------------------------------------------- */

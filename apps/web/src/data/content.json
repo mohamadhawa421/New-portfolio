@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-05T22:42:06.021Z",
+  "generatedAt": "2026-09-06T20:24:20.663Z",
   "siteSetting": {
     "id": 1,
     "siteName": "Mohamad Hawa",
@@ -18,7 +18,7 @@
     "portrait": {
       "id": 1,
       "name": "mohamad-avatar",
-      "alternativeText": "Mohamad Hawa",
+      "alternativeText": "mohamad-avatar",
       "caption": "",
       "focalPoint": null,
       "width": 1024,
@@ -53,7 +53,7 @@
     }
   },
   "homePage": {
-    "id": 6,
+    "id": 5,
     "heroTitle": "Mohamad Hawa",
     "heroSubtitle": "Designing intuitive experiences.",
     "heroIntro": "Product owner working on web and mobile products — turning complex challenges into interfaces people understand without being taught. Freelance since 2020, at Poyesis since 2022.",
@@ -63,7 +63,7 @@
     "workHeadingSuffix": "projects.",
     "workLinkLabel": "Open the index",
     "servicesEyebrow": "What I do",
-    "servicesHeading": "Five ways to work together.",
+    "servicesHeading": "Four ways to work together.",
     "servicesIntro": "Pick the one that sounds like your project — it opens the brief with that already filled in.",
     "manifestoLead": "Complexity isn't the problem.",
     "manifestoTail": "Confusion is.",
@@ -77,42 +77,42 @@
     "contactBody": "Three fields. It opens a message with everything already written — you just press send.",
     "stats": [
       {
-        "id": 29,
+        "id": 24,
         "value": "20+",
         "label": "projects shipped",
         "animate": true
       },
       {
-        "id": 30,
+        "id": 25,
         "value": "2020",
         "label": "designing since",
         "animate": false
       },
       {
-        "id": 31,
+        "id": 26,
         "value": "Poyesis",
         "label": "2022 — now",
         "animate": false
       }
     ],
     "seo": {
-      "id": 154,
+      "id": 140,
       "metaTitle": "Mohamad Hawa — Product Owner",
       "metaDescription": "Product owner and designer working on web and mobile products — turning complex challenges into interfaces people understand without being taught.",
       "shareImage": null
     }
   },
   "workPage": {
-    "id": 4,
+    "id": 3,
     "eyebrow": "Work",
     "heading": "Every project starts the same way.",
-    "intro": "With a question about the person who has to use it. Filter by the kind of work, or read straight through.",
+    "intro": "With a question about the person who has to use it. Filter by sector, or read straight through.",
     "allFilterLabel": "All",
     "countLabel": "shown",
     "seo": {
-      "id": 156,
+      "id": 26,
       "metaTitle": "Work — Mohamad Hawa",
-      "metaDescription": "Selected UI/UX projects — landing pages, mobile apps, web apps, design systems and redesigns.",
+      "metaDescription": "Selected UI/UX projects across education, legal, logistics, community and corporate products.",
       "shareImage": null
     }
   },
@@ -233,39 +233,32 @@
   },
   "services": [
     {
-      "id": 22,
-      "title": "Landing page / showcase website",
-      "description": "One page — or a short set of them — that says the right thing in the right order and asks for one action.",
+      "id": 14,
+      "title": "Product Design",
+      "description": "End-to-end product work for web and mobile — the model underneath, the flows on top, and the screens people actually use.",
       "ctaLabel": "Start here",
       "order": 0
     },
     {
-      "id": 24,
-      "title": "Mobile app",
-      "description": "iOS and Android products designed thumb-first: the model underneath, the flows on top, and every state in between.",
+      "id": 16,
+      "title": "Web Experience",
+      "description": "Sites and portals where a lot of content has to stay findable, readable, and worth coming back to.",
       "ctaLabel": "Start here",
       "order": 1
     },
     {
-      "id": 26,
-      "title": "Web app",
-      "description": "Dashboards, portals and internal tools where a lot of data has to stay readable and a lot of people have to stay oriented.",
+      "id": 18,
+      "title": "Landing Page",
+      "description": "One page that says the right thing in the right order and asks for one action.",
       "ctaLabel": "Start here",
       "order": 2
     },
     {
-      "id": 28,
-      "title": "Design system",
+      "id": 20,
+      "title": "Design System",
       "description": "Components, tokens, and rules so the tenth screen looks like the first.",
       "ctaLabel": "Start here",
       "order": 3
-    },
-    {
-      "id": 30,
-      "title": "Redesign web / mobile",
-      "description": "An existing product taken apart and rebuilt around what people are actually trying to do with it.",
-      "ctaLabel": "Start here",
-      "order": 4
     }
   ],
   "processSteps": [
@@ -302,10 +295,10 @@
   ],
   "projects": [
     {
-      "id": 94,
+      "id": 68,
       "title": "Kanz",
       "slug": "kanz",
-      "discipline": "Mobile app design",
+      "discipline": "Product Design",
       "summary": "Kanz is a mobile financial platform designed to make everyday money movement simpler, giving users easier access to their salary, transfers, withdrawals, and card payments in one place.",
       "role": "UI / UX Design",
       "order": 0,
@@ -321,12 +314,7 @@
       "shippedHeading": "A financial experience built around access and control.",
       "reflectionLead": "The goal was not simply to add more financial features, but to make access to money feel immediate, understandable, and under the user's control.",
       "reflectionBody": "Kanz connects the most important financial actions into one mobile journey.",
-      "categories": [
-        {
-          "id": 68,
-          "label": "Mobile app"
-        }
-      ],
+      "categories": [],
       "cover": {
         "id": 35,
         "name": "kanz-cover",
@@ -371,36 +359,36 @@
       ],
       "constraints": [
         {
-          "id": 364,
+          "id": 286,
           "title": "Salary access, transfers, withdrawals, and cards were treated as separate experiences.",
           "body": ""
         },
         {
-          "id": 365,
+          "id": 287,
           "title": "Essential money movements involved multiple steps and could create unnecessary friction.",
           "body": ""
         },
         {
-          "id": 366,
+          "id": 288,
           "title": "Users had limited flexibility over when and how they accessed their earned money.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 364,
+          "id": 286,
           "eyebrow": "Outcome",
           "title": "Faster Access",
           "body": "Users can access earned salary without relying solely on traditional payday cycles."
         },
         {
-          "id": 365,
+          "id": 287,
           "eyebrow": "Outcome",
           "title": "Everyday Flexibility",
           "body": "Transfers, withdrawals, and payments are connected through one experience."
         },
         {
-          "id": 366,
+          "id": 288,
           "eyebrow": "Outcome",
           "title": "Greater Control",
           "body": "Account, card, notification, and security settings are managed in one place."
@@ -408,36 +396,36 @@
       ],
       "metrics": [
         {
-          "id": 382,
+          "id": 286,
           "value": "Salary Streaming",
           "label": "Access salary already earned before the regular payday.",
           "animate": false
         },
         {
-          "id": 383,
+          "id": 287,
           "value": "Instant Transfers",
           "label": "A streamlined flow for selecting recipients, entering amounts, and sending money.",
           "animate": false
         },
         {
-          "id": 384,
+          "id": 288,
           "value": "Withdrawals & Cards",
           "label": "Flexible withdrawal methods and virtual card management for everyday spending.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 148,
+        "id": 115,
         "metaTitle": "Kanz — Mohamad Hawa",
         "metaDescription": "Kanz is a mobile financial platform designed to make everyday money movement simpler, giving users easier access to their salary, transfers, withdrawals, and card payments in one place.",
         "shareImage": null
       }
     },
     {
-      "id": 95,
+      "id": 69,
       "title": "Rowad",
       "slug": "rowad",
-      "discipline": "Web app redesign",
+      "discipline": "Web Experience Design",
       "summary": "Rowad is a financial education and entrepreneurship platform designed to help entrepreneurs discover the knowledge, tools, and resources they need throughout their journey.",
       "role": "UI / UX Design",
       "order": 1,
@@ -453,16 +441,7 @@
       "shippedHeading": "From a resource library to a guided journey.",
       "reflectionLead": "The biggest opportunity was not adding more content, but making the existing content easier to understand and act on.",
       "reflectionBody": "The Journey Guide gives Rowad a way to connect its ecosystem into a clear next step for every user.",
-      "categories": [
-        {
-          "id": 71,
-          "label": "Redesign web / mobile"
-        },
-        {
-          "id": 72,
-          "label": "Web app"
-        }
-      ],
+      "categories": [],
       "cover": {
         "id": 39,
         "name": "rowad-rowad-cover",
@@ -507,36 +486,36 @@
       ],
       "constraints": [
         {
-          "id": 367,
+          "id": 289,
           "title": "Resources were spread across different areas, making discovery feel fragmented.",
           "body": ""
         },
         {
-          "id": 368,
+          "id": 290,
           "title": "Users had little guidance based on their business stage or individual needs.",
           "body": ""
         },
         {
-          "id": 369,
+          "id": 291,
           "title": "Content existed as separate resources rather than feeling like one connected journey.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 367,
+          "id": 289,
           "eyebrow": "Outcome",
           "title": "Guided Discovery",
           "body": "Users can start from their needs instead of searching through the entire platform."
         },
         {
-          "id": 368,
+          "id": 290,
           "eyebrow": "Outcome",
           "title": "Personalized Journey",
           "body": "Recommendations adapt to each entrepreneur's stage, goals, and responses."
         },
         {
-          "id": 369,
+          "id": 291,
           "eyebrow": "Outcome",
           "title": "Connected Ecosystem",
           "body": "Courses, tools, podcasts, and resources work together as one experience."
@@ -544,36 +523,36 @@
       ],
       "metrics": [
         {
-          "id": 385,
+          "id": 289,
           "value": "Journey Guide",
           "label": "Personalized onboarding and recommendations.",
           "animate": false
         },
         {
-          "id": 386,
+          "id": 290,
           "value": "Content Discovery",
           "label": "Structured access to courses, tools, and resources.",
           "animate": false
         },
         {
-          "id": 387,
+          "id": 291,
           "value": "Podcasts & Editorial Content",
           "label": "A richer way to explore stories and entrepreneurial insights.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 149,
+        "id": 116,
         "metaTitle": "Rowad — Mohamad Hawa",
         "metaDescription": "Rowad is a financial education and entrepreneurship platform designed to help entrepreneurs discover the knowledge, tools, and resources they need throughout their journey.",
         "shareImage": null
       }
     },
     {
-      "id": 106,
+      "id": 70,
       "title": "Lebanese Prime Minister",
       "slug": "lebanese-prime-minister",
-      "discipline": "Web app redesign",
+      "discipline": "Web Experience Design",
       "summary": "A redesigned digital home for the Lebanese Prime Minister's Office, bringing government information, legislation, institutional content, and national history into a clearer and more accessible experience.",
       "role": "UI / UX Design",
       "order": 2,
@@ -589,16 +568,7 @@
       "shippedHeading": "A government portal designed around information, not just pages.",
       "reflectionLead": "The goal was not simply to make a government website look newer.",
       "reflectionBody": "It was to make a complex institutional system easier to understand by giving different types of information the hierarchy, navigation, and interaction patterns they require.",
-      "categories": [
-        {
-          "id": 92,
-          "label": "Redesign web / mobile"
-        },
-        {
-          "id": 93,
-          "label": "Web app"
-        }
-      ],
+      "categories": [],
       "cover": {
         "id": 43,
         "name": "lebanese-prime-minister-cover",
@@ -643,36 +613,36 @@
       ],
       "constraints": [
         {
-          "id": 400,
+          "id": 292,
           "title": "Large volumes of information were presented with weak visual hierarchy.",
           "body": ""
         },
         {
-          "id": 401,
+          "id": 293,
           "title": "The navigation structure made it difficult to understand how sections and institutions were connected.",
           "body": ""
         },
         {
-          "id": 402,
+          "id": 294,
           "title": "Content-heavy experiences such as the Official Gazette and Grand Serail relied on static presentation instead of discovery and storytelling.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 400,
+          "id": 292,
           "eyebrow": "Outcome",
           "title": "Clearer Navigation",
           "body": "A simplified structure makes government information easier to reach and understand."
         },
         {
-          "id": 401,
+          "id": 293,
           "eyebrow": "Outcome",
           "title": "Better Reading",
           "body": "The Official Gazette is organized around browsing, filtering, and document access."
         },
         {
-          "id": 402,
+          "id": 294,
           "eyebrow": "Outcome",
           "title": "Narrative History",
           "body": "The Grand Serail becomes a visual timeline connecting places, moments, and history."
@@ -680,36 +650,36 @@
       ],
       "metrics": [
         {
-          "id": 418,
+          "id": 292,
           "value": "Government & Institutions",
           "label": "A clearer structure for ministries, institutions, and government information.",
           "animate": false
         },
         {
-          "id": 419,
+          "id": 293,
           "value": "Official Gazette",
           "label": "A redesigned experience for discovering issues, dates, categories, and documents.",
           "animate": false
         },
         {
-          "id": 420,
+          "id": 294,
           "value": "Grand Serail",
           "label": "A narrative-driven history experience built around visual moments and chronology.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 170,
+        "id": 117,
         "metaTitle": "Lebanese Prime Minister — Mohamad Hawa",
-        "metaDescription": "A redesigned digital home for the Lebanese Prime Minister's Office, bringing government information, legislation and national history into one accessible place.",
+        "metaDescription": "A redesigned digital home for the Lebanese Prime Minister's Office, bringing government information, legislation, institutional content, and national history into a clearer and more accessible experie",
         "shareImage": null
       }
     },
     {
-      "id": 97,
+      "id": 71,
       "title": "Apamea",
       "slug": "apamea",
-      "discipline": "Web app design",
+      "discipline": "Product Design",
       "summary": "Apamea is a multi-asset management platform designed to give investors a clearer view of their wealth by bringing different investment types into one structured workspace.",
       "role": "UI / UX Design",
       "order": 3,
@@ -725,12 +695,7 @@
       "shippedHeading": "One system. Multiple asset classes.",
       "reflectionLead": "The challenge was not simply presenting more financial data. It was creating a system where different types of investments could feel coherent.",
       "reflectionBody": "Apamea connects those experiences through a shared structure while allowing each asset class to surface what matters most.",
-      "categories": [
-        {
-          "id": 78,
-          "label": "Web app"
-        }
-      ],
+      "categories": [],
       "cover": {
         "id": 52,
         "name": "apamea-cover",
@@ -775,36 +740,36 @@
       ],
       "constraints": [
         {
-          "id": 373,
+          "id": 295,
           "title": "Different asset classes required different ways of tracking value and performance.",
           "body": ""
         },
         {
-          "id": 374,
+          "id": 296,
           "title": "Large amounts of financial data made important information difficult to scan and compare.",
           "body": ""
         },
         {
-          "id": 375,
+          "id": 297,
           "title": "Without a unified overview, understanding the bigger portfolio picture became harder.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 373,
+          "id": 295,
           "eyebrow": "Outcome",
           "title": "One Portfolio",
           "body": "A centralized view of assets and investments across different categories."
         },
         {
-          "id": 374,
+          "id": 296,
           "eyebrow": "Outcome",
           "title": "Deeper Visibility",
           "body": "Detailed views expose valuation, performance, positions, and asset-specific information."
         },
         {
-          "id": 375,
+          "id": 297,
           "eyebrow": "Outcome",
           "title": "Structured Management",
           "body": "Consistent patterns make a complex multi-asset system easier to operate."
@@ -812,36 +777,36 @@
       ],
       "metrics": [
         {
-          "id": 391,
+          "id": 295,
           "value": "Portfolio Management",
           "label": "A centralized workspace for switching portfolios and understanding holdings.",
           "animate": false
         },
         {
-          "id": 392,
+          "id": 296,
           "value": "Stock Market",
           "label": "Position management, valuation, performance, P/L, and portfolio views.",
           "animate": false
         },
         {
-          "id": 393,
+          "id": 297,
           "value": "Real Estate",
           "label": "Project tracking for budgets, margins, stages, and activity.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 151,
+        "id": 118,
         "metaTitle": "Apamea — Mohamad Hawa",
         "metaDescription": "Apamea is a multi-asset management platform designed to give investors a clearer view of their wealth by bringing different investment types into one structured workspace.",
         "shareImage": null
       }
     },
     {
-      "id": 98,
+      "id": 73,
       "title": "MyLebPass",
       "slug": "mylebpass",
-      "discipline": "Web app design",
+      "discipline": "Product Design",
       "summary": "MyLebPass is a digital membership that unlocks offers at restaurants, cafés, and lifestyle venues across Lebanon — one pass, scanned at the counter.",
       "role": "UI / UX Design",
       "order": 4,
@@ -857,12 +822,7 @@
       "shippedHeading": "A membership people actually open.",
       "reflectionLead": "The hard part of a discount product is not the discount.",
       "reflectionBody": "It is being present at the moment someone decides where to go, and effortless at the moment they pay. Both are interface problems more than pricing problems.",
-      "categories": [
-        {
-          "id": 80,
-          "label": "Web app"
-        }
-      ],
+      "categories": [],
       "cover": {
         "id": 61,
         "name": "mylebpass-lebpass-cover",
@@ -907,36 +867,36 @@
       ],
       "constraints": [
         {
-          "id": 376,
+          "id": 301,
           "title": "Members have to believe a yearly fee will pay for itself before they have used the pass even once.",
           "body": ""
         },
         {
-          "id": 377,
+          "id": 302,
           "title": "Redemption happens in public, at a till, with people waiting — it has to take seconds, not menus.",
           "body": ""
         },
         {
-          "id": 378,
+          "id": 303,
           "title": "Offers spread across venue types and towns are hard to browse when they are presented as one long list.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 376,
+          "id": 301,
           "eyebrow": "Outcome",
           "title": "Worth It Upfront",
           "body": "Savings are shown against the membership price, so the pass proves its value early instead of asking for faith."
         },
         {
-          "id": 377,
+          "id": 302,
           "eyebrow": "Outcome",
           "title": "Two-Tap Redemption",
           "body": "The QR code is never more than a tap away, so using the pass at a counter is quicker than explaining it."
         },
         {
-          "id": 378,
+          "id": 303,
           "eyebrow": "Outcome",
           "title": "Browsable, Not Searchable",
           "body": "Venues are grouped by type and area, so members can choose somewhere without already knowing what they want."
@@ -944,36 +904,36 @@
       ],
       "metrics": [
         {
-          "id": 394,
+          "id": 301,
           "value": "Digital Pass",
           "label": "One QR code that works across every partner venue, with no codes to remember.",
           "animate": false
         },
         {
-          "id": 395,
+          "id": 302,
           "value": "Venue Catalogue",
           "label": "Partner restaurants, cafés, and lifestyle spots grouped by category and area.",
           "animate": false
         },
         {
-          "id": 396,
+          "id": 303,
           "value": "Offers & Savings",
           "label": "What each venue gives members, and what the pass has saved them so far.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 152,
+        "id": 120,
         "metaTitle": "MyLebPass — Mohamad Hawa",
         "metaDescription": "MyLebPass is a digital membership that unlocks offers at restaurants, cafés, and lifestyle venues across Lebanon — one pass, scanned at the counter.",
         "shareImage": null
       }
     },
     {
-      "id": 99,
+      "id": 75,
       "title": "Tahweel",
       "slug": "tahweel",
-      "discipline": "Mobile app redesign",
+      "discipline": "Product Design — concept",
       "summary": "A self-initiated redesign of Tahweel, a MENA app for instant gaming top-ups, mobile recharges, gift cards, and eSIMs. Concept work — never handed over or implemented.",
       "role": "UI / UX Design",
       "order": 5,
@@ -989,12 +949,7 @@
       "shippedHeading": "A concept, explored end to end.",
       "reflectionLead": "Redesigning something nobody asked you to redesign is a good way to find out whether you understand the problem or just dislike the layout.",
       "reflectionBody": "The interesting constraint here was restraint: the existing product works, and most of what I changed was hierarchy rather than features. If it were ever built, the next step would be checking the repeat-purchase assumption against real usage data rather than my own habits.",
-      "categories": [
-        {
-          "id": 82,
-          "label": "Redesign web / mobile"
-        }
-      ],
+      "categories": [],
       "cover": {
         "id": 65,
         "name": "tahweel-tahweel-cover",
@@ -1039,36 +994,36 @@
       ],
       "constraints": [
         {
-          "id": 379,
+          "id": 307,
           "title": "Gaming top-ups, mobile recharges, gift cards, and eSIMs are four different products competing for the same home screen.",
           "body": ""
         },
         {
-          "id": 380,
+          "id": 308,
           "title": "Most sessions repeat a previous purchase, but every visit is treated as a first visit.",
           "body": ""
         },
         {
-          "id": 381,
+          "id": 309,
           "title": "Paying for digital credit needs visible reassurance at the exact moment of checkout, not in a policy page.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 379,
+          "id": 307,
           "eyebrow": "Outcome",
           "title": "Repeat First",
           "body": "The home screen leads with what this person actually buys, so the common case takes one tap."
         },
         {
-          "id": 380,
+          "id": 308,
           "eyebrow": "Outcome",
           "title": "One Category at a Time",
           "body": "Four unrelated product types stop competing for attention and get their own focused space."
         },
         {
-          "id": 381,
+          "id": 309,
           "eyebrow": "Outcome",
           "title": "Trust at Checkout",
           "body": "Account, price, and delivery are confirmed before payment, where the doubt actually happens."
@@ -1076,37 +1031,37 @@
       ],
       "metrics": [
         {
-          "id": 397,
+          "id": 307,
           "value": "Home & Quick Repeat",
           "label": "Recent purchases promoted to the top, with categories a step behind.",
           "animate": false
         },
         {
-          "id": 398,
+          "id": 308,
           "value": "Category Browsing",
           "label": "Focused space for top-ups, recharges, gift cards, and eSIMs.",
           "animate": false
         },
         {
-          "id": 399,
+          "id": 309,
           "value": "Checkout & Confirmation",
           "label": "Account, price, and delivery confirmed before the payment step.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 153,
+        "id": 122,
         "metaTitle": "Tahweel — Mohamad Hawa",
         "metaDescription": "A self-initiated redesign of Tahweel, a MENA app for instant gaming top-ups, mobile recharges, gift cards, and eSIMs. Concept work — never handed over or implemented.",
         "shareImage": null
       }
     },
     {
-      "id": 107,
+      "id": 82,
       "title": "Wise Academy",
       "slug": "wise-academy",
       "discipline": "Web app design",
-      "summary": "An admin system for a private school in the US: one place to follow enrolments, search student and parent records, schedule interviews, and send the messages that go with them.",
+      "summary": "WISE Academy a high standard school based in the US promoting academic excellence in a faith based and safe environment for our students.",
       "role": "UI / UX Design",
       "order": 6,
       "featured": false,
@@ -1121,16 +1076,11 @@
       "shippedHeading": "The screens that carry the work.",
       "reflectionLead": "Staff praised the intuitive design and improved workflows.",
       "reflectionBody": "Wise Academy expressed interest in extending the platform for managing other aspects of school operations.",
-      "categories": [
-        {
-          "id": 94,
-          "label": "Web app"
-        }
-      ],
+      "categories": [],
       "cover": {
         "id": 60,
         "name": "wise-academy-cover-v2",
-        "alternativeText": "Wise Academy",
+        "alternativeText": "wise-academy",
         "caption": "",
         "focalPoint": null,
         "width": 1440,
@@ -1171,36 +1121,36 @@
       ],
       "constraints": [
         {
-          "id": 403,
+          "id": 328,
           "title": "Staff struggled with locating and updating student data quickly.",
           "body": ""
         },
         {
-          "id": 404,
+          "id": 329,
           "title": "New enrollments required multiple manual steps, leading to delays.",
           "body": ""
         },
         {
-          "id": 405,
+          "id": 330,
           "title": "A lack of filtering options for student records made tracking alumni difficult.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 403,
+          "id": 328,
           "eyebrow": "Outcome",
           "title": "Improved Efficiency",
           "body": "Reduced time spent managing student data by 40%."
         },
         {
-          "id": 404,
+          "id": 329,
           "eyebrow": "Outcome",
           "title": "Streamlined Enrollment",
           "body": "Created a path to view and find student records within seconds."
         },
         {
-          "id": 405,
+          "id": 330,
           "eyebrow": "Outcome",
           "title": "Enhanced Usability",
           "body": "A clean layout with intuitive navigation ensured ease of use for all staff levels."
@@ -1208,36 +1158,36 @@
       ],
       "metrics": [
         {
-          "id": 421,
+          "id": 331,
           "value": "Dashboard Analytics",
           "label": "Visualized enrollment trends across active and pending applications.",
           "animate": false
         },
         {
-          "id": 422,
+          "id": 332,
           "value": "Student Management",
           "label": "Easy-to-use interface for adding, editing, and searching student records.",
           "animate": false
         },
         {
-          "id": 423,
+          "id": 333,
           "value": "Automated Notifications",
           "label": "Reminds parents about upcoming payments, deadlines and interviews.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 172,
+        "id": 133,
         "metaTitle": "Wise Academy — Mohamad Hawa",
-        "metaDescription": "An admin system for a private school in the US — enrolments, student and parent records, interviews and messaging, in one place.",
+        "metaDescription": "WISE Academy a high standard school based in the US promoting academic excellence in a faith based and safe environment for our students.",
         "shareImage": null
       }
     },
     {
-      "id": 88,
+      "id": 83,
       "title": "Kabbara Office",
       "slug": "kabbara-office",
-      "discipline": "Mobile app design",
+      "discipline": "Landing page",
       "summary": "Kabbara Office is a digital solution built to help Deputy Karim Kabbara manage and respond to public service requests efficiently.",
       "role": "UI / UX Design",
       "order": 7,
@@ -1253,16 +1203,11 @@
       "shippedHeading": "The screens that carry the work.",
       "reflectionLead": "Deputy's team appreciated the clarity and ease of use.",
       "reflectionBody": "The Deputy expressed interest in expanding the system to manage more public-facing initiatives.",
-      "categories": [
-        {
-          "id": 56,
-          "label": "Mobile app"
-        }
-      ],
+      "categories": [],
       "cover": {
         "id": 55,
         "name": "kabbara-office-cover-v2",
-        "alternativeText": "Kabbara Office",
+        "alternativeText": "kabbara-office",
         "caption": "",
         "focalPoint": null,
         "width": 1440,
@@ -1282,36 +1227,36 @@
       "gallery": [],
       "constraints": [
         {
-          "id": 346,
+          "id": 331,
           "title": "Manual request handling was time-consuming and prone to errors.",
           "body": ""
         },
         {
-          "id": 347,
+          "id": 332,
           "title": "There was no unified view of pending, approved, or rejected services.",
           "body": ""
         },
         {
-          "id": 348,
+          "id": 333,
           "title": "Categorizing and prioritizing new requests lacked a clear workflow.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 346,
+          "id": 331,
           "eyebrow": "Outcome",
           "title": "Centralized Request Management",
           "body": "All requests are now logged and easily trackable in one place."
         },
         {
-          "id": 347,
+          "id": 332,
           "eyebrow": "Outcome",
           "title": "Clear Status Indicators",
           "body": "Staff can instantly see which requests are new, pending, or completed."
         },
         {
-          "id": 348,
+          "id": 333,
           "eyebrow": "Outcome",
           "title": "Faster Response Times",
           "body": "Filtering and search tools significantly reduced the time to locate and act on requests."
@@ -1319,36 +1264,36 @@
       ],
       "metrics": [
         {
-          "id": 364,
+          "id": 337,
           "value": "Status at a Glance",
           "label": "A colour-coded system for request status across the whole queue.",
           "animate": false
         },
         {
-          "id": 365,
+          "id": 338,
           "value": "Filter & Categorise",
           "label": "Easy-to-use filters and categorisation tools for incoming requests.",
           "animate": false
         },
         {
-          "id": 366,
+          "id": 339,
           "value": "Arabic-First",
           "label": "Designed Arabic-first for accessibility to the intended audience.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 142,
+        "id": 134,
         "metaTitle": "Kabbara Office — Mohamad Hawa",
         "metaDescription": "Kabbara Office is a digital solution built to help Deputy Karim Kabbara manage and respond to public service requests efficiently.",
         "shareImage": null
       }
     },
     {
-      "id": 89,
+      "id": 84,
       "title": "CodingCLebanon",
       "slug": "coding-lebanon",
-      "discipline": "Landing page design",
+      "discipline": "Web design",
       "summary": "CodingCLebanon is an educational platform that empowers individuals to learn programming through personalized one-on-one online mentorship.",
       "role": "UI / UX Design",
       "order": 8,
@@ -1364,16 +1309,11 @@
       "shippedHeading": "The screens that carry the work.",
       "reflectionLead": "Mentors and students appreciated the new dashboard and cleaner navigation.",
       "reflectionBody": "CodingCLebanon praised the redesign and reported increased engagement across the platform.",
-      "categories": [
-        {
-          "id": 58,
-          "label": "Landing page / showcase website"
-        }
-      ],
+      "categories": [],
       "cover": {
         "id": 56,
         "name": "coding-lebanon-cover-v2",
-        "alternativeText": "CodingCLebanon",
+        "alternativeText": "coding-lebanon",
         "caption": "",
         "focalPoint": null,
         "width": 1440,
@@ -1393,36 +1333,36 @@
       "gallery": [],
       "constraints": [
         {
-          "id": 349,
+          "id": 334,
           "title": "Users were unclear about how to get started or book their first session.",
           "body": ""
         },
         {
-          "id": 350,
+          "id": 335,
           "title": "The homepage lacked a clear call-to-action and value proposition.",
           "body": ""
         },
         {
-          "id": 351,
+          "id": 336,
           "title": "There was no centralized dashboard to track progress or session history.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 349,
+          "id": 334,
           "eyebrow": "Outcome",
           "title": "Boosted Onboarding",
           "body": "Clear CTAs and guidance helped new users start their learning journey faster."
         },
         {
-          "id": 350,
+          "id": 335,
           "eyebrow": "Outcome",
           "title": "Seamless Booking",
           "body": "Booking sessions was simplified into an intuitive and fast workflow."
         },
         {
-          "id": 351,
+          "id": 336,
           "eyebrow": "Outcome",
           "title": "Learner Empowerment",
           "body": "The dashboard gave students more control and visibility over their learning journey."
@@ -1430,36 +1370,36 @@
       ],
       "metrics": [
         {
-          "id": 367,
+          "id": 343,
           "value": "Conversion-Focused Home",
           "label": "A welcoming homepage built around a clear call to action.",
           "animate": false
         },
         {
-          "id": 368,
+          "id": 344,
           "value": "Clear User Flows",
           "label": "Onboarding, session booking, and progress tracking, each with an obvious path.",
           "animate": false
         },
         {
-          "id": 369,
+          "id": 345,
           "value": "Mobile Responsive",
           "label": "Designed to support learners on any device.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 143,
+        "id": 135,
         "metaTitle": "CodingCLebanon — Mohamad Hawa",
         "metaDescription": "CodingCLebanon is an educational platform that empowers individuals to learn programming through personalized one-on-one online mentorship.",
         "shareImage": null
       }
     },
     {
-      "id": 90,
+      "id": 85,
       "title": "WFK Law Firm",
       "slug": "wfk-law-firm",
-      "discipline": "Web app design",
+      "discipline": "Landing page",
       "summary": "WFK Law Firm is a professional legal firm that needed an internal tool to streamline employee task tracking, scheduling, and performance monitoring.",
       "role": "UI / UX Design",
       "order": 9,
@@ -1475,16 +1415,11 @@
       "shippedHeading": "The screens that carry the work.",
       "reflectionLead": "Both legal staff and managers found the system intuitive and time-saving.",
       "reflectionBody": "WFK Law Firm was impressed with how the tool improved internal transparency and organization.",
-      "categories": [
-        {
-          "id": 60,
-          "label": "Web app"
-        }
-      ],
+      "categories": [],
       "cover": {
         "id": 57,
         "name": "wfk-law-firm-cover-v2",
-        "alternativeText": "WFK Law Firm",
+        "alternativeText": "wfk-law-firm",
         "caption": "",
         "focalPoint": null,
         "width": 1440,
@@ -1535,36 +1470,36 @@
       ],
       "constraints": [
         {
-          "id": 352,
+          "id": 337,
           "title": "Employees lacked a unified interface to view or manage their assigned tasks.",
           "body": ""
         },
         {
-          "id": 353,
+          "id": 338,
           "title": "There was no performance tracking mechanism or analytics overview for management.",
           "body": ""
         },
         {
-          "id": 354,
+          "id": 339,
           "title": "The solution needed to align with Power Apps limitations while maintaining good UX practices.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 352,
+          "id": 337,
           "eyebrow": "Outcome",
           "title": "Task Ownership",
           "body": "Employees can now clearly view and manage their assignments in real time."
         },
         {
-          "id": 353,
+          "id": 338,
           "eyebrow": "Outcome",
           "title": "Executive Overview",
           "body": "The dashboard provides management with performance insights and workload balance."
         },
         {
-          "id": 354,
+          "id": 339,
           "eyebrow": "Outcome",
           "title": "System Integration",
           "body": "The design was fully Power Apps compatible, ensuring smooth implementation within the existing IT infrastructure."
@@ -1572,33 +1507,33 @@
       ],
       "metrics": [
         {
-          "id": 370,
+          "id": 349,
           "value": "Task Board",
           "label": "A visually organised board with clear status indicators.",
           "animate": false
         },
         {
-          "id": 371,
+          "id": 350,
           "value": "High-Contrast Layout",
           "label": "Built for easy readability across legal teams.",
           "animate": false
         },
         {
-          "id": 372,
+          "id": 351,
           "value": "Power Apps Fit",
           "label": "Designed to sit naturally inside the existing Microsoft ecosystem.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 144,
+        "id": 136,
         "metaTitle": "WFK Law Firm — Mohamad Hawa",
         "metaDescription": "WFK Law Firm is a professional legal firm that needed an internal tool to streamline employee task tracking, scheduling, and performance monitoring.",
         "shareImage": null
       }
     },
     {
-      "id": 91,
+      "id": 86,
       "title": "Shipment Share",
       "slug": "shipment-share",
       "discipline": "Mobile app design",
@@ -1617,16 +1552,11 @@
       "shippedHeading": "The screens that carry the work.",
       "reflectionLead": "Testers praised the clarity of trip details and the ease of contacting travelers.",
       "reflectionBody": "Shipment Share’s team appreciated the friendly UI and its appeal to both casual and business users.",
-      "categories": [
-        {
-          "id": 62,
-          "label": "Mobile app"
-        }
-      ],
+      "categories": [],
       "cover": {
         "id": 58,
         "name": "shipment-share-cover-v2",
-        "alternativeText": "Shipment Share",
+        "alternativeText": "shipment-share",
         "caption": "",
         "focalPoint": null,
         "width": 1440,
@@ -1646,36 +1576,36 @@
       "gallery": [],
       "constraints": [
         {
-          "id": 355,
+          "id": 340,
           "title": "Travelers wanted an easy way to offer extra luggage space for delivery without being overwhelmed.",
           "body": ""
         },
         {
-          "id": 356,
+          "id": 341,
           "title": "Senders needed to trust the traveler, know the exact route, and have direct communication.",
           "body": ""
         },
         {
-          "id": 357,
+          "id": 342,
           "title": "A clear visual summary of the trip, shipment capacity, and fees was essential to both parties.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 355,
+          "id": 340,
           "eyebrow": "Outcome",
           "title": "Real-Time Matchmaking",
           "body": "Travelers and senders can easily connect based on route and availability."
         },
         {
-          "id": 356,
+          "id": 341,
           "eyebrow": "Outcome",
           "title": "Trust-Driven UI",
           "body": "Clear sender/recipient info, travel timelines, and secure communication features."
         },
         {
-          "id": 357,
+          "id": 342,
           "eyebrow": "Outcome",
           "title": "Mobile Focus",
           "body": "Designed with mobile-first principles for everyday accessibility and fast interactions."
@@ -1683,36 +1613,36 @@
       ],
       "metrics": [
         {
-          "id": 373,
+          "id": 355,
           "value": "Trip Matching",
           "label": "Browse and filter trips by date and destination, then request a shipment.",
           "animate": false
         },
         {
-          "id": 374,
+          "id": 356,
           "value": "Shipment Breakdown",
           "label": "Sender and recipient info, timeline, capacity, and pricing in one view.",
           "animate": false
         },
         {
-          "id": 375,
+          "id": 357,
           "value": "Direct Contact",
           "label": "Chat between sender and traveller, because trust is the product.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 145,
+        "id": 137,
         "metaTitle": "Shipment Share — Mohamad Hawa",
         "metaDescription": "Shipment Share is a smart delivery platform that connects people who need to send packages with travelers already heading to the same destination.",
         "shareImage": null
       }
     },
     {
-      "id": 92,
+      "id": 87,
       "title": "Shareb",
       "slug": "shareb",
-      "discipline": "Web app design",
+      "discipline": "Design system",
       "summary": "Shareb is a promotional lottery app designed to boost brand engagement through interactive weekly draws.",
       "role": "UI / UX Design",
       "order": 11,
@@ -1728,16 +1658,11 @@
       "shippedHeading": "The screens that carry the work.",
       "reflectionLead": "Users described it as 'super quick' and 'fun to use after grabbing coffee'.",
       "reflectionBody": "Shareb’s sponsors praised the exposure and engagement, especially during live campaigns.",
-      "categories": [
-        {
-          "id": 64,
-          "label": "Web app"
-        }
-      ],
+      "categories": [],
       "cover": {
         "id": 59,
         "name": "shareb-cover-v2",
-        "alternativeText": "Shareb",
+        "alternativeText": "shareb",
         "caption": "",
         "focalPoint": null,
         "width": 1440,
@@ -1768,36 +1693,36 @@
       ],
       "constraints": [
         {
-          "id": 358,
+          "id": 343,
           "title": "QR code scanning had to be seamless and redirect users directly into the app or sign-up screen.",
           "body": ""
         },
         {
-          "id": 359,
+          "id": 344,
           "title": "The lottery button needed to feel satisfying and responsive — giving a mini dopamine hit.",
           "body": ""
         },
         {
-          "id": 360,
+          "id": 345,
           "title": "Showcasing past winners and brand sponsors built trust and encouraged participation.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 358,
+          "id": 343,
           "eyebrow": "Outcome",
           "title": "Instant Access",
           "body": "Users can enter the draw in seconds with no complicated forms."
         },
         {
-          "id": 359,
+          "id": 344,
           "eyebrow": "Outcome",
           "title": "Brand-Driven UI",
           "body": "Sponsors and partner logos are clearly featured for visibility."
         },
         {
-          "id": 360,
+          "id": 345,
           "eyebrow": "Outcome",
           "title": "Gamified Interaction",
           "body": "Tapping to participate adds a game-like layer to simple actions."
@@ -1805,26 +1730,26 @@
       ],
       "metrics": [
         {
-          "id": 376,
+          "id": 361,
           "value": "One-Tap Entry",
           "label": "Scan the QR code on the cup, tap once, and you are in the draw.",
           "animate": false
         },
         {
-          "id": 377,
+          "id": 362,
           "value": "Brand Carousel",
           "label": "Sponsors and partner logos featured for visibility.",
           "animate": false
         },
         {
-          "id": 378,
+          "id": 363,
           "value": "Winner Highlights",
           "label": "Past winners and prizes shown to build trust and encourage entry.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 146,
+        "id": 138,
         "metaTitle": "Shareb — Mohamad Hawa",
         "metaDescription": "Shareb is a promotional lottery app designed to boost brand engagement through interactive weekly draws.",
         "shareImage": null

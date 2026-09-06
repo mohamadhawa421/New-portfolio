@@ -175,6 +175,15 @@ import EggSound from './EggSound.astro';
       mode.setArcListener(null);
       mode.teardown();
       sound.end();
+      // The pattern outlives the picture if it is not cancelled, and a phone
+      // still buzzing over a page that has put itself back is a fault.
+      if (typeof navigator.vibrate === 'function') {
+        try {
+          navigator.vibrate(0);
+        } catch {
+          /* Nothing was running. */
+        }
+      }
       hideSwitch();
       root.style.removeProperty('--dm-fx');
       root.style.removeProperty('--dm-fy');
@@ -295,6 +304,29 @@ import EggSound from './EggSound.astro';
         fieldDecay: mode.FIELD_DECAY_MS,
         preload: mode.PRELOAD_MS,
       });
+
+      /*
+       * And the phone feels it, where a phone can.
+       *
+       * Android hands this over on a gesture, which a press on the portrait
+       * is. iOS has no vibration API at all — not withheld, absent — so this
+       * is simply nothing there, and that visitor loses a layer rather than
+       * getting a broken one.
+       *
+       * Gated on the same mute the storm is. It is a different sense, but
+       * somebody who has silenced this has said what they want from it, and a
+       * phone buzzing for two and a half seconds afterwards would be reading
+       * the letter of that switch rather than the point of it. Reduced motion
+       * skips it too: it is asking for less of exactly this.
+       */
+      const quiet = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!sound.isMuted() && !quiet && typeof navigator.vibrate === 'function') {
+        try {
+          navigator.vibrate(mode.shockPattern());
+        } catch {
+          /* Refused, or there is no motor. Nothing is lost but a layer. */
+        }
+      }
     });
 
     /*
