@@ -27,6 +27,16 @@
   the native cursor was still hidden — no pointer at all until a full reload.
 -->
 <div class="cursor" data-cursor aria-hidden="true" transition:persist="site-cursor">
+  {/*
+    The bolt that comes down on the pointer when he loses his temper. Empty
+    until then, and redrawn several times a second while it holds — a bolt that
+    keeps still is a shape, and this has to read as current.
+  */}
+  <svg class="cursor__bolt" data-cursor-bolt aria-hidden="true">
+    <path class="cursor__bolt-glow" data-cursor-bolt-glow />
+    <path class="cursor__bolt-fork" data-cursor-bolt-fork />
+    <path class="cursor__bolt-core" data-cursor-bolt-core />
+  </svg>
   <div class="cursor__ring" data-cursor-ring></div>
   <div class="cursor__dot" data-cursor-dot></div>
   {/*
@@ -79,6 +89,9 @@
     let ring = document.querySelector<HTMLElement>('[data-cursor-ring]');
     let dot = document.querySelector<HTMLElement>('[data-cursor-dot]');
     let zap = document.querySelector<SVGElement>('[data-cursor-zap]');
+    let boltGlow = document.querySelector<SVGPathElement>('[data-cursor-bolt-glow]');
+    let boltFork = document.querySelector<SVGPathElement>('[data-cursor-bolt-fork]');
+    let boltCore = document.querySelector<SVGPathElement>('[data-cursor-bolt-core]');
     if (!root || !ring || !dot) return;
 
     /** True if the elements are still in the document this frame belongs to. */
@@ -96,6 +109,9 @@
       ring = nextRing;
       dot = nextDot;
       zap = document.querySelector<SVGElement>('[data-cursor-zap]');
+      boltGlow = document.querySelector<SVGPathElement>('[data-cursor-bolt-glow]');
+      boltFork = document.querySelector<SVGPathElement>('[data-cursor-bolt-fork]');
+      boltCore = document.querySelector<SVGPathElement>('[data-cursor-bolt-core]');
       return true;
     }
 
@@ -351,6 +367,57 @@
      */
     const RAGE_MS = 1000;
     let rageUntil = 0;
+    /** Where in the sky this one is coming from, fixed for its length. */
+    let boltFromX = 0;
+    let boltAt = 0;
+
+    /*
+     * A line from up there to the pointer, bent at nine places.
+     *
+     * The offsets are taken along the normal of the line rather than in x, so
+     * the bolt is as jagged when the pointer is off to one side as when it is
+     * straight below — and they are scaled by sin(pi * t), which is zero at
+     * both ends. That is what keeps the last point exactly on the pointer: the
+     * bolt is wild in the middle and lands on the spot.
+     */
+    function boltPath(x0: number, y0: number, x1: number, y1: number, spread: number): string {
+      const dx = x1 - x0;
+      const dy = y1 - y0;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = -dy / len;
+      const ny = dx / len;
+
+      let d = `M${x0.toFixed(1)} ${y0.toFixed(1)}`;
+      for (let i = 1; i <= 9; i += 1) {
+        const t = i / 9;
+        const o = (Math.random() * 2 - 1) * Math.sin(Math.PI * t) * spread;
+        d += ` L${(x0 + dx * t + nx * o).toFixed(1)} ${(y0 + dy * t + ny * o).toFixed(1)}`;
+      }
+      return d;
+    }
+
+    /** Redraws the bolt onto wherever the pointer has got to. */
+    function drawBolt(x: number, y: number): void {
+      // The strike wanders a little between flickers, the way a real one does
+      // not come down the same channel twice.
+      const fromX = boltFromX + (Math.random() * 2 - 1) * 60;
+      const main = boltPath(fromX, -40, x, y, 38);
+      boltGlow?.setAttribute('d', main);
+      boltCore?.setAttribute('d', main);
+
+      /*
+       * A fork off the middle that goes nowhere, which is most of what makes a
+       * drawn bolt look like a photographed one — a single clean line reads as
+       * a crack in the glass instead.
+       */
+      const t = 0.35 + Math.random() * 0.3;
+      const bx = fromX + (x - fromX) * t;
+      const by = -40 + (y + 40) * t;
+      boltFork?.setAttribute(
+        'd',
+        boltPath(bx, by, bx + (Math.random() * 2 - 1) * 180, by + 60 + Math.random() * 140, 26)
+      );
+    }
     /** Where the drawn pointer has got to, when it is not keeping up. */
     let dragX = targetX;
     let dragY = targetY;
@@ -367,6 +434,9 @@
       if (rageUntil && now >= rageUntil) {
         rageUntil = 0;
         root!.classList.remove('cursor--raging', 'cursor--zapped');
+        // Emptied rather than left hidden: a path with a d attribute is still
+        // a thing the compositor carries around for the rest of the visit.
+        for (const path of [boltGlow, boltFork, boltCore]) path?.removeAttribute('d');
       }
 
       /*
@@ -469,6 +539,17 @@
           zapX = Math.sin(t) * 5.5 * k;
           zapY = Math.cos(t * 1.37) * 4.5 * k;
         }
+      }
+
+      /*
+       * Redrawn on its own clock, not every frame. At sixty frames a second the
+       * bolt strobes into a blur; at about twenty it flickers, which is what
+       * current looks like. It is aimed at the pointer *including* the shake,
+       * so the thing being hit and the thing being drawn are the same point.
+       */
+      if (rageUntil && now - boltAt > 48) {
+        boltAt = now;
+        drawBolt(px + zapX, py + zapY);
       }
 
       ring!.style.transform = `translate3d(${ringX + zapX}px, ${ringY + zapY}px, 0) translate(-50%, -50%)`;
@@ -607,6 +688,10 @@
       root!.classList.add('cursor--raging', 'cursor--zapped');
       zapUntil = 0;
       rageUntil = performance.now() + RAGE_MS;
+      // Overhead, roughly. Off to one side by a fifth of the screen so it comes
+      // down at an angle rather than dropping like a plumb line.
+      boltFromX = targetX + (Math.random() * 2 - 1) * window.innerWidth * 0.2;
+      boltAt = 0;
       // From wherever it is now, so the weight is felt from the first frame
       // rather than after a jump to the mouse.
       dragX = ringX;
@@ -842,6 +927,56 @@
   }
 
   /*
+   * The bolt.
+   *
+   * A full-viewport layer inside the pointer's own, so its user units are
+   * viewport pixels and the coordinates the script works in need no mapping.
+   * Three strokes over each other: a wide soft one for the light it throws, a
+   * fork that goes nowhere, and a hot white core down the middle — which is
+   * what a bolt actually is, and is why one flat purple line never looks like
+   * one.
+   */
+  .cursor__bolt {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    overflow: visible;
+  }
+
+  .cursor--raging .cursor__bolt {
+    opacity: 1;
+  }
+
+  .cursor__bolt-glow,
+  .cursor__bolt-fork,
+  .cursor__bolt-core {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .cursor__bolt-glow {
+    stroke: var(--dm-core);
+    stroke-width: 9;
+    opacity: 0.42;
+    filter: drop-shadow(0 0 16px color-mix(in srgb, var(--dm-core) 80%, transparent));
+  }
+
+  .cursor__bolt-fork {
+    stroke: var(--dm-arc);
+    stroke-width: 2.4;
+    opacity: 0.8;
+  }
+
+  .cursor__bolt-core {
+    stroke: color-mix(in srgb, var(--dm-arc) 40%, #fff);
+    stroke-width: 2.2;
+    filter: drop-shadow(0 0 7px var(--dm-arc));
+  }
+
+  /*
    * The rage: the same arcs, but held on rather than struck and let go.
    *
    * A loop of about a sixth of a second, which is short enough that the flicker
@@ -883,6 +1018,10 @@
     .cursor--raging .cursor__zap,
     .cursor--raging .cursor__ring {
       animation: none;
+    }
+
+    .cursor--raging .cursor__bolt {
+      opacity: 0;
     }
 
     .cursor--raging .cursor__zap {
