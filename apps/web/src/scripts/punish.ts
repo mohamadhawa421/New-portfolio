@@ -73,8 +73,8 @@ const RAGE_AT = 6;
 const RAGE_WINDOW_MS = 10_000;
 
 /** How much of the page comes off its hooks. Enough to be felt. */
-const RATTLE_REACH = 21;
-const RATTLE_MAX = 34;
+const RATTLE_REACH = 44;
+const RATTLE_MAX = 52;
 const RATTLE_MS = 1500;
 
 let streak = 0;
@@ -125,7 +125,7 @@ function rage(at: { x: number; y: number }): void {
  */
 function rattle(): void {
   const seen = document.querySelectorAll<HTMLElement>(
-    'main h1, main h2, main h3, main p, main img, main .btn, main .row, main .chip, main .featured, main .card'
+    'main h1, main h2, main h3, main p, main img, main label, main input, main textarea, main select, main .btn, main .row, main .chip, main .eyebrow, main .featured, main .card, main li'
   );
 
   let taken = 0;
@@ -138,11 +138,11 @@ function rattle(): void {
     if (el.classList.contains('is-rattled') || el.classList.contains('is-punished')) continue;
 
     const angle = Math.random() * Math.PI * 2;
-    const reach = RATTLE_REACH * (0.45 + Math.random() * 0.55);
+    const reach = RATTLE_REACH * (0.55 + Math.random() * 0.45);
     el.style.setProperty('--rx', `${(Math.cos(angle) * reach).toFixed(1)}px`);
     el.style.setProperty('--ry', `${(Math.sin(angle) * reach).toFixed(1)}px`);
-    el.style.setProperty('--rr', `${((Math.random() * 2 - 1) * 3.4).toFixed(2)}deg`);
-    el.style.setProperty('--rd', `${Math.round(Math.random() * 90)}ms`);
+    el.style.setProperty('--rr', `${((Math.random() * 2 - 1) * 6.5).toFixed(2)}deg`);
+    el.style.setProperty('--rd', `${Math.round(Math.random() * 70)}ms`);
     el.classList.add('is-rattled');
     taken += 1;
 

@@ -950,8 +950,8 @@ figure {
  * A piece of the page, knocked loose and coming back.
  *
  * Still a smaller range than the egg's, which throws the page clear across the
- * screen because the page is what it is about — but far enough now to read as
- * a shock rather than as a wobble. Every piece comes back to exactly where it
+ * screen because the page is what it is about — but far enough now to be the
+ * thing you notice rather than something you might have imagined. Every piece comes back to exactly where it
  * started, so nothing can be left crooked.
  *
  * One animation, not a throw and a later return — the whole thing has to be
@@ -968,8 +968,19 @@ figure {
   0% {
     transform: translate3d(0, 0, 0) rotate(0deg);
   }
-  14% {
+  /*
+   * Thrown in a tenth of a second and then a whole second finding its way
+   * back. The gap between those two numbers is the entire effect: matched, it
+   * reads as a wobble; this far apart it reads as something that was hit.
+   */
+  9% {
     transform: translate3d(var(--rx), var(--ry), 0) rotate(var(--rr));
+  }
+  /* Past the mark on the way home and back again, so it lands rather than
+     glides to a halt. */
+  62% {
+    transform: translate3d(calc(var(--rx) * -0.18), calc(var(--ry) * -0.18), 0)
+      rotate(calc(var(--rr) * -0.18));
   }
   100% {
     transform: translate3d(0, 0, 0) rotate(0deg);
