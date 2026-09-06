@@ -102,7 +102,7 @@ interface Beat {
 const DECAY_MS = 3000;
 
 /** How long the leading edge takes to cross the viewport. Matches the CSS. */
-const WAVE_MS = 420;
+const WAVE_MS = 520;
 
 /**
  * How long the shove and the momentum after it last, together.
@@ -112,14 +112,25 @@ const WAVE_MS = 420;
  * of this is the running out.
  */
 const OUT_MS = 820;
+/**
+ * And how long they are held out there before they are brought back.
+ *
+ * This is not a floating phase and the difference is the whole point: nothing
+ * drifts, nothing bobs, nothing loops. A piece arrives at the apex with no
+ * speed left and is held there, shuddering against the grip — see buzz() — for
+ * long enough that you can see the field is doing work. The only movement in
+ * it is the struggle, which is a force with a name.
+ */
+const HOLD_MS = 800;
 /** And the way home: the shortest of them, and how much longer the longest is. */
 const HOME_MS = 2600;
 const HOME_SPREAD = 1200;
 
 /** The nearest piece turns for home as soon as its own momentum is spent. */
-const homewardAt = (impact: number) => impact + OUT_MS;
+const homewardAt = (impact: number) => impact + OUT_MS + HOLD_MS;
 /** The furthest lands a whole wave crossing and the longest way home later. */
-const landedAt = (impact: number) => impact + WAVE_MS + OUT_MS + HOME_MS + HOME_SPREAD;
+const landedAt = (impact: number) =>
+  impact + WAVE_MS + OUT_MS + HOLD_MS + HOME_MS + HOME_SPREAD;
 
 const BEAT: Beat = {
   /*
@@ -131,11 +142,11 @@ const BEAT: Beat = {
   impact: 70,
   /*
    * The field comes up as the first piece is caught, which is what it is for —
-   * so it is that moment minus a frame, and it follows the flight if the flight
-   * is ever retimed rather than having to be remembered.
+   * the apex, not the release. Those used to be the same instant; now there is
+   * a held stretch between them, and this is the front of it.
    */
-  freeze: homewardAt(70) - 20,
-  hold: homewardAt(70) - 20,
+  freeze: 70 + OUT_MS - 20,
+  hold: 70 + OUT_MS - 20,
   homeward: homewardAt(70),
   /* Well into the journey home, so the power is visibly going while things are
      still moving through it rather than after they have stopped. */
@@ -156,12 +167,12 @@ const BEAT: Beat = {
 const MOBILE_BEAT: Beat = {
   impact: 80,
   fight: 300,
-  freeze: homewardAt(80) - 20,
-  hold: homewardAt(80) - 20,
+  freeze: 80 + OUT_MS - 20,
+  hold: 80 + OUT_MS - 20,
   homeward: homewardAt(80),
-  decay: 2200,
-  drift: 2500,
-  avatar: 4100,
+  decay: 2300,
+  drift: 2700,
+  avatar: 4500,
   landed: landedAt(80),
   done: landedAt(80) + 700,
 };
@@ -246,7 +257,33 @@ const SHATTER = [
   '.about__body',
   '.card__summary',
   '.row__summary',
+  /*
+   * And the controls, which were the last things standing.
+   *
+   * A button came through the wave rigid and intact while every word around it
+   * was in pieces, and a thing that survives a blast unmarked reads as the
+   * strongest object on screen. They are not. They are two words on a coloured
+   * rectangle, and the words should leave.
+   */
+  '.btn',
+  '.chip',
+  '.text-link',
+  '.enquiry__send',
+  '.footer__links a',
 ].join(',');
+
+/*
+ * Text that comes apart without its container being spared.
+ *
+ * The rule everywhere else is that a thing is either thrown whole or broken
+ * into letters, never both — a heading has no surface of its own, so a block
+ * flying with letters twitching inside it is nonsense. A control does have
+ * one. Its shell is a real object and should be thrown; its label is text and
+ * should leave. Both together is the shell tumbling away while the word it was
+ * carrying bursts out of it, which is what a weak thing looks like when it is
+ * hit.
+ */
+const SHELLS = '.btn, .chip, .text-link, .enquiry__send, .footer__links a';
 
 /** Ceilings, so a long page cannot ask a weak GPU for hundreds of layers. */
 const MAX_PIECES_WIDE = 84;
@@ -285,6 +322,8 @@ interface Flight {
   home: number;
   /** How far the path home bows off the straight line, and which way. */
   bow: number;
+  /** How hard the field has to work to hold it. 0 for a cover, 1 for a chip. */
+  grip: number;
 }
 
 let running = false;
@@ -331,13 +370,50 @@ function undo(fn: () => void): void {
  * which is both simpler and exact: whatever was in there — a `data-rise` span,
  * a non-breaking space — comes back untouched.
  */
+/** Every text node in an element, in the order a letter walk will see them. */
+function textNodes(el: HTMLElement): Text[] {
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const nodes: Text[] = [];
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const text = node as Text;
+    if ((text.nodeValue ?? '').trim()) nodes.push(text);
+  }
+  return nodes;
+}
+
+/**
+ * Where every character actually is, before anything is done to it.
+ *
+ * A Range around one character reports the box the browser drew it in, kerning
+ * and all. That is the number that matters, and it can only be had while the
+ * text is still text — which is why this is a separate pass that runs over the
+ * whole page before a single element is split.
+ */
+function measureLetters(el: HTMLElement): DOMRect[] {
+  const spots: DOMRect[] = [];
+  const range = document.createRange();
+
+  for (const node of textNodes(el)) {
+    const value = node.nodeValue ?? '';
+    for (let i = 0; i < value.length; i += 1) {
+      if (!value[i].trim()) continue;
+      range.setStart(node, i);
+      range.setEnd(node, i + 1);
+      spots.push(range.getBoundingClientRect());
+    }
+  }
+
+  return spots;
+}
+
 /**
  * Breaks one element into letters and hands them back.
  *
- * It only builds. Where each letter goes is decided afterwards, in one pass
- * over every letter on the page — see run() — because that needs each letter's
- * own position on screen and reading those one element at a time is a layout
- * per heading.
+ * It only builds, and it walks the text in exactly the order measureLetters
+ * did, so the two lists line up one to one. Where each letter goes is decided
+ * afterwards, in one pass over every letter on the page — see run() — because
+ * that needs each letter's position on screen and reading those one element at
+ * a time is a layout per heading.
  */
 function shatterText(el: HTMLElement): HTMLElement[] {
   const original = el.innerHTML;
@@ -370,19 +446,12 @@ function shatterText(el: HTMLElement): HTMLElement[] {
     });
   }
 
-  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-  const nodes: Text[] = [];
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    nodes.push(node as Text);
-  }
-
   const letters: HTMLElement[] = [];
 
-  for (const node of nodes) {
+  for (const node of textNodes(el)) {
     const value = node.nodeValue ?? '';
-    if (!value.trim()) continue;
-
     const fragment = document.createDocumentFragment();
+
     // Split on spaces but keep them, so the gaps between words survive.
     for (const chunk of value.split(/(\s+)/)) {
       if (!chunk) continue;
@@ -403,7 +472,19 @@ function shatterText(el: HTMLElement): HTMLElement[] {
       fragment.appendChild(word);
     }
 
-    node.parentNode?.replaceChild(fragment, node);
+    /*
+     * One wrapper per text node, not a run of loose spans.
+     *
+     * A button is a flex container with a single anonymous item in it — its
+     * label. Replacing that text node with eleven word spans makes eleven flex
+     * items, and the button lays itself out completely differently. Handing
+     * back one element for the one node that was there keeps every container
+     * seeing what it saw before.
+     */
+    const holder = document.createElement('span');
+    holder.className = 'dm-line';
+    holder.appendChild(fragment);
+    node.parentNode?.replaceChild(holder, node);
   }
 
   return letters;
@@ -517,8 +598,9 @@ export function run(options: DesignerModeOptions): Beat {
     if (chosen.length >= (narrow ? MAX_PIECES_NARROW : MAX_PIECES_WIDE)) break;
     // The character is the one thing holding still.
     if (character.contains(el) || el.contains(character)) continue;
-    // Text that is coming apart is not also thrown whole.
-    if (shattering.has(el)) continue;
+    // Text that is coming apart is not also thrown whole — unless it has a
+    // surface of its own to throw. See SHELLS.
+    if (shattering.has(el) && !el.matches(SHELLS)) continue;
 
     const rect = el.getBoundingClientRect();
     if (rect.width < 8 || rect.height < 2) continue;
@@ -526,8 +608,6 @@ export function run(options: DesignerModeOptions): Beat {
 
     // Outermost wins: a card moves as a card, not as a pile of its own parts.
     if (chosen.some((kept) => kept.contains(el))) continue;
-    // And a piece never swallows text that is coming apart on its own.
-    if (words.some((word) => el.contains(word) && el !== word)) continue;
 
     chosen.push(el);
   }
@@ -541,7 +621,7 @@ export function run(options: DesignerModeOptions): Beat {
    * third of that half is as much as can be spent before the far pieces start
    * leaving the screen.
    */
-  const push = Math.min(narrow ? 168 : 250, Math.min(window.innerWidth, window.innerHeight) * 0.33);
+  const push = Math.min(narrow ? 195 : 300, Math.min(window.innerWidth, window.innerHeight) * 0.38);
 
   /*
    * One bias for the whole run.
@@ -668,6 +748,9 @@ export function run(options: DesignerModeOptions): Beat {
       home: Math.round(HOME_MS + Math.random() * HOME_SPREAD),
       // Which way the path bows on the way in, and how far.
       bow: (Math.random() < 0.5 ? -1 : 1) * (10 + Math.random() * 18),
+      // How hard the field has to work to hold it, which is the inverse of
+      // how much there is to hold.
+      grip: 1 - heft,
     };
 
     undo(() => {
@@ -758,9 +841,14 @@ export function run(options: DesignerModeOptions): Beat {
      * wave does to something with nothing to it.
      */
     /*
-     * When each block is hit is read before any of them is touched, so the
-     * measurement is of the page as it stands rather than of a page that is
-     * already half taken apart.
+     * Everything is read before anything is written, and in that order for a
+     * reason.
+     *
+     * Splitting one heading changes the width of that heading, which reflows
+     * whatever is under it — so every measurement of the page as it stands has
+     * to be taken before the first element is touched. Both passes below are
+     * pure reads: when each block is struck, and where every one of its
+     * characters actually sits.
      */
     const struckAt = words.map((el) => {
       const box = el.getBoundingClientRect();
@@ -769,27 +857,76 @@ export function run(options: DesignerModeOptions): Beat {
       return Math.round(Math.min(1, Math.hypot(ex, ey) / reach) * WAVE_MS);
     });
 
+    const wasAt = words.map((el) => measureLetters(el));
+    /*
+     * How big this block's letters are, read here with everything else.
+     *
+     * It decides how hard the field throws each one about: a letter of body
+     * copy has almost nothing to it, and a letter of a display heading has the
+     * mass of a small object. Read per block rather than per letter — 260
+     * computed-style reads is a real cost and every letter in a paragraph is
+     * the same size anyway.
+     */
+    const blockSize = words.map((el) => parseFloat(window.getComputedStyle(el).fontSize) || 17);
+
     const letters: HTMLElement[] = [];
     const struck: number[] = [];
+    const before: DOMRect[] = [];
+    const sized: number[] = [];
     words.forEach((el, w) => {
-      for (const letter of shatterText(el)) {
+      const made = shatterText(el);
+      made.forEach((letter, i) => {
         letters.push(letter);
         struck.push(struckAt[w]);
-      }
+        before.push(wasAt[w][i]);
+        sized.push(blockSize[w]);
+      });
     });
 
     const spots = letters.map((letter) => letter.getBoundingClientRect());
 
     letters.forEach((letter, i) => {
       const spot = spots[i];
+
+      /*
+       * The correction that makes home actually home.
+       *
+       * A line of text split into inline-blocks is not the same width as the
+       * line it came from — the kerning between every pair of letters is gone,
+       * and it adds up: measured, this heading came out seventy-four pixels
+       * narrower than it went in. So every letter animating back to `none` was
+       * animating back to the wrong place, and the swap back to real text at
+       * the end of the sequence was what put it right. That is the snap.
+       *
+       * This is the gap between where the character was drawn and where its
+       * span has landed, and it is carried through every keyframe. Home is now
+       * the position the character actually had, so the restore at the end
+       * moves nothing at all — and it corrects a line that wraps differently
+       * as readily as one that is merely narrower, because it is per letter
+       * and not per line.
+       */
+      const was = before[i];
+      if (was) {
+        letter.style.setProperty('--ox', `${(was.left - spot.left).toFixed(2)}px`);
+        letter.style.setProperty('--oy', `${(was.top - spot.top).toFixed(2)}px`);
+      }
+
       const lx = spot.left + spot.width / 2 - originX;
       const ly = spot.top + spot.height / 2 - originY;
       const distance = Math.hypot(lx, ly) || 1;
 
       const falloff = 0.5 + 0.5 * (1 - Math.min(1, distance / reach));
       const spread = 0.7 + Math.random() * 0.7;
-      // Nothing is lighter than a letter, so nothing goes further for its size.
-      const strength = push * falloff * spread * 0.82;
+      /*
+       * Nothing is lighter than a letter, so nothing goes further for its size
+       * — except a letter that is already being carried. A card title or a
+       * button label is thrown twice, once by its own container and once on
+       * its own account, and at the full share the two together put it off the
+       * screen. At this share it still plainly separates from what it was
+       * written on, which is the whole point of it.
+       */
+      const carried = letter.closest('.dm-piece');
+      const strength = push * falloff * spread * (carried ? 0.42 : 0.82);
 
       const nx = lx / distance;
       const ny = ly / distance;
@@ -820,13 +957,48 @@ export function run(options: DesignerModeOptions): Beat {
        * word does not come back in the order it left in — and long enough that
        * the way home is unmistakably slower than the way out.
        */
-      letter.style.setProperty('--lt', `${2100 + Math.round(Math.random() * 900)}ms`);
+      const journey = 2100 + Math.round(Math.random() * 900);
+      letter.style.setProperty('--lt', `${journey}ms`);
+
+      /*
+       * And it buzzes in the field like everything else, harder than anything
+       * else, because there is less of it than anything else.
+       *
+       * Scaled off the size of the type it belongs to: body copy at three
+       * pixels, a display heading's letters at a little under two — between a
+       * paragraph and a button, which is where something that light and that
+       * large belongs. The apex is 26% into its own journey, which is where
+       * its keyframes put the turn.
+       */
+      const weight = Math.min(1, Math.max(0.55, 20 / sized[i]));
+      const shake = buzz(
+        letter,
+        struck[i] + journey * 0.26,
+        3.2 * weight,
+        1.3 * weight
+      );
+      if (shake) returning.push(shake);
     });
 
     root.classList.add('dm-shattered');
     undo(() => root.classList.remove('dm-shattered'));
 
-    for (const { el, flight } of placed) returning.push(launch(el, flight));
+    for (const { el, flight } of placed) {
+      returning.push(launch(el, flight));
+      /*
+       * Heavier things are held more easily. A chip is thrown about at nearly
+       * two pixels and a full-width cover at half of one, and neither is
+       * perfectly still — a cover that did not move at all read as the one
+       * object the field had no trouble with, which is the opposite of true.
+       */
+      const shake = buzz(
+        el,
+        flight.wave + OUT_MS,
+        1.9 * (0.28 + 0.72 * flight.grip),
+        0.5 * (0.28 + 0.72 * flight.grip)
+      );
+      if (shake) returning.push(shake);
+    }
   });
 
   /* ---- Act three, mobile only: the menu will not go quietly ----------- */
@@ -954,9 +1126,10 @@ export function run(options: DesignerModeOptions): Beat {
  * like a reversed throw.
  */
 function launch(el: HTMLElement, f: Flight): Animation {
-  const total = f.wave + OUT_MS + f.home;
+  const total = f.wave + OUT_MS + HOLD_MS + f.home;
   const at = (ms: number) => ms / total;
   const apex = f.wave + OUT_MS;
+  const away = apex + HOLD_MS;
 
   const span = Math.hypot(f.ax, f.ay) || 1;
   const bowX = (-f.ay / span) * f.bow;
@@ -977,6 +1150,20 @@ function launch(el: HTMLElement, f: Flight): Animation {
       {
         transform: `translate3d(${f.ax.toFixed(1)}px, ${f.ay.toFixed(1)}px, 0) rotate(${f.ar.toFixed(2)}deg) scale(${f.as.toFixed(3)})`,
         offset: at(apex),
+        easing: 'linear',
+      },
+      /*
+       * Held, and only held.
+       *
+       * The same position as the frame above it, so across this stretch the
+       * flight contributes no movement at all — everything you see here is the
+       * shudder from buzz(), added on top. That is the distinction this whole
+       * sequence turns on: it is not floating, because nothing is carrying it.
+       * It has been stopped and it is being fought over.
+       */
+      {
+        transform: `translate3d(${f.ax.toFixed(1)}px, ${f.ay.toFixed(1)}px, 0) rotate(${f.ar.toFixed(2)}deg) scale(${f.as.toFixed(3)})`,
+        offset: at(away),
         // From nothing, and still building at the far end: the pull is
         // strongest in the middle of the way home, not at either end of it.
         easing: 'cubic-bezier(0.55, 0, 0.75, 0.6)',
@@ -999,7 +1186,7 @@ function launch(el: HTMLElement, f: Flight): Animation {
         transform:
           `translate3d(${(f.ax * 0.5 + bowX).toFixed(1)}px, ${(f.ay * 0.5 + bowY).toFixed(1)}px, 0) ` +
           `rotate(${(f.ar * 0.42).toFixed(2)}deg) scale(${(1 + (f.as - 1) * 0.42).toFixed(3)})`,
-        offset: at(apex + f.home * 0.5),
+        offset: at(away + f.home * 0.5),
         // Handed 1.6 and running out to nothing: it arrives by slowing, not
         // by being stopped there.
         easing: 'cubic-bezier(0.15, 0.24, 0.35, 1)',
@@ -1008,6 +1195,92 @@ function launch(el: HTMLElement, f: Flight): Animation {
     ],
     { duration: total, fill: 'both' }
   );
+}
+
+/**
+ * Whether the browser will add one animation's transform to another's.
+ *
+ * Without this the tremble would not layer on top of the flight, it would
+ * replace it — the piece would shiver on the spot and never go anywhere. Asked
+ * once, because the answer cannot change.
+ */
+const CAN_LAYER = (() => {
+  try {
+    return new KeyframeEffect(null, [], { composite: 'add' }).composite === 'add';
+  } catch {
+    return false;
+  }
+})();
+
+/** How the shudder is shaped around the moment the field takes hold. */
+const BUZZ_RISE = 300;
+/** Long enough to cover the whole of the held stretch, and then some. */
+const BUZZ_HOLD = HOLD_MS + 160;
+const BUZZ_FADE = 820;
+const BUZZ_STEP = 56;
+
+/**
+ * The shudder of something being fought over.
+ *
+ * A rigid thing in a field that is gripping it does not travel smoothly: the
+ * hold is not perfectly steady, so the object buzzes against it. That is the
+ * force this names, and it is why it is shaped the way it is.
+ *
+ * It comes up as the shove is running out, holds while the field is doing the
+ * actual work of stopping the thing and turning it round, and fades as it is
+ * carried home. Nothing rattles on the way back — something being carefully
+ * put down does not shake, and a buzz that ran the whole length would be an
+ * idle animation again, which is the one thing this sequence must never have.
+ *
+ * Three rules keep it from being a shake:
+ *
+ * It is added to the movement underneath rather than replacing it, so the
+ * trajectory is untouched and this is a texture on top of it.
+ *
+ * It is irregular. Every offset is rolled, so no two frames relate and there
+ * is no cycle to notice.
+ *
+ * And the amount is decided by what is being held. The lighter and smaller a
+ * thing is, the harder it is thrown about: a letter of body copy buzzes at
+ * three pixels, a heading's letter at under two, a button at about the same,
+ * and a full-width cover at half of one. It is the same field having an easier
+ * time with the heavy things.
+ */
+function buzz(el: HTMLElement, apex: number, amp: number, spin: number): Animation | null {
+  if (!CAN_LAYER || amp <= 0) return null;
+
+  const start = Math.max(0, apex - BUZZ_RISE);
+  const span = BUZZ_RISE + BUZZ_HOLD + BUZZ_FADE;
+  const steps = Math.max(2, Math.round(span / BUZZ_STEP));
+  const frames: Keyframe[] = [];
+
+  for (let i = 0; i <= steps; i += 1) {
+    const now = (i / steps) * span;
+
+    /*
+     * Up, level, and out. `sin` and `cos` over a quarter turn rather than a
+     * straight ramp, so it arrives and leaves without a corner at either end.
+     */
+    let envelope: number;
+    if (now < BUZZ_RISE) envelope = Math.sin((Math.PI / 2) * (now / BUZZ_RISE));
+    else if (now < BUZZ_RISE + BUZZ_HOLD) envelope = 1;
+    else envelope = Math.cos((Math.PI / 2) * ((now - BUZZ_RISE - BUZZ_HOLD) / BUZZ_FADE));
+
+    const reach = amp * envelope;
+    frames.push({
+      offset: i / steps,
+      transform:
+        `translate3d(${((Math.random() * 2 - 1) * reach).toFixed(2)}px, ` +
+        `${((Math.random() * 2 - 1) * reach).toFixed(2)}px, 0) ` +
+        `rotate(${((Math.random() * 2 - 1) * spin * envelope).toFixed(3)}deg)`,
+      easing: 'linear',
+    });
+  }
+
+  // It has to end on nothing, or whatever it was added to is left off its mark.
+  frames[frames.length - 1] = { offset: 1, transform: 'translate3d(0, 0, 0) rotate(0deg)' };
+
+  return el.animate(frames, { duration: span, delay: start, composite: 'add', fill: 'both' });
 }
 
 /* ---------------------------------------------------------------------- */

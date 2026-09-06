@@ -762,20 +762,38 @@ figure {
 
 @keyframes dm-letter {
   0% {
-    transform: none;
+    transform: translate3d(var(--ox, 0px), var(--oy, 0px), 0);
     /* Opening slope 28, closing slope 0: gone before you see it leave, and
        then a long time running out. */
     animation-timing-function: cubic-bezier(0.03, 0.85, 0.2, 1);
   }
   26% {
-    transform: translate3d(calc(var(--cx) * 1.18), calc(var(--cy) * 1.18), 0)
-      rotate(calc(var(--cr) * 1.3));
+    transform: translate3d(
+        calc(var(--ox, 0px) + var(--cx)),
+        calc(var(--oy, 0px) + var(--cy)),
+        0
+      )
+      rotate(var(--cr));
     /* Away from nothing, quickest through the middle, and slowest arriving. */
     animation-timing-function: cubic-bezier(0.5, 0, 0.3, 1);
   }
+  /*
+   * Home is --ox/--oy, not zero. See designer-mode.ts: a line split into
+   * inline-blocks is narrower than the line it came from, so every letter's
+   * own place is a couple of pixels — or, across a heading, seventy — from
+   * where its span sits. Landing on the span's position and then swapping the
+   * real text back in at the end of the sequence is what made everything jump
+   * at the last moment.
+   */
   100% {
-    transform: none;
+    transform: translate3d(var(--ox, 0px), var(--oy, 0px), 0);
   }
+}
+
+/* One wrapper per text node, so a flex or grid container still sees the single
+   item it had rather than one per word. It is otherwise nothing. */
+.dm-line {
+  display: inline;
 }
 
 /* ---- The field ------------------------------------------------------- */

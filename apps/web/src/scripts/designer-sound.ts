@@ -678,7 +678,17 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
    * rather than a roar.
    */
   const waveGain = audio.createGain();
-  waveGain.gain.setValueAtTime(1, t0);
+  /*
+   * The first fifty milliseconds are louder than the rest of the storm.
+   *
+   * The transient is the contact — it is the only part of this that arrives
+   * rather than develops, and at a flat opening level it was the same weight
+   * as the roar behind it. A third above, for as long as it takes to hear it
+   * and no longer, is the difference between a loud sound and a hit.
+   */
+  waveGain.gain.setValueAtTime(1.35, t0);
+  waveGain.gain.setValueAtTime(1.35, t0 + 0.05);
+  waveGain.gain.linearRampToValueAtTime(1, t0 + 0.16);
   waveGain.gain.setValueAtTime(1, t0 + 0.18);
   waveGain.gain.exponentialRampToValueAtTime(0.55, freeze);
   waveGain.gain.setValueAtTime(0.55, decay);
