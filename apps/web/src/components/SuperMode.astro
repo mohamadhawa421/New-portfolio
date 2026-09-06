@@ -236,10 +236,23 @@
    * be told to keep going rather than to look. Ending on a full ring means the
    * gesture is legible in hindsight: that was filling up.
    */
-  /* The button has no positioned children of its own, so this is inert in
-     light and dark — it is only here to anchor the two rings below. */
+  /*
+   * The button has no positioned children of its own, so `position` is inert
+   * in light and dark — it is only here to anchor the two rings below.
+   *
+   * The rest is what a long press costs on iOS. WebKit reads a hold as the
+   * start of a selection: it highlighted the control and whatever text sat
+   * nearest it, then raised the copy/look-up callout over the top, so the
+   * gesture worked and looked broken while it did. None of it belongs on a
+   * button in any mode — there is nothing here to select or to copy — and
+   * `touch-action: manipulation` drops the 300ms double-tap wait with it.
+   */
   .theme-toggle {
     position: relative;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
   }
 
   .theme-toggle--charging::after {
@@ -345,6 +358,26 @@
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--dm-core);
+    /* Held to leave the mode — so the same long-press treatment the way in
+       needed, or iOS would offer to copy the word instead. */
+    cursor: default;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+    transition: opacity 200ms var(--ease-out);
+  }
+
+  /*
+   * The badge dimming under a held press.
+   *
+   * The same bargain as the ring on the way in: no hint that anything is
+   * there, and once you are holding it, confirmation that something is
+   * happening. Fading out is the right direction for an exit.
+   */
+  :root[data-super] .footer__super--charging {
+    opacity: 0.3;
+    transition-duration: 1200ms;
   }
 
   .footer__super::before {

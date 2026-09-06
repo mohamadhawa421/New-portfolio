@@ -212,6 +212,25 @@ export function bindSuperTrigger(): void {
     held = null;
   };
 
+  /*
+   * iOS treats a long press as "you are trying to select something".
+   *
+   * Holding the control there put a selection highlight over the button and
+   * whatever text was nearest it, and raised the copy/look-up callout on top —
+   * so the gesture worked and looked like a bug while it did. The CSS in
+   * SuperMode.astro stops the callout and takes the trigger out of selection;
+   * this stops the range that WebKit starts on the surrounding text before
+   * either of those applies, and clears anything already caught.
+   */
+  const dropSelection = () => {
+    const selection = window.getSelection();
+    if (selection && !selection.isCollapsed) selection.removeAllRanges();
+  };
+
+  document.addEventListener('selectstart', (event) => {
+    if (held) event.preventDefault();
+  });
+
   document.addEventListener(
     'pointerdown',
     (event) => {
@@ -224,6 +243,7 @@ export function bindSuperTrigger(): void {
       button.classList.add('theme-toggle--charging');
       timer = window.setTimeout(() => {
         stop();
+        dropSelection();
         swallowClick = true;
         enterSuper();
       }, HOLD_MS);
@@ -266,15 +286,15 @@ export function bindSuperTrigger(): void {
 const EXIT_HOLD_MS = 1200;
 
 /**
- * Hold M, or shake the phone.
+ * Hold M, hold the badge, or shake the phone.
  *
- * Neither is discoverable and neither is meant to be: the exit every visitor
- * has is a reload, and this is for the one person who needs to leave the mode
- * a hundred times without losing his place. Nothing hints at either, and both
- * only listen while the mode is actually on.
+ * None of the three is discoverable and none is meant to be: the exit every
+ * visitor has is a reload, and this is for the one person who needs to leave
+ * the mode a hundred times without losing his place. All three only listen
+ * while the mode is actually on.
  *
- * A shake rather than a tap on mobile for the same reason M is a hold: it
- * cannot happen while someone is reading.
+ * Holds rather than taps, for the same reason the way in is a hold: neither
+ * can happen while someone is reading.
  */
 function bindSuperExit(): void {
   let keyTimer = 0;
@@ -311,7 +331,56 @@ function bindSuperExit(): void {
   // Letting go outside the window never sends a keyup.
   window.addEventListener('blur', cancelKey);
 
+  bindBadgeHold();
   bindShake();
+}
+
+/**
+ * Hold the badge, which is the way out on a phone.
+ *
+ * The footer says SUPER DESIGNER while the mode is on, and holding that is
+ * what turns it off — the thing that tells you the mode is running is the
+ * thing you press to end it, which is the only exit here that is obvious once
+ * you know and invisible until then. It needs no permission, no keyboard and
+ * no hardware, which is what the shake could not promise.
+ *
+ * The theme control would have been the symmetric choice, but it is `disabled`
+ * while the mode runs and a disabled button is sent no pointer events at all.
+ */
+function bindBadgeHold(): void {
+  let timer = 0;
+  let held: HTMLElement | null = null;
+
+  const stop = () => {
+    if (timer) window.clearTimeout(timer);
+    timer = 0;
+    held?.classList.remove('footer__super--charging');
+    held = null;
+  };
+
+  document.addEventListener(
+    'pointerdown',
+    (event) => {
+      if (!on) return;
+      const badge = (event.target as Element | null)?.closest<HTMLElement>('.footer__super');
+      if (!badge || (event as PointerEvent).button !== 0) return;
+
+      held = badge;
+      badge.classList.add('footer__super--charging');
+      timer = window.setTimeout(() => {
+        stop();
+        const selection = window.getSelection();
+        if (selection && !selection.isCollapsed) selection.removeAllRanges();
+        exitSuper();
+      }, EXIT_HOLD_MS);
+    },
+    { passive: true }
+  );
+
+  for (const type of ['pointerup', 'pointercancel', 'pointerleave']) {
+    document.addEventListener(type, stop, { passive: true });
+  }
+  window.addEventListener('scroll', stop, { passive: true });
 }
 
 /**
