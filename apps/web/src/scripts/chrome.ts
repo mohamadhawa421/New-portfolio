@@ -494,9 +494,18 @@ function chromePass(): void {
    * page, which is exactly the "background before it is scrolled" it should
    * not have had. 100% is the identity, and it still interpolates.
    */
+  /*
+   * `none` at rest, not an identity filter.
+   *
+   * A backdrop-filter that is still a filter — even one that changes nothing —
+   * keeps the nav on its own composited layer with a backdrop root behind it,
+   * for every frame of every page. `none` takes the layer away entirely, and
+   * it still interpolates: an empty filter list animates from the identity of
+   * whatever it is going to, so the blur fades in on scroll exactly as before.
+   */
   styles.setProperty(
     '--nav-blur',
-    condensed ? `saturate(180%) blur(${NAV_BLUR_PX}px)` : 'saturate(100%) blur(0px)'
+    condensed ? `saturate(180%) blur(${NAV_BLUR_PX}px)` : 'none'
   );
   styles.setProperty('--nav-shadow', `0 1px 8px rgba(0,0,0,${condensed ? 0.07 : 0})`);
   styles.setProperty('--nav-ink', overDark ? '#ffffff' : '#1d1d1f');
@@ -608,6 +617,24 @@ function init(): void {
 // visible on the first frame. Doing this on `astro:page-load` instead — which
 // runs after paint — showed up as a flash of empty page on every navigation.
 document.addEventListener('astro:before-swap', (event) => {
+  /*
+   * The nav corrects itself across a navigation instead of animating.
+   *
+   * Everything the nav's chrome is computed from is thrown in the air by a
+   * swap: the router wipes the inline custom properties off <html> along with
+   * every other attribute, the scroll position moves to wherever the next page
+   * starts, and chromePass runs again on the other side. Any of that can leave
+   * the pill briefly holding the wrong answer — and with a 520ms transition on
+   * it, "briefly wrong" is a background fading in and back out again, which is
+   * the flicker. Zeroed here and restored once the page has settled, so a
+   * correction is a frame rather than a fade.
+   *
+   * It is not a state to be in for long: `page-load` puts it back, and so does
+   * a failed navigation, because the next one starts from `before-preparation`
+   * either way.
+   */
+  styles.setProperty('--nav-anim', '0ms');
+
 
   /*
    * The `morphing` class only means anything while a transition is running, and
@@ -1009,6 +1036,24 @@ document.addEventListener('astro:page-load', () => {
   window.setTimeout(() => {
     root.style.scrollBehavior = '';
   }, 0);
+
+  /*
+   * And the nav gets its transition back, one frame later.
+   *
+   * A frame, not immediately: the scroll restore above lands on this turn of
+   * the loop, and giving the transition back before the position it is
+   * responding to has settled is the flicker again with a smaller window. By
+   * the next frame the pill is already on the right answer, so what comes back
+   * is only what happens the next time the visitor scrolls.
+   */
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      lastCondensed = null;
+      lastOverDark = null;
+      chromePass();
+      styles.removeProperty('--nav-anim');
+    });
+  });
 });
 
 /*

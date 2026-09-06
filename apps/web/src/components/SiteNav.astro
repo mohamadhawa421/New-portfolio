@@ -308,17 +308,23 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     padding: var(--nav-pad, 2px 12px);
     border-radius: var(--r-pill);
     background: var(--nav-bg, rgba(255, 255, 255, 0));
-    backdrop-filter: var(--nav-blur, saturate(100%) blur(0px));
-    -webkit-backdrop-filter: var(--nav-blur, saturate(100%) blur(0px));
+    backdrop-filter: var(--nav-blur, none);
+    -webkit-backdrop-filter: var(--nav-blur, none);
     box-shadow: var(--nav-shadow, 0 1px 8px rgba(0, 0, 0, 0));
     max-width: calc(100vw - 20px);
+    /*
+     * The three that answer to scroll share `--nav-anim`, which chrome.ts
+     * zeroes for the length of a navigation — see the note there. Across a
+     * swap every input to them moves at once, and a 520ms fade on a value that
+     * is about to be corrected is a background appearing and disappearing.
+     */
     transition:
       top 620ms var(--ease-out),
       gap 620ms var(--ease-out),
       padding 620ms var(--ease-out),
-      background 520ms ease,
-      box-shadow 520ms ease,
-      backdrop-filter 520ms ease;
+      background var(--nav-anim, 520ms) ease,
+      box-shadow var(--nav-anim, 520ms) ease,
+      backdrop-filter var(--nav-anim, 520ms) ease;
   }
 
   .nav__link {
@@ -369,13 +375,14 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     height: 68px;
     z-index: 199;
     background: var(--nav-bg, rgba(255, 255, 255, 0));
-    backdrop-filter: var(--nav-blur, saturate(100%) blur(0px));
-    -webkit-backdrop-filter: var(--nav-blur, saturate(100%) blur(0px));
+    backdrop-filter: var(--nav-blur, none);
+    -webkit-backdrop-filter: var(--nav-blur, none);
     box-shadow: var(--nav-shadow, 0 1px 8px rgba(0, 0, 0, 0));
+    /* Same bargain as the pill above. */
     transition:
-      background 520ms ease,
-      box-shadow 520ms ease,
-      backdrop-filter 520ms ease;
+      background var(--nav-anim, 520ms) ease,
+      box-shadow var(--nav-anim, 520ms) ease,
+      backdrop-filter var(--nav-anim, 520ms) ease;
   }
 
   /* The bar is the surface; it must not sit above the open menu. */
