@@ -54,6 +54,8 @@ export interface SoundBeat {
 export interface SoundShape {
   wave: number;
   fieldDecay: number;
+  /** How long the pressure is felt before the force lands. */
+  preload: number;
 }
 
 /**
@@ -659,11 +661,68 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
   master.gain.cancelScheduledValues(t0);
   master.gain.setValueAtTime(LEVEL, t0);
 
+  /* ---- The pressure, ahead of the force ------------------------------ */
+
+  /*
+   * The woomph.
+   *
+   * The picture now lifts everything a tenth of a second before it throws it —
+   * the air ahead of the front arriving before the front does — and a lift
+   * with no sound is a lift nobody notices. This is what pressure sounds like:
+   * a sine falling from 96Hz to 38 in a seventh of a second, with the attack
+   * inside two milliseconds so it lands rather than swells, and a breath of
+   * filtered noise over it so it has air in it and is not a test tone.
+   *
+   * It has to stay under the blast, not compete with it. Everything about it
+   * is over before the crack arrives, which is the point: the ear reads two
+   * events in an order, exactly as the eye does.
+   */
+  const press = audio.createOscillator();
+  press.type = 'sine';
+  press.frequency.setValueAtTime(96, t0);
+  press.frequency.exponentialRampToValueAtTime(38, t0 + 0.14);
+
+  const pressGain = audio.createGain();
+  pressGain.gain.setValueAtTime(0.0001, t0);
+  pressGain.gain.exponentialRampToValueAtTime(0.5, t0 + 0.002);
+  pressGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.17);
+
+  press.connect(pressGain).connect(master);
+  press.start(t0);
+  press.stop(t0 + 0.2);
+
+  // The air moving with it, rather than a tone on its own.
+  if (strikeBuf) {
+    const air = audio.createBufferSource();
+    air.buffer = strikeBuf;
+    air.playbackRate.value = 0.22;
+
+    const airLow = audio.createBiquadFilter();
+    airLow.type = 'lowpass';
+    airLow.frequency.setValueAtTime(420, t0);
+
+    const airGain = audio.createGain();
+    airGain.gain.setValueAtTime(0.0001, t0);
+    airGain.gain.exponentialRampToValueAtTime(0.22, t0 + 0.01);
+    airGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.15);
+
+    air.connect(airLow).connect(airGain).connect(master);
+    air.start(t0);
+    air.stop(t0 + 0.2);
+  }
+
   /* ---- The wave, and time closing around it -------------------------- */
+
+  /*
+   * Started a preload late, so its transient is the force landing rather than
+   * the pressure arriving. Every ramp below is written against absolute times
+   * and so still lands where it always did — only the source moves.
+   */
+  const blastAt = at(shape.preload);
 
   const wave = audio.createBufferSource();
   wave.buffer = waveBuf;
-  wave.playbackRate.setValueAtTime(1, t0);
+  wave.playbackRate.setValueAtTime(1, blastAt);
   // Reaches the held rate on the exact frame everything stops moving.
   wave.playbackRate.exponentialRampToValueAtTime(FREEZE_RATE, freeze);
 
@@ -686,10 +745,10 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
    * as the roar behind it. A third above, for as long as it takes to hear it
    * and no longer, is the difference between a loud sound and a hit.
    */
-  waveGain.gain.setValueAtTime(1.35, t0);
-  waveGain.gain.setValueAtTime(1.35, t0 + 0.05);
-  waveGain.gain.linearRampToValueAtTime(1, t0 + 0.16);
-  waveGain.gain.setValueAtTime(1, t0 + 0.18);
+  waveGain.gain.setValueAtTime(1.35, blastAt);
+  waveGain.gain.setValueAtTime(1.35, blastAt + 0.05);
+  waveGain.gain.linearRampToValueAtTime(1, blastAt + 0.16);
+  waveGain.gain.setValueAtTime(1, blastAt + 0.18);
   waveGain.gain.exponentialRampToValueAtTime(0.55, freeze);
   waveGain.gain.setValueAtTime(0.55, decay);
   /*
@@ -706,7 +765,7 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
   waveGain.gain.exponentialRampToValueAtTime(0.0001, drift + 1);
 
   wave.connect(waveGain).connect(master);
-  wave.start(t0);
+  wave.start(blastAt);
   wave.stop(drift + 1.2);
 
   /* ---- The strikes' level, which follows the storm ------------------- */
