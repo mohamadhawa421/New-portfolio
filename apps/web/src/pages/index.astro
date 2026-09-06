@@ -818,6 +818,22 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     max-width: 400px;
   }
 
+  /*
+   * On a phone the section is one column, and a 400px cap inside a 335px
+   * column does nothing — but the flex centring left it a few pixels in from
+   * the copy it belongs to, which is the same complaint the hero portrait had.
+   * Below the wrap it takes the column: same edges as the heading and the
+   * paragraph beside it.
+   */
+  @media (max-width: 767px) {
+    .about__portrait {
+      max-width: none;
+      min-width: 0;
+      width: 100%;
+      margin-inline: 0;
+    }
+  }
+
   .about__portrait-frame {
     /* Anchors the purple-eyed copy stacked over it. */
     position: relative;

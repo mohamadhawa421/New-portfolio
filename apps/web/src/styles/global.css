@@ -986,6 +986,49 @@ figure {
   }
 }
 
+/*
+ * The control that took the current.
+ *
+ * When he loses his temper the thing that was pressed goes purple and then
+ * cools back to its own colour — the same movement the refused field makes
+ * with its focus ring, and deliberately the same: one language for "he has
+ * touched this", used on the thing that asked for it as well as on the thing
+ * that was wrong.
+ *
+ * It ends on --was-bg, which scripts/punish.ts reads off the element before it
+ * starts. Naming a colour here would only work for one of these buttons — the
+ * two sends are not the same colour, and neither is a secondary button on a
+ * dark panel — and landing on the wrong one is a snap at the end of a
+ * sequence that has none.
+ */
+.is-overloaded {
+  animation: overloaded 1150ms var(--ease-out) both;
+}
+
+@keyframes overloaded {
+  0% {
+    background-color: var(--dm-core);
+    box-shadow: 0 0 26px -2px color-mix(in srgb, var(--dm-core) 75%, transparent);
+    color: #fff;
+  }
+  /* Held hot while the storm is at its loudest, then cooling for the rest. */
+  34% {
+    background-color: var(--dm-wave);
+    box-shadow: 0 0 22px -3px color-mix(in srgb, var(--dm-core) 55%, transparent);
+  }
+  100% {
+    background-color: var(--was-bg, var(--blue-fill));
+    box-shadow: 0 0 22px -3px transparent;
+  }
+}
+
+/* The current stays; nothing about it moves. */
+@media (prefers-reduced-motion: reduce) {
+  .is-overloaded {
+    animation-duration: 700ms;
+  }
+}
+
 /* --------------------------------------------------------------------- */
 /* Theme wave                                                             */
 /* --------------------------------------------------------------------- */

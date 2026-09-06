@@ -76,6 +76,8 @@ const RAGE_WINDOW_MS = 10_000;
 const RATTLE_REACH = 44;
 const RATTLE_MAX = 52;
 const RATTLE_MS = 1500;
+/** How long the pressed control stays hot before it is back to itself. */
+const OVERLOAD_MS = 1150;
 
 let streak = 0;
 let lastRefusal = 0;
@@ -90,9 +92,32 @@ let raging = false;
  * event. Staggering any of it turns it into a sequence, and a sequence reads
  * as a feature rather than as a reaction.
  */
-function rage(at: { x: number; y: number }): void {
+function rage(at: { x: number; y: number }, pressed?: HTMLElement): void {
   const root = document.documentElement;
   raging = true;
+
+  /*
+   * The control that asked for this takes the current.
+   *
+   * The field turns it purple and then lets it cool back to whatever colour it
+   * was, which is the same thing the refused input does with its focus ring —
+   * one language for "he has touched this", used on the thing that was pressed
+   * as well as on the thing that was wrong. Its own colour is read here rather
+   * than named, because the two buttons are not the same colour and neither is
+   * the one on a dark panel: the animation ends on `--was-bg` and lands
+   * wherever it started.
+   */
+  if (pressed) {
+    const was = window.getComputedStyle(pressed).backgroundColor;
+    pressed.style.setProperty('--was-bg', was);
+    pressed.classList.remove('is-overloaded');
+    void pressed.offsetWidth;
+    pressed.classList.add('is-overloaded');
+    window.setTimeout(() => {
+      pressed.classList.remove('is-overloaded');
+      pressed.style.removeProperty('--was-bg');
+    }, OVERLOAD_MS + 60);
+  }
 
   root.style.setProperty('--rage-x', `${Math.round((at.x / window.innerWidth) * 100)}%`);
   root.style.setProperty('--rage-y', `${Math.round((at.y / window.innerHeight) * 100)}%`);
@@ -186,10 +211,13 @@ export function punish(target?: Element | null): void {
   if (streak >= RAGE_AT) {
     streak = 0;
     const box = target instanceof HTMLElement ? target.getBoundingClientRect() : null;
-    rage({
-      x: box ? box.left + box.width / 2 : window.innerWidth / 2,
-      y: box ? box.top + box.height / 2 : window.innerHeight / 2,
-    });
+    rage(
+      {
+        x: box ? box.left + box.width / 2 : window.innerWidth / 2,
+        y: box ? box.top + box.height / 2 : window.innerHeight / 2,
+      },
+      target instanceof HTMLElement && !isField(target) ? target : undefined
+    );
     return;
   }
 
