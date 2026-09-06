@@ -428,7 +428,16 @@ let lastOverDark: boolean | null = null;
  * invisible in dark mode.
  */
 function isDarkTheme(): boolean {
-  return resolvedTheme() === 'dark' || root.dataset.surface === 'void';
+  /*
+   * Super designer mode is dark whatever the theme underneath it, and asking
+   * the theme was not enough: a visitor who found the mode while in light mode
+   * got the white pill and near-black nav ink over a near-black violet page.
+   */
+  return (
+    resolvedTheme() === 'dark' ||
+    root.dataset.surface === 'void' ||
+    root.hasAttribute('data-super')
+  );
 }
 
 function chromePass(): void {
@@ -458,12 +467,20 @@ function chromePass(): void {
   styles.setProperty('--nav-gap', condensed ? '2px' : 'clamp(6px,2.2vw,30px)');
   styles.setProperty('--nav-pad', condensed ? '2px 6px' : '2px 6px');
   styles.setProperty('--nav-link-pad', condensed ? '0 15px' : '0 16px');
+  /*
+   * Nothing at all until the page has been scrolled — the pill is a response to
+   * content passing under it, not a permanent bar. Super designer mode gets its
+   * own tint rather than the neutral dark one: a grey pill on that ground reads
+   * as a panel from another site sitting on top of the room.
+   */
   styles.setProperty(
     '--nav-bg',
     condensed
-      ? overDark
-        ? 'rgba(28,28,32,0.72)'
-        : 'rgba(255,255,255,0.74)'
+      ? root.hasAttribute('data-super')
+        ? 'rgba(22,8,42,0.78)'
+        : overDark
+          ? 'rgba(28,28,32,0.72)'
+          : 'rgba(255,255,255,0.74)'
       : 'transparent'
   );
   styles.setProperty('--nav-blur', `saturate(180%) blur(${condensed ? NAV_BLUR_PX : 0}px)`);
@@ -559,6 +576,13 @@ function init(): void {
       chromePass();
     };
     window.addEventListener('mh:themechange', repaintChrome);
+    /*
+     * And when super designer mode arrives, which changes both the ink test and
+     * the pill's tint without changing the scroll position — so the cached
+     * answer above would otherwise hold and the nav would keep the palette of
+     * the theme the visitor just left.
+     */
+    document.addEventListener('mh:super', repaintChrome);
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', repaintChrome);
     // Images finishing late change section offsets, so measure again.
     window.addEventListener('load', remeasure);

@@ -422,6 +422,32 @@
     let dragX = targetX;
     let dragY = targetY;
 
+    /*
+     * When the pointer was last heard from.
+     *
+     * A native popup — an autofill suggestion list, a <select> menu, a
+     * spellcheck menu — is browser furniture, not page content: while it is
+     * open the page is sent no pointer events at all, so the drawn pointer
+     * stops where it was and the visitor watches it sit still while their
+     * mouse moves. There is nothing to be done about the events, but the
+     * catching up afterwards is ours: see the snap in the move handler.
+     */
+    let lastMove = 0;
+
+    /** Long enough that a gap can only be something taking the pointer away. */
+    const STALL_MS = 220;
+
+    /*
+     * And far enough that it can only be a stranding.
+     *
+     * Resting on a control leaves the ring a few pixels off the pointer,
+     * because it is drifting toward the control's centre — snapping that away
+     * on the next move would put a pop into the most ordinary interaction on
+     * the site. Sixty pixels is well past any lean and well short of what the
+     * mouse covers while a menu is open.
+     */
+    const STALL_GAP = 60;
+
     function wake(): void {
       if (looping) return;
       looping = true;
@@ -612,6 +638,26 @@
     }
 
     function onMove(event: PointerEvent) {
+      const now = performance.now();
+      /*
+       * A gap in the stream means something took the pointer away — a native
+       * suggestion list, a select menu, the OS. The mouse kept moving the whole
+       * time and the drawn one did not, so easing back over ten frames from
+       * wherever it was stranded is what reads as the pointer being stuck.
+       * Coming back is not a movement to animate: it is a correction, and it
+       * belongs on the frame the pointer is heard from again.
+       */
+      if (
+        now - lastMove > STALL_MS &&
+        Math.hypot(event.clientX - ringX, event.clientY - ringY) > STALL_GAP
+      ) {
+        ringX = event.clientX;
+        ringY = event.clientY;
+        dragX = event.clientX;
+        dragY = event.clientY;
+      }
+      lastMove = now;
+
       targetX = event.clientX;
       targetY = event.clientY;
       show();

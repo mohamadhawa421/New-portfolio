@@ -52,6 +52,23 @@ button {
   font-family: inherit;
 }
 
+/*
+ * The grey-blue box Android paints over whatever is tapped.
+ *
+ * It is a rectangle: it ignores the border radius, so on a pill button or a
+ * rounded card it flashes square corners over a round shape, and on a whole
+ * project row it lights the entire row. Every control here already answers a
+ * press — the buttons scale, the rows fill, the chips press in — so this is
+ * a second, cruder acknowledgement drawn on top of a better one.
+ *
+ * Removed globally rather than per control: the platform default is a fallback
+ * for interfaces with no press feedback of their own, and every one of ours
+ * has it. Focus rings and the :active states are untouched.
+ */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
 :focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 3px;

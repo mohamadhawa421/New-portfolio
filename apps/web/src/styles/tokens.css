@@ -428,28 +428,32 @@
   color-scheme: dark;
 
   /*
-   * Deeper than the site's own dark, and warmer than its void.
+   * The deep end. Darker than anything else on the site, including the 404.
    *
    * The void (the 404) is a cold near-black with a violet cast — somewhere the
    * page has fallen out of. This is the opposite reading of the same colour:
-   * the room the character works in, so the purple is in the surface itself
-   * rather than behind it. #1a0533 is the ground; everything raised off it is
-   * a step lighter and slightly bluer, so a card still reads as a card.
+   * the room the character works in, and it is a long way down. #0c0118 is
+   * almost black and still unmistakably violet, which is the whole trick — the
+   * hue has to survive being that dark or the mode is just dark mode again.
+   *
+   * Everything raised off the ground is a step lighter and a step more
+   * saturated rather than a step greyer, so a card reads as lit from inside
+   * the room instead of as a panel laid on top of it.
    */
-  --surface: #1a0533;
-  --surface-parchment: #1f0a3d;
-  --surface-dark: #12032a;
-  --surface-card: #240d45;
-  --surface-card-hover: #2b1252;
-  --surface-chip: #2b1252;
-  --surface-chip-hover: #35195f;
-  --surface-row-hover: #240d45;
-  --surface-row-hover-parchment: #2b1252;
-  --surface-form: #200a3e;
-  --surface-input: #150429;
-  --surface-button-dark: #34175c;
-  --surface-button-dark-hover: #3f1e6c;
-  --surface-placeholder: #2b1252;
+  --surface: #0c0118;
+  --surface-parchment: #100420;
+  --surface-dark: #070010;
+  --surface-card: #150729;
+  --surface-card-hover: #1c0d34;
+  --surface-chip: #1c0d34;
+  --surface-chip-hover: #241141;
+  --surface-row-hover: #150729;
+  --surface-row-hover-parchment: #1c0d34;
+  --surface-form: #130624;
+  --surface-input: #090113;
+  --surface-button-dark: #241141;
+  --surface-button-dark-hover: #2d1750;
+  --surface-placeholder: #1c0d34;
 
   /*
    * Ink with the ground's own cast in it. Pure white on a violet field reads as
@@ -465,10 +469,10 @@
   --ink-on-dark: #f4f0fb;
   --ink-on-dark-muted: #b9addb;
 
-  --line: #33165d;
-  --line-light: #2b1252;
-  --line-parchment: #3a1c69;
-  --line-dark: #452580;
+  --line: #241141;
+  --line-light: #1c0d34;
+  --line-parchment: #2a1450;
+  --line-dark: #34195f;
 
   /*
    * The accents. The same three the storm uses, so a page in this mode and a

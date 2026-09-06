@@ -167,7 +167,52 @@ function context(): Ctx | null {
   arcBus.gain.value = 1;
   arcBus.connect(master);
 
+  watchDevice(ctx);
+
   return ctx;
+}
+
+/**
+ * Safari lets go of the output, and does not say so.
+ *
+ * On macOS an AudioContext that has been open for a while — a tab left in the
+ * background, the machine asleep, another app taking the device, a Bluetooth
+ * output going away — is moved to `suspended` or to WebKit's own `interrupted`
+ * state. Nothing throws and nothing logs: every source still starts, still
+ * runs its envelope and still stops, into a context that is not advancing. The
+ * site simply goes quiet, and stays quiet for the life of the tab, which is
+ * why it looked like it needed the whole browser restarted.
+ *
+ * Nothing here creates a context or plays anything; it only asks a context we
+ * already have to come back. `resume()` is allowed without a gesture when the
+ * page is visible and focused, and the gesture listeners below are the fallback
+ * for the case where it is not — they are passive, capture-phase and never
+ * consume the event, so nothing else on the page notices them.
+ */
+function watchDevice(audio: Ctx): void {
+  const revive = () => {
+    if (!ctx || ctx !== audio) return;
+    if (audio.state === 'running' || audio.state === 'closed') return;
+    void audio.resume().catch(() => {
+      // Not allowed yet. The next gesture will be.
+    });
+  };
+
+  audio.addEventListener('statechange', () => {
+    // Only when the page is in front: reviving a backgrounded tab's context is
+    // both refused and the wrong thing to want.
+    if (document.visibilityState === 'visible') revive();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') revive();
+  });
+
+  window.addEventListener('focus', revive);
+  window.addEventListener('pageshow', revive);
+  for (const type of ['pointerdown', 'keydown', 'touchstart']) {
+    window.addEventListener(type, revive, { passive: true, capture: true });
+  }
 }
 
 /** Whether the storm is currently silenced. */
