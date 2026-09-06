@@ -893,6 +893,111 @@ figure {
 }
 
 /* --------------------------------------------------------------------- */
+/* The rage                                                               */
+/* --------------------------------------------------------------------- */
+
+/*
+ * What happens the sixth time in a row, when he stops telling you off and
+ * loses his temper.
+ *
+ * Everything here runs at once and is over inside two seconds: the room lights
+ * up, the page comes off its hooks a little way and goes back, and the pointer
+ * is held (see Cursor.astro). It is deliberately the same vocabulary as the
+ * easter egg — his field, his arcs, his colour — at a fraction of the size,
+ * because it is meant to read as the same person doing a smaller version of
+ * the same thing, not as a second effect the site happens to have.
+ */
+:root.is-raged::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at var(--rage-x, 50%) var(--rage-y, 50%),
+    color-mix(in srgb, var(--dm-arc) 85%, transparent) 0%,
+    color-mix(in srgb, var(--dm-core) 55%, transparent) 38%,
+    color-mix(in srgb, var(--dm-deep) 30%, transparent) 100%
+  );
+  animation: rage-flash 900ms var(--ease-out) both;
+}
+
+/*
+ * Two strikes rather than one long flare. A single fade reads as a screen
+ * transition; a flash that comes back once reads as lightning, and it is the
+ * second one that makes the first one legible as light rather than as a
+ * coloured overlay someone put there.
+ */
+@keyframes rage-flash {
+  0% {
+    opacity: 0;
+  }
+  6% {
+    opacity: 0.92;
+  }
+  18% {
+    opacity: 0.12;
+  }
+  26% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/*
+ * A piece of the page, knocked loose and coming back.
+ *
+ * Small range on purpose: the egg throws the page across the screen because
+ * the page is what it is about, and this is a footnote to a form error. Nine
+ * pixels is enough to be felt and not enough to be read as a fault.
+ *
+ * One animation, not a throw and a later return — the whole thing has to be
+ * finished before the flash is, and nothing should be left holding state for
+ * an element it borrowed for a second and a half.
+ */
+.is-rattled {
+  animation: rattled 1200ms cubic-bezier(0.2, 0.85, 0.24, 1) both;
+  animation-delay: var(--rd, 0ms);
+  will-change: transform;
+}
+
+@keyframes rattled {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  14% {
+    transform: translate3d(var(--rx), var(--ry), 0) rotate(var(--rr));
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+
+/* The temper stays; the room does not move. A flash that cannot be avoided is
+   the one thing here that can actually hurt someone, so it goes first. */
+@media (prefers-reduced-motion: reduce) {
+  .is-rattled {
+    animation: none;
+  }
+
+  :root.is-raged::before {
+    animation-name: rage-flash-quiet;
+  }
+
+  @keyframes rage-flash-quiet {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    40% {
+      opacity: 0.3;
+    }
+  }
+}
+
+/* --------------------------------------------------------------------- */
 /* Theme wave                                                             */
 /* --------------------------------------------------------------------- */
 

@@ -55,8 +55,143 @@ function strike(el: HTMLElement): void {
   window.setTimeout(() => el.classList.remove('is-punished'), PUNISH_MS + 60);
 }
 
+/* ---------------------------------------------------------------------- */
+/* The rage                                                                */
+/* ---------------------------------------------------------------------- */
+
+/** Which refusal in a row stops being a telling-off. */
+const RAGE_AT = 6;
+
+/**
+ * How long two refusals can be apart and still count as in a row.
+ *
+ * A run is someone hammering the button, not someone who came back twenty
+ * minutes later and got it wrong again. Ten seconds is long enough to read the
+ * message, try something, and be refused a second time — and short enough that
+ * a count never survives the visitor going away and doing something else.
+ */
+const RAGE_WINDOW_MS = 10_000;
+
+/** How much of the page comes off its hooks. Enough to be felt. */
+const RATTLE_REACH = 9;
+const RATTLE_MAX = 34;
+const RATTLE_MS = 1500;
+
+let streak = 0;
+let lastRefusal = 0;
+/** True while a storm is running, so nothing small is drawn under it. */
+let raging = false;
+
+/**
+ * Everything at once, and over in a second and a half.
+ *
+ * The order in the code is not an order in time: the flash, the thunder, the
+ * pointer and the page all start on the same frame, because a temper is one
+ * event. Staggering any of it turns it into a sequence, and a sequence reads
+ * as a feature rather than as a reaction.
+ */
+function rage(at: { x: number; y: number }): void {
+  const root = document.documentElement;
+  raging = true;
+
+  root.style.setProperty('--rage-x', `${Math.round((at.x / window.innerWidth) * 100)}%`);
+  root.style.setProperty('--rage-y', `${Math.round((at.y / window.innerHeight) * 100)}%`);
+  root.classList.remove('is-raged');
+  void root.offsetWidth;
+  root.classList.add('is-raged');
+
+  document.dispatchEvent(new CustomEvent('mh:rage'));
+  if (!sound.isMuted()) sound.thunder();
+
+  if (!reduced()) rattle();
+
+  window.setTimeout(() => {
+    raging = false;
+    root.classList.remove('is-raged');
+    root.style.removeProperty('--rage-x');
+    root.style.removeProperty('--rage-y');
+  }, RATTLE_MS);
+}
+
+/**
+ * Knocks the visible page loose and lets it fall back.
+ *
+ * Only what is on screen, and only as much of it as will still be on screen
+ * when it moves — an element half out of the viewport that jumps is a scrollbar
+ * flicker, not a shock. Everything is handed its own direction and its own
+ * delay here and then left alone: the animation puts each one back where it
+ * started, so nothing has to be undone afterwards and a visitor who navigates
+ * mid-rage leaves nothing behind.
+ */
+function rattle(): void {
+  const seen = document.querySelectorAll<HTMLElement>(
+    'main h1, main h2, main h3, main p, main img, main .btn, main .row, main .chip, main .featured, main .card'
+  );
+
+  let taken = 0;
+  for (const el of seen) {
+    if (taken >= RATTLE_MAX) break;
+    const rect = el.getBoundingClientRect();
+    if (rect.bottom < 0 || rect.top > window.innerHeight || !rect.width) continue;
+    // Something already animating for another reason is left out of it rather
+    // than fought over.
+    if (el.classList.contains('is-rattled') || el.classList.contains('is-punished')) continue;
+
+    const angle = Math.random() * Math.PI * 2;
+    const reach = RATTLE_REACH * (0.45 + Math.random() * 0.55);
+    el.style.setProperty('--rx', `${(Math.cos(angle) * reach).toFixed(1)}px`);
+    el.style.setProperty('--ry', `${(Math.sin(angle) * reach).toFixed(1)}px`);
+    el.style.setProperty('--rr', `${((Math.random() * 2 - 1) * 1.6).toFixed(2)}deg`);
+    el.style.setProperty('--rd', `${Math.round(Math.random() * 90)}ms`);
+    el.classList.add('is-rattled');
+    taken += 1;
+
+    window.setTimeout(() => {
+      el.classList.remove('is-rattled');
+      for (const prop of ['--rx', '--ry', '--rr', '--rd']) el.style.removeProperty(prop);
+      if (!el.getAttribute('style')) el.removeAttribute('style');
+    }, RATTLE_MS);
+  }
+}
+
 export function punish(target?: Element | null): void {
   const shakes = !reduced();
+
+  /*
+   * Patience, and the end of it.
+   *
+   * Five refusals get the arcs. The sixth in a row gets the storm — he has
+   * said the same thing five times and is not going to say it a sixth. The
+   * count resets either way, so the next run has to be earned again rather
+   * than every press from here on being a thunderclap.
+   */
+  const now = performance.now();
+
+  /*
+   * One refusal can call this more than once — the form punishes the button
+   * that was pressed and the field that was wrong — and counting each of those
+   * would have him losing his temper on the third press rather than the sixth.
+   * Calls this close together are the same refusal arriving in pieces.
+   */
+  const again = now - lastRefusal < 60;
+  if (!again) {
+    streak = now - lastRefusal < RAGE_WINDOW_MS ? streak + 1 : 1;
+    lastRefusal = now;
+  }
+
+  // The rest of a refusal he has already lost his temper over is dropped: the
+  // storm is the answer, and the small arcs underneath it are noise.
+  if (raging) return;
+
+  if (streak >= RAGE_AT) {
+    streak = 0;
+    const box = target instanceof HTMLElement ? target.getBoundingClientRect() : null;
+    rage({
+      x: box ? box.left + box.width / 2 : window.innerWidth / 2,
+      y: box ? box.top + box.height / 2 : window.innerHeight / 2,
+    });
+    return;
+  }
 
   /*
    * The pointer is punished once; anything handed in is punished as well.

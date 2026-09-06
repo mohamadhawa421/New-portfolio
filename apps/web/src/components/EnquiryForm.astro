@@ -480,11 +480,52 @@ const config = {
           void focus.offsetWidth;
           focus.setAttribute('aria-invalid', 'true');
         }
-        focus?.focus();
+        focus?.focus({ preventScroll: true });
+        if (focus) reveal(focus);
 
         // The pointer takes the arcs, and so does the field that caused them.
         punish(pressed);
         if (focus) punish(focus);
+      }
+
+      /**
+       * Brings the refusal into view, if it is not already.
+       *
+       * focus() scrolls on its own, but it scrolls the *field* to the nearest
+       * edge — which on the way up leaves the section above still filling most
+       * of the screen and the form arriving from the bottom, so the visitor is
+       * looking at the wrong section with their answer at the edge of it. This
+       * puts the top of the contact section under the nav instead, the way
+       * following a link to it would.
+       *
+       * The nav is measured rather than assumed: it is a floating pill whose
+       * height changes with the viewport, and a hardcoded offset either hid the
+       * heading behind it or left a band of the previous section showing.
+       */
+      function reveal(field: HTMLElement) {
+        const here = field.getBoundingClientRect();
+        const nav = document.querySelector('.nav');
+        const clear = (nav ? nav.getBoundingClientRect().bottom : 76) + 18;
+
+        // Already comfortably on screen: moving the page would be the only
+        // thing the visitor noticed, and it would not be an answer.
+        if (here.top > clear && here.bottom < window.innerHeight - 12) return;
+
+        const section = form.closest('section') ?? form;
+        const top = section.getBoundingClientRect().top + window.scrollY - clear;
+
+        /*
+         * Unless the section is taller than the window and the field is near
+         * its foot — aligning the top would then scroll the answer off the
+         * bottom, which is worse than the thing being fixed. The field wins.
+         */
+        const after = here.top + window.scrollY - top;
+        const target =
+          after > window.innerHeight - 90
+            ? here.top + window.scrollY - (window.innerHeight - here.height) / 2
+            : top;
+
+        window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
       }
 
       function clearError() {
@@ -878,8 +919,8 @@ const config = {
    * down is the one moment in the ordinary interface where he should be
    * visible.
    *
-   * It is a jolt, not a state: the focus ring the browser has just drawn goes
-   * purple, the text flickers through the arc colour the way his speech does
+   * It is a jolt, not a state: the focus ring the field has just been given
+   * goes purple, the text flickers through the arc colour the way his speech does
    * when he is charged, and then all of it drains back to the field the
    * visitor was already looking at. The error message above is what persists —
    * the purple is only how it arrives.
@@ -899,22 +940,22 @@ const config = {
   /*
    * The ring is the focus ring, not a second one beside it.
    *
-   * showError focuses the field, so the browser draws its own blue outline
-   * there the moment the refusal lands. Adding a purple ring inside it left
-   * the field wearing two. This overrides that same outline for the length of
-   * the jolt and then lets go of it — with no fill mode the browser's own ring
-   * comes straight back, so it reads as the blue one turning purple and
-   * returning. The glow is the only thing drawn outside it.
+   * showError focuses the field, so the site's own :focus-visible ring is on
+   * it the moment the refusal lands. Adding a purple ring inside that left the
+   * field wearing two, so this animates the same outline instead — starting
+   * and ending on var(--blue), which is what the stylesheet has it at, so the
+   * hand-back at the end is invisible. The glow is the only thing drawn
+   * outside it.
    */
   @keyframes enquiry-refused {
     0% {
-      outline: 2px solid transparent;
-      outline-offset: 0;
+      outline: 2px solid var(--blue);
+      outline-offset: 3px;
       box-shadow: 0 0 22px -4px transparent;
     }
     10% {
       outline: 2px solid var(--dm-core);
-      outline-offset: 0;
+      outline-offset: 3px;
       box-shadow: 0 0 22px -4px color-mix(in srgb, var(--dm-core) 70%, transparent);
       color: transparent;
       text-shadow: none;
@@ -929,14 +970,20 @@ const config = {
     }
     40% {
       outline: 2px solid var(--dm-core);
-      outline-offset: 0;
+      outline-offset: 3px;
       box-shadow: 0 0 22px -4px color-mix(in srgb, var(--dm-core) 70%, transparent);
       color: var(--dm-arc);
       text-shadow: 0 0 14px color-mix(in srgb, var(--dm-core) 65%, transparent);
     }
+    /*
+     * Back to the ring the field would have had anyway, by walking the colour
+     * there rather than by letting go of it. Fading the purple out and letting
+     * the browser's own ring reappear underneath read as two rings, one after
+     * the other; this is one ring cooling from purple to blue.
+     */
     100% {
-      outline: 2px solid transparent;
-      outline-offset: 0;
+      outline: 2px solid var(--blue);
+      outline-offset: 3px;
       box-shadow: 0 0 22px -4px transparent;
       color: var(--ink-on-dark);
       text-shadow: none;
@@ -985,12 +1032,12 @@ const config = {
     @keyframes enquiry-refused-quiet {
       0%,
       100% {
-        outline: 2px solid transparent;
-        outline-offset: 0;
+        outline: 2px solid var(--blue);
+        outline-offset: 3px;
       }
       30% {
         outline: 2px solid var(--dm-core);
-        outline-offset: 0;
+        outline-offset: 3px;
       }
     }
   }

@@ -401,6 +401,57 @@ export function spark(level = 0.3): void {
 }
 
 /**
+ * The real thing: a crack and a roll behind it.
+ *
+ * spark() is a tick — right for a character arriving and for the small
+ * punishments, and far too small for the moment he actually loses his temper.
+ * This is the same two buffers the storm is built from, played the way weather
+ * plays them: the arc slowed until it breaks rather than clicks, and the
+ * shockwave stretched to a fifth of its speed under a lowpass that closes over
+ * two seconds, which is what turns a bang into a rumble rolling away.
+ *
+ * Routed straight to the output like spark(), and refusing for the same reason
+ * — if nothing has been pressed yet there is no device open and no right to
+ * open one.
+ */
+export function thunder(level = 0.55): void {
+  if (!ctx || ctx.state !== 'running' || !strikeBuf || !waveBuf) return;
+
+  const t = ctx.currentTime;
+  const out = ctx.createGain();
+  out.gain.value = level;
+  out.connect(ctx.destination);
+
+  // The strike. Slow enough that the gaps in the arc are audible as breaks.
+  const crack = ctx.createBufferSource();
+  crack.buffer = strikeBuf;
+  crack.playbackRate.value = 0.4 + Math.random() * 0.08;
+  const cg = ctx.createGain();
+  cg.gain.setValueAtTime(1, t);
+  cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
+  crack.connect(cg).connect(out);
+  crack.start(t);
+  crack.stop(t + 1.1);
+
+  // The roll. It arrives with the crack rather than after it — distance is
+  // what separates the two in the sky, and this one is directly overhead.
+  const roll = ctx.createBufferSource();
+  roll.buffer = waveBuf;
+  roll.playbackRate.value = 0.2;
+  const lp = ctx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.setValueAtTime(1100, t);
+  lp.frequency.exponentialRampToValueAtTime(170, t + 1.7);
+  const rg = ctx.createGain();
+  rg.gain.setValueAtTime(0.0001, t);
+  rg.gain.exponentialRampToValueAtTime(0.95, t + 0.05);
+  rg.gain.exponentialRampToValueAtTime(0.0001, t + 1.9);
+  roll.connect(lp).connect(rg).connect(out);
+  roll.start(t);
+  roll.stop(t + 2);
+}
+
+/**
  * Tears the whole thing down, for a page that is going away.
  *
  * end() fades and lets the voices ring off, which is right when the sequence is
