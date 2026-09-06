@@ -466,7 +466,7 @@ import EggSound from './EggSound.astro';
   }
 
   .shock.is-rippling {
-    animation: egg-shock 520ms cubic-bezier(0.12, 0.72, 0.24, 1) both;
+    animation: egg-shock 380ms cubic-bezier(0.1, 0.78, 0.2, 1) both;
   }
 
   /*
@@ -474,20 +474,39 @@ import EggSound from './EggSound.astro';
    * the crossing is what made the old front vanish halfway across the page and
    * read as a glow rather than as something arriving.
    */
+  /*
+   * Up in two frames, and from a disc rather than from a point: at scale 0.02
+   * the band is a couple of pixels across and takes a tenth of a second to
+   * become anything, which is a tenth of a second of the wave not being there.
+   */
   @keyframes egg-shock {
     0% {
       opacity: 0;
-      transform: scale(0.02);
+      transform: scale(0.07);
     }
-    12% {
+    4% {
       opacity: 1;
     }
     72% {
       opacity: 0.92;
     }
+    /*
+     * Past the corner and gone, not stopped at the edge.
+     *
+     * The element is sized so that scale 1 puts its edge exactly on the
+     * furthest corner of the viewport, which is where the old front stopped —
+     * and a front that reaches the edge and stops is a circle drawn on the
+     * page. Half again as far means it leaves through the sides while it is
+     * still bright, and what the eye reports is a wave bigger than the window
+     * it happened in. It stays visible almost the whole way, so the leaving is
+     * the last thing seen rather than a fade.
+     */
+    82% {
+      opacity: 0.7;
+    }
     100% {
       opacity: 0;
-      transform: scale(1.1);
+      transform: scale(1.55);
     }
   }
 
@@ -547,15 +566,15 @@ import EggSound from './EggSound.astro';
   }
 
   .ring.is-rippling {
-    animation: egg-ring 520ms cubic-bezier(0.12, 0.72, 0.24, 1) both;
+    animation: egg-ring 380ms cubic-bezier(0.1, 0.78, 0.2, 1) both;
   }
 
   .ring--trail.is-rippling {
-    animation: egg-ring-trail 640ms cubic-bezier(0.12, 0.72, 0.24, 1) 60ms both;
+    animation: egg-ring-trail 480ms cubic-bezier(0.1, 0.78, 0.2, 1) 45ms both;
   }
 
   .wash.is-rippling {
-    animation: egg-wash 700ms cubic-bezier(0.12, 0.74, 0.22, 1) both;
+    animation: egg-wash 560ms cubic-bezier(0.1, 0.78, 0.2, 1) both;
   }
 
   /*
@@ -568,7 +587,7 @@ import EggSound from './EggSound.astro';
   @keyframes egg-ring {
     0% {
       opacity: 1;
-      transform: scale(0.012);
+      transform: scale(0.06);
     }
     62% {
       opacity: 0.92;
@@ -592,7 +611,7 @@ import EggSound from './EggSound.astro';
     }
     100% {
       opacity: 0;
-      transform: scale(1.06);
+      transform: scale(1.5);
     }
   }
 
@@ -609,7 +628,7 @@ import EggSound from './EggSound.astro';
     }
     100% {
       opacity: 0;
-      transform: scale(1.12);
+      transform: scale(1.5);
     }
   }
 </style>

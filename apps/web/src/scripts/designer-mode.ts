@@ -101,8 +101,16 @@ interface Beat {
 /** How long the field takes to exhaust itself once it starts. */
 const DECAY_MS = 3000;
 
-/** How long the leading edge takes to cross the viewport. Matches the CSS. */
-const WAVE_MS = 520;
+/**
+ * How long the leading edge takes to cross the viewport. Matches the CSS.
+ *
+ * Fast enough to read as a release of energy rather than a thing travelling —
+ * but not instant, because the whole point is that it is watched crossing the
+ * page and hitting things in the order it reaches them. Under about 300 it
+ * stops being a front and becomes a flash; over about 500 you are waiting for
+ * it.
+ */
+const WAVE_MS = 380;
 
 /**
  * How long the shove and the momentum after it last, together.
@@ -121,7 +129,7 @@ const OUT_MS = 820;
  * long enough that you can see the field is doing work. The only movement in
  * it is the struggle, which is a force with a name.
  */
-const HOLD_MS = 800;
+const HOLD_MS = 1500;
 /** And the way home: the shortest of them, and how much longer the longest is. */
 const HOME_MS = 2600;
 const HOME_SPREAD = 1200;
@@ -419,6 +427,35 @@ function shatterText(el: HTMLElement): HTMLElement[] {
   const original = el.innerHTML;
   undo(() => {
     el.innerHTML = original;
+  });
+
+  /*
+   * The element keeps the box it had, whatever happens inside it.
+   *
+   * Splitting a line into inline-blocks changes its width — every kerning pair
+   * is gone — and anything laid out against that width moves. The theme
+   * control sits in a row with four nav links; when those came apart the row
+   * got narrower, the centred nav re-centred, and the control was fifty-six
+   * pixels from where it had been. Its own flight then brought it home to a
+   * position that no longer existed, and the swap back to real text at the end
+   * put it right in one frame. That is the snap, and it was never about the
+   * letters: it was about everything standing next to them.
+   *
+   * Pinning the outside means the split is invisible to the page. --ox and --oy
+   * put every letter exactly where its character was inside that box, so both
+   * halves of the illusion hold: nothing moves, and nothing has moved.
+   */
+  const box = el.getBoundingClientRect();
+  const priorWidth = el.style.width;
+  const priorHeight = el.style.height;
+  const priorSizing = el.style.boxSizing;
+  el.style.boxSizing = 'border-box';
+  el.style.width = `${box.width}px`;
+  el.style.height = `${box.height}px`;
+  undo(() => {
+    el.style.width = priorWidth;
+    el.style.height = priorHeight;
+    el.style.boxSizing = priorSizing;
   });
 
   /*
@@ -906,10 +943,6 @@ export function run(options: DesignerModeOptions): Beat {
        * and not per line.
        */
       const was = before[i];
-      if (was) {
-        letter.style.setProperty('--ox', `${(was.left - spot.left).toFixed(2)}px`);
-        letter.style.setProperty('--oy', `${(was.top - spot.top).toFixed(2)}px`);
-      }
 
       const lx = spot.left + spot.width / 2 - originX;
       const ly = spot.top + spot.height / 2 - originY;
@@ -932,51 +965,49 @@ export function run(options: DesignerModeOptions): Beat {
       const ny = ly / distance;
       const tangent = swirl + (Math.random() * 2 - 1) * 0.75;
 
-      letter.style.setProperty('--cx', `${((nx - ny * tangent + lean.x) * strength).toFixed(1)}px`);
-      letter.style.setProperty('--cy', `${((ny + nx * tangent + lean.y) * strength).toFixed(1)}px`);
-      // Torque, like everything else: it turns the way it was swung, and only
-      // that way. A letter has no mass to resist it, so it turns further.
-      letter.style.setProperty('--cr', `${(tangent * 20).toFixed(2)}deg`);
-      /*
-       * Hit when its block is hit, not when its own position says.
-       *
-       * Timing each letter off its own distance made the front cross a line of
-       * text letter by letter — a clean left-to-right ripple, in order, which
-       * is the most orderly thing that has ever happened to a paragraph and
-       * the exact opposite of being hit by something. A block is struck at
-       * once. The seventy milliseconds on top are so that it is a mess rather
-       * than a chord: no two letters leave on the same frame, and no two leave
-       * in any particular order either.
-       *
-       * The direction is still each letter's own, which is what stops it
-       * behaving like a block: they are struck together and go their own ways.
-       */
-      letter.style.setProperty('--cd', `${struck[i] + Math.round(Math.random() * 70)}ms`);
-      /*
-       * How long this letter's whole journey takes. Its own number, so the
-       * word does not come back in the order it left in — and long enough that
-       * the way home is unmistakably slower than the way out.
-       */
       const journey = 2100 + Math.round(Math.random() * 900);
-      letter.style.setProperty('--lt', `${journey}ms`);
+      const flight: Throw = {
+        ox: was ? was.left - spot.left : 0,
+        oy: was ? was.top - spot.top : 0,
+        cx: (nx - ny * tangent + lean.x) * strength,
+        cy: (ny + nx * tangent + lean.y) * strength,
+        // Torque, like everything else: it turns the way it was swung, and only
+        // that way. A letter has no mass to resist it, so it turns further.
+        cr: tangent * 20,
+        /*
+         * Hit when its block is hit, not when its own position says.
+         *
+         * Timing each letter off its own distance made the front cross a line
+         * of text letter by letter — a clean left-to-right ripple, in order,
+         * which is the most orderly thing that has ever happened to a paragraph
+         * and the exact opposite of being hit by something. A block is struck
+         * at once. The seventy milliseconds on top are so that it is a mess
+         * rather than a chord: no two letters leave on the same frame, and no
+         * two leave in any particular order either.
+         *
+         * The direction is still each letter's own, which is what stops it
+         * behaving like a block: they are struck together and go their own ways.
+         */
+        cd: struck[i] + Math.round(Math.random() * 70),
+        /*
+         * How long its way home takes. Its own number, so the word does not
+         * come back in the order it left in — and long enough that the way
+         * home is unmistakably slower than the way out.
+         */
+        home: journey,
+      };
+
+      returning.push(launchLetter(letter, flight));
 
       /*
-       * And it buzzes in the field like everything else, harder than anything
-       * else, because there is less of it than anything else.
-       *
-       * Scaled off the size of the type it belongs to: body copy at three
-       * pixels, a display heading's letters at a little under two — between a
-       * paragraph and a button, which is where something that light and that
-       * large belongs. The apex is 26% into its own journey, which is where
-       * its keyframes put the turn.
+       * And it shudders while it is held, harder than anything else, because
+       * there is less of it than anything else. Scaled off the size of the type
+       * it belongs to: body copy at three pixels, a display heading's letters
+       * at a little under two — between a paragraph and a button, which is
+       * where something that light and that large belongs.
        */
       const weight = Math.min(1, Math.max(0.55, 20 / sized[i]));
-      const shake = buzz(
-        letter,
-        struck[i] + journey * 0.26,
-        3.2 * weight,
-        1.3 * weight
-      );
+      const shake = buzz(letter, flight.cd + LETTER_OUT, 3.2 * weight);
       if (shake) returning.push(shake);
     });
 
@@ -991,13 +1022,11 @@ export function run(options: DesignerModeOptions): Beat {
        * perfectly still — a cover that did not move at all read as the one
        * object the field had no trouble with, which is the opposite of true.
        */
-      const shake = buzz(
-        el,
-        flight.wave + OUT_MS,
-        1.9 * (0.28 + 0.72 * flight.grip),
-        0.5 * (0.28 + 0.72 * flight.grip)
-      );
+      const shake = buzz(el, flight.wave + OUT_MS, 1.9 * (0.28 + 0.72 * flight.grip));
       if (shake) returning.push(shake);
+
+      const lifted = lift(el, flight);
+      if (lifted) returning.push(lifted);
     }
   });
 
@@ -1212,75 +1241,154 @@ const CAN_LAYER = (() => {
   }
 })();
 
-/** How the shudder is shaped around the moment the field takes hold. */
-const BUZZ_RISE = 300;
-/** Long enough to cover the whole of the held stretch, and then some. */
-const BUZZ_HOLD = HOLD_MS + 160;
-const BUZZ_FADE = 820;
-const BUZZ_STEP = 56;
-
 /**
- * The shudder of something being fought over.
+ * How the shudder is shaped, and it is shaped by the hold and nothing else.
  *
- * A rigid thing in a field that is gripping it does not travel smoothly: the
- * hold is not perfectly steady, so the object buzzes against it. That is the
- * force this names, and it is why it is shaped the way it is.
+ * It used to start before the apex and fade well into the return, which put
+ * trembling on the way out and on the way home — two places where the thing
+ * moving it is momentum, not a grip. The buzz is evidence of a grip. It cannot
+ * be anywhere the grip is not.
  *
- * It comes up as the shove is running out, holds while the field is doing the
- * actual work of stopping the thing and turning it round, and fades as it is
- * carried home. Nothing rattles on the way back — something being carefully
- * put down does not shake, and a buzz that ran the whole length would be an
- * idle animation again, which is the one thing this sequence must never have.
- *
- * Three rules keep it from being a shake:
- *
- * It is added to the movement underneath rather than replacing it, so the
- * trajectory is untouched and this is a texture on top of it.
- *
- * It is irregular. Every offset is rolled, so no two frames relate and there
- * is no cycle to notice.
- *
- * And the amount is decided by what is being held. The lighter and smaller a
- * thing is, the harder it is thrown about: a letter of body copy buzzes at
- * three pixels, a heading's letter at under two, a button at about the same,
- * and a full-width cover at half of one. It is the same field having an easier
- * time with the heavy things.
+ * So it begins on the frame the piece stops and ends on the frame it is let
+ * go. The edges are 90ms of ramp so it arrives and leaves without a click, and
+ * that ramp lives inside the hold rather than either side of it.
  */
-function buzz(el: HTMLElement, apex: number, amp: number, spin: number): Animation | null {
+const BUZZ_EDGE = 90;
+const BUZZ_STEP = 52;
+
+function buzz(el: HTMLElement, apex: number, amp: number): Animation | null {
   if (!CAN_LAYER || amp <= 0) return null;
 
-  const start = Math.max(0, apex - BUZZ_RISE);
-  const span = BUZZ_RISE + BUZZ_HOLD + BUZZ_FADE;
+  const span = HOLD_MS;
   const steps = Math.max(2, Math.round(span / BUZZ_STEP));
   const frames: Keyframe[] = [];
 
   for (let i = 0; i <= steps; i += 1) {
     const now = (i / steps) * span;
 
-    /*
-     * Up, level, and out. `sin` and `cos` over a quarter turn rather than a
-     * straight ramp, so it arrives and leaves without a corner at either end.
-     */
-    let envelope: number;
-    if (now < BUZZ_RISE) envelope = Math.sin((Math.PI / 2) * (now / BUZZ_RISE));
-    else if (now < BUZZ_RISE + BUZZ_HOLD) envelope = 1;
-    else envelope = Math.cos((Math.PI / 2) * ((now - BUZZ_RISE - BUZZ_HOLD) / BUZZ_FADE));
+    // In and out inside its own window, so nothing starts or stops abruptly
+    // and nothing trembles outside the hold.
+    const envelope = Math.min(1, Math.min(now, span - now) / BUZZ_EDGE);
 
-    const reach = amp * envelope;
+    const reach = amp * Math.max(0, envelope);
+    /*
+     * Position only, and no rotation at all.
+     *
+     * A thing turning one way and then the other is the oscillation this
+     * sequence has spent its whole life removing, and at this scale a rotation
+     * is indistinguishable from a wobble. A held object shivers; it does not
+     * rock.
+     */
     frames.push({
       offset: i / steps,
       transform:
         `translate3d(${((Math.random() * 2 - 1) * reach).toFixed(2)}px, ` +
-        `${((Math.random() * 2 - 1) * reach).toFixed(2)}px, 0) ` +
-        `rotate(${((Math.random() * 2 - 1) * spin * envelope).toFixed(3)}deg)`,
+        `${((Math.random() * 2 - 1) * reach).toFixed(2)}px, 0)`,
       easing: 'linear',
     });
   }
 
-  // It has to end on nothing, or whatever it was added to is left off its mark.
-  frames[frames.length - 1] = { offset: 1, transform: 'translate3d(0, 0, 0) rotate(0deg)' };
+  // Both ends are exactly nothing, so what it is added to is untouched before
+  // the hold and untouched after it.
+  frames[0] = { offset: 0, transform: 'translate3d(0, 0, 0)' };
+  frames[frames.length - 1] = { offset: 1, transform: 'translate3d(0, 0, 0)' };
 
-  return el.animate(frames, { duration: span, delay: start, composite: 'add', fill: 'both' });
+  return el.animate(frames, { duration: span, delay: apex, composite: 'add', fill: 'both' });
+}
+
+/**
+ * How long a letter's own momentum takes to run out.
+ *
+ * Shorter than a piece's. There is less to a letter, so there is less to keep
+ * it going, and the field has it sooner.
+ */
+const LETTER_OUT = 620;
+
+/** Where a letter is aimed, and when. */
+interface Throw {
+  ox: number;
+  oy: number;
+  cx: number;
+  cy: number;
+  cr: number;
+  cd: number;
+  home: number;
+}
+
+/**
+ * One letter, one animation, told exactly as a piece is told.
+ *
+ * It used to be a CSS animation with fixed percentages, which cannot express a
+ * hold of a set number of milliseconds inside a total that differs per letter
+ * — and it meant a letter had a CSS animation and an added Web Animations
+ * shudder on the same property, from two systems. Both halves are now the same
+ * system, and the same shape as everything else on the page: still, struck,
+ * carried, held, brought home.
+ *
+ * Home is --ox/--oy and not zero. A line split into inline-blocks loses every
+ * kerning pair, so a letter's span does not sit where its character was drawn;
+ * this is the difference, measured before anything was touched.
+ */
+function launchLetter(el: HTMLElement, t: Throw): Animation {
+  const total = t.cd + LETTER_OUT + HOLD_MS + t.home;
+  const at = (ms: number) => ms / total;
+  const apex = t.cd + LETTER_OUT;
+
+  const rest = `translate3d(${t.ox.toFixed(2)}px, ${t.oy.toFixed(2)}px, 0)`;
+  const out =
+    `translate3d(${(t.ox + t.cx).toFixed(2)}px, ${(t.oy + t.cy).toFixed(2)}px, 0) ` +
+    `rotate(${t.cr.toFixed(2)}deg)`;
+
+  return el.animate(
+    [
+      { transform: rest, offset: 0, easing: 'linear' },
+      // Untouched. The front arrives on this frame.
+      { transform: rest, offset: at(t.cd), easing: 'cubic-bezier(0.03, 0.85, 0.2, 1)' },
+      // Struck, and carried until there is nothing left.
+      { transform: out, offset: at(apex), easing: 'linear' },
+      // Held. The same position, so the only movement here is the shudder.
+      { transform: out, offset: at(apex + HOLD_MS), easing: 'cubic-bezier(0.5, 0, 0.3, 1)' },
+      { transform: rest, offset: 1 },
+    ],
+    { duration: total, fill: 'both' }
+  );
+}
+
+/**
+ * The kick the front gives a thing as it passes under it.
+ *
+ * The same movement the theme wipe uses — up fourteen pixels and a hair
+ * larger, over 620ms — because it is the same idea: something is crossing the
+ * page and everything it reaches answers it. There it is the only thing that
+ * happens; here it is the first, and it is added on top of the throw rather
+ * than replacing it, so what you see is a piece being lifted and flung at the
+ * same instant rather than one and then the other.
+ *
+ * It is scaled by weight for the same reason everything else is. A cover is
+ * barely lifted; a chip is thrown off its feet.
+ */
+function lift(el: HTMLElement, f: Flight): Animation | null {
+  if (!CAN_LAYER) return null;
+
+  const height = 14 * (0.35 + 0.65 * f.grip);
+
+  return el.animate(
+    [
+      { transform: 'translate3d(0, 0, 0) scale(1)', offset: 0 },
+      {
+        transform: `translate3d(0, ${-height.toFixed(1)}px, 0) scale(${(1 + 0.012 * f.grip).toFixed(4)})`,
+        offset: 0.38,
+      },
+      { transform: 'translate3d(0, 0, 0) scale(1)', offset: 1 },
+    ],
+    {
+      duration: 620,
+      delay: f.wave,
+      easing: 'cubic-bezier(0.33, 0.02, 0.18, 1)',
+      composite: 'add',
+      fill: 'both',
+    }
+  );
 }
 
 /* ---------------------------------------------------------------------- */
