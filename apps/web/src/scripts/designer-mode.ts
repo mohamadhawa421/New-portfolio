@@ -689,11 +689,14 @@ export function run(options: DesignerModeOptions): Beat {
   /*
    * Far enough to read as an explosion rather than a nudge. The ceiling is the
    * viewport, not taste: a piece thrown past the edge is a piece nobody sees
-   * come back, so the throw is scaled to the smaller half-dimension — and a
-   * third of that half is as much as can be spent before the far pieces start
-   * leaving the screen.
+   * come back, so the throw is scaled to the smaller half-dimension.
+   *
+   * Trimmed when the coast above was raised. The two multiply — the total is
+   * the shove times the coast — so making the momentum harder to beat had to
+   * be paid for out of the shove, or the far pieces would spend the fight
+   * off the side of the screen where nobody can watch them lose it.
    */
-  const push = Math.min(narrow ? 195 : 300, Math.min(window.innerWidth, window.innerHeight) * 0.38);
+  const push = Math.min(narrow ? 168 : 260, Math.min(window.innerWidth, window.innerHeight) * 0.33);
 
   /*
    * One bias for the whole run.
@@ -780,7 +783,18 @@ export function run(options: DesignerModeOptions): Beat {
      * left. That is the moment the field has it, and it is a moment and not a
      * phase: the way home starts on the same frame.
      */
-    const coast = 1.19 + Math.random() * 0.07;
+    /*
+     * How much further the momentum carries it than the shove alone did.
+     *
+     * This number is the strength of the field, read backwards. At 1.2 the
+     * argument was over almost as soon as it started — the fight added a fifth
+     * to a distance the shove had already covered, so the grip looked like it
+     * barely had to try. At 1.6 the piece travels most of another half of its
+     * own throw while it is being worked on, which is what makes the holding
+     * look like work: it is still getting away for a second and a half, and
+     * only just stops in time.
+     */
+    const coast = 1.55 + Math.random() * 0.17;
 
     /*
      * The whole attribute, saved and put back.
@@ -1026,7 +1040,7 @@ export function run(options: DesignerModeOptions): Beat {
       }
 
       const journey = 2100 + Math.round(Math.random() * 900);
-      const letterCoast = 1.2 + Math.random() * 0.1;
+      const letterCoast = 1.58 + Math.random() * 0.2;
       const flight: Throw = {
         coast: letterCoast,
         cx: (nx - ny * tangent + lean.x) * strength * letterCoast,
@@ -1067,7 +1081,7 @@ export function run(options: DesignerModeOptions): Beat {
        * where something that light and that large belongs.
        */
       const weight = Math.min(1, Math.max(0.55, 20 / sized[i]));
-      const shake = buzz(letter, flight.cd + LETTER_BLAST, 3.2 * weight, LETTER_FIGHT);
+      const shake = buzz(letter, flight.cd + LETTER_OUT, 2.6 * weight, BUZZ_LETTER_MS);
       if (shake) returning.push(shake);
 
       // When this block is whole again: the last of its letters, plus a frame.
@@ -1099,7 +1113,7 @@ export function run(options: DesignerModeOptions): Beat {
        * perfectly still — a cover that did not move at all read as the one
        * object the field had no trouble with, which is the opposite of true.
        */
-      const shake = buzz(el, flight.wave + BLAST_MS, 1.9 * (0.28 + 0.72 * flight.grip));
+      const shake = buzz(el, flight.wave + OUT_MS, 1.55 * (0.28 + 0.72 * flight.grip), BUZZ_MS);
       if (shake) returning.push(shake);
 
       const lifted = lift(el, flight);
@@ -1265,13 +1279,19 @@ function launch(el: HTMLElement, f: Flight): Animation {
         transform: `translate3d(${bx.toFixed(1)}px, ${by.toFixed(1)}px, 0) rotate(${(f.ar * 0.72).toFixed(2)}deg) scale(${f.as.toFixed(3)})`,
         offset: at(struck),
         /*
-         * Opening slope 2.7, closing slope 0. In absolute terms that opening
-         * is the speed the segment above ends at: this stretch covers a fifth
-         * of the distance in four times the duration, so the two numbers have
-         * to differ by that much to mean the same speed. From there it runs
-         * down to nothing.
+         * Opening slope 0.93, closing slope 0, and the middle deliberately
+         * high.
+         *
+         * The opening is the speed the shove ends at, expressed in this
+         * segment's own terms: it covers a bit over half the shove's distance
+         * in four times its duration, so the number that means "the same
+         * speed" is much smaller than it was when the fight was a fifth as
+         * long. Pushing the second control point out to 0.55 keeps the speed
+         * up through the middle instead of collapsing early — the piece is
+         * still making real ground when it is half beaten, and only loses it
+         * at the end.
          */
-        easing: 'cubic-bezier(0.2, 0.54, 0.35, 1)',
+        easing: 'cubic-bezier(0.3, 0.28, 0.55, 1)',
       },
       /*
        * The neutral point: the frame the outward speed reaches zero.
@@ -1328,29 +1348,40 @@ const CAN_LAYER = (() => {
 })();
 
 /**
- * How the shudder is shaped, and it is shaped by the fight and nothing else.
+ * How the shudder is shaped, and where it belongs.
  *
  * It used to start before the apex and fade well into the return, which put
  * trembling on the way out and on the way home — two places where the thing
  * moving it is momentum, not a grip. The buzz is evidence of a grip. It cannot
  * be anywhere the grip is not.
  *
- * So it begins on the frame the shove ends — the moment the field has hold of
- * something still travelling — and it ends on the frame the argument is
- * settled. Outside that the piece is being moved by one force only and has
- * nothing to shudder about: the shove, and then the way home. The edges are
- * 90ms of ramp so it arrives and leaves without a click, and that ramp lives
- * inside the fight rather than either side of it.
+ * It begins at the far point — the frame the outward speed reaches zero, which
+ * is the moment the grip finally closes — and it is over shortly after. Not
+ * during the fight: the whole of the fight is the piece still getting away,
+ * and a tremor laid over travel is read as a rattle in the travel rather than
+ * as a hold. What it marks is the instant the thing stops going anywhere.
+ *
+ * Both edges are ramped inside its own window, so it arrives out of nothing
+ * and leaves into nothing and never begins or ends on a frame.
  */
-const BUZZ_EDGE = 90;
-/*
- * How often the shudder is re-rolled. Coarser on a phone: the step is the only
- * thing deciding how many keyframes three hundred letters ask for, and there
- * it is worth spending a little of the texture to keep the frames.
- */
-const BUZZ_STEP = window.innerWidth < 768 ? 76 : 52;
+const BUZZ_EDGE = 110;
 
-function buzz(el: HTMLElement, from: number, amp: number, span = FIGHT_MS): Animation | null {
+/*
+ * How often the shudder is re-rolled.
+ *
+ * Every roll is a change of direction, so this is its frequency — and at 52ms
+ * it read as a buzz, which is right for something being fought over and wrong
+ * for something that has just been caught. At 74 it is a tremor: the same
+ * irregularity, half the agitation. Coarser again on a phone, where the step
+ * is the only thing deciding how many keyframes three hundred letters ask for.
+ */
+const BUZZ_STEP = window.innerWidth < 768 ? 92 : 74;
+
+/** How long the grip takes to close, on a piece and on a letter. */
+const BUZZ_MS = 560;
+const BUZZ_LETTER_MS = 430;
+
+function buzz(el: HTMLElement, from: number, amp: number, span: number): Animation | null {
   if (!CAN_LAYER || amp <= 0) return null;
 
   const steps = Math.max(2, Math.round(span / BUZZ_STEP));
@@ -1377,12 +1408,14 @@ function buzz(el: HTMLElement, from: number, amp: number, span = FIGHT_MS): Anim
       transform:
         `translate3d(${((Math.random() * 2 - 1) * reach).toFixed(2)}px, ` +
         `${((Math.random() * 2 - 1) * reach).toFixed(2)}px, 0)`,
-      easing: 'linear',
+      // Eased between rolls rather than run to in a straight line: it is a
+      // tremor and not a series of small jumps.
+      easing: 'ease-in-out',
     });
   }
 
-  // Both ends are exactly nothing, so what it is added to is untouched before
-  // the hold and untouched after it.
+  // Both ends are exactly nothing, so what this is added to is untouched
+  // before the grip closes and untouched once it has.
   frames[0] = { offset: 0, transform: 'translate3d(0, 0, 0)' };
   frames[frames.length - 1] = { offset: 1, transform: 'translate3d(0, 0, 0)' };
 
@@ -1458,7 +1491,7 @@ function launchLetter(el: HTMLElement, t: Throw): Animation {
       // Untouched. The front arrives on this frame.
       { transform: 'none', offset: at(t.cd), easing: 'cubic-bezier(0.03, 0.85, 0.72, 0.958)' },
       // The end of the shove, and still going.
-      { transform: shove, offset: at(struck), easing: 'cubic-bezier(0.2, 0.54, 0.35, 1)' },
+      { transform: shove, offset: at(struck), easing: 'cubic-bezier(0.3, 0.28, 0.55, 1)' },
       // Losing speed the whole way, and out of it here. One frame, not a phase.
       { transform: far, offset: at(neutral), easing: 'cubic-bezier(0.5, 0, 0.3, 1)' },
       { transform: 'none', offset: 1 },
