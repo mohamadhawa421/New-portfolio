@@ -263,7 +263,12 @@ function undo(fn: () => void): void {
  * which is both simpler and exact: whatever was in there — a `data-rise` span,
  * a non-breaking space — comes back untouched.
  */
-function shatterText(el: HTMLElement, budget: { left: number }, arrival: number): void {
+function shatterText(
+  el: HTMLElement,
+  budget: { left: number },
+  arrival: number,
+  wave: { x: number; y: number }
+): void {
   const text = el.textContent ?? '';
   if (!text.trim() || text.length > 52 || text.length > budget.left) return;
 
@@ -307,9 +312,29 @@ function shatterText(el: HTMLElement, budget: { left: number }, arrival: number)
          * broken text. Far enough to see the join come apart; not so far that
          * you stop being able to read it.
          */
-        letter.style.setProperty('--cx', `${(Math.random() * 2 - 1) * 17}px`);
-        letter.style.setProperty('--cy', `${(Math.random() * 2 - 1) * 14 - 4}px`);
-        letter.style.setProperty('--cr', `${(Math.random() * 2 - 1) * 10}deg`);
+        /*
+         * Every letter goes the way the wave is going.
+         *
+         * They used to leave in random directions, which made a heading look
+         * like it had been dropped rather than hit — the letters read as
+         * independent particles that happened to start together. They were
+         * part of a word, and the same thing broke all of them, so the vector
+         * is the wave's and only the share of it differs: how far this one
+         * carries, and how much it slides off the line. The turn comes from
+         * that slide, so a letter pushed sideways is the one that turns, and
+         * it turns the way it was pushed.
+         */
+        const carry = 13 + Math.random() * 11;
+        const slide = (Math.random() * 2 - 1) * 0.55;
+        letter.style.setProperty(
+          '--cx',
+          `${((wave.x - wave.y * slide) * carry).toFixed(1)}px`
+        );
+        letter.style.setProperty(
+          '--cy',
+          `${((wave.y + wave.x * slide) * carry - 3).toFixed(1)}px`
+        );
+        letter.style.setProperty('--cr', `${(slide * 6).toFixed(2)}deg`);
         // Off the mark when the wave gets to this heading, then letter by
         // letter along it — so a word comes apart from where it was standing.
         letter.style.setProperty('--cd', `${arrival + index * 9}ms`);
@@ -428,9 +453,16 @@ export function run(options: DesignerModeOptions): void {
     // a little sideways is what stops the whole page reading as one explosion
     // diagram.
     const falloff = 0.5 + 0.5 * (1 - Math.min(1, distance / reach));
-    // A wide spread is what stops it looking like a diagram of an explosion
-    // and starts it looking like one: some pieces barely shift, some are gone.
-    const spread = 0.55 + Math.random() * 1.15;
+    /*
+     * Some scatter, but not enough to drown the mass.
+     *
+     * At three times between the least and the most, chance decided how far a
+     * piece went and the weight of the thing barely showed — a chip and a case
+     * study cover took the same wave and moved the same distance about as
+     * often as not. Under two times, and the size of what is being thrown is
+     * the first thing you read, with the randomness as the grain on top of it.
+     */
+    const spread = 0.72 + Math.random() * 0.62;
     const strength = push * falloff * spread;
 
     const nx = vx / distance;
@@ -439,12 +471,47 @@ export function run(options: DesignerModeOptions): void {
     // The run's own swirl, plus this piece's share of chaos on top of it.
     const tangent = swirl + (Math.random() * 2 - 1) * 0.55;
 
-    const dx = (nx - ny * tangent + lean.x) * strength;
-    const dy = (ny + nx * tangent + lean.y) * strength;
-    const rotation = (Math.random() * 2 - 1) * (narrow ? 11 : 9);
-    const scale = 1 + (Math.random() * 2 - 1) * 0.07;
+    /*
+     * Mass, so that the same wave does not move everything by the same amount.
+     *
+     * A project cover and a chip take the same shove and should not answer it
+     * the same way. Size stands in for mass — it is the only thing about an
+     * element the page actually tells us — and the square root of the area
+     * keeps a card from being a hundred times heavier than a label instead of
+     * a few times. Heavy things move less and turn less; nothing is immune.
+     */
+    const heft = Math.min(1, Math.sqrt(rect.width * rect.height) / 460);
+    const inertia = 0.58 + 0.42 * (1 - heft);
+
+    const dx = (nx - ny * tangent + lean.x) * strength * inertia;
+    const dy = (ny + nx * tangent + lean.y) * strength * inertia;
+
+    /*
+     * Rotation is torque, not decoration.
+     *
+     * It comes from the tangential part of the blow — a shove that lands off
+     * centre is the only reason a thing in this sequence has to turn at all —
+     * so its direction is the direction the piece was already being swung, and
+     * a heavy element resists it. Small on purpose: the wave is pushing these
+     * things, not spinning them like coins.
+     */
+    const rotation = tangent * (narrow ? 5.5 : 4.5) * (1 - heft * 0.55);
+    const scale = 1 + (Math.random() * 2 - 1) * 0.05;
 
     const delay = Math.round(Math.min(1, distance / reach) * WAVE_MS);
+
+    /*
+     * Where the momentum takes it after the shove, and where the field stops it.
+     *
+     * The shove is over in 560ms but the piece is still travelling, so it
+     * carries on along the same line — --k* is further out and turned a little
+     * further the same way. Then the field opposes it: --h* is back down the
+     * line it came along, which is what being caught looks like from outside.
+     * The rotation does not come back with it. A thing that spins one way and
+     * then unspins is a thing on a spring, and this one is being held.
+     */
+    const coast = 1.19 + Math.random() * 0.07;
+    const held = 1.07;
 
     /*
      * The whole attribute, saved and put back.
@@ -462,34 +529,40 @@ export function run(options: DesignerModeOptions): void {
     el.style.setProperty('--pr', `${rotation.toFixed(2)}deg`);
     el.style.setProperty('--ps', scale.toFixed(3));
     el.style.setProperty('--pd', `${delay}ms`);
+    // Where the momentum is still carrying it when the field arrives.
+    el.style.setProperty('--kx', `${(dx * coast).toFixed(1)}px`);
+    el.style.setProperty('--ky', `${(dy * coast).toFixed(1)}px`);
+    el.style.setProperty('--kr', `${(rotation * 1.4).toFixed(2)}deg`);
+
+    // And where it is stopped: short of where it was going, against the way it
+    // was travelling.
+    el.style.setProperty('--hx', `${(dx * held).toFixed(1)}px`);
+    el.style.setProperty('--hy', `${(dy * held).toFixed(1)}px`);
+
     /*
-     * Held, but never still. What is being described is something caught in a
-     * current, so the drift has to be wide enough and quick enough to see.
+     * The last two pixels, and the only movement in the held state.
      *
-     * These numbers are sized to the window they live in, which is the whole
-     * of what was wrong with them: the pieces are held from `freeze` to
-     * `drift` and that is under two seconds. Nine pixels over a 3800ms
-     * half-cycle is under five pixels a second, and a piece whose delay ran to
-     * 1400ms of it barely set off at all — so most of the page hung there
-     * looking frozen, which is exactly what it was. Twenty-six pixels over
-     * 1100ms is a piece that visibly moves out and comes back inside the hold,
-     * and the delay is now short enough that everything is under way while
-     * still nothing is in step.
+     * Something being held by a force is not perfectly still, but it is not
+     * floating either — it settles against whatever is holding it and then
+     * stops. So this is a few pixels, once, in a direction of its own, at the
+     * end of the carry and never repeated. It is the difference between held
+     * and parked, and it is deliberately almost too small to notice.
      */
-    el.style.setProperty('--jx', `${(Math.random() * 2 - 1) * 26}px`);
-    el.style.setProperty('--jy', `${(Math.random() * 2 - 1) * 26}px`);
-    el.style.setProperty('--jr', `${(Math.random() * 2 - 1) * 5.5}deg`);
+    const settleAngle = Math.random() * Math.PI * 2;
+    el.style.setProperty('--sx', `${(dx * held + Math.cos(settleAngle) * 2.6).toFixed(1)}px`);
+    el.style.setProperty('--sy', `${(dy * held + Math.sin(settleAngle) * 2.6).toFixed(1)}px`);
+
     /*
-     * When this piece starts drifting: the moment its own throw ends.
+     * When the carry takes over: the moment this piece's own shove ends.
      *
-     * `delay` is how long the shock front takes to reach it and 560 is the
-     * throw's own duration, so the sum is the frame the shove finishes on.
-     * The drift is handed the exact position the throw left it in — the two
-     * share --px/--py/--pr/--ps — so there is no seam and, more to the point,
-     * no pause. The last few milliseconds are a per-piece scatter, or the
-     * whole page would breathe in time with itself.
+     * `delay` is how long the shock front took to reach it and 560 is the
+     * shove's own duration, so the sum is the frame the transition finishes
+     * on. The carry starts from exactly the position it finishes at — both are
+     * written against --px/--py/--pr/--ps — so there is no seam and no pause.
+     * The last few milliseconds are a per-piece scatter, or the whole page
+     * would be caught in one movement.
      */
-    el.style.setProperty('--jd', `${delay + 560 + Math.round(Math.random() * 90)}ms`);
+    el.style.setProperty('--kd', `${delay + 560 + Math.round(Math.random() * 90)}ms`);
     /*
      * The way back is staggered too, but inward-out rather than outward-in:
      * the field lets go at the character first and the furthest piece is the
@@ -590,7 +663,17 @@ export function run(options: DesignerModeOptions): void {
       const dy = Math.max(rect.top - originY, 0, originY - rect.bottom);
       const arrival = Math.round((Math.min(1, Math.hypot(dx, dy) / reach) * WAVE_MS) / 10) * 10;
 
-      shatterText(el, budget, arrival);
+      /*
+       * Which way the front is travelling when it gets here — from the source
+       * to this heading, not the gap-to-the-nearest-edge the arrival is timed
+       * off. The letters need a direction, and it has to be the same one the
+       * pieces around them were thrown in.
+       */
+      const wx = rect.left + rect.width / 2 - originX;
+      const wy = rect.top + rect.height / 2 - originY;
+      const span = Math.hypot(wx, wy) || 1;
+
+      shatterText(el, budget, arrival, { x: wx / span, y: wy / span });
     }
 
     root.classList.add('dm-shattered');

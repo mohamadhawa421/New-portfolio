@@ -745,30 +745,56 @@ figure {
  * than like something under tension. Two or three pixels is enough.
  */
 /*
- * The drift, which begins the instant the throw ends.
+ * What happens after the shove, in one movement: coast, caught, held.
  *
- * --jd is not a stagger: it is that piece's own throw — how long the shock
- * front took to reach it, plus the length of the shove — so the animation
- * comes in on the frame the transition goes out, from the position the
- * transition put it in. Both are written against --px/--py/--pr/--ps, so
- * there is no seam and nothing stops in between.
+ * --kd is not a stagger. It is this piece's own shove — how long the shock
+ * front took to reach it plus the length of the push — so the animation comes
+ * in on the frame the transition goes out, from the position the transition
+ * put it in. Both are written against --px/--py/--pr/--ps, so there is no seam
+ * and nothing stops in between.
  *
- * 1100ms out and 1100ms back, against a hold that lasts under two seconds, so
- * a piece completes the movement while it is being watched. At the old 3800ms
- * nothing finished even a quarter of a stroke before the power dropped and the
- * storm's most-looked-at moment was a still image.
+ * `forwards` and not `both`: during the delay the animation must not be in
+ * effect at all, or its first frame would hold the piece at its thrown
+ * position from the moment the class goes on and there would be no throw to
+ * watch. Afterwards it holds the last frame, which is the point — the piece is
+ * being held.
  */
 .dm-piece.dm-held {
-  animation: dm-hold 1100ms var(--ease-glide) var(--jd) infinite alternate;
+  animation: dm-carry 1500ms var(--kd) forwards;
 }
 
-@keyframes dm-hold {
-  from {
+/*
+ * Three forces, in order, and nothing that repeats.
+ *
+ * 0-46%: momentum. The shove is over and the piece is still travelling, so it
+ * keeps going the way it was thrown and slows because nothing is pushing it
+ * any more. The curve is almost all tail.
+ *
+ * 46-78%: the catch. The field takes hold and pulls against the travel — the
+ * piece comes back down the line it came along, which is what an invisible
+ * force stopping something looks like from outside. The rotation stays where
+ * the momentum left it: a thing that turns one way and then unturns is a thing
+ * on a spring, and this one is being held.
+ *
+ * 78-100%: it settles against whatever is holding it, by about two pixels, and
+ * stops. There is no idle animation after this and there should not be. The
+ * life in the held state is the field's, not the furniture's.
+ */
+@keyframes dm-carry {
+  0% {
     transform: translate3d(var(--px), var(--py), 0) rotate(var(--pr)) scale(var(--ps));
+    animation-timing-function: cubic-bezier(0.05, 0.62, 0.16, 1);
   }
-  to {
-    transform: translate3d(calc(var(--px) + var(--jx)), calc(var(--py) + var(--jy)), 0)
-      rotate(calc(var(--pr) + var(--jr))) scale(var(--ps));
+  46% {
+    transform: translate3d(var(--kx), var(--ky), 0) rotate(var(--kr)) scale(var(--ps));
+    animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
+  }
+  78% {
+    transform: translate3d(var(--hx), var(--hy), 0) rotate(var(--kr)) scale(var(--ps));
+    animation-timing-function: linear;
+  }
+  100% {
+    transform: translate3d(var(--sx), var(--sy), 0) rotate(var(--kr)) scale(var(--ps));
   }
 }
 
