@@ -293,25 +293,20 @@
   /* ------------------------------------------------------------------ */
 
   /*
-   * One change, and a small one: the eyebrows — the little tracked-out labels
-   * over every section — go to the interface's own monospace.
+   * There is none. One typeface across all three modes.
    *
-   * They are already the most technical thing on the page, so it reads as the
-   * same design system in a different state rather than as a different site.
-   * Headings get a hair more negative tracking with it, which is enough to
-   * feel sharper without re-flowing a single line. Body copy is untouched:
-   * this mode is atmosphere, and atmosphere should never cost legibility.
+   * The eyebrows were moved to the interface monospace here and the headings
+   * given a hair more negative tracking — subtle in isolation, and wrong in
+   * place: a different letterform is the one change that reads as a different
+   * site rather than the same site in a different state. The colour and the
+   * ground carry this mode; the type is what says it is still the same page.
+   *
+   * The eyebrows do still take the accent, because that is a colour and every
+   * accent in the mode moves with it.
    */
   :root[data-super] .eyebrow,
   :root[data-super] .eyebrow--small {
-    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
-    letter-spacing: 0.16em;
     color: var(--dm-core);
-  }
-
-  :root[data-super] h1,
-  :root[data-super] h2 {
-    letter-spacing: -0.026em;
   }
 
   /* ------------------------------------------------------------------ */
@@ -328,7 +323,6 @@
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 11px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
