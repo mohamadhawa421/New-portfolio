@@ -33,6 +33,13 @@ const { settings } = Astro.props;
     </div>
 
     <span class="footer__location">{settings.location}</span>
+
+    {/*
+      Only ever visible in super designer mode, which is set at runtime — so
+      this is display:none in every ordinary visit and never reaches the
+      accessibility tree. Styled with the rest of that mode in SuperMode.astro.
+    */}
+    <span class="footer__super">Super designer</span>
   </div>
 </footer>
 

@@ -240,6 +240,21 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
                 />
               )
             }
+            {/* The same purple-eyed drawing the hero has, on the same terms: a
+                second <img> rather than a swapped src, so the portrait is
+                never blank while a file decodes. Lazy, and invisible until
+                super designer mode is on. */}
+            <img
+              class="about__portrait-alt"
+              src="/avatar-designer.webp"
+              alt=""
+              width="1024"
+              height="1024"
+              loading="lazy"
+              decoding="async"
+              aria-hidden="true"
+              style={`object-position:${settings.portraitTallFocus}`}
+            />
           </div>
         </div>
 
@@ -423,8 +438,18 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     transition-duration: 420ms;
   }
 
-  :global(:root[data-designer]) .hero__portrait-alt {
+  :global(:root[data-designer]) .hero__portrait-alt,
+  :global(:root[data-super]) .hero__portrait-alt {
     opacity: 1;
+  }
+
+  /*
+   * In super designer mode he stays purple-eyed rather than powering down
+   * after a few seconds, so the crossfade there is the mode arriving, not the
+   * storm passing — it comes in on the same curve as everything else.
+   */
+  :global(:root[data-super]) .hero__portrait-alt {
+    transition-duration: 900ms;
   }
 
   /*
@@ -779,11 +804,28 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   }
 
   .about__portrait-frame {
+    /* Anchors the purple-eyed copy stacked over it. */
+    position: relative;
     width: 100%;
     aspect-ratio: 4 / 5;
     border-radius: var(--r-portrait);
     overflow: hidden;
     background: var(--surface-placeholder);
+  }
+
+  /* Stacked exactly over the portrait, and invisible unless the mode is on. */
+  .about__portrait-alt {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 900ms var(--ease-glide);
+  }
+
+  :global(:root[data-super]) .about__portrait-alt {
+    opacity: 1;
   }
 
   .about__portrait-frame img {

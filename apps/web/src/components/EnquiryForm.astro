@@ -160,6 +160,17 @@ const config = {
 
   <div class="enquiry__error" role="alert" data-error hidden></div>
 
+  {/*
+    The super designer discount. Present in the markup on every visit and
+    display:none until <html data-super> is set, so it costs nothing and can
+    never be mistaken for a promotion — there is no code to type and no way to
+    make it appear except by having found the mode.
+  */}
+  <p class="enquiry__perk">
+    <span class="enquiry__perk-label">Super designer discount</span>
+    <span class="enquiry__perk-value">&minus;5%</span>
+  </p>
+
   <div class="enquiry__actions">
     {
       showWhatsApp && (
@@ -560,7 +571,17 @@ const config = {
             `${config.greeting}\n\n` +
             `Name: ${name}\n` +
             `Service: ${serviceInput.value}\n` +
-            `Budget: ${budgetInput.value}\n\n` +
+            `Budget: ${budgetInput.value}\n` +
+            /*
+             * Only when the mode is actually on in this document. There is
+             * nothing to verify against and nothing to build: the line is here
+             * so the discovery arrives in the message with the rest of the
+             * enquiry, which is all it has to do.
+             */
+            (document.documentElement.hasAttribute('data-super')
+              ? 'Super Designer Mode unlocked — 5% discount (SUPER-DESIGNER-5)\n'
+              : '') +
+            `\n` +
             brief,
         };
       }
@@ -1047,6 +1068,35 @@ const config = {
     line-height: 1.45;
     letter-spacing: -0.016em;
     color: var(--error-on-dark);
+  }
+
+  /*
+   * A line of terms, not a badge.
+   *
+   * Same type and same spacing as the hint below the buttons, because that is
+   * what it is — a condition of this enquiry, stated once. A promotional
+   * treatment would undo the whole point of a discount you had to find.
+   */
+  .enquiry__perk {
+    display: none;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 4px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line-menu);
+    font-size: 14px;
+    letter-spacing: -0.016em;
+    color: var(--ink-on-dark-muted);
+  }
+
+  :global(:root[data-super]) .enquiry__perk {
+    display: flex;
+  }
+
+  .enquiry__perk-value {
+    font-variant-numeric: tabular-nums;
+    color: var(--dm-core);
   }
 
   .enquiry__actions {

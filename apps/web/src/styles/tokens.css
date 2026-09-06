@@ -404,3 +404,86 @@
     --line-dark: #262032;
   }
 }
+
+/* ===================================================================== */
+/* SUPER DESIGNER                                                        */
+/*                                                                       */
+/* The third theme, and the only one with no switch: it is found rather  */
+/* than chosen, it lasts until the page is reloaded, and while it is on  */
+/* the light/dark control is locked. See scripts/super.ts.               */
+/*                                                                       */
+/* MUST stay last in this file, and the selector list is not decoration. */
+/* `[data-super]` on its own is (0,2,0), which ties with                 */
+/* `[data-theme='dark']` and loses outright to                           */
+/* `[data-surface='void'][data-theme='dark']` at (0,3,0) — so a visitor  */
+/* who found this on the 404 page would have got the void palette back   */
+/* one token at a time. Every combination it has to beat is written out. */
+/* ===================================================================== */
+:root[data-super],
+:root[data-super][data-theme='dark'],
+:root[data-super][data-theme='light'],
+:root[data-surface='void'][data-super],
+:root[data-surface='void'][data-super][data-theme='dark'],
+:root[data-surface='void'][data-super][data-theme='light'] {
+  color-scheme: dark;
+
+  /*
+   * Deeper than the site's own dark, and warmer than its void.
+   *
+   * The void (the 404) is a cold near-black with a violet cast — somewhere the
+   * page has fallen out of. This is the opposite reading of the same colour:
+   * the room the character works in, so the purple is in the surface itself
+   * rather than behind it. #1a0533 is the ground; everything raised off it is
+   * a step lighter and slightly bluer, so a card still reads as a card.
+   */
+  --surface: #1a0533;
+  --surface-parchment: #1f0a3d;
+  --surface-dark: #12032a;
+  --surface-card: #240d45;
+  --surface-card-hover: #2b1252;
+  --surface-chip: #2b1252;
+  --surface-chip-hover: #35195f;
+  --surface-row-hover: #240d45;
+  --surface-row-hover-parchment: #2b1252;
+  --surface-form: #200a3e;
+  --surface-input: #150429;
+  --surface-button-dark: #34175c;
+  --surface-button-dark-hover: #3f1e6c;
+  --surface-placeholder: #2b1252;
+
+  /*
+   * Ink with the ground's own cast in it. Pure white on a violet field reads as
+   * a foreign layer pasted over it; carrying a little of the purple up into the
+   * text is what makes the page look lit rather than composited. 13.9:1 on the
+   * ground, so nothing is bought with contrast.
+   */
+  --ink: #f4f0fb;
+  --ink-muted: #b9addb;
+  --ink-soft: #a99bd0;
+  --ink-softer: #a99bd0;
+  --ink-faint: #a99bd0;
+  --ink-on-dark: #f4f0fb;
+  --ink-on-dark-muted: #b9addb;
+
+  --line: #33165d;
+  --line-light: #2b1252;
+  --line-parchment: #3a1c69;
+  --line-dark: #452580;
+
+  /*
+   * The accents. The same three the storm uses, so a page in this mode and a
+   * page mid-storm are unmistakably the same voice — the hot end is rationed
+   * here for the same reason it is there.
+   */
+  --blue: #a855f7;
+  --blue-hover: #c084fc;
+  --blue-on-dark: #a855f7;
+  /* White has to sit on the fill: #6d28d9 carries it at 7:1, #7c3aed at 5.7. */
+  --blue-fill: #6d28d9;
+  --blue-fill-hover: #7c3aed;
+
+  --error-on-dark: #ffb3b3;
+
+  /* Right before chrome.ts runs, so the mark is never black on black. */
+  --nav-ink: #f4f0fb;
+}

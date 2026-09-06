@@ -8,6 +8,7 @@ import IntroCurtain from '../components/IntroCurtain.astro';
 import SiteLogo from '../components/SiteLogo.astro';
 import GridOverlay from '../components/GridOverlay.astro';
 import Cursor from '../components/Cursor.astro';
+import SuperMode from '../components/SuperMode.astro';
 import { ClientRouter } from 'astro:transitions';
 import { getSiteSettings } from '../lib/content';
 import type { Seo } from '../lib/types';
@@ -188,6 +189,7 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         silently dropped, which is how they came to be replaced on every
         navigation. */}
     <Cursor />
+    <SuperMode />
     <GridOverlay />
 
     {/* Runs while the parser is still in <body>, so it executes before the

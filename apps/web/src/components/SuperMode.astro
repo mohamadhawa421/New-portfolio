@@ -1,0 +1,346 @@
+---
+/**
+ * The atmosphere super designer mode brings with it, and the wiring that turns
+ * the mode on.
+ *
+ * Everything here is inert until <html data-super> is set: the layer is
+ * display:none, the motes are not animating, and the only script is a pair of
+ * listeners. Normal light and dark are untouched by this file.
+ *
+ * It sits in the layout beside the pointer, outside <main>, because the layer
+ * is fixed to the viewport and any transformed ancestor would become its
+ * containing block and pin it to one section of the page.
+ */
+---
+
+{/* The flicker. Its own element rather than a pseudo on <html>, which the
+    storm's wash and the rage flash already have between them. */}
+<div class="super-flare" aria-hidden="true"></div>
+
+<div class="void" data-super-void aria-hidden="true">
+  {/*
+    Five, and no more. The brief for this was "almost subconscious": enough
+    that the room is not still, few enough that nobody counts them or reads
+    them as a particle effect. They are given their positions here rather than
+    in CSS so the drift is not five copies of the same path.
+  */}
+  <span class="void__mote" style="--mx: 12%; --my: 74%; --md: 0s; --mt: 23s"></span>
+  <span class="void__mote" style="--mx: 31%; --my: 18%; --md: -6s; --mt: 31s"></span>
+  <span class="void__mote" style="--mx: 58%; --my: 61%; --md: -14s; --mt: 27s"></span>
+  <span class="void__mote" style="--mx: 79%; --my: 29%; --md: -3s; --mt: 35s"></span>
+  <span class="void__mote" style="--mx: 91%; --my: 83%; --md: -19s; --mt: 29s"></span>
+</div>
+
+<script>
+  import { bindSuperTrigger, restoreSuper } from '../scripts/super';
+
+  /*
+   * Bound once for the life of the tab, not once per page.
+   *
+   * This script runs again on every swap, and the listeners inside
+   * bindSuperTrigger are on `document`, which the router never replaces — so
+   * calling it twice would leave two holds racing on one press.
+   */
+  if (!(window as unknown as { __mhSuper?: boolean }).__mhSuper) {
+    (window as unknown as { __mhSuper?: boolean }).__mhSuper = true;
+    bindSuperTrigger();
+    // Before the new page is drawn rather than after it, or the visitor sees a
+    // frame of the normal theme on the way into every link they follow.
+    document.addEventListener('astro:after-swap', restoreSuper);
+    document.addEventListener('astro:page-load', restoreSuper);
+  }
+</script>
+
+<style is:global>
+  /* ------------------------------------------------------------------ */
+  /* The room                                                            */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * A layer of light over the page rather than behind it.
+   *
+   * Behind would be invisible: every section paints its own opaque ground, so
+   * there is nothing to see through. Over the top at these opacities the
+   * gradients read as depth in the room instead of as a film on the glass —
+   * and the text underneath keeps every point of its contrast, because eight
+   * percent of a violet on a violet ground is not a colour change anyone can
+   * measure, only one they can feel.
+   */
+  .void {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        ellipse 80% 55% at 50% -10%,
+        color-mix(in srgb, var(--dm-core) 12%, transparent) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 70% 60% at 8% 105%,
+        color-mix(in srgb, var(--dm-deep) 22%, transparent) 0%,
+        transparent 72%
+      );
+  }
+
+  :root[data-super] .void {
+    display: block;
+    animation: void-arrive 1400ms var(--ease-out) both;
+  }
+
+  @keyframes void-arrive {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /*
+   * A speck of his weather, still in the air.
+   *
+   * Barely lit and very slow: at this size and opacity a mote is only visible
+   * while it is moving, which is exactly the amount of attention it should
+   * get. The negative delays start them mid-drift so none of the five sets off
+   * from its corner the moment the mode lands.
+   */
+  .void__mote {
+    position: absolute;
+    left: var(--mx);
+    top: var(--my);
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: var(--dm-arc);
+    opacity: 0;
+    box-shadow: 0 0 6px 1px color-mix(in srgb, var(--dm-core) 70%, transparent);
+    animation: mote var(--mt) linear var(--md) infinite;
+  }
+
+  @keyframes mote {
+    0% {
+      transform: translate3d(0, 0, 0);
+      opacity: 0;
+    }
+    18% {
+      opacity: 0.55;
+    }
+    72% {
+      opacity: 0.35;
+    }
+    100% {
+      transform: translate3d(26px, -120px, 0);
+      opacity: 0;
+    }
+  }
+
+  /* The room stays; nothing floats in it. */
+  @media (prefers-reduced-motion: reduce) {
+    :root[data-super] .void {
+      animation: none;
+    }
+
+    .void__mote {
+      animation: none;
+      opacity: 0.28;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The arrival                                                         */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * The flicker, and then the fade. Both are short and neither moves anything:
+   * this mode is a change of state, not the storm — the whole difference
+   * between the two eggs is that this one leaves the furniture alone.
+   */
+  .super-flare {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9992;
+    pointer-events: none;
+    background: radial-gradient(
+      circle at 50% 8%,
+      color-mix(in srgb, var(--dm-arc) 55%, transparent) 0%,
+      color-mix(in srgb, var(--dm-core) 22%, transparent) 45%,
+      transparent 75%
+    );
+  }
+
+  :root.super-arriving .super-flare {
+    display: block;
+    animation: super-flicker 620ms var(--ease-out) both;
+  }
+
+  @keyframes super-flicker {
+    0% {
+      opacity: 0;
+    }
+    8% {
+      opacity: 0.8;
+    }
+    16% {
+      opacity: 0.1;
+    }
+    26% {
+      opacity: 0.55;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  /*
+   * The cross-fade. Slower than the router's own, and only while this is
+   * running — the class is on for the length of the transition and nothing
+   * else in the site uses it, so no other view transition is touched.
+   */
+  :root.super-fading::view-transition-old(root),
+  :root.super-fading::view-transition-new(root) {
+    animation-duration: 900ms;
+    animation-timing-function: var(--ease-glide);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The control that let you in                                         */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * The charge under a held press.
+   *
+   * It is not a hint — it only exists once the visitor is already holding the
+   * button, which is the point at which they have found the thing and need to
+   * be told to keep going rather than to look. Ending on a full ring means the
+   * gesture is legible in hindsight: that was filling up.
+   */
+  /* The button has no positioned children of its own, so this is inert in
+     light and dark — it is only here to anchor the two rings below. */
+  .theme-toggle {
+    position: relative;
+  }
+
+  .theme-toggle--charging::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    border: 1.5px solid var(--dm-core);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--dm-core) 60%, transparent);
+    animation: toggle-charge 1400ms var(--ease-out) both;
+    pointer-events: none;
+  }
+
+  @keyframes toggle-charge {
+    0% {
+      opacity: 0;
+      scale: 0.35;
+    }
+    100% {
+      opacity: 0.9;
+      scale: 1;
+    }
+  }
+
+  /*
+   * Locked, and saying so quietly.
+   *
+   * The button keeps its place in the nav — taking it out would move
+   * everything beside it — and goes to a dim purple with the icon faded back.
+   * It is the only always-visible sign the mode is on, which is deliberate:
+   * the control you used to get in is the one that goes dark.
+   */
+  :root[data-super] .theme-toggle {
+    cursor: default;
+    color: var(--dm-core);
+    opacity: 0.55;
+  }
+
+  :root[data-super] .theme-toggle:hover {
+    background: transparent;
+  }
+
+  :root[data-super] .theme-toggle__icon {
+    opacity: 0.35;
+  }
+
+  :root[data-super] .theme-toggle::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--dm-core);
+    box-shadow: 0 0 8px var(--dm-core);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .theme-toggle--charging::after {
+      animation: none;
+      opacity: 0.9;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Typography                                                          */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * One change, and a small one: the eyebrows — the little tracked-out labels
+   * over every section — go to the interface's own monospace.
+   *
+   * They are already the most technical thing on the page, so it reads as the
+   * same design system in a different state rather than as a different site.
+   * Headings get a hair more negative tracking with it, which is enough to
+   * feel sharper without re-flowing a single line. Body copy is untouched:
+   * this mode is atmosphere, and atmosphere should never cost legibility.
+   */
+  :root[data-super] .eyebrow,
+  :root[data-super] .eyebrow--small {
+    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: 0.16em;
+    color: var(--dm-core);
+  }
+
+  :root[data-super] h1,
+  :root[data-super] h2 {
+    letter-spacing: -0.026em;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The privilege                                                       */
+  /* ------------------------------------------------------------------ */
+
+  /* Named where it is earned, in the footer, at the size of the fine print it
+     effectively is. Nothing announces it anywhere else. */
+  .footer__super {
+    display: none;
+  }
+
+  :root[data-super] .footer__super {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dm-core);
+  }
+
+  .footer__super::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--dm-core);
+    box-shadow: 0 0 7px var(--dm-core);
+  }
+</style>
