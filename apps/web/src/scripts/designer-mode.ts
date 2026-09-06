@@ -65,10 +65,21 @@ interface Beat {
   decay: number;
   /** The purple starts leaving the character. */
   avatar: number;
-  /** Pieces begin drifting home, each on its own clock. */
+  /** Control is released — which is now only the sidebar. */
   drift: number;
-  /** Letters begin finding each other again. */
-  letters: number;
+  /**
+   * The first piece turns for home, and the last one lands.
+   *
+   * These two are not decisions. They are read off the flight itself — the
+   * nearest piece turns as soon as its own shove and momentum are spent, and
+   * the furthest lands a full wave crossing and the longest way home later —
+   * and they exist so the sound has the same two numbers the picture does.
+   * The rewind is written across exactly this window, so its swell begins on
+   * the frame the first piece starts back and its crack lands on the frame the
+   * last one arrives.
+   */
+  homeward: number;
+  landed: number;
   /** Nothing is left. */
   done: number;
 }
@@ -76,13 +87,40 @@ interface Beat {
 /*
  * The takeover is fast and the recovery is not.
  *
- * Two and a half seconds of storm, five of it passing — the ratio is the point.
- * The destruction has to impress and the restoration has to satisfy, and those
- * are not the same speed. Nothing in the second half is a reversal of anything
- * in the first: the pieces come home on their own trajectories, their own
- * timings and their own curves, because debris settling and debris being thrown
- * look nothing alike.
+ * A second and a half of storm and nearly four of it passing — the ratio is the
+ * point. The destruction has to impress and the restoration has to satisfy, and
+ * those are not the same speed. Nothing in the second half is a reversal of
+ * anything in the first: every piece comes home on its own trajectory, its own
+ * timing and its own curve, because debris settling and debris being thrown look
+ * nothing alike.
+ *
+ * Every number below is either read off the flight or placed against one. The
+ * sequence and the sound are written from the same two moments, so they cannot
+ * drift apart when one of them is retimed.
  */
+/** How long the field takes to exhaust itself once it starts. */
+const DECAY_MS = 3000;
+
+/** How long the leading edge takes to cross the viewport. Matches the CSS. */
+const WAVE_MS = 420;
+
+/**
+ * How long the shove and the momentum after it last, together.
+ *
+ * Shorter than it reads: the whole point of a blast is that it is over before
+ * you have registered it, and what you watch is the momentum running out. Most
+ * of this is the running out.
+ */
+const OUT_MS = 820;
+/** And the way home: the shortest of them, and how much longer the longest is. */
+const HOME_MS = 2600;
+const HOME_SPREAD = 1200;
+
+/** The nearest piece turns for home as soon as its own momentum is spent. */
+const homewardAt = (impact: number) => impact + OUT_MS;
+/** The furthest lands a whole wave crossing and the longest way home later. */
+const landedAt = (impact: number) => impact + WAVE_MS + OUT_MS + HOME_MS + HOME_SPREAD;
+
 const BEAT: Beat = {
   /*
    * Almost immediately, because the delay that matters is per piece, not
@@ -91,13 +129,23 @@ const BEAT: Beat = {
    * it.
    */
   impact: 70,
-  freeze: 1080,
-  hold: 1080,
-  decay: 2400,
-  drift: 3000,
-  avatar: 3100,
-  letters: 3300,
-  done: 7700,
+  /*
+   * The field comes up as the first piece is caught, which is what it is for —
+   * so it is that moment minus a frame, and it follows the flight if the flight
+   * is ever retimed rather than having to be remembered.
+   */
+  freeze: homewardAt(70) - 20,
+  hold: homewardAt(70) - 20,
+  homeward: homewardAt(70),
+  /* Well into the journey home, so the power is visibly going while things are
+     still moving through it rather than after they have stopped. */
+  decay: 2300,
+  drift: 2600,
+  /* Near the end, so the purple leaves him last. */
+  avatar: 4200,
+  landed: landedAt(70),
+  /* Seven hundred milliseconds of quiet after the last piece is back. */
+  done: landedAt(70) + 700,
 };
 
 /*
@@ -108,28 +156,16 @@ const BEAT: Beat = {
 const MOBILE_BEAT: Beat = {
   impact: 80,
   fight: 300,
-  freeze: 1450,
-  hold: 1450,
-  decay: 2800,
-  drift: 3400,
-  avatar: 3500,
-  letters: 3700,
-  done: 8100,
+  freeze: homewardAt(80) - 20,
+  hold: homewardAt(80) - 20,
+  homeward: homewardAt(80),
+  decay: 2200,
+  drift: 2500,
+  avatar: 4100,
+  landed: landedAt(80),
+  done: landedAt(80) + 700,
 };
 
-/** How long the field takes to exhaust itself once it starts. */
-const DECAY_MS = 3000;
-
-/** How long the leading edge takes to cross the viewport. Matches the CSS. */
-const WAVE_MS = 420;
-
-/*
- * The three numbers the sound needs, published so it cannot drift from the
- * picture. Every instant in designer-sound.ts is derived from the beat below
- * rather than written down a second time — the sound used to carry its own
- * copy of the timings, and a release scheduled at 2500ms against a decay that
- * begins at 2400 is a coincidence, not an arrangement.
- */
 export { DECAY_MS as FIELD_DECAY_MS, WAVE_MS as WAVE_CROSS_MS };
 export type { Beat };
 
@@ -195,12 +231,30 @@ const SHATTER = [
   '.service__title',
   '.hero__subtitle',
   '.footer__location',
+  /*
+   * The prose comes apart too.
+   *
+   * A paragraph thrown as one block is the least convincing thing in the
+   * sequence: everything around it has been broken into its parts and it sails
+   * off as a rectangle, which reads as a screenshot being moved rather than as
+   * text being hit. Broken into letters it behaves like what it is. They are
+   * expensive — a paragraph is two hundred of them where a heading is twenty —
+   * so the ceiling below is what keeps a long page from asking for thousands.
+   */
+  '.hero__intro',
+  '.lead',
+  '.about__body',
+  '.card__summary',
+  '.row__summary',
 ].join(',');
 
 /** Ceilings, so a long page cannot ask a weak GPU for hundreds of layers. */
 const MAX_PIECES_WIDE = 84;
 const MAX_PIECES_NARROW = 34;
-const MAX_LETTERS = 190;
+const MAX_LETTERS = 460;
+const MAX_LETTERS_NARROW = 170;
+/** And no single block may take more than this much of it. */
+const MAX_ONE_BLOCK = 240;
 
 /* ---------------------------------------------------------------------- */
 /* State                                                                    */
@@ -277,19 +331,44 @@ function undo(fn: () => void): void {
  * which is both simpler and exact: whatever was in there — a `data-rise` span,
  * a non-breaking space — comes back untouched.
  */
-function shatterText(
-  el: HTMLElement,
-  budget: { left: number },
-  arrival: number,
-  wave: { x: number; y: number }
-): void {
-  const text = el.textContent ?? '';
-  if (!text.trim() || text.length > 52 || text.length > budget.left) return;
-
+/**
+ * Breaks one element into letters and hands them back.
+ *
+ * It only builds. Where each letter goes is decided afterwards, in one pass
+ * over every letter on the page — see run() — because that needs each letter's
+ * own position on screen and reading those one element at a time is a layout
+ * per heading.
+ */
+function shatterText(el: HTMLElement): HTMLElement[] {
   const original = el.innerHTML;
   undo(() => {
     el.innerHTML = original;
   });
+
+  /*
+   * Whatever is clipping this text stops clipping it while it is in pieces.
+   *
+   * Several headings sit in a box with `overflow: hidden` — it is what hides
+   * the rising text before it slides into place, and what keeps a tight
+   * line-height from shaving the descenders. Neither matters once the reveal
+   * has run, but the box is still there, so the letters flew out of a word and
+   * were cut off at its edge as if the whole thing were happening inside an
+   * invisible frame.
+   *
+   * Three levels is enough to find the clip and shallow enough not to start
+   * opening up sections. Each one is restored exactly as it was, inline value
+   * or none at all.
+   */
+  let clip: HTMLElement | null = el;
+  for (let up = 0; up < 3 && clip; up += 1, clip = clip.parentElement) {
+    if (window.getComputedStyle(clip).overflow === 'visible') continue;
+    const node = clip;
+    const had = node.style.overflow;
+    node.style.overflow = 'visible';
+    undo(() => {
+      node.style.overflow = had;
+    });
+  }
 
   const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
   const nodes: Text[] = [];
@@ -297,7 +376,8 @@ function shatterText(
     nodes.push(node as Text);
   }
 
-  let index = 0;
+  const letters: HTMLElement[] = [];
+
   for (const node of nodes) {
     const value = node.nodeValue ?? '';
     if (!value.trim()) continue;
@@ -317,49 +397,8 @@ function shatterText(
         const letter = document.createElement('span');
         letter.className = 'dm-char';
         letter.textContent = character;
-        /*
-         * Each letter leaves on its own vector and arrives on its own beat.
-         *
-         * Deliberately short of what looks best in a still. The words have to
-         * stay readable while they are apart — the effect is the interface
-         * being disassembled, and a heading scrambled past recognition is just
-         * broken text. Far enough to see the join come apart; not so far that
-         * you stop being able to read it.
-         */
-        /*
-         * Every letter goes the way the wave is going.
-         *
-         * They used to leave in random directions, which made a heading look
-         * like it had been dropped rather than hit — the letters read as
-         * independent particles that happened to start together. They were
-         * part of a word, and the same thing broke all of them, so the vector
-         * is the wave's and only the share of it differs: how far this one
-         * carries, and how much it slides off the line. The turn comes from
-         * that slide, so a letter pushed sideways is the one that turns, and
-         * it turns the way it was pushed.
-         */
-        const carry = 13 + Math.random() * 11;
-        const slide = (Math.random() * 2 - 1) * 0.55;
-        letter.style.setProperty(
-          '--cx',
-          `${((wave.x - wave.y * slide) * carry).toFixed(1)}px`
-        );
-        letter.style.setProperty(
-          '--cy',
-          `${((wave.y + wave.x * slide) * carry - 3).toFixed(1)}px`
-        );
-        letter.style.setProperty('--cr', `${(slide * 6).toFixed(2)}deg`);
-        // Off the mark when the wave gets to this heading, then letter by
-        // letter along it — so a word comes apart from where it was standing.
-        letter.style.setProperty('--cd', `${arrival + index * 9}ms`);
-        /*
-         * How long this letter's whole journey takes. Its own number, so the
-         * word does not come back in the order it left in — and long enough
-         * that the way home is unmistakably slower than the way out.
-         */
-        letter.style.setProperty('--lt', `${2300 + Math.round(Math.random() * 900)}ms`);
         word.appendChild(letter);
-        index += 1;
+        letters.push(letter);
       }
       fragment.appendChild(word);
     }
@@ -367,7 +406,7 @@ function shatterText(
     node.parentNode?.replaceChild(fragment, node);
   }
 
-  budget.left -= index;
+  return letters;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -386,8 +425,8 @@ export interface DesignerModeOptions {
   onEnd?: () => void;
 }
 
-export function run(options: DesignerModeOptions): void {
-  if (running) return;
+export function run(options: DesignerModeOptions): Beat {
+  if (running) return beatFor();
   running = true;
 
   // Nothing from a previous run can still be pending — teardown clears them —
@@ -416,6 +455,59 @@ export function run(options: DesignerModeOptions): void {
   character.classList.add('dm-source');
   undo(() => character.classList.remove('dm-source'));
 
+  /* ---- Pick the text that comes apart --------------------------------- */
+
+  /*
+   * Decided before the pieces, because a thing cannot be both.
+   *
+   * Nearly every text element on the page matches both lists — h1 is in each of
+   * them — so a heading was being thrown as a block *and* broken into letters,
+   * and the block throw is three times the letter scatter. What you saw was
+   * "Mohamad Hawa" sailing off in one piece and its letters twitching inside it
+   * as it went, sometimes snapping apart on the way. That is not two effects
+   * fighting; it is one object being told two different stories about what it
+   * is.
+   *
+   * So text is text. Anything that shatters is taken out of the pieces below,
+   * and its letters carry the whole of its movement — each one thrown from
+   * where it actually is, by the same wave, with the same falloff. A card is
+   * still a card and its title still comes apart on it: a card is an object
+   * with text on it, and a heading is only the text.
+   */
+  const shortestFirst = Array.from(document.querySelectorAll<HTMLElement>(SHATTER)).sort(
+    (a, b) => (a.textContent ?? '').length - (b.textContent ?? '').length
+  );
+
+  let allowance = narrow ? MAX_LETTERS_NARROW : MAX_LETTERS;
+  const words: HTMLElement[] = [];
+
+  for (const el of shortestFirst) {
+    if (allowance <= 0) break;
+    if (character.contains(el)) continue;
+
+    const rect = el.getBoundingClientRect();
+    if (rect.bottom < 0 || rect.top > window.innerHeight) continue;
+    // Small print stays whole. Letters flying off a 13px label is noise.
+    if (narrow && parseFloat(window.getComputedStyle(el).fontSize) < 17) continue;
+
+    const text = (el.textContent ?? '').trim();
+    if (!text || text.length > MAX_ONE_BLOCK || text.length > allowance) continue;
+
+    allowance -= text.length;
+    words.push(el);
+  }
+
+  /*
+   * Shortest first, so the structure always comes apart.
+   *
+   * In document order a page of prose eats the whole allowance before the
+   * headings below it are reached — one paragraph is a hundred and fifty
+   * letters where a nav link is four. Sorting by length means every label,
+   * link and heading on screen is served for the price of one paragraph, and
+   * it is the prose that goes without if anything has to.
+   */
+  const shattering = new Set(words);
+
   /* ---- Pick the pieces ------------------------------------------------ */
 
   const candidates = Array.from(document.querySelectorAll<HTMLElement>(PIECES));
@@ -425,6 +517,8 @@ export function run(options: DesignerModeOptions): void {
     if (chosen.length >= (narrow ? MAX_PIECES_NARROW : MAX_PIECES_WIDE)) break;
     // The character is the one thing holding still.
     if (character.contains(el) || el.contains(character)) continue;
+    // Text that is coming apart is not also thrown whole.
+    if (shattering.has(el)) continue;
 
     const rect = el.getBoundingClientRect();
     if (rect.width < 8 || rect.height < 2) continue;
@@ -432,6 +526,8 @@ export function run(options: DesignerModeOptions): void {
 
     // Outermost wins: a card moves as a card, not as a pile of its own parts.
     if (chosen.some((kept) => kept.contains(el))) continue;
+    // And a piece never swallows text that is coming apart on its own.
+    if (words.some((word) => el.contains(word) && el !== word)) continue;
 
     chosen.push(el);
   }
@@ -441,9 +537,11 @@ export function run(options: DesignerModeOptions): void {
   /*
    * Far enough to read as an explosion rather than a nudge. The ceiling is the
    * viewport, not taste: a piece thrown past the edge is a piece nobody sees
-   * come back, so the throw is scaled to the smaller half-dimension.
+   * come back, so the throw is scaled to the smaller half-dimension — and a
+   * third of that half is as much as can be spent before the far pieces start
+   * leaving the screen.
    */
-  const push = Math.min(narrow ? 96 : 132, Math.min(window.innerWidth, window.innerHeight) * 0.19);
+  const push = Math.min(narrow ? 168 : 250, Math.min(window.innerWidth, window.innerHeight) * 0.33);
 
   /*
    * One bias for the whole run.
@@ -478,8 +576,13 @@ export function run(options: DesignerModeOptions): void {
      * study cover took the same wave and moved the same distance about as
      * often as not. Under two times, and the size of what is being thrown is
      * the first thing you read, with the randomness as the grain on top of it.
+     *
+     * The floor matters as much as the range. Every run should land as a hard
+     * shove and differ in how it scatters, not in whether it was hard — at a
+     * floor of 0.55 a run could come out limp, which is the one thing none of
+     * them should ever be.
      */
-    const spread = 0.72 + Math.random() * 0.62;
+    const spread = 0.86 + Math.random() * 0.5;
     const strength = push * falloff * spread;
 
     const nx = vx / distance;
@@ -562,7 +665,7 @@ export function run(options: DesignerModeOptions): void {
       as: scale,
       // When the wave gets here, and how long it takes to come back.
       wave: delay,
-      home: Math.round(2600 + Math.random() * 1200),
+      home: Math.round(HOME_MS + Math.random() * HOME_SPREAD),
       // Which way the path bows on the way in, and how far.
       bow: (Math.random() < 0.5 ? -1 : 1) * (10 + Math.random() * 18),
     };
@@ -580,6 +683,28 @@ export function run(options: DesignerModeOptions): void {
     el.classList.add('dm-piece');
     placed.push({ el, anchor: { x: cx + dx, y: cy + dy }, flight });
   }
+
+  /*
+   * The window the sound has to be written across, measured rather than
+   * assumed.
+   *
+   * beatFor() can only give the theoretical extremes — a piece at the source
+   * with the shortest way home, and one at the far corner with the longest —
+   * and no real piece is ever at either. On this page that was 140ms of swell
+   * before anything had turned and 420ms of crack after everything had landed.
+   * These are the actual first turn and the actual last arrival of the pieces
+   * that exist, so the two ends of the sound sit on two frames of the picture.
+   */
+  const turns = placed.map((p) => beat.impact + p.flight.wave + OUT_MS);
+  const arrivals = placed.map((p, i) => turns[i] + p.flight.home);
+  const timed: Beat = placed.length
+    ? {
+        ...beat,
+        homeward: Math.min(...turns),
+        landed: Math.max(...arrivals),
+        done: Math.max(...arrivals) + 700,
+      }
+    : beat;
 
   /* ---- The nav stops being a pill ------------------------------------- */
 
@@ -609,45 +734,99 @@ export function run(options: DesignerModeOptions): void {
   /* ---- Act one: the shock, and everything it touches ------------------ */
 
   /*
-   * The throw and the shatter are the same event.
+   * The throw and the shatter are the same event, and now the same wave.
    *
    * They used to be a second apart, which meant a heading was already halfway
-   * across the screen before it came apart — so the letters separated from
-   * wherever the block had got to rather than from where the word had been.
-   * Both now wait on the same per-element delay: the moment the ring arrives.
+   * across the screen before it came apart. Then they were simultaneous but
+   * still two things happening to one element. Now nothing is both: a piece is
+   * thrown or its letters are, and either way the only thing deciding when is
+   * how long the front takes to reach it.
    */
   after(beat.impact, () => {
-    for (const { el, flight } of placed) returning.push(launch(el, flight));
+    /*
+     * The text comes apart first, and every letter is aimed from where it
+     * actually is.
+     *
+     * Reads before writes: all the letters on the page are built, then their
+     * positions are read in one pass, then their vectors are written. Aiming
+     * them element by element costs a layout per heading; this costs one.
+     *
+     * A letter is the lightest thing in the sequence and is thrown like it —
+     * the same wave, the same falloff, the same swirl and lean the pieces got,
+     * so a paragraph does not disperse in its own private direction. What it
+     * does not get is any of the mass that holds a card back. This is what the
+     * wave does to something with nothing to it.
+     */
+    /*
+     * When each block is hit is read before any of them is touched, so the
+     * measurement is of the page as it stands rather than of a page that is
+     * already half taken apart.
+     */
+    const struckAt = words.map((el) => {
+      const box = el.getBoundingClientRect();
+      const ex = box.left + box.width / 2 - originX;
+      const ey = box.top + box.height / 2 - originY;
+      return Math.round(Math.min(1, Math.hypot(ex, ey) / reach) * WAVE_MS);
+    });
 
-    const budget = { left: narrow ? 90 : MAX_LETTERS };
-    for (const el of document.querySelectorAll<HTMLElement>(SHATTER)) {
-      if (budget.left <= 0) break;
-      if (character.contains(el)) continue;
+    const letters: HTMLElement[] = [];
+    const struck: number[] = [];
+    words.forEach((el, w) => {
+      for (const letter of shatterText(el)) {
+        letters.push(letter);
+        struck.push(struckAt[w]);
+      }
+    });
 
-      const rect = el.getBoundingClientRect();
-      if (rect.bottom < 0 || rect.top > window.innerHeight) continue;
-      // Small print stays whole. Letters flying off a 13px label is noise.
-      if (narrow && parseFloat(getComputedStyle(el).fontSize) < 17) continue;
+    const spots = letters.map((letter) => letter.getBoundingClientRect());
 
-      const dx = Math.max(rect.left - originX, 0, originX - rect.right);
-      const dy = Math.max(rect.top - originY, 0, originY - rect.bottom);
-      const arrival = Math.round((Math.min(1, Math.hypot(dx, dy) / reach) * WAVE_MS) / 10) * 10;
+    letters.forEach((letter, i) => {
+      const spot = spots[i];
+      const lx = spot.left + spot.width / 2 - originX;
+      const ly = spot.top + spot.height / 2 - originY;
+      const distance = Math.hypot(lx, ly) || 1;
 
+      const falloff = 0.5 + 0.5 * (1 - Math.min(1, distance / reach));
+      const spread = 0.7 + Math.random() * 0.7;
+      // Nothing is lighter than a letter, so nothing goes further for its size.
+      const strength = push * falloff * spread * 0.82;
+
+      const nx = lx / distance;
+      const ny = ly / distance;
+      const tangent = swirl + (Math.random() * 2 - 1) * 0.75;
+
+      letter.style.setProperty('--cx', `${((nx - ny * tangent + lean.x) * strength).toFixed(1)}px`);
+      letter.style.setProperty('--cy', `${((ny + nx * tangent + lean.y) * strength).toFixed(1)}px`);
+      // Torque, like everything else: it turns the way it was swung, and only
+      // that way. A letter has no mass to resist it, so it turns further.
+      letter.style.setProperty('--cr', `${(tangent * 20).toFixed(2)}deg`);
       /*
-       * Which way the front is travelling when it gets here — from the source
-       * to this heading, not the gap-to-the-nearest-edge the arrival is timed
-       * off. The letters need a direction, and it has to be the same one the
-       * pieces around them were thrown in.
+       * Hit when its block is hit, not when its own position says.
+       *
+       * Timing each letter off its own distance made the front cross a line of
+       * text letter by letter — a clean left-to-right ripple, in order, which
+       * is the most orderly thing that has ever happened to a paragraph and
+       * the exact opposite of being hit by something. A block is struck at
+       * once. The seventy milliseconds on top are so that it is a mess rather
+       * than a chord: no two letters leave on the same frame, and no two leave
+       * in any particular order either.
+       *
+       * The direction is still each letter's own, which is what stops it
+       * behaving like a block: they are struck together and go their own ways.
        */
-      const wx = rect.left + rect.width / 2 - originX;
-      const wy = rect.top + rect.height / 2 - originY;
-      const span = Math.hypot(wx, wy) || 1;
-
-      shatterText(el, budget, arrival, { x: wx / span, y: wy / span });
-    }
+      letter.style.setProperty('--cd', `${struck[i] + Math.round(Math.random() * 70)}ms`);
+      /*
+       * How long this letter's whole journey takes. Its own number, so the
+       * word does not come back in the order it left in — and long enough that
+       * the way home is unmistakably slower than the way out.
+       */
+      letter.style.setProperty('--lt', `${2100 + Math.round(Math.random() * 900)}ms`);
+    });
 
     root.classList.add('dm-shattered');
     undo(() => root.classList.remove('dm-shattered'));
+
+    for (const { el, flight } of placed) returning.push(launch(el, flight));
   });
 
   /* ---- Act three, mobile only: the menu will not go quietly ----------- */
@@ -736,14 +915,13 @@ export function run(options: DesignerModeOptions): void {
    * reassemble. It has been reassembling since it came apart.
    */
 
-  after(beat.done, () => {
+  after(timed.done, () => {
     teardown();
     options.onEnd?.();
   });
-}
 
-/** How long the shove and the momentum after it last, together. */
-const OUT_MS = 1020;
+  return timed;
+}
 
 /**
  * One piece, one animation, from struck to home.
@@ -759,7 +937,7 @@ const OUT_MS = 1020;
  *
  *   0 → wave      Nothing. The front has not reached it.
  *   wave → apex   One movement, not two. It leaves fast — the curve's opening
- *                 slope is twelve — and decays the whole way, so the shove and
+ *                 slope is twenty-eight — and decays the whole way, so the shove and
  *                 the momentum after it are the same gesture running out. It
  *                 arrives with no speed left, and that is the catch.
  *   apex → bow    The only place velocity is allowed to reach zero, because it
@@ -791,8 +969,9 @@ function launch(el: HTMLElement, f: Flight): Animation {
       {
         transform: 'none',
         offset: at(f.wave),
-        // Opening slope 12, closing slope 0: hit hard, run out completely.
-        easing: 'cubic-bezier(0.06, 0.72, 0.28, 1)',
+        // Opening slope 28, closing slope 0: gone before you see it leave,
+        // and then a long time running out.
+        easing: 'cubic-bezier(0.03, 0.85, 0.2, 1)',
       },
       // Carried as far as it goes, and caught.
       {

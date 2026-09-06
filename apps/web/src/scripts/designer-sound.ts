@@ -36,6 +36,18 @@ export interface SoundBeat {
   freeze: number;
   decay: number;
   drift: number;
+  /**
+   * The frame the first piece turns for home, and the frame the last one lands.
+   *
+   * The rewind is written across exactly this window and nothing else decides
+   * it. Before these existed the sound was hung off `drift`, which used to be
+   * when the picture released everything — and when the picture stopped
+   * releasing everything at once, the swell started a second and a half after
+   * the first piece was already on its way back and the crack landed two
+   * seconds after the last one had arrived.
+   */
+  homeward: number;
+  landed: number;
   done: number;
 }
 
@@ -703,42 +715,44 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
   /* ---- The rewind ---------------------------------------------------- */
 
   /*
-   * The same wave backwards, accelerating across the window the pieces use to
-   * come home — and it has to consume exactly its own length in that window,
+   * The same wave backwards, swelling across exactly the window the pieces use
+   * to come home — and it has to consume exactly its own length in that window,
    * or it runs out early or is cut off mid-air.
    *
-   * A tail is left at the end because the picture keeps one: pieces drift for
-   * between 1.9 and 3 seconds, and the last of them are still settling after
-   * the rest have arrived, so the sound finishes first and lets them land in
-   * quiet. That leaves 3.5 seconds to play 2.6 seconds of buffer.
-   *
-   * It also starts part way in. Reversed, the buffer opens on what was the
-   * blast's dying tail, which is very nearly silence — so the rewind was
-   * inaudible for its first four hundred milliseconds, exactly while the first
-   * pieces were being let go. Skipping that head means the swell is already
-   * underway on the frame the picture starts moving.
-   *
-   * The pieces are released over the first 1240ms of this window and each takes
-   * between 1.9 and 3 seconds, so the last of them lands at about 7.2 seconds —
-   * and the crack has to land with them, not a second early. That sets the
-   * window at four seconds and the tail at seven hundred milliseconds.
-   *
-   * For a rate ramping exponentially from a to b over W, the buffer consumed is
-   * W(b - a) / ln(b / a). From three times the held rate to 1.55 over four
-   * seconds that is 3.2 seconds, which is what is left of the blast after the
-   * silent head is skipped. It ends above real speed rather than below it, so
-   * the way back is quicker than the way out, and the reversed transient — the
-   * crack, which comes last now — lands as the pieces do.
+   * It starts part way in. Reversed, the buffer opens on what was the blast's
+   * dying tail, which is very nearly silence — so the rewind was inaudible for
+   * its first four hundred milliseconds, exactly while the first pieces were
+   * being let go. Skipping that head means the swell is already underway on the
+   * frame the picture starts moving.
    */
-  const REWIND_TAIL_MS = 700;
   const REWIND_SKIP = 0.8;
-  const span = Math.max(1.2, (beat.done - beat.drift - REWIND_TAIL_MS) / 1000);
+
+  /*
+   * The window is the picture's, exactly: from the frame the first piece turns
+   * for home to the frame the last one lands. Nothing here is a tail added by
+   * hand — `done` is that landing plus its own quiet, and the crack falls on
+   * the landing itself.
+   */
+  const homeward = at(beat.homeward);
+  const span = Math.max(1.2, (beat.landed - beat.homeward) / 1000);
 
   const back = audio.createBufferSource();
   back.buffer = backBuf;
   // Three times the held rate: the frozen sound already moving again.
-  back.playbackRate.setValueAtTime(FREEZE_RATE * 3, drift);
-  back.playbackRate.exponentialRampToValueAtTime(1.55, drift + span);
+  back.playbackRate.setValueAtTime(FREEZE_RATE * 3, homeward);
+  /*
+   * And the end rate is arithmetic, not taste.
+   *
+   * For a rate ramping exponentially from a to b over W, the buffer consumed is
+   * W(b - a) / ln(b / a). There are 3.2 seconds of buffer left once the silent
+   * head is skipped, and the window is now 4.22 — so b is 1.4, which spends
+   * 3.23 of them. At the 1.55 this used to be, against the old and longer
+   * window, it would now overrun by a quarter of a second and be cut off
+   * mid-air. It still ends above real speed, so the way back is quicker than
+   * the way out and the reversed transient — the crack, which comes last —
+   * lands with the pieces.
+   */
+  back.playbackRate.exponentialRampToValueAtTime(1.4, homeward + span);
 
   /*
    * The level rides the material rather than sitting flat on top of it.
@@ -749,26 +763,22 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
    * let go — measured at a fiftieth of the level either side of it. Lifting the
    * opening and easing back as the material grows keeps one continuous swell
    * from the instant the picture starts moving to the crack at the end.
-   */
-  /*
-   * Opening from 0.05 rather than from nothing.
    *
-   * An exponential ramp starting at 0.0001 spends almost the whole of its
-   * length inaudible — a quarter of the way to 2.2 it has reached 0.004 — so
-   * what was meant to be a fast lift was in practice a second gap on top of the
-   * quiet material. Starting from a floor that can already be heard makes the
-   * curve do what it looks like it does.
+   * Opening from 0.05 rather than from nothing: an exponential ramp starting at
+   * 0.0001 spends almost the whole of its length inaudible — a quarter of the
+   * way to 2.2 it has reached 0.004 — so what was meant to be a fast lift was
+   * in practice a second gap on top of the quiet material.
    */
   const backGain = audio.createGain();
-  backGain.gain.setValueAtTime(0.05, drift);
-  backGain.gain.exponentialRampToValueAtTime(1.6, drift + 0.5);
-  backGain.gain.exponentialRampToValueAtTime(1, drift + span * 0.62);
-  backGain.gain.setValueAtTime(1, drift + span * 0.88);
-  backGain.gain.exponentialRampToValueAtTime(0.0001, drift + span + 0.5);
+  backGain.gain.setValueAtTime(0.05, homeward);
+  backGain.gain.exponentialRampToValueAtTime(1.6, homeward + 0.5);
+  backGain.gain.exponentialRampToValueAtTime(1, homeward + span * 0.62);
+  backGain.gain.setValueAtTime(1, homeward + span * 0.88);
+  backGain.gain.exponentialRampToValueAtTime(0.0001, homeward + span + 0.5);
 
   back.connect(backGain).connect(master);
-  back.start(drift, REWIND_SKIP);
-  back.stop(drift + span + 0.7);
+  back.start(homeward, REWIND_SKIP);
+  back.stop(homeward + span + 0.7);
 
   voices = voices.concat([wave, back]);
 }

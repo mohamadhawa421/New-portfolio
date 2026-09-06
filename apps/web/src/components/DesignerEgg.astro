@@ -256,22 +256,35 @@ import EggSound from './EggSound.astro';
        * There are no timers here any more. There used to be two, holding a
        * release at 2500ms and a strain of 1100ms — numbers that had to be kept
        * in step by hand with a decay that begins at 2400 and a fight that ends
-       * at the freeze, and were not. Everything the sound does is now derived
-       * from the instants below, so the two cannot drift apart.
+       * at the freeze, and were not. Everything the sound does is derived from
+       * the instants in that beat, so the two cannot drift apart.
        */
-      sound.play(mode.beatFor(), {
-        wave: mode.WAVE_CROSS_MS,
-        fieldDecay: mode.FIELD_DECAY_MS,
-      });
       mode.setArcListener(sound.tick);
       showSwitch();
 
-      mode.run({
+      /*
+       * The picture is started first, and hands back the beat it is actually
+       * running to.
+       *
+       * It used to be the other way round, with both given beatFor() — but two
+       * of those numbers can only be the theoretical extremes until the pieces
+       * exist, and the sound is written across exactly the window between them.
+       * So the run measures its own first turn and last arrival and returns
+       * them, and the sound is scheduled from that. The few milliseconds of
+       * JavaScript between the two calls is the whole of the offset between
+       * them, which is a frame at most.
+       */
+      const beat = mode.run({
         originX: x,
         originY: y,
         character: trigger,
         field: field!,
         onEnd: stop,
+      });
+
+      sound.play(beat, {
+        wave: mode.WAVE_CROSS_MS,
+        fieldDecay: mode.FIELD_DECAY_MS,
       });
     });
 
@@ -413,15 +426,15 @@ import EggSound from './EggSound.astro';
   }
 
   .ring.is-rippling {
-    animation: egg-ring 420ms cubic-bezier(0.14, 0.76, 0.2, 1) both;
+    animation: egg-ring 340ms cubic-bezier(0.1, 0.82, 0.16, 1) both;
   }
 
   .ring--trail.is-rippling {
-    animation: egg-ring-trail 540ms cubic-bezier(0.14, 0.76, 0.2, 1) 60ms both;
+    animation: egg-ring-trail 450ms cubic-bezier(0.1, 0.82, 0.16, 1) 50ms both;
   }
 
   .wash.is-rippling {
-    animation: egg-wash 620ms var(--ease-out) both;
+    animation: egg-wash 520ms cubic-bezier(0.1, 0.8, 0.2, 1) both;
   }
 
   /*
