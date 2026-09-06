@@ -73,6 +73,26 @@
   --blue-fill: #0066cc;
   --blue-fill-hover: #0a72d8;
 
+  /* ---- The shock ----------------------------------------------------- */
+  /*
+   * The wash that crosses the page when the egg fires, and the only part of
+   * that sequence whose colour has to change with the theme.
+   *
+   * On a dark page the shock is light arriving: the hot end of the palette
+   * over near-black, and it reads instantly. On white the same colours were a
+   * pale lavender bloom on an already-pale ground — the strongest moment in
+   * the whole sequence was the one nobody could see.
+   *
+   * So in light mode the wash inverts. The room darkens as the front passes,
+   * in the deep end of the same purple rather than in black: black would be a
+   * different effect from a different site, and the deep violet is still
+   * unmistakably his. The rings stay hot on top of it, which is the real
+   * point — they had nothing to be bright against before, and now they do.
+   */
+  --shock-1: #14042b;
+  --shock-2: #2e1065;
+  --shock-3: #4c1d95;
+
   /* ---- Surfaces ------------------------------------------------------ */
   --surface: #ffffff;
   --surface-parchment: #f5f5f7;
@@ -214,6 +234,12 @@
   --blue-fill: #0f6ad0;
   --blue-fill-hover: #1573d8;
 
+  /* Light arriving, not the room darkening. See the note in the light
+     block above — this is the half that was already working. */
+  --shock-1: #7c3aed;
+  --shock-2: #6d28d9;
+  --shock-3: #4c1d95;
+
   --surface: #0b0b0d;
   --surface-parchment: #131316;
   --surface-dark: #1c1c20;
@@ -264,6 +290,12 @@
     /* Deep enough to carry white text: 5.3:1, against 3:1 for the link blue. */
     --blue-fill: #0f6ad0;
     --blue-fill-hover: #1573d8;
+
+    /* Light arriving, not the room darkening. See the note in the light
+       block above — this is the half that was already working. */
+    --shock-1: #7c3aed;
+    --shock-2: #6d28d9;
+    --shock-3: #4c1d95;
 
     --surface: #0b0b0d;
     --surface-parchment: #131316;
@@ -319,6 +351,12 @@
    * paints its own white band behind the address bar unless it is told.
    */
   color-scheme: dark;
+
+  /* Light arriving, not the room darkening. See the note in the light
+     block above — this is the half that was already working. */
+  --shock-1: #7c3aed;
+  --shock-2: #6d28d9;
+  --shock-3: #4c1d95;
 
   --surface: #0e0b16;
   --surface-parchment: #120e1c;
@@ -440,6 +478,12 @@
    * saturated rather than a step greyer, so a card reads as lit from inside
    * the room instead of as a panel laid on top of it.
    */
+  /* Light arriving, not the room darkening. See the note in the light
+     block above — this is the half that was already working. */
+  --shock-1: #7c3aed;
+  --shock-2: #6d28d9;
+  --shock-3: #4c1d95;
+
   --surface: #0c0118;
   --surface-parchment: #100420;
   --surface-dark: #070010;

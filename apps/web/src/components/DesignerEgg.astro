@@ -381,27 +381,34 @@ import EggSound from './EggSound.astro';
    * lasts about half a second.
    */
   .ring {
-    border: 3px solid var(--dm-core);
+    border: 4px solid var(--dm-core);
     box-shadow:
-      0 0 26px color-mix(in srgb, var(--dm-glow) 62%, transparent),
-      inset 0 0 26px color-mix(in srgb, var(--dm-wave) 55%, transparent);
+      0 0 38px color-mix(in srgb, var(--dm-glow) 78%, transparent),
+      0 0 10px color-mix(in srgb, var(--dm-core) 90%, transparent),
+      inset 0 0 32px color-mix(in srgb, var(--dm-wave) 62%, transparent);
   }
 
   /* A second, thinner ring a beat behind. One ring is an outline; two are a
      shock front with something behind it. */
   .ring--trail {
-    border-width: 1.5px;
+    border-width: 2.5px;
     border-color: var(--dm-arc);
-    box-shadow: none;
+    box-shadow: 0 0 18px color-mix(in srgb, var(--dm-arc) 55%, transparent);
   }
 
+  /*
+   * The wash, from --shock-*, which is the one thing here that changes with
+   * the theme. On a dark page it is light arriving; on a white one it is the
+   * room darkening as the front passes. Same three stops either way — see
+   * tokens.css for why the colours swap ends of the palette.
+   */
   .wash {
     background: radial-gradient(
       circle,
-      color-mix(in srgb, var(--dm-wave) 40%, transparent) 0%,
-      color-mix(in srgb, var(--dm-field) 22%, transparent) 42%,
-      color-mix(in srgb, var(--dm-deep) 10%, transparent) 62%,
-      transparent 76%
+      color-mix(in srgb, var(--shock-1) 54%, transparent) 0%,
+      color-mix(in srgb, var(--shock-2) 34%, transparent) 42%,
+      color-mix(in srgb, var(--shock-3) 16%, transparent) 62%,
+      transparent 78%
     );
   }
 
@@ -417,12 +424,22 @@ import EggSound from './EggSound.astro';
     animation: egg-wash 620ms var(--ease-out) both;
   }
 
+  /*
+   * Held bright most of the way out rather than fading from the first frame.
+   *
+   * A front that starts dimming as it leaves is a ripple; one that holds and
+   * then goes is a shock. The scale curve is untouched — this is only about
+   * how much of the crossing you actually see.
+   */
   @keyframes egg-ring {
-    from {
+    0% {
       opacity: 1;
       transform: scale(0.012);
     }
-    to {
+    62% {
+      opacity: 0.92;
+    }
+    100% {
       opacity: 0;
       transform: scale(1.06);
     }
@@ -434,7 +451,10 @@ import EggSound from './EggSound.astro';
       transform: scale(0.012);
     }
     16% {
-      opacity: 0.78;
+      opacity: 0.92;
+    }
+    64% {
+      opacity: 0.72;
     }
     100% {
       opacity: 0;
@@ -447,8 +467,11 @@ import EggSound from './EggSound.astro';
       opacity: 0;
       transform: scale(0.02);
     }
-    26% {
+    22% {
       opacity: 1;
+    }
+    58% {
+      opacity: 0.85;
     }
     100% {
       opacity: 0;
