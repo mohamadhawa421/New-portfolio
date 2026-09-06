@@ -17,18 +17,18 @@
     storm's wash and the rage flash already have between them. */}
 <div class="super-flare" aria-hidden="true"></div>
 
-<div class="void" data-super-void aria-hidden="true">
+<div class="super-void" data-super-void aria-hidden="true">
   {/*
     Five, and no more. The brief for this was "almost subconscious": enough
     that the room is not still, few enough that nobody counts them or reads
     them as a particle effect. They are given their positions here rather than
     in CSS so the drift is not five copies of the same path.
   */}
-  <span class="void__mote" style="--mx: 12%; --my: 74%; --md: 0s; --mt: 23s"></span>
-  <span class="void__mote" style="--mx: 31%; --my: 18%; --md: -6s; --mt: 31s"></span>
-  <span class="void__mote" style="--mx: 58%; --my: 61%; --md: -14s; --mt: 27s"></span>
-  <span class="void__mote" style="--mx: 79%; --my: 29%; --md: -3s; --mt: 35s"></span>
-  <span class="void__mote" style="--mx: 91%; --my: 83%; --md: -19s; --mt: 29s"></span>
+  <span class="super-void__mote" style="--mx: 12%; --my: 74%; --md: 0s; --mt: 23s"></span>
+  <span class="super-void__mote" style="--mx: 31%; --my: 18%; --md: -6s; --mt: 31s"></span>
+  <span class="super-void__mote" style="--mx: 58%; --my: 61%; --md: -14s; --mt: 27s"></span>
+  <span class="super-void__mote" style="--mx: 79%; --my: 29%; --md: -3s; --mt: 35s"></span>
+  <span class="super-void__mote" style="--mx: 91%; --my: 83%; --md: -19s; --mt: 29s"></span>
 </div>
 
 <script>
@@ -59,6 +59,11 @@
   /*
    * A layer of light over the page rather than behind it.
    *
+   * Prefixed, and it has to be: the 404 page's own main section is `.void`,
+   * and these rules are global. An unprefixed name here put a purple gradient
+   * and pointer-events:none on that section in every mode — the class was only
+   * saved from also hiding it by Astro's scoping winning on specificity.
+   *
    * Behind would be invisible: every section paints its own opaque ground, so
    * there is nothing to see through. Over the top at these opacities the
    * gradients read as depth in the room instead of as a film on the glass —
@@ -66,7 +71,7 @@
    * percent of a violet on a violet ground is not a colour change anyone can
    * measure, only one they can feel.
    */
-  .void {
+  .super-void {
     display: none;
     position: fixed;
     inset: 0;
@@ -85,12 +90,25 @@
       );
   }
 
-  :root[data-super] .void {
+  :root[data-super] .super-void {
     display: block;
-    animation: void-arrive 1400ms var(--ease-out) both;
+    animation: super-void-arrive 1400ms var(--ease-out) both;
   }
 
-  @keyframes void-arrive {
+  /*
+   * Except on the 404, which is already a room.
+   *
+   * That page has its own well, its own halo and its own motes falling towards
+   * it — all of them drawn from the same purple family, so the palette change
+   * alone lands there. Adding this layer on top gave it two atmospheres with
+   * motes drifting in opposite directions, which is one more than the page can
+   * carry.
+   */
+  :root[data-super][data-surface='void'] .super-void {
+    display: none;
+  }
+
+  @keyframes super-void-arrive {
     from {
       opacity: 0;
     }
@@ -107,7 +125,7 @@
    * get. The negative delays start them mid-drift so none of the five sets off
    * from its corner the moment the mode lands.
    */
-  .void__mote {
+  .super-void__mote {
     position: absolute;
     left: var(--mx);
     top: var(--my);
@@ -117,10 +135,10 @@
     background: var(--dm-arc);
     opacity: 0;
     box-shadow: 0 0 6px 1px color-mix(in srgb, var(--dm-core) 70%, transparent);
-    animation: mote var(--mt) linear var(--md) infinite;
+    animation: super-mote var(--mt) linear var(--md) infinite;
   }
 
-  @keyframes mote {
+  @keyframes super-mote {
     0% {
       transform: translate3d(0, 0, 0);
       opacity: 0;
@@ -139,11 +157,11 @@
 
   /* The room stays; nothing floats in it. */
   @media (prefers-reduced-motion: reduce) {
-    :root[data-super] .void {
+    :root[data-super] .super-void {
       animation: none;
     }
 
-    .void__mote {
+    .super-void__mote {
       animation: none;
       opacity: 0.28;
     }
