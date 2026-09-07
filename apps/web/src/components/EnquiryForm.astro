@@ -506,9 +506,10 @@ const config = {
        * edge — which on the way up leaves the section above still filling most
        * of the screen and the form arriving from the bottom, so the visitor is
        * looking at the wrong section with their answer at the edge of it. On a
-       * wide screen this puts the top of the contact section under the nav
-       * instead, the way following a link to it would; on a phone it puts the
-       * field itself there, because the keyboard is about to take the rest.
+       * laptop this puts the top of the contact section at the top of the
+       * screen instead, which is the one framing that shows all of it; on a
+       * phone it puts the field itself there, because the keyboard is about to
+       * take the rest.
        *
        * The nav is measured rather than assumed: it is a floating pill whose
        * height changes with the viewport, and a hardcoded offset either hid the
@@ -547,15 +548,19 @@ const config = {
         if (here.top > clear && here.bottom < seen - 12) return;
 
         /*
-         * A phone and a desktop want different things here.
+         * A phone is the one screen this cannot be the same on.
          *
-         * On a wide screen the whole section fits, so putting its top under the
-         * nav shows the refusal in its context — the heading, the form, the
-         * message, all of it. On a phone that same scroll puts the field itself
-         * halfway down a screen whose bottom half is about to be a keyboard,
-         * which is how the answer ended up hidden behind it. There the field
-         * goes to the top instead, with its label, and the keyboard can have
-         * everything below.
+         * On a laptop the section's top goes to the screen's top and the whole
+         * of it is there — heading, form, message, both buttons. On a phone the
+         * form is taller than the window on its own, so that same scroll leaves
+         * the error six hundred pixels below the fold behind a keyboard that is
+         * about to open. There the field goes to the top with its label, and
+         * the keyboard can have everything under it.
+         *
+         * This branch is a breakpoint, not a measurement, which is the point:
+         * every phone gets the same answer and every laptop gets the same
+         * answer. The rule that used to differ between two laptops was the one
+         * below, and it is gone.
          */
         const narrow = window.matchMedia('(max-width: 767px)').matches;
 
@@ -567,21 +572,35 @@ const config = {
           return;
         }
 
-        const section = form.closest('section') ?? form;
-        const top = section.getBoundingClientRect().top + window.scrollY - clear;
-
         /*
-         * Unless the section is taller than the window and the field is near
-         * its foot — aligning the top would then scroll the answer off the
-         * bottom, which is worse than the thing being fixed. The field wins.
+         * The top of the section to the top of the screen, and nothing else
+         * decides it.
+         *
+         * There used to be a second rule here: if the field ended up more than
+         * a screen below the section's top, the field was centred instead. That
+         * is what made this land somewhere different on every laptop. Whether
+         * it took the first branch or the second depended on the window's
+         * height against the section's, and those cross over right in the
+         * middle of the sizes people actually have — so a 1440x900 aligned the
+         * section and a 1280x720 centred the field, from the same code, and
+         * neither machine could be told what the other was doing.
+         *
+         * Measured, the fallback was never needed on a laptop anyway. The
+         * section is 803px at 1440x900 and 748px at 1280x720, and with its top
+         * at the viewport's top the form's own bottom edge lands at 669px on
+         * the shorter one — the whole form, both send buttons and the note
+         * under them, with fifty pixels to spare. What overflowed 720 was the
+         * section's bottom padding, which is nothing anyone needs to see.
+         *
+         * The nav clearance is deliberately not subtracted. It is a pill that
+         * floats over the section's own top padding, and taking it off again
+         * pushed everything down by another ninety pixels and left a band of
+         * the section above showing.
          */
-        const after = here.top + window.scrollY - top;
-        const target =
-          after > seen - 90
-            ? here.top + window.scrollY - (seen - here.height) / 2
-            : top;
+        const section = form.closest('section') ?? form;
+        const top = section.getBoundingClientRect().top + window.scrollY;
 
-        window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
       }
 
       function clearError() {
