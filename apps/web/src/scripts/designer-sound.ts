@@ -603,7 +603,7 @@ export function shutdown(): void {
  * the picture actually draws them, in a different pattern every activation, and
  * each is pitched and weighted differently so a run never repeats itself.
  */
-export function tick(): void {
+export function tick(strength = 1): void {
   const audio = context();
   if (!audio || !arcBus || !strikeBuf || stopped) return;
 
@@ -617,8 +617,17 @@ export function tick(): void {
   src.buffer = strikeBuf;
   src.playbackRate.value = 0.82 + Math.random() * 0.5;
 
+  /*
+   * As loud as the arc is bright.
+   *
+   * It used to be a random 0.62 to 1.0, which meant a nearly invisible arc at
+   * the end of the decay could crack louder than the first one out of the
+   * character. The field passes in the alpha it is actually drawing with, so
+   * the sound of a strike is the strike: full when the arc is, and a whisper
+   * when it is a whisper. The remaining randomness is grain, not level.
+   */
   const gain = audio.createGain();
-  gain.gain.value = 0.62 + Math.random() * 0.38;
+  gain.gain.value = (0.78 + Math.random() * 0.22) * Math.max(0.05, Math.min(1, strength));
 
   src.connect(gain).connect(arcBus);
   src.start(t);
@@ -664,43 +673,63 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
   /* ---- The pressure, ahead of the force ------------------------------ */
 
   /*
-   * The woomph.
+   * The woomph, and it is now the longest thing in the sequence before the
+   * crack.
    *
-   * The picture now lifts everything a tenth of a second before it throws it —
-   * the air ahead of the front arriving before the front does — and a lift
-   * with no sound is a lift nobody notices. This is what pressure sounds like:
-   * a sine falling from 96Hz to 34 across the length of the bend, with the
-   * attack inside two milliseconds so it lands rather than swells, and a
-   * breath of filtered noise over it so it has air in it and is not a test
-   * tone.
+   * What the picture does before the shatter has changed completely, so this
+   * had to. It used to lift everything a tenth of a second before throwing it,
+   * and the numbers here were written against that: a fall to 31Hz over 340ms,
+   * gone by 420, stopped at 460. The picture now takes 610ms to get from the
+   * front reaching a thing to the force breaking it — the swell rolls across
+   * the page, every letter and control rises and comes all the way back down,
+   * and only then is it struck. Against that timing the old envelope left
+   * about 150ms of silence sitting exactly where the settle is, which is the
+   * one stretch the eye is following most closely.
    *
-   * It has to stay under the blast, not compete with it — but it does have to
-   * last as long as the bend does, so it is still there when the crack cuts
-   * it off. The ear reads two events in an order, exactly as the eye does.
+   * So it is derived from the preload rather than written down: it covers the
+   * whole swell and is still sounding when the blast cuts it off, whatever the
+   * picture's timing is retuned to.
+   *
+   * The shape is the shape of what is seen. It lands hard — two milliseconds
+   * of attack, because the front does not swell in, it arrives — and the pitch
+   * falls the whole way, which is a mass being loaded. The level rises to its
+   * peak a little under halfway, where the front is mid-page and the most
+   * things are moving at once, then eases back as they settle, and is still at
+   * two thirds when the crack takes it. It never quite gets quiet, because
+   * nothing on screen is ever quite still in that window either.
    */
+  const swell = shape.preload / 1000;
+
   const press = audio.createOscillator();
   press.type = 'sine';
   press.frequency.setValueAtTime(96, t0);
-  press.frequency.exponentialRampToValueAtTime(31, t0 + 0.34);
+  press.frequency.exponentialRampToValueAtTime(29, t0 + swell);
 
   const pressGain = audio.createGain();
   pressGain.gain.setValueAtTime(0.0001, t0);
   pressGain.gain.exponentialRampToValueAtTime(0.5, t0 + 0.002);
-  /*
-   * It swells into the blast rather than dying before it. The bend now takes
-   * 235ms to reach its furthest and the force lands there, so the pressure has
-   * to still be audible at that moment — it is the sound of the thing being
-   * bent, and it should be cut off by the crack rather than finish politely
-   * ahead of it.
-   */
-  pressGain.gain.exponentialRampToValueAtTime(0.38, t0 + 0.3);
-  pressGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.42);
+  // The front crossing: most things are in the air at once around here.
+  pressGain.gain.exponentialRampToValueAtTime(0.62, t0 + swell * 0.44);
+  // And easing off as they come back down, without ever going quiet.
+  pressGain.gain.exponentialRampToValueAtTime(0.4, t0 + swell * 0.82);
+  // Cut by the crack rather than finishing ahead of it.
+  pressGain.gain.exponentialRampToValueAtTime(0.0001, t0 + swell + 0.05);
 
   press.connect(pressGain).connect(master);
   press.start(t0);
-  press.stop(t0 + 0.46);
+  press.stop(t0 + swell + 0.09);
 
-  // The air moving with it, rather than a tone on its own.
+  /*
+   * The air moving with it, rather than a tone on its own — and it opens as
+   * the front crosses.
+   *
+   * The filter used to sit at a fixed 420Hz for the whole thing, which is a
+   * hiss laid over the groan. What is on screen is a front travelling outward,
+   * so the air travels with it: the cutoff climbs while the wave is crossing
+   * and closes again as things settle, which is the only part of this layer
+   * the ear can actually localise in time. Its length comes off the preload
+   * with everything else.
+   */
   if (strikeBuf) {
     const air = audio.createBufferSource();
     air.buffer = strikeBuf;
@@ -708,16 +737,19 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
 
     const airLow = audio.createBiquadFilter();
     airLow.type = 'lowpass';
-    airLow.frequency.setValueAtTime(420, t0);
+    airLow.frequency.setValueAtTime(300, t0);
+    airLow.frequency.exponentialRampToValueAtTime(760, t0 + swell * 0.44);
+    airLow.frequency.exponentialRampToValueAtTime(240, t0 + swell);
 
     const airGain = audio.createGain();
     airGain.gain.setValueAtTime(0.0001, t0);
-    airGain.gain.exponentialRampToValueAtTime(0.22, t0 + 0.01);
-    airGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.36);
+    airGain.gain.exponentialRampToValueAtTime(0.26, t0 + 0.01);
+    airGain.gain.exponentialRampToValueAtTime(0.14, t0 + swell * 0.7);
+    airGain.gain.exponentialRampToValueAtTime(0.0001, t0 + swell + 0.04);
 
     air.connect(airLow).connect(airGain).connect(master);
     air.start(t0);
-    air.stop(t0 + 0.42);
+    air.stop(t0 + swell + 0.08);
   }
 
   /* ---- The wave, and time closing around it -------------------------- */
@@ -780,15 +812,21 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
   /* ---- The strikes' level, which follows the storm ------------------- */
 
   /*
-   * Not their timing — the field owns that — only how loud they are by the
-   * time they happen. They hold while the field does and are gone before it
-   * finishes dying, which matches the picture: the long reaches out of the
-   * character are the first thing the storm cannot afford any more.
+   * Not their timing — the field owns that, and now their level mostly too:
+   * each strike is scaled by the alpha the arc is drawn with, so the fade is
+   * already in the sound.
+   *
+   * What is left here is a floor under that, and it runs the full length of the
+   * decay rather than stopping at seven tenths of it. It used to end early on
+   * purpose — sound gone before the picture finished dying — but the strikes
+   * are fired from the draw itself now, so an arc that is still visible in the
+   * last third would have been drawn in silence. The two ends have to be the
+   * same end.
    */
   arcBus.gain.cancelScheduledValues(t0);
   arcBus.gain.setValueAtTime(1, t0);
   arcBus.gain.setValueAtTime(1, decay);
-  arcBus.gain.exponentialRampToValueAtTime(0.0001, at(beat.decay + shape.fieldDecay * 0.7));
+  arcBus.gain.exponentialRampToValueAtTime(0.0001, at(beat.decay + shape.fieldDecay));
 
   /* ---- The rewind ---------------------------------------------------- */
 

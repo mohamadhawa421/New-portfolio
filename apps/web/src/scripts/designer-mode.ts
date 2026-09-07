@@ -2066,14 +2066,8 @@ let motes: Mote[] = [];
 let nextMote = 0;
 let lastSlot = -1;
 
-/** True once per turn of the arc pair, for the sound to hang off. */
-function slotChanged(now: number): boolean {
-  const slot = Math.floor(now / (760 / Math.max(0.25, power(now))));
-  if (slot === lastSlot) return false;
-  lastSlot = slot;
-  return true;
-}
-let onArc: (() => void) | null = null;
+/** The last arc slot that was actually drawn, so each one sounds once. */
+let onArc: ((strength: number) => void) | null = null;
 
 /** When the power started going, or 0 while the field is still at full. */
 let decayFrom = 0;
@@ -2097,7 +2091,7 @@ export function beginDecay(): void {
   if (!decayFrom) decayFrom = performance.now();
 }
 
-export function setArcListener(fn: (() => void) | null): void {
+export function setArcListener(fn: ((strength: number) => void) | null): void {
   onArc = fn;
 }
 
@@ -2230,10 +2224,9 @@ function drawField(now: number): void {
 
   drawFieldLines(now, p);
 
-  // One small sound per pair of arcs, not per frame of them.
-  // Advances on its own clock, and seeds the jitter on every arc drawn below.
+  // Seeds the jitter on every arc drawn below. The sound is fired from the
+  // draw itself, further down, and not from here.
   const step = Math.floor(now / 130);
-  if (slotChanged(now)) onArc?.();
 
   /*
    * One arc at a time, and never the same one for long.
@@ -2268,6 +2261,25 @@ function drawField(now: number): void {
     const alpha = (link.hot ? 0.42 : 0.28) * envelope * p;
     if (alpha <= 0.01) continue;
     const seed = step * 0.7 + link.phase;
+
+    /*
+     * The strike sounds here, because here is where there is one.
+     *
+     * It used to fire from a clock at the top of this function, on every turn
+     * of the slot — and a slot does not always draw anything. The long reaches
+     * out of the character are dropped once the power is under 0.55, and any
+     * arc whose envelope has faded below a hundredth is skipped as well, so a
+     * good part of what was heard was electricity with no lightning under it.
+     * Past the decay it was most of it.
+     *
+     * Now it is the last thing before the stroke and after every test that can
+     * refuse one: one sound per arc, on the frame the arc appears, and silence
+     * when nothing is being drawn.
+     */
+    if (slot !== lastSlot) {
+      lastSlot = slot;
+      onArc?.(alpha / 0.42);
+    }
 
     ctx.beginPath();
     jaggedPath(link.a, link.b, seed, link.hot ? 13 : 8);
