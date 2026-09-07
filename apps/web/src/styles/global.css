@@ -656,6 +656,27 @@ figure {
   --dm-deep: #4c1d95;
   --dm-glow: #8b5cf6;
 
+  /*
+   * The two halves of the bend in the ground, and the one thing here that has
+   * to be different in every mode.
+   *
+   * A bend is drawn as a crest of caught light and a trough of shadow behind
+   * it, and which of those two is doing the work depends entirely on what it
+   * is drawn over. On the light theme the page is white: there is no room to
+   * add light, so the trough carries it and the crest is barely there. On dark
+   * and on super the page is nearly black: there is nothing to darken, so the
+   * crest carries it. One value cannot serve both, and no blend mode can
+   * either — `overlay` has almost nothing to lighten on a near-black page and
+   * `plus-lighter` has nothing to add to white.
+   *
+   * Light: a purple shadow rather than a grey one, so the ridge belongs to the
+   * storm and not to the page.
+   */
+  --dm-bend-crest: color-mix(in srgb, var(--dm-core) 26%, transparent);
+  --dm-bend-trough: color-mix(in srgb, var(--dm-deep) 30%, transparent);
+  /* The rings. Faint enough to be texture rather than a diagram. */
+  --dm-bend-line: color-mix(in srgb, var(--dm-deep) 32%, transparent);
+
   /* Slow, because the purple draining out of the site is part of the storm
      passing rather than a colour being switched back. */
   transition:
@@ -1161,4 +1182,48 @@ figure {
   .is-lifting {
     animation: none;
   }
+}
+
+/* --------------------------------------------------------------------- */
+/* The bend in the ground, per mode                                       */
+/*                                                                        */
+/* The default above is tuned for the light theme, where the page is white */
+/* and the trough is the only half with anywhere to go. On a near-black    */
+/* ground the two swap jobs: there is nothing left to darken, so the crest */
+/* carries the ridge and the trough becomes a faint deepening behind it.   */
+/* --------------------------------------------------------------------- */
+:root[data-theme='dark'],
+:root[data-surface='void'] {
+  --dm-bend-crest: color-mix(in srgb, var(--dm-core) 72%, transparent);
+  --dm-bend-trough: color-mix(in srgb, #000 52%, transparent);
+  --dm-bend-line: color-mix(in srgb, var(--dm-arc) 40%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --dm-bend-crest: color-mix(in srgb, var(--dm-core) 72%, transparent);
+    --dm-bend-trough: color-mix(in srgb, #000 52%, transparent);
+    --dm-bend-line: color-mix(in srgb, var(--dm-arc) 40%, transparent);
+  }
+}
+
+/*
+ * Super designer mode, which is already violet.
+ *
+ * The crest cannot be the storm's own purple here — it would be the same hue
+ * as the ground it is meant to be lifting off, and the ridge would read as a
+ * brightness change rather than as a shape. So it goes to the hot end of the
+ * palette, which is the one colour in the set that is lighter than this
+ * ground, and the trough goes deeper than the page can on its own.
+ *
+ * Written last and with both attributes, so it beats the dark block above on
+ * source order as well as on specificity — super mode keeps whatever
+ * light/dark the visitor had, so those selectors both match at once.
+ */
+:root[data-super],
+:root[data-super][data-theme='dark'],
+:root[data-super][data-theme='light'] {
+  --dm-bend-crest: color-mix(in srgb, var(--dm-arc) 74%, transparent);
+  --dm-bend-trough: color-mix(in srgb, #10002a 62%, transparent);
+  --dm-bend-line: color-mix(in srgb, var(--dm-arc) 46%, transparent);
 }

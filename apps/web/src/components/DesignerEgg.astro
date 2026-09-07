@@ -30,6 +30,10 @@ import EggSound from './EggSound.astro';
 <div class="flash" data-egg-flash aria-hidden="true"></div>
 {/* The wave itself: a thick band of compressed light travelling outward, which
     is the thing an explosion actually looks like. The rings are its edges. */}
+{/* The ground under it all, flexing as the front crosses. A crest of caught
+    light with a trough behind it, which is how a bend in a surface is drawn —
+    and the only layer here that is not itself the wave. */}
+<div class="bend" data-egg-bend aria-hidden="true"></div>
 <div class="shock" data-egg-shock aria-hidden="true"></div>
 <div class="ring" data-egg-ring aria-hidden="true"></div>
 <div class="ring ring--trail" data-egg-ring-trail aria-hidden="true"></div>
@@ -58,6 +62,7 @@ import EggSound from './EggSound.astro';
     const wash = document.querySelector<HTMLElement>('[data-egg-wash]');
     const flash = document.querySelector<HTMLElement>('[data-egg-flash]');
     const shock = document.querySelector<HTMLElement>('[data-egg-shock]');
+    const bend = document.querySelector<HTMLElement>('[data-egg-bend]');
     const field = document.querySelector<HTMLCanvasElement>('[data-egg-field]');
     const trigger = document.querySelector<HTMLElement>('[data-egg-trigger]');
     const toggle = document.querySelector<HTMLButtonElement>('[data-egg-sound]');
@@ -81,7 +86,7 @@ import EggSound from './EggSound.astro';
       root.style.setProperty('--dm-fx', `${originX}px`);
       root.style.setProperty('--dm-fy', `${originY}px`);
 
-      for (const el of [ring!, trail!, wash!, flash!, shock!]) {
+      for (const el of [ring!, trail!, wash!, flash!, shock!, bend!]) {
         el.style.setProperty('--egg-x', `${originX}px`);
         el.style.setProperty('--egg-y', `${originY}px`);
         el.style.setProperty('--egg-reach', `${Math.ceil(reach)}px`);
@@ -498,6 +503,142 @@ import EggSound from './EggSound.astro';
     );
   }
 
+  /*
+   * The sheet, bending.
+   *
+   * Everything else in this file is the wave; this is the surface the wave is
+   * travelling under. A pressure pulse does not lift a flat sheet evenly — it
+   * flexes it in a narrow band that moves, and the way you draw a bend in a
+   * surface is a crest of caught light with a trough of shadow behind it.
+   *
+   * The band is written across the gradient rather than moved: 'transparent'
+   * out to 62%, the trough, then the crest at the leading edge, then nothing.
+   * Scaling the whole thing outward is what carries the ridge across the page,
+   * and because the element is sized off the click point the band is the same
+   * width of screen wherever it is clicked.
+   *
+   * Two colours, both from tokens, because this has to be seen on three very
+   * different grounds. On the light theme the trough does the work and the
+   * crest is nearly invisible; on dark and on super it is the other way round.
+   * Getting that from one blend mode was the first attempt and it does not
+   * work: 'overlay' has almost nothing to lighten on a near-black page, and
+   * 'plus-lighter' has nothing to add to white.
+   */
+  .bend {
+    background: radial-gradient(
+      circle,
+      transparent 40%,
+      color-mix(in srgb, var(--dm-bend-trough) 55%, transparent) 56%,
+      var(--dm-bend-trough) 70%,
+      var(--dm-bend-crest) 86%,
+      color-mix(in srgb, var(--dm-bend-crest) 34%, transparent) 94%,
+      transparent 100%
+    );
+  }
+
+  /*
+   * Slower than the wave, and it outlives it.
+   *
+   * The front is gone in 380ms; a sheet that had finished flexing by then
+   * would be a second wave rather than the ground answering the first. This
+   * runs half again as long and holds a little of the bend after the light has
+   * left, which is the decay the pressure has behind it.
+   */
+  /*
+   * The structure the distortion is read against.
+   *
+   * This is the part that was missing, and without it the rest of this layer
+   * could not work: a flat ground has nothing in it to be displaced, so a
+   * gradient sweeping over it is a gradient sweeping over it. Bending is only
+   * legible where there is something straight to stop being straight.
+   *
+   * So there are rings, drawn at a fixed spacing in the element's own space
+   * and centred on the click. The element scales from almost nothing to past
+   * the corner, and the rings scale with it — which means their spacing is
+   * tight at the moment they appear and stretches as the front travels. That
+   * is exactly the picture of space being compressed at a pressure front and
+   * relaxing behind it, and it costs one gradient and no per-frame work.
+   *
+   * The mask is what keeps it honest. The rings are only painted inside the
+   * band where the pressure actually is, so the page is not covered in
+   * concentric circles — what crosses the screen is a ring-textured ridge with
+   * clean ground ahead of it and clean ground behind.
+   *
+   * Idle it does not exist: the parent is at opacity 0 until the wave starts.
+   */
+  .bend::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: repeating-radial-gradient(
+      circle,
+      var(--dm-bend-line) 0 1.5px,
+      transparent 1.5px 22px
+    );
+    -webkit-mask-image: radial-gradient(
+      circle,
+      transparent 46%,
+      #000 66%,
+      #000 88%,
+      transparent 99%
+    );
+    mask-image: radial-gradient(
+      circle,
+      transparent 46%,
+      #000 66%,
+      #000 88%,
+      transparent 99%
+    );
+  }
+
+  .bend.is-rippling {
+    /*
+     * Linear, and the keyframes below carry the shape.
+     *
+     * The wave layers all use a hard front-loaded curve because a shock front
+     * genuinely does leave at speed. Borrowing it here was wrong: measured,
+     * the ridge reached the far corner 100ms into a 620ms animation and spent
+     * the remaining half second expanding off-screen, so there was nothing to
+     * see. The sheet is not the front — it is what the front is passing under,
+     * and it has to still be crossing the page while the pieces are being
+     * thrown.
+     */
+    animation: egg-bend 620ms linear both;
+  }
+
+  @keyframes egg-bend {
+    0% {
+      opacity: 0;
+      transform: scale(0.05);
+    }
+    /* The pressure arrives almost vertically. */
+    7% {
+      opacity: 1;
+      transform: scale(0.26);
+    }
+    /* Then crosses at a steady rate, decelerating slightly as it spreads. */
+    34% {
+      opacity: 0.95;
+      transform: scale(0.68);
+    }
+    64% {
+      opacity: 0.72;
+      transform: scale(1.06);
+    }
+    /* And decays behind the front rather than stopping with it. */
+    100% {
+      opacity: 0;
+      transform: scale(1.4);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bend.is-rippling {
+      animation-duration: 0.001ms;
+    }
+  }
+
   .shock.is-rippling {
     animation: egg-shock 380ms cubic-bezier(0.1, 0.78, 0.2, 1) both;
   }
@@ -545,7 +686,8 @@ import EggSound from './EggSound.astro';
 
   .ring,
   .shock,
-  .wash {
+  .wash,
+  .bend {
     position: fixed;
     left: var(--egg-x, 50%);
     top: var(--egg-y, 50%);

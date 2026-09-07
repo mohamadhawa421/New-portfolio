@@ -132,7 +132,21 @@ const WAVE_MS = 380;
  * on the way up. At the 110 it was before, the bend was still a third of the
  * way in when it was overrun, which is why it could not be seen.
  */
-const PRELOAD_MS = 340;
+const BEND_PEAK_MS = 430;
+
+/**
+ * And how long the sheet is held at full bend before the force arrives.
+ *
+ * The blast used to land on the exact frame the bend was furthest, which is
+ * tidy arithmetic and too fast to read: the flex and the shatter were one
+ * event, and what the eye got was the shatter. This holds the page at very
+ * nearly full bend for a sixth of a second first, so there is a moment where
+ * the interface is visibly under load and nothing has broken yet. It is the
+ * only pause in the sequence and it is the reason the rest of it lands.
+ */
+const TENSION_MS = 170;
+
+const PRELOAD_MS = BEND_PEAK_MS + TENSION_MS;
 
 /**
  * And how long the bend itself takes.
@@ -143,9 +157,73 @@ const PRELOAD_MS = 340;
  * together is what keeps the shape of the theme's cue while giving the eye
  * long enough to see it happen.
  */
-const LIFT_MS = Math.round(PRELOAD_MS / 0.38);
+const LIFT_MS = 1320;
+
+/** Where in the lift the bend is furthest, and where it stops being held. */
+const BEND_PEAK = BEND_PEAK_MS / LIFT_MS;
+const BEND_HOLD = PRELOAD_MS / LIFT_MS;
 
 const BLAST_MS = 380;
+
+/**
+ * How much pressure is left this far out.
+ *
+ * A shock pulse is not a ripple. The pressure rises almost vertically at the
+ * front, peaks, and then decays behind it — so the sheet is bent hard in a
+ * narrow band around the front and is very nearly flat everywhere else. What
+ * this replaced was linear and bottomed out at half, which bent the whole page
+ * by roughly the same amount at once: a page-wide flex rather than something
+ * travelling across it.
+ *
+ * The shape is a stretched exponential, `exp(-(u/k)^1.4)`, fitted to the
+ * profile a decaying front actually has:
+ *
+ *      at the front   1.00
+ *      a fifth out    0.62
+ *      a third out    0.32
+ *      half way       0.09
+ *      beyond that    ~0
+ *
+ * The length scale is a fraction of `reach` rather than a pixel count, because
+ * the same click has to read the same way on a phone and on a wide display —
+ * a fixed 180px band would be most of a narrow screen and a stripe on a large
+ * one.
+ *
+ * `floor` is what separates the two things this drives. The bend takes 0,
+ * because a bend that has decayed to nothing is exactly right and a far corner
+ * that stays flat is the point. The throw cannot: this storm's business is
+ * taking the whole interface apart, and an element left where it was reads as
+ * one the wave could not be bothered with. So the throw keeps a third of its
+ * force at any distance and spends the rest on the near field.
+ */
+function pressure(distance: number, reach: number): number {
+  const u = Math.min(1, distance / (reach || 1));
+  return Math.exp(-Math.pow(u / 0.42, 1.5));
+}
+
+/**
+ * How much of the shove is left this far out.
+ *
+ * The same idea as the pressure above and deliberately not the same curve,
+ * because the two are answering different questions. The bend is allowed to
+ * decay to nothing — a far corner that stays flat while the front is still
+ * near the middle is exactly what a pulse looks like. The shove is not: this
+ * storm's business is taking the whole interface apart, and a chip left
+ * sitting in the corner reads as one the wave could not be bothered with.
+ *
+ * So this keeps both ends of what was here before — full force at the origin,
+ * half of it at the furthest corner — and only changes the shape between them.
+ * It was linear, which spread the force evenly across the page; the same two
+ * endpoints with a decaying middle put it where the front is instead. At a
+ * fifth of the way out the shove is 0.84 rather than 0.90, at half way 0.61
+ * rather than 0.75, and the far corner is unchanged, so nothing about how far
+ * the outer pieces travel — which the coast, the grip and the way home are all
+ * tuned against — moves at all.
+ */
+function carry(distance: number, reach: number): number {
+  const u = Math.min(1, distance / (reach || 1));
+  return 0.5 + 0.5 * Math.exp(-Math.pow(u / 0.38, 1.5));
+}
 
 /**
  * And how long the field takes to work that off.
@@ -387,6 +465,8 @@ interface Flight {
   bow: number;
   /** How hard the field has to work to hold it. 0 for a cover, 1 for a chip. */
   grip: number;
+  /** How much pressure was left here when the front passed. Drives the bend. */
+  force: number;
   /** Which way the front was travelling when it got here. */
   nx: number;
   ny: number;
@@ -738,7 +818,7 @@ export function run(options: DesignerModeOptions): Beat {
    * be paid for out of the shove, or the far pieces would spend the fight
    * off the side of the screen where nobody can watch them lose it.
    */
-  const push = Math.min(narrow ? 168 : 260, Math.min(window.innerWidth, window.innerHeight) * 0.33);
+  const push = Math.min(narrow ? 340 : 560, Math.min(window.innerWidth, window.innerHeight) * 0.62);
 
   /*
    * One bias for the whole run.
@@ -764,7 +844,7 @@ export function run(options: DesignerModeOptions): Beat {
     // Nearer the blast is thrown harder, and never straight along the radius —
     // a little sideways is what stops the whole page reading as one explosion
     // diagram.
-    const falloff = 0.5 + 0.5 * (1 - Math.min(1, distance / reach));
+    const falloff = carry(distance, reach);
     /*
      * Some scatter, but not enough to drown the mass.
      *
@@ -879,6 +959,15 @@ export function run(options: DesignerModeOptions): Beat {
       // How hard the field has to work to hold it, which is the inverse of
       // how much there is to hold.
       grip: 1 - heft,
+      /*
+       * The bend reads the pressure, not the throw.
+       *
+       * Taken with no floor, unlike the falloff the shove uses: a far corner
+       * that is thrown but barely flexed is exactly what a decaying front
+       * does, and giving the bend the throw is floor would have bent the whole
+       * page a third of the way again.
+       */
+      force: pressure(distance, reach),
       /*
        * The way it is actually going, not the way the source lies.
        *
@@ -1032,7 +1121,9 @@ export function run(options: DesignerModeOptions): Beat {
       const bx = wx / span - (wy / span) * swirl + lean.x;
       const by = wy / span + (wx / span) * swirl + lean.y;
       const aim = Math.hypot(bx, by) || 1;
-      const lifted = lift(el, struckAt[w], bx / aim, by / aim);
+      // The pressure where the block actually stands: a heading under the click
+      // bends hard and one at the foot of the page barely creases.
+      const lifted = lift(el, struckAt[w], bx / aim, by / aim, pressure(span, reach), Math.min(1, Math.sqrt(box.width * box.height) / 460));
       if (lifted) returning.push(lifted);
     });
 
@@ -1084,7 +1175,7 @@ export function run(options: DesignerModeOptions): Beat {
       const ly = spot.top + spot.height / 2 - originY;
       const distance = Math.hypot(lx, ly) || 1;
 
-      const falloff = 0.5 + 0.5 * (1 - Math.min(1, distance / reach));
+      const falloff = carry(distance, reach);
       const spread = 0.7 + Math.random() * 0.7;
       /*
        * Nothing is lighter than a letter, so nothing goes further for its size
@@ -1196,7 +1287,8 @@ export function run(options: DesignerModeOptions): Beat {
       const shake = buzz(el, flight.wave + PRELOAD_MS + OUT_MS, 1.55 * (0.28 + 0.72 * flight.grip), GRIP_MS);
       if (shake) returning.push(shake);
 
-      const lifted = lift(el, flight.wave, flight.nx, flight.ny);
+      // The pressure still left where it stands, and its own weight.
+      const lifted = lift(el, flight.wave, flight.nx, flight.ny, flight.force, 1 - flight.grip);
       if (lifted) returning.push(lifted);
     }
   });
@@ -1615,7 +1707,14 @@ function launchLetter(el: HTMLElement, t: Throw): Animation {
  * behind it, so the order is legible: pressure, then force. Added on top of
  * whatever else is moving the element rather than replacing it.
  */
-function lift(el: HTMLElement, at: number, nx = 0, ny = 0): Animation | null {
+function lift(
+  el: HTMLElement,
+  at: number,
+  nx = 0,
+  ny = 0,
+  force = 1,
+  heft = 0
+): Animation | null {
   if (!CAN_LAYER) return null;
 
   /*
@@ -1633,23 +1732,123 @@ function lift(el: HTMLElement, at: number, nx = 0, ny = 0): Animation | null {
    * all; without it these numbers are a squash, and 700px is close enough to
    * the page to make the far edge genuinely recede.
    */
-  const px = nx * 20;
-  const py = -40 + ny * 20;
+
+  /*
+   * How hard this one is bent, and the floor that stops it being a downgrade.
+   *
+   * `force` is the pressure still left where the element stands. It used to be
+   * absent — every element took the same 15° whether it was under the click or
+   * in the far corner, which is a page-wide flex rather than a front crossing
+   * one — and the gradient is the whole of what makes it read as travelling.
+   *
+   * But a bare multiply makes most of the page bend *less* than it used to,
+   * because pressure is below 1 everywhere except at the origin. So the
+   * gradient runs from a floor rather than from nothing: at 0.6 the quietest
+   * element on the page still gets 18° against the old flat 15°, and the ones
+   * near the click get 30°. Every element bends more than it did, and there is
+   * now half again as much difference between the near ones and the far ones
+   * as there is bend at all. That is the point of the preload — it has to be
+   * seen, on most of the page, before the shatter arrives.
+   *
+   * Weight is deliberately not in here, and was briefly: the note above about
+   * the air ahead of a front not caring what it is pushing is right, and
+   * scaling the flex by size took a full-width cover down to a third of the
+   * turn — which is exactly the case where a bend is most visible and most
+   * worth having. The throw already answers mass, twice, through `inertia` and
+   * through the rotation. This does not need to.
+   */
+  const give = 0.6 + 0.4 * force;
+
+  /*
+   * And how much of that this particular thing gives up.
+   *
+   * A chip and a full-width cover do not flex alike — the small thing snaps
+   * and the large one leans — so size comes back in here, which it did not
+   * before. It is floored rather than scaled from zero for the same reason the
+   * pressure is: a cover that barely creased was the one element on the page
+   * the wave appeared not to touch, and a cover is the most visible surface
+   * there is to bend.
+   */
+  const light = 1 - heft * 0.42;
+
+  const px = nx * 46 * give * light;
+  const py = (-84 + ny * 46) * give * light;
+  const stretch = 1 + 0.105 * give * light;
+  const degrees = 30 * give * (1 - heft * 0.34);
 
   const peak =
-    `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0) scale(1.03) ` +
-    `perspective(700px) rotate3d(${(-ny).toFixed(3)}, ${nx.toFixed(3)}, 0, 15deg)`;
+    `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0) scale(${stretch.toFixed(3)}) ` +
+    `perspective(700px) rotate3d(${(-ny).toFixed(3)}, ${nx.toFixed(3)}, 0, ${degrees.toFixed(1)}deg)`;
+
+  /*
+   * Braced, and then let go of slowly.
+   *
+   * The sheet dips a little the wrong way just before the front arrives — the
+   * pressure ahead of a pulse pushes down before the crest lifts anything —
+   * and that tiny counter-move is what makes the peak read as something
+   * arriving rather than something starting. Then the fall is much longer than
+   * the rise: a pulse has a near-vertical front and a decaying tail, and the
+   * old shape came back as fast as it went, which is a pump rather than a
+   * pressure wave.
+   *
+   * The offsets are the pressure curve of a decaying front, sampled: 85% of
+   * peak already reached a twelfth of the way before the top, then 55%, 20%
+   * and 5% on the way out. The peak stays at 0.38 because PRELOAD_MS is
+   * derived from it and the blast has to land on that exact frame.
+   */
+  const at38 = (k: number) =>
+    `translate3d(${(px * k).toFixed(1)}px, ${(py * k).toFixed(1)}px, 0) ` +
+    `scale(${(1 + (stretch - 1) * k).toFixed(3)}) ` +
+    `perspective(700px) rotate3d(${(-ny).toFixed(3)}, ${nx.toFixed(3)}, 0, ${(degrees * k).toFixed(1)}deg)`;
 
   return el.animate(
     [
-      { transform: 'translate3d(0, 0, 0) scale(1)', offset: 0 },
-      { transform: peak, offset: 0.38 },
+      {
+        transform: 'translate3d(0, 0, 0) scale(1)',
+        offset: 0,
+        easing: 'cubic-bezier(0.4, 0, 0.6, 1)',
+      },
+      /*
+       * The brace. Against the travel, and small enough to be felt rather than
+       * seen: the air ahead of a pulse presses down before the crest lifts
+       * anything, and that counter-move is what makes the peak read as
+       * something arriving rather than something starting.
+       */
+      {
+        transform: at38(-0.08),
+        offset: BEND_PEAK * 0.34,
+        easing: 'cubic-bezier(0.16, 0.84, 0.3, 1)',
+      },
+      { transform: peak, offset: BEND_PEAK, easing: 'linear' },
+      /*
+       * Held. This is the tension window, and it is the whole reason the bend
+       * can be read at all: the page sits at very nearly full flex while
+       * nothing else happens, and the blast lands on the frame it ends. Not
+       * perfectly still — 97% rather than 100% — because a sheet under load
+       * creeps, and a frozen frame in the middle of a physical event reads as
+       * a dropped one.
+       */
+      {
+        transform: at38(0.97),
+        offset: BEND_HOLD,
+        easing: 'cubic-bezier(0.4, 0, 0.5, 0.85)',
+      },
+      /*
+       * And the tail. A pulse has a near-vertical front and a decay behind it,
+       * so the fall gets the rest of the animation and is still at a third of
+       * full bend well past the blast. The old shape came back as fast as it
+       * went out, which is a pump rather than a pressure wave.
+       */
+      {
+        transform: at38(0.3),
+        offset: BEND_HOLD + (1 - BEND_HOLD) * 0.42,
+        easing: 'cubic-bezier(0.3, 0, 0.4, 1)',
+      },
       { transform: 'translate3d(0, 0, 0) scale(1)', offset: 1 },
     ],
     {
       duration: LIFT_MS,
       delay: at,
-      easing: 'cubic-bezier(0.33, 0.02, 0.18, 1)',
       composite: 'add',
       fill: 'both',
     }
