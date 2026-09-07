@@ -132,36 +132,47 @@ const WAVE_MS = 380;
  * on the way up. At the 110 it was before, the bend was still a third of the
  * way in when it was overrun, which is why it could not be seen.
  */
-const BEND_PEAK_MS = 430;
+/**
+ * How long one thing takes to be lifted and set back down.
+ *
+ * This is the whole of the bend, start to finish: the front arrives under an
+ * element, it rises, and it settles again — and it is over before anything
+ * hits it. Earlier versions had the blast land on the frame the bend was
+ * furthest, which is tidy and unreadable: what the eye got was one event, and
+ * that event was the shatter.
+ *
+ * 420ms, peaking at 160 and back down by the end, which is slow enough to be
+ * unmistakable and quick enough that the whole page can be crossed and settled
+ * before the shock catches up with it.
+ */
+const SWELL_MS = 420;
 
 /**
- * And how long the sheet is held at full bend before the force arrives.
+ * The furthest a swell can be pushed back by the sweep across its own block.
  *
- * The blast used to land on the exact frame the bend was furthest, which is
- * tidy arithmetic and too fast to read: the flex and the shatter were one
- * event, and what the eye got was the shatter. This holds the page at very
- * nearly full bend for a sixth of a second first, so there is a moment where
- * the interface is visibly under load and nothing has broken yet. It is the
- * only pause in the sequence and it is the reason the rest of it lands.
+ * The sweep below travels along each line at about a millisecond per pixel, so
+ * a very wide heading could otherwise still be rising when the blast arrives.
+ * Capping it is what lets the preload be one number rather than a per-element
+ * calculation.
+ *
+ * 150 rather than the 240 it started at, because the preload is built on top
+ * of it: every millisecond of headroom here is a millisecond of stillness
+ * between the settle and the shock for everything that is not at the far end
+ * of a long line. Measured, the wide cap left 312ms of dead air on the
+ * quickest elements, and dead air was the first thing that read as wrong.
  */
-const TENSION_MS = 170;
-
-const PRELOAD_MS = BEND_PEAK_MS + TENSION_MS;
+const SWEEP_CAP = 150;
 
 /**
- * And how long the bend itself takes.
+ * How long the pressure is felt before the force behind it lands.
  *
- * Derived, not chosen: the theme wipe's curve peaks at 38% of its length, and
- * the force has to land on the frame the bend is furthest — so the length is
- * whatever makes 38% of it equal the preload above. Stretching the two
- * together is what keeps the shape of the theme's cue while giving the eye
- * long enough to see it happen.
+ * Not chosen freely: it is the swell, plus the furthest the sweep can push one
+ * back, plus a frame or two of clear air. That is what guarantees the order the
+ * whole sequence depends on — every letter and every control has risen and
+ * settled before the shock reaches it, so the three beats read as three beats
+ * and not as one.
  */
-const LIFT_MS = 1320;
-
-/** Where in the lift the bend is furthest, and where it stops being held. */
-const BEND_PEAK = BEND_PEAK_MS / LIFT_MS;
-const BEND_HOLD = PRELOAD_MS / LIFT_MS;
+const PRELOAD_MS = SWELL_MS + SWEEP_CAP + 40;
 
 const BLAST_MS = 380;
 
@@ -1007,7 +1018,19 @@ export function run(options: DesignerModeOptions): Beat {
    * These are the actual first turn and the actual last arrival of the pieces
    * that exist, so the two ends of the sound sit on two frames of the picture.
    */
-  const turns = placed.map((p) => beat.impact + p.flight.wave + OUT_MS);
+  /*
+   * The same arithmetic launch() uses, and it has to be exactly that.
+   *
+   * This was missing the preload and the grip: a piece turns for home at
+   * wave + PRELOAD_MS + OUT_MS + GRIP_MS, not at wave + OUT_MS, so the number
+   * handed to the sound was most of a second early and the rewind swell began
+   * while the field was still winning. It was wrong before and survived
+   * because the gap was 340ms; raising the preload to give the bend its own
+   * moment took it to 610 and made it audible.
+   */
+  const turns = placed.map(
+    (p) => beat.impact + p.flight.wave + PRELOAD_MS + OUT_MS + GRIP_MS
+  );
   const arrivals = placed.map((p, i) => turns[i] + p.flight.home);
   const timed: Beat = placed.length
     ? {
@@ -1087,6 +1110,16 @@ export function run(options: DesignerModeOptions): Beat {
     });
 
     const wasAt = words.map((el) => measureLetters(el));
+
+    /*
+     * Where each block sits, and where on it the front arrives first.
+     *
+     * Measured once per block rather than per letter: two hundred
+     * getBoundingClientRect calls inside the loop that is about to split every
+     * heading is the one place in this sequence that could actually drop a
+     * frame.
+     */
+    const wordBox = words.map((el) => el.getBoundingClientRect());
     /*
      * How big this block's letters are, read here with everything else.
      *
@@ -1106,26 +1139,15 @@ export function run(options: DesignerModeOptions): Beat {
      * feel like it is made of air. It gets the same lift everything else does,
      * on the element itself, and its letters leave a tenth of a second later.
      */
-    words.forEach((el, w) => {
-      const box = el.getBoundingClientRect();
-      const wx = box.left + box.width / 2 - originX;
-      const wy = box.top + box.height / 2 - originY;
-      const span = Math.hypot(wx, wy) || 1;
-      /*
-       * The block bends the way its letters are about to go.
-       *
-       * Each letter has its own share of chaos on top, but the run's swirl and
-       * lean are common to all of them — so this is where the word as a whole
-       * is headed, and the bend and the scatter pull the same way.
-       */
-      const bx = wx / span - (wy / span) * swirl + lean.x;
-      const by = wy / span + (wx / span) * swirl + lean.y;
-      const aim = Math.hypot(bx, by) || 1;
-      // The pressure where the block actually stands: a heading under the click
-      // bends hard and one at the foot of the page barely creases.
-      const lifted = lift(el, struckAt[w], bx / aim, by / aim, pressure(span, reach), Math.min(1, Math.sqrt(box.width * box.height) / 460));
-      if (lifted) returning.push(lifted);
-    });
+    /*
+     * The block is deliberately not bent, and its letters are.
+     *
+     * This used to lift the word as one plate, which is a sign being tilted.
+     * A blast under a surface lifts what is above it in the order it reaches
+     * them, so the swell is applied per letter in the loop below, timed off
+     * each glyph's own distance. Nothing is both a block and its letters:
+     * bending both put a tilting plate under a rolling swell.
+     */
 
     const letters: HTMLElement[] = [];
     const struck: number[] = [];
@@ -1245,6 +1267,64 @@ export function run(options: DesignerModeOptions): Beat {
       returning.push(launchLetter(letter, flight));
 
       /*
+       * The wave passes under this letter and lifts it.
+       *
+       * This is the bend, and it belongs here rather than on the block. A
+       * heading lifted as one plate is a sign being tilted; a blast travelling
+       * under a surface lifts what is above it in the order it reaches them,
+       * and that order is the whole read — you see the swell cross the words.
+       *
+       * Timed off each glyph's own distance from the origin, so the front
+       * genuinely rolls through the line at the speed it crosses the page.
+       * That is deliberately the opposite of what the shatter does twenty
+       * lines below, and the note there is right about why: a block struck
+       * letter by letter is an orderly ripple, and being hit is not orderly.
+       * A ground swell is. So the swell rolls and the impact lands at once,
+       * which is also the order they happen in.
+       *
+       * The block is no longer lifted at all — nothing is both a block and its
+       * letters, or the bend is applied twice and the second one is a plate
+       * tilting under the first.
+       */
+      /*
+       * Stretched past the front's own speed, and deliberately.
+       *
+       * At the true crossing time the letters of one heading are about 150ms
+       * apart, against a flex that takes 540ms to reach full — an 18% phase
+       * difference, which the eye reads as the word leaning rather than as a
+       * swell moving through it. At 1.9x the onsets across a line span most of
+       * a rise, so at any instant part of the word is coming up, part is at
+       * the top and part has not been reached. That is the picture.
+       *
+       * And the ripple is local: 640ms against the block flex of 1421, so it
+       * passes under a letter and leaves rather than holding the whole line up
+       * at once. A deformation that outlasts the wave crossing the page is not
+       * a wave, it is a bulge.
+       */
+      /*
+       * And the sweep along the line, which is the part that actually rolls.
+       *
+       * The radial term above is honest and, on its own, not enough: a heading
+       * above the click runs across the radius, so every letter in it is very
+       * nearly the same distance from the origin and the front reaches them
+       * together. Measured on this page, the eleven letters of the h1 were
+       * 47ms apart out of a 540ms rise — the word leaned, it did not roll.
+       *
+       * So the front also travels *along* each block, outward from whichever
+       * end of it the wave meets first. That is what a swell crossing the
+       * ground does, and it is what puts a real order on the letters: at any
+       * instant part of the word is coming up, part is at the top and part has
+       * not been reached. Just under a millisecond per pixel, so a 215px
+       * heading takes about 180ms to cross — a third of the rise.
+       */
+      const bx = wordBox[block[i]];
+      const entry = Math.max(bx.left, Math.min(originX, bx.right));
+      const sweep = Math.min(SWEEP_CAP, Math.abs(spot.left + spot.width / 2 - entry) * 0.85);
+      const roll = Math.round(Math.min(1, distance / reach) * WAVE_MS + sweep);
+      const swell = lift(letter, roll, nx, ny, pressure(distance, reach), Math.min(1, sized[i] / 460));
+      if (swell) returning.push(swell);
+
+      /*
        * And it shudders while it is held, harder than anything else, because
        * there is less of it than anything else. Scaled off the size of the type
        * it belongs to: body copy at three pixels, a display heading's letters
@@ -1288,6 +1368,14 @@ export function run(options: DesignerModeOptions): Beat {
       if (shake) returning.push(shake);
 
       // The pressure still left where it stands, and its own weight.
+      /*
+       * Lifted and set down again before it is thrown.
+       *
+       * Same beat as the letters and for the same reason: the front arrives,
+       * the thing rises, it settles, and only then does the blast take it.
+       * The swell is over 240ms before the shove starts, which is the gap that
+       * makes them two events instead of one.
+       */
       const lifted = lift(el, flight.wave, flight.nx, flight.ny, flight.force, 1 - flight.grip);
       if (lifted) returning.push(lifted);
     }
@@ -1713,7 +1801,8 @@ function lift(
   nx = 0,
   ny = 0,
   force = 1,
-  heft = 0
+  heft = 0,
+  span = SWELL_MS
 ): Animation | null {
   if (!CAN_LAYER) return null;
 
@@ -1796,59 +1885,37 @@ function lift(
    * and 5% on the way out. The peak stays at 0.38 because PRELOAD_MS is
    * derived from it and the blast has to land on that exact frame.
    */
-  const at38 = (k: number) =>
-    `translate3d(${(px * k).toFixed(1)}px, ${(py * k).toFixed(1)}px, 0) ` +
-    `scale(${(1 + (stretch - 1) * k).toFixed(3)}) ` +
-    `perspective(700px) rotate3d(${(-ny).toFixed(3)}, ${nx.toFixed(3)}, 0, ${(degrees * k).toFixed(1)}deg)`;
 
+  /*
+   * Three positions and one curve, which is what it was before any of this.
+   *
+   * The version in between had seven keyframes — a brace, a sampled rise, a
+   * hold, two decay points — and every junction between them was a place the
+   * velocity changed abruptly. Sampling a curve and joining the samples with a
+   * linear easing does not reproduce the curve, it reproduces a polyline, and
+   * the eye reads the corners. One easing across the whole flight cannot have a
+   * corner in it.
+   *
+   * So the shape is carried by the easing and the magnitude by the numbers
+   * above. It rises slowly at first, is quickest through the middle, and is
+   * still moving — barely — as it arrives at full bend on the frame the blast
+   * lands. Then the same curve unwinds it over the remaining 62%, which is the
+   * asymmetry a pulse has: a front that arrives and a pressure that decays.
+   *
+   * The brace is gone with the rest. It was four keyframes' worth of idea
+   * spent on eight pixels in the wrong direction, and it cost a junction right
+   * where the rise needed to be cleanest.
+   */
   return el.animate(
     [
-      {
-        transform: 'translate3d(0, 0, 0) scale(1)',
-        offset: 0,
-        easing: 'cubic-bezier(0.4, 0, 0.6, 1)',
-      },
-      /*
-       * The brace. Against the travel, and small enough to be felt rather than
-       * seen: the air ahead of a pulse presses down before the crest lifts
-       * anything, and that counter-move is what makes the peak read as
-       * something arriving rather than something starting.
-       */
-      {
-        transform: at38(-0.08),
-        offset: BEND_PEAK * 0.34,
-        easing: 'cubic-bezier(0.16, 0.84, 0.3, 1)',
-      },
-      { transform: peak, offset: BEND_PEAK, easing: 'linear' },
-      /*
-       * Held. This is the tension window, and it is the whole reason the bend
-       * can be read at all: the page sits at very nearly full flex while
-       * nothing else happens, and the blast lands on the frame it ends. Not
-       * perfectly still — 97% rather than 100% — because a sheet under load
-       * creeps, and a frozen frame in the middle of a physical event reads as
-       * a dropped one.
-       */
-      {
-        transform: at38(0.97),
-        offset: BEND_HOLD,
-        easing: 'cubic-bezier(0.4, 0, 0.5, 0.85)',
-      },
-      /*
-       * And the tail. A pulse has a near-vertical front and a decay behind it,
-       * so the fall gets the rest of the animation and is still at a third of
-       * full bend well past the blast. The old shape came back as fast as it
-       * went out, which is a pump rather than a pressure wave.
-       */
-      {
-        transform: at38(0.3),
-        offset: BEND_HOLD + (1 - BEND_HOLD) * 0.42,
-        easing: 'cubic-bezier(0.3, 0, 0.4, 1)',
-      },
+      { transform: 'translate3d(0, 0, 0) scale(1)', offset: 0 },
+      { transform: peak, offset: 0.38 },
       { transform: 'translate3d(0, 0, 0) scale(1)', offset: 1 },
     ],
     {
-      duration: LIFT_MS,
+      duration: span,
       delay: at,
+      easing: 'cubic-bezier(0.33, 0.02, 0.18, 1)',
       composite: 'add',
       fill: 'both',
     }
