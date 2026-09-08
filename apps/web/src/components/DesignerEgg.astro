@@ -39,6 +39,124 @@ import EggSound from './EggSound.astro';
 <div class="ring ring--trail" data-egg-ring-trail aria-hidden="true"></div>
 <div class="wash" data-egg-wash aria-hidden="true"></div>
 <canvas class="dm-field" data-egg-field aria-hidden="true"></canvas>
+
+{/*
+  The screen coming apart, defined once.
+
+  Three filters rather than one animated one: SVG filter primitives are not
+  CSS and their attributes are not on the CSS animation clock, so the only way
+  to change the separation over time is to change which filter is applied.
+  Which suits it — a glitch cuts between states, it does not slide between
+  them, and stepping across three fixed levels is exactly the vocabulary.
+
+  Each one splits the source into its channels, offsets red one way and blue
+  the other, and screens the three back together. Where nothing has moved the
+  channels recombine to the original colour exactly; where an edge is, the
+  offset leaves a red fringe on one side and a cyan one on the other. That is
+  chromatic aberration as a display actually fails at it, and it works on a
+  white ground and a black one without knowing which it is on.
+
+  sRGB interpolation is not optional here: filters default to linearRGB, and
+  the same maths in linear light comes back visibly paler than the element it
+  was applied to, which reads as a flash rather than as damage.
+*/}
+<svg class="dm-tear-defs" aria-hidden="true" focusable="false">
+  <defs>
+    <filter
+      id="dm-tear-1"
+      x="-12%"
+      y="-12%"
+      width="124%"
+      height="124%"
+      color-interpolation-filters="sRGB"
+    >
+      <feOffset in="SourceGraphic" dx="2" dy="0" result="rshift" />
+      <feColorMatrix
+        in="rshift"
+        type="matrix"
+        values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"
+        result="red"
+      />
+      <feColorMatrix
+        in="SourceGraphic"
+        type="matrix"
+        values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"
+        result="green"
+      />
+      <feOffset in="SourceGraphic" dx="-2" dy="0" result="bshift" />
+      <feColorMatrix
+        in="bshift"
+        type="matrix"
+        values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"
+        result="blue"
+      />
+      <feBlend in="red" in2="green" mode="screen" result="rg" />
+      <feBlend in="rg" in2="blue" mode="screen" />
+    </filter>
+    <filter
+      id="dm-tear-2"
+      x="-12%"
+      y="-12%"
+      width="124%"
+      height="124%"
+      color-interpolation-filters="sRGB"
+    >
+      <feOffset in="SourceGraphic" dx="3.5" dy="0" result="rshift" />
+      <feColorMatrix
+        in="rshift"
+        type="matrix"
+        values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"
+        result="red"
+      />
+      <feColorMatrix
+        in="SourceGraphic"
+        type="matrix"
+        values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"
+        result="green"
+      />
+      <feOffset in="SourceGraphic" dx="-3.5" dy="0" result="bshift" />
+      <feColorMatrix
+        in="bshift"
+        type="matrix"
+        values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"
+        result="blue"
+      />
+      <feBlend in="red" in2="green" mode="screen" result="rg" />
+      <feBlend in="rg" in2="blue" mode="screen" />
+    </filter>
+    <filter
+      id="dm-tear-3"
+      x="-12%"
+      y="-12%"
+      width="124%"
+      height="124%"
+      color-interpolation-filters="sRGB"
+    >
+      <feOffset in="SourceGraphic" dx="5" dy="0" result="rshift" />
+      <feColorMatrix
+        in="rshift"
+        type="matrix"
+        values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"
+        result="red"
+      />
+      <feColorMatrix
+        in="SourceGraphic"
+        type="matrix"
+        values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"
+        result="green"
+      />
+      <feOffset in="SourceGraphic" dx="-5" dy="0" result="bshift" />
+      <feColorMatrix
+        in="bshift"
+        type="matrix"
+        values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"
+        result="blue"
+      />
+      <feBlend in="red" in2="green" mode="screen" result="rg" />
+      <feBlend in="rg" in2="blue" mode="screen" />
+    </filter>
+  </defs>
+</svg>
 <EggSound />
 
 <script>
@@ -178,6 +296,7 @@ import EggSound from './EggSound.astro';
 
     function stop(): void {
       mode.setArcListener(null);
+      mode.setTearListener(null);
       mode.teardown();
       sound.end();
       // The pattern outlives the picture if it is not cancelled, and a phone
@@ -282,6 +401,7 @@ import EggSound from './EggSound.astro';
        * the instants in that beat, so the two cannot drift apart.
        */
       mode.setArcListener(sound.tick);
+      mode.setTearListener(sound.crackle);
       showSwitch();
 
       /*
@@ -410,6 +530,24 @@ import EggSound from './EggSound.astro';
 </script>
 
 <style>
+  /*
+   * The filters are definitions, not a picture.
+   *
+   * An <svg> with no width still takes a line box, and one with visibility
+   * left alone still hands the page a focusable, announced element. It is
+   * pulled out of flow at nothing by nothing so it cannot affect a single
+   * layout, and it cannot be hidden with display:none — a filter inside a
+   * display:none subtree is not resolvable in every engine, and the
+   * references would silently do nothing.
+   */
+  .dm-tear-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
   /* ------------------------------------------------------------------ */
   /* The shock                                                           */
   /*                                                                     */

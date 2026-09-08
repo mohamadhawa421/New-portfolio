@@ -121,6 +121,8 @@ let arcBus: GainNode | null = null;
 let stopped = true;
 let voices: AudioScheduledSourceNode[] = [];
 let lastStrike = 0;
+/** And the last tear, throttled separately — they are different rates. */
+let lastTear = 0;
 /** Whether the output device has been forced open yet. */
 let opened = false;
 
@@ -632,6 +634,64 @@ export function tick(strength = 1): void {
   src.connect(gain).connect(arcBus);
   src.start(t);
   src.stop(t + 0.9);
+  voices.push(src);
+}
+
+/**
+ * The screen tearing, heard.
+ *
+ * The picture's glitch is a display failing for four frames, so this is the
+ * sound of a contact failing for the same four: the arc buffer, played at two
+ * to three times its rate so the whole of its gated crackle lands inside a
+ * tenth of a second, and high-passed so nothing of the arc's body comes with
+ * it. What is left is the top of a spark and none of the thump — a tick, not
+ * a crack.
+ *
+ * A sixth of the wave's level at its loudest, and less than a tenth at the
+ * edges of the page, which is the whole brief for it: the tear is a detail on
+ * the wave and the moment it can be listened to on its own it has stopped
+ * being one.
+ *
+ * The picture already caps itself at twelve tears spread along the front, and
+ * this refuses anything inside forty milliseconds of the last regardless — two
+ * that land together are not two sounds, they are one louder one, and a run of
+ * them is the machine-gun this effect fails as.
+ */
+export function crackle(strength = 1): void {
+  const audio = context();
+  if (!audio || !master || !strikeBuf || stopped) return;
+
+  const t = audio.currentTime;
+  if (t - lastTear < 0.04) return;
+  lastTear = t;
+
+  const src = audio.createBufferSource();
+  src.buffer = strikeBuf;
+  src.playbackRate.value = 2.1 + Math.random() * 0.9;
+
+  /*
+   * Nothing below three kilohertz.
+   *
+   * The arc buffer has a body to it because an arc does; a screen does not,
+   * and left in, that body is what makes a glitch sound like a small
+   * explosion. Twelve of them over half a second with any weight at all also
+   * queue up behind the wave's own low end and turn the front to mud.
+   */
+  const air = audio.createBiquadFilter();
+  air.type = 'highpass';
+  air.frequency.value = 3000;
+  air.Q.value = 0.7;
+
+  const gain = audio.createGain();
+  const level = 0.17 * Math.max(0.06, Math.min(1, strength));
+  gain.gain.setValueAtTime(level, t);
+  // Ninety milliseconds, ramped out rather than cut, so the tail is a
+  // contact settling and not a gate closing.
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+
+  src.connect(air).connect(gain).connect(master);
+  src.start(t);
+  src.stop(t + 0.16);
   voices.push(src);
 }
 

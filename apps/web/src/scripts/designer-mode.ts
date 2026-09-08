@@ -1465,6 +1465,38 @@ export function run(options: DesignerModeOptions): Beat {
       const lifted = lift(el, flight.wave, flight.nx, flight.ny, flight.force, 1 - flight.grip);
       if (lifted) returning.push(lifted);
     }
+
+    /*
+     * And the screen itself gives out where the front crosses it.
+     *
+     * Every candidate the wave touches is offered — the pieces with the
+     * vectors they were already given, the text blocks with theirs recomputed
+     * from boxes that were measured before anything was split — and `damage`
+     * takes twelve of them spread along the front. It is deliberately the same
+     * `at` the lift runs on and the same `force` the bend is scaled by: there
+     * is one pressure envelope crossing the page and the tear, the bend and
+     * the crackle are three readings of it, not three effects.
+     */
+    const wounds: Array<{ el: HTMLElement; at: number; sx: number; force: number }> = [];
+
+    for (const { el, flight } of placed) {
+      wounds.push({ el, at: flight.wave, sx: flight.nx >= 0 ? 1 : -1, force: flight.force });
+    }
+
+    words.forEach((el, w) => {
+      const box = wordBox[w];
+      const ex = box.left + box.width / 2 - originX;
+      const ey = box.top + box.height / 2 - originY;
+      const away = Math.hypot(ex, ey) || 1;
+      wounds.push({
+        el,
+        at: struckAt[w],
+        sx: ex >= 0 ? 1 : -1,
+        force: pressure(away, reach),
+      });
+    });
+
+    returning.push(...damage(wounds, (strength) => onTear?.(strength)));
   });
 
   /* ---- Act three, mobile only: the menu will not go quietly ----------- */
@@ -2019,6 +2051,192 @@ function lift(
 }
 
 /**
+ * How long one element is torn for, start to recovered.
+ *
+ * The damage is not the event — the wave is — so this has to be over before
+ * anyone has finished registering it. A hundred and fifty milliseconds is
+ * about four frames of visible break and four of recovery, which is where a
+ * glitch stops reading as a fault in the screen and starts reading as an
+ * effect somebody chose.
+ */
+const TEAR_MS = 150;
+
+/**
+ * The most elements one run is allowed to tear.
+ *
+ * There are between forty and sixty candidates on this page and tearing all of
+ * them is not a stronger effect, it is a broken monitor: every filter is a
+ * separate offscreen pass, and every tear that fires wants a sound with it, so
+ * the honest version of "all of them" is a smear with dozens of clicks over
+ * it. Ten, spread across the whole crossing rather than bunched where the
+ * pressure is highest, is what makes it read as damage travelling.
+ */
+const TEAR_CAP = 10;
+
+/**
+ * The screen giving out where the front crosses it.
+ *
+ * Three levels of RGB separation defined once in the markup and stepped
+ * between here — not interpolated, because a glitch that eases is a dissolve.
+ * The filter jumps to its worst on the frame the pressure arrives, drops,
+ * jumps again, and is gone, and the element skips sideways with it along the
+ * direction the wave is travelling.
+ *
+ * The two halves are separate animations on purpose. The displacement is
+ * composited onto whatever else is moving the element — it lands inside the
+ * lift's own window and must not replace it — and the filter is not a
+ * transform and cannot be added to anything.
+ */
+function tear(el: HTMLElement, at: number, sx: number, bite: number): Animation[] {
+  if (!CAN_LAYER) return [];
+
+  const quiet = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /*
+   * Which of the three it reaches at its worst.
+   *
+   * `bite` is the pressure here as a share of the hardest-hit element in this
+   * run, not the raw pressure — so the damage is heaviest where the front is
+   * and lighter at the edges of the page, which is the same gradient the bend
+   * runs on, and the worst of it always reaches the top of the scale. Against
+   * absolute thresholds it did not: the portrait is the origin, everything
+   * near it is excluded from the shatter for that reason, and the closest
+   * thing left standing on this page measured 0.5 — so the heaviest filter of
+   * the three was written, shipped, and never once applied.
+   */
+  const peak = quiet ? 1 : bite > 0.72 ? 3 : bite > 0.4 ? 2 : 1;
+  const mid = Math.max(1, peak - 1);
+
+  const url = (n: number) => `url(#dm-tear-${n})`;
+
+  /*
+   * Reduced motion keeps the fringe and loses the fit.
+   *
+   * Somebody who has asked for less motion has not asked for less colour —
+   * the separation is not movement — but three hard cuts and a sideways jump
+   * plainly are. So it appears once, at its mildest, and fades rather than
+   * flickering, and there is nothing to translate.
+   */
+  if (quiet) {
+    return [
+      el.animate(
+        [
+          { offset: 0, filter: 'none' },
+          { offset: 0.15, filter: url(1) },
+          { offset: 1, filter: 'none' },
+        ],
+        { duration: TEAR_MS * 1.6, delay: at, easing: 'ease-out', fill: 'none' }
+      ),
+    ];
+  }
+
+  // Two to five pixels, on the same gradient as everything else here.
+  const amp = 2 + 3 * Math.max(0, Math.min(1, bite));
+
+  /*
+   * Cut, cut, cut. `steps(1)` holds each value for the whole of its own
+   * interval, so what plays is four still frames rather than a slide between
+   * them — and the uneven offsets are what stop the flicker having a rhythm.
+   */
+  const cut = 'steps(1, end)';
+
+  const broken = el.animate(
+    [
+      { offset: 0, filter: 'none', easing: cut },
+      { offset: 0.04, filter: url(peak), easing: cut },
+      { offset: 0.26, filter: url(mid), easing: cut },
+      { offset: 0.42, filter: url(peak), easing: cut },
+      { offset: 0.68, filter: url(1), easing: cut },
+      { offset: 1, filter: 'none' },
+    ],
+    { duration: TEAR_MS, delay: at, fill: 'none' }
+  );
+
+  const slipped = el.animate(
+    [
+      { offset: 0, transform: 'translate3d(0, 0, 0)', easing: cut },
+      { offset: 0.04, transform: `translate3d(${(sx * amp).toFixed(2)}px, 0, 0)`, easing: cut },
+      { offset: 0.26, transform: `translate3d(${(-sx * amp * 0.45).toFixed(2)}px, 0, 0)`, easing: cut },
+      { offset: 0.42, transform: `translate3d(${(sx * amp * 0.7).toFixed(2)}px, 0, 0)`, easing: cut },
+      { offset: 0.68, transform: `translate3d(${(-sx * amp * 0.22).toFixed(2)}px, 0, 0)`, easing: cut },
+      { offset: 1, transform: 'translate3d(0, 0, 0)' },
+    ],
+    { duration: TEAR_MS, delay: at, composite: 'add', fill: 'none' }
+  );
+
+  return [broken, slipped];
+}
+
+/**
+ * Picks which ten, and cracks the speaker for each one.
+ *
+ * The first version of this sorted by arrival and took every fourth, which is
+ * only an even spread if the arrivals are evenly spaced — and they are not.
+ * Most of a page sits at a similar radius from the portrait, so a stride
+ * through the sorted list handed back four tears bunched in the first quarter
+ * of the crossing and nothing at all after it.
+ *
+ * So the crossing is divided into ten equal slices of time and each slice
+ * gives up its hardest-hit element. The damage then arrives at a steady rate
+ * from the first frame of the front to the last, which is what "it travels
+ * with the wave" means, and each tear is the worst one available where it is,
+ * which is what keeps the gradient across the page.
+ */
+function damage(
+  candidates: Array<{ el: HTMLElement; at: number; sx: number; force: number }>,
+  fire: (strength: number) => void
+): Animation[] {
+  if (!CAN_LAYER || !candidates.length) return [];
+
+  let first = Infinity;
+  let last = -Infinity;
+  for (const one of candidates) {
+    if (one.at < first) first = one.at;
+    if (one.at > last) last = one.at;
+  }
+
+  const span = Math.max(1, last - first);
+  const picked: Array<{ el: HTMLElement; at: number; sx: number; force: number }> = [];
+
+  for (const one of candidates) {
+    const slice = Math.min(TEAR_CAP - 1, Math.floor(((one.at - first) / span) * TEAR_CAP));
+    const held = picked[slice];
+    if (!held || one.force > held.force) picked[slice] = one;
+  }
+
+  /*
+   * The hardest hit in this run, which the rest are graded against.
+   *
+   * Relative rather than absolute because the page decides what "near" means:
+   * the portrait is the origin and everything around it is deliberately not in
+   * the shatter, so the closest element that is left is already well down the
+   * falloff. Grading against it puts the worst damage at the top of the scale
+   * on every page and every viewport, and keeps the gradient out to the edges.
+   */
+  let strongest = 0;
+  for (const one of picked) if (one && one.force > strongest) strongest = one.force;
+
+  const made: Animation[] = [];
+
+  for (const one of picked) {
+    if (!one) continue;
+    made.push(...tear(one.el, one.at, one.sx, strongest ? one.force / strongest : 1));
+    /*
+     * The crackle belongs to the frame the screen actually breaks, not to the
+     * schedule — which is why it is fired from here rather than placed with
+     * the wave. The sound throttles itself: ten tears across three hundred
+     * milliseconds is one every thirty, and `crackle` refuses anything inside
+     * forty, so about half of them are heard and the rest are only seen. That
+     * is the layering the effect needs — a few cracks over a continuous front,
+     * rather than one click per broken thing.
+     */
+    after(one.at, () => fire(one.force));
+  }
+
+  return made;
+}
+
+/**
  * What the storm feels like through a phone.
  *
  * The Vibration API has no amplitude — only on and off, in milliseconds — so
@@ -2164,6 +2382,8 @@ let lastSlot = -1;
 
 /** The last arc slot that was actually drawn, so each one sounds once. */
 let onArc: ((strength: number) => void) | null = null;
+/** Fired once per torn element, so the sound can crack where the screen does. */
+let onTear: ((strength: number) => void) | null = null;
 
 /** When the power started going, or 0 while the field is still at full. */
 let decayFrom = 0;
@@ -2225,6 +2445,10 @@ export function beginDecay(): void {
 
 export function setArcListener(fn: ((strength: number) => void) | null): void {
   onArc = fn;
+}
+
+export function setTearListener(fn: ((strength: number) => void) | null): void {
+  onTear = fn;
 }
 
 /**
