@@ -1,0 +1,328 @@
+---
+/**
+ * The page's own scrollbar, drawn rather than borrowed.
+ *
+ * The document scrolls exactly as it always did — wheel, trackpad, keyboard,
+ * touch, find-in-page, anchor links, the router's scroll restoration. Nothing
+ * here intercepts any of that. The native bar is hidden and this is drawn in
+ * its place, which is the whole of what it does: a readout, plus a thumb you
+ * can drag because a scrollbar that cannot be dragged is a progress meter
+ * wearing a scrollbar's clothes.
+ *
+ * It is fixed to the viewport rather than to the page, takes no layout width,
+ * and cannot cause horizontal overflow: it is a fixed overlay with
+ * `pointer-events: none` everywhere except the thumb itself, so it is also
+ * invisible to the pointer's magnetism and to everything the storm does.
+ */
+---
+
+<div class="scroller" data-scroller aria-hidden="true">
+  <div class="scroller__track"></div>
+  <div class="scroller__thumb" data-scroller-thumb></div>
+</div>
+
+<script>
+  /*
+   * Bound once for the life of the tab.
+   *
+   * This script runs again on every swap and the listeners are on `window`,
+   * which the router never replaces, so registering twice would leave two
+   * loops writing the same two properties.
+   */
+  if (!(window as unknown as { __mhScroller?: boolean }).__mhScroller) {
+    (window as unknown as { __mhScroller?: boolean }).__mhScroller = true;
+
+    const root = document.documentElement;
+
+    /** The two numbers the bar is, written as custom properties. */
+    let height = 0;
+    let offset = 0;
+    let queued = false;
+    let idle = 0;
+
+    /*
+     * Measured on a frame, never on the scroll event itself.
+     *
+     * A scroll handler that reads layout runs on every wheel tick and forces
+     * the browser to flush style and layout to answer it, which is the
+     * classic way to make a page that scrolls smoothly stop doing so. The
+     * event does nothing but ask for a frame; the frame does the reading, and
+     * only ever one per frame however many events arrived.
+     */
+    function measure(): void {
+      queued = false;
+
+      const view = window.innerHeight;
+      const full = root.scrollHeight;
+      const room = full - view;
+
+      // Nothing to scroll: the bar has nothing to say and says nothing.
+      if (room <= 1) {
+        root.style.setProperty('--scroller-shown', '0');
+        return;
+      }
+
+      /*
+       * The thumb is the viewport's share of the document, floored so it stays
+       * grabbable on a very long page — at ten thousand pixels the honest
+       * height is four, which is a hairline nobody can hit.
+       */
+      const share = view / full;
+      height = Math.max(0.06, share);
+      offset = Math.min(1, Math.max(0, window.scrollY / room));
+
+      root.style.setProperty('--scroller-shown', '1');
+      root.style.setProperty('--scroller-size', String(height));
+      root.style.setProperty('--scroller-at', String(offset));
+    }
+
+    function schedule(): void {
+      if (!queued) {
+        queued = true;
+        requestAnimationFrame(measure);
+      }
+
+      // Brighter while it is moving, and back to its resting weight once it
+      // has stopped. The class is what the CSS transitions off.
+      root.classList.add('is-scrolling');
+      window.clearTimeout(idle);
+      idle = window.setTimeout(() => root.classList.remove('is-scrolling'), 620);
+    }
+
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule, { passive: true });
+
+    /*
+     * The page's own height changes without anyone scrolling: images land, a
+     * filter empties the work grid, a section reveals. Watching the document
+     * box is how the thumb stays the right size through all of that without
+     * polling for it.
+     */
+    if (typeof ResizeObserver === 'function') {
+      new ResizeObserver(schedule).observe(document.body);
+    }
+
+    document.addEventListener('astro:page-load', schedule);
+    measure();
+
+    /* ---- Dragging ---------------------------------------------------- */
+
+    /*
+     * The one thing here that writes to the page rather than reading it.
+     *
+     * It scrolls the document with scrollTo, which is the same thing the
+     * native bar does — the browser is still doing the scrolling, and every
+     * other way in still works while this is happening.
+     */
+    const thumb = document.querySelector<HTMLElement>('[data-scroller-thumb]');
+
+    if (thumb) {
+      let dragging = false;
+      let grabbedAt = 0;
+      let startedFrom = 0;
+
+      thumb.addEventListener('pointerdown', (event) => {
+        dragging = true;
+        grabbedAt = event.clientY;
+        startedFrom = window.scrollY;
+        thumb.setPointerCapture(event.pointerId);
+        root.classList.add('is-scrolling');
+        event.preventDefault();
+      });
+
+      thumb.addEventListener('pointermove', (event) => {
+        if (!dragging) return;
+
+        const view = window.innerHeight;
+        const room = root.scrollHeight - view;
+        if (room <= 1) return;
+
+        /*
+         * A pixel of thumb is worth however many pixels of document the ratio
+         * says, and the travel is the track minus the thumb rather than the
+         * whole track — otherwise the last of the page arrives before the
+         * thumb reaches the bottom.
+         */
+        const travel = view * (1 - height);
+        if (travel <= 0) return;
+
+        window.scrollTo({
+          top: startedFrom + ((event.clientY - grabbedAt) / travel) * room,
+          behavior: 'instant' as ScrollBehavior,
+        });
+      });
+
+      const release = (event: PointerEvent) => {
+        if (!dragging) return;
+        dragging = false;
+        try {
+          thumb.releasePointerCapture(event.pointerId);
+        } catch {
+          /* Already released with the pointer. */
+        }
+        schedule();
+      };
+
+      thumb.addEventListener('pointerup', release);
+      thumb.addEventListener('pointercancel', release);
+    }
+  }
+</script>
+
+<style is:global>
+  /*
+   * The native bar goes, and takes no layout with it.
+   *
+   * `scrollbar-width: none` is the standard property and the WebKit
+   * pseudo-element is the same instruction for Safari. Neither changes how the
+   * page scrolls — only whether the browser paints its own furniture. Overlay
+   * scrollbars (every phone, and macOS by default) already take no width, so
+   * on those nothing about the layout changes at all; on a Windows desktop the
+   * page gains the fifteen pixels the bar used to occupy, which is the point
+   * of drawing our own over the top rather than beside it.
+   */
+  html {
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  /*
+   * The bar itself.
+   *
+   * Fixed to the viewport, not the page. It is the full height of the window
+   * and the thumb is positioned inside it as a fraction, so nothing here has
+   * to know the document's height in CSS — the two numbers come from the
+   * script as --scroller-size and --scroller-at, and the browser does the
+   * arithmetic.
+   */
+  .scroller {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 14px;
+    z-index: 190;
+    /*
+     * Under the nav and over the page. Below the pointer and the storm at
+     * 9999 and above, so it is never in front of a flash or a bolt — and it
+     * is `none` here so the only thing in the viewport's right-hand strip
+     * that can be hit is the thumb.
+     */
+    pointer-events: none;
+    opacity: var(--scroller-shown, 0);
+    transition: opacity 300ms var(--ease-out);
+  }
+
+  /* A hairline, and mostly a hint that the thumb has somewhere to be. */
+  .scroller__track {
+    position: absolute;
+    top: 12px;
+    bottom: 12px;
+    right: 6px;
+    width: 1px;
+    border-radius: 1px;
+    background: var(--ink);
+    opacity: 0.06;
+    transition: opacity 320ms var(--ease-out);
+  }
+
+  .scroller__thumb {
+    position: absolute;
+    right: 4px;
+    width: 5px;
+    /*
+     * Both of these are fractions of the track, which is the viewport minus
+     * its own inset — so the thumb is the document's own ratio at every window
+     * size and page length, with nothing to recompute on a breakpoint.
+     */
+    height: calc((100% - 24px) * var(--scroller-size, 0.2));
+    top: calc(12px + (100% - 24px) * (1 - var(--scroller-size, 0.2)) * var(--scroller-at, 0));
+    border-radius: 999px;
+    background: var(--ink);
+    opacity: 0.22;
+    pointer-events: auto;
+    cursor: grab;
+    touch-action: none;
+    transition:
+      opacity 320ms var(--ease-out),
+      background 420ms ease;
+  }
+
+  .scroller__thumb:hover,
+  .scroller__thumb:active {
+    opacity: 0.5;
+  }
+
+  .scroller__thumb:active {
+    cursor: grabbing;
+  }
+
+  /*
+   * Brighter while the page is moving and back to a whisper when it stops.
+   *
+   * The fade out is slower than the fade in on purpose: it should appear the
+   * instant you start scrolling and leave without you noticing it go.
+   */
+  :root.is-scrolling .scroller__thumb {
+    opacity: 0.42;
+  }
+
+  :root.is-scrolling .scroller__track {
+    opacity: 0.1;
+  }
+
+  /*
+   * In his room it is his colour.
+   *
+   * The ink-coloured thumb reads correctly on white and on near-black because
+   * --ink is the page's own text colour in both. On the violet ground it also
+   * reads correctly and says nothing, and this is a mode where the small
+   * furniture is supposed to say something.
+   */
+  :root[data-super] .scroller__thumb {
+    background: var(--dm-core);
+    opacity: 0.5;
+    box-shadow: 0 0 8px color-mix(in srgb, var(--dm-core) 45%, transparent);
+  }
+
+  :root[data-super].is-scrolling .scroller__thumb {
+    opacity: 0.85;
+  }
+
+  :root[data-super] .scroller__track {
+    background: var(--dm-core);
+    opacity: 0.12;
+  }
+
+  /* A pointer that is drawn cannot also be a system cursor. */
+  :root.has-custom-cursor .scroller__thumb {
+    cursor: none;
+  }
+
+  /*
+   * Wider to grab on a touch screen, where there is no hover to find it with
+   * — and no thinner visually, because the thumb is not the target: the strip
+   * around it is.
+   */
+  @media (hover: none) {
+    .scroller {
+      width: 18px;
+    }
+
+    .scroller__thumb {
+      right: 5px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scroller,
+    .scroller__thumb,
+    .scroller__track {
+      transition-duration: 1ms;
+    }
+  }
+</style>

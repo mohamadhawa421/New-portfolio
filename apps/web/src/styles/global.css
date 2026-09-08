@@ -1008,6 +1008,49 @@ figure {
 }
 
 /*
+ * A control that has just been refused, on a screen with no pointer to punish.
+ *
+ * The purple goes in the fill rather than round the edge. An outline on a
+ * button reads as a validation state — the same language the site uses to say
+ * "this field is wrong" — and what happened is not a state, it is a jolt. A
+ * filled shape says that by filling with the current.
+ *
+ * Fast on purpose, and the counterpart to `overloaded` further down: that one
+ * is two and three quarter seconds of metal giving up its heat after the
+ * storm, this is four hundred milliseconds of something being zapped. Same
+ * idea, opposite ends of it. Both end on --was-bg, read off the element, so
+ * neither has to know which button it is on.
+ */
+.is-zapped {
+  animation: zapped 420ms var(--ease-out) both;
+}
+
+@keyframes zapped {
+  0% {
+    background-color: var(--dm-core);
+    box-shadow: 0 0 20px -2px color-mix(in srgb, var(--dm-core) 70%, transparent);
+    color: #fff;
+  }
+  /* A flicker on the way through, so it is a current and not a fade. */
+  22% {
+    background-color: var(--dm-arc);
+  }
+  38% {
+    background-color: var(--dm-wave);
+  }
+  100% {
+    background-color: var(--was-bg, var(--blue-fill));
+    box-shadow: 0 0 20px -2px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-zapped {
+    animation-duration: 300ms;
+  }
+}
+
+/*
  * The bolt that lands on the control.
  *
  * A full-viewport layer, so its user units are viewport pixels and the script

@@ -17,6 +17,15 @@ import * as sound from './designer-sound';
 /** How long the whole thing lasts, matched to the CSS below. */
 export const PUNISH_MS = 380;
 
+/**
+ * And how long the current is in a control that was pressed.
+ *
+ * Shorter than the shake, and much shorter than the rage's cooling. This is a
+ * zap: it arrives, it is unmistakably purple for a moment, and it is gone
+ * before the visitor has decided whether to look at it.
+ */
+const ZAP_MS = 420;
+
 /*
  * Whether there is a drawn pointer to punish.
  *
@@ -47,6 +56,30 @@ function isField(el: HTMLElement): boolean {
 
 /** Runs the arcs on one element. */
 function strike(el: HTMLElement): void {
+  /*
+   * A control takes the current itself; a field only gets the outline.
+   *
+   * On a touch screen there is no pointer to punish, so the thing that was
+   * pressed stands in for it — and an outline is what that looked like: a
+   * purple border appearing on a button, which reads as a validation state
+   * rather than as a jolt. A button is a filled shape, so the honest way to
+   * say a current went through it is to put the current in the fill. It is
+   * over in a third of a second, because a zap is not a colour change: see
+   * the note on `zapped` in global.css for why this and the rage's own
+   * cooling are the same idea at opposite speeds.
+   */
+  if (!isField(el)) {
+    el.style.setProperty('--was-bg', window.getComputedStyle(el).backgroundColor);
+    el.classList.remove('is-zapped');
+    void el.offsetWidth;
+    el.classList.add('is-zapped');
+    window.setTimeout(() => {
+      el.classList.remove('is-zapped');
+      el.style.removeProperty('--was-bg');
+    }, ZAP_MS + 60);
+    return;
+  }
+
   el.classList.remove('is-punished');
   // Flushed, so a second refusal restarts the animation rather than being
   // swallowed by the one still running.
@@ -59,8 +92,15 @@ function strike(el: HTMLElement): void {
 /* The rage                                                                */
 /* ---------------------------------------------------------------------- */
 
-/** Which refusal in a row stops being a telling-off. */
-const RAGE_AT = 6;
+/**
+ * Which refusal in a row stops being a telling-off.
+ *
+ * Four, not six. Six is a lot of presses to sit through before anything
+ * happens, and most people give up on a form long before that — the moment was
+ * being written for a patience nobody has. Four is still unmistakably a run
+ * rather than an accident.
+ */
+const RAGE_AT = 4;
 
 /**
  * How long two refusals can be apart and still count as in a row.
