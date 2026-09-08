@@ -10,6 +10,7 @@ import GridOverlay from '../components/GridOverlay.astro';
 import Cursor from '../components/Cursor.astro';
 import SuperMode from '../components/SuperMode.astro';
 import ScrollBar from '../components/ScrollBar.astro';
+import Lightbox from '../components/Lightbox.astro';
 import { ClientRouter } from 'astro:transitions';
 import { getSiteSettings } from '../lib/content';
 import type { Seo } from '../lib/types';
@@ -192,6 +193,7 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
     <Cursor />
     <SuperMode />
     <ScrollBar />
+    <Lightbox />
     <GridOverlay />
 
     {/* Runs while the parser is still in <body>, so it executes before the

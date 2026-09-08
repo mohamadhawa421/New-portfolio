@@ -82,6 +82,7 @@ const coverStyle = project.cover
           class="case-cover"
           data-morph
           data-slug={project.slug}
+          data-zoom={project.cover ? '' : undefined}
           style={coverStyle}
         >
           {
@@ -159,7 +160,7 @@ const coverStyle = project.cover
 
             {project.approachShot && (
               <>
-                <div class="case-shot" data-reveal="0">
+                <div class="case-shot" data-reveal="0" data-zoom>
                   <img
                     src={project.approachShot.url}
                     alt={project.approachShot.alt}
@@ -204,7 +205,7 @@ const coverStyle = project.cover
             {project.gallery.length > 0 && (
               <div class="gallery">
                 {project.gallery.map((image, i) => (
-                  <div class="gallery__item" data-reveal={String(i)}>
+                  <div class="gallery__item" data-reveal={String(i)} data-zoom>
                     <img
                       src={image.url}
                       alt={image.alt}

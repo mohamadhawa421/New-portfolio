@@ -1,0 +1,269 @@
+---
+/**
+ * The work, at the size it was made.
+ *
+ * A case study's images are the case study, and on a laptop a gallery tile is
+ * three hundred pixels of something that was designed at fifteen hundred. This
+ * opens one over the page: the thumbnail grows from exactly where it sits into
+ * the middle of the screen, and closing puts it back in the same place.
+ *
+ * It is one dialog reused for every image rather than one per image. The
+ * markup is here, the wiring is in scripts/lightbox.ts, and every image that
+ * can be opened is marked in the page with `data-zoom` — so a new section with
+ * pictures in it opts in by saying so and nothing here has to know about it.
+ */
+---
+
+<div class="lightbox" data-lightbox hidden aria-hidden="true">
+  {/*
+    The ground the image sits on. Its own element rather than a background on
+    the dialog, because it fades on its own clock — the veil is up before the
+    picture has finished travelling, and still there for a moment after it has
+    gone home.
+  */}
+  <div class="lightbox__veil" data-lightbox-veil></div>
+
+  {/*
+    The image is inserted here rather than written here: it is a clone of the
+    one that was clicked, so it arrives with the same src, the same srcset if
+    it ever has one, and the same alt — and it is already decoded, because the
+    browser has it on screen.
+  */}
+  <div class="lightbox__stage" data-lightbox-stage></div>
+
+  <button class="lightbox__close" data-lightbox-close type="button" aria-label="Close image">
+    {/*
+      The same two strokes as the menu's close, at the same weight as the
+      nav's own marks. Currency of the site rather than an icon set.
+    */}
+    <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false">
+      <path d="M5 5 L15 15 M15 5 L5 15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+    </svg>
+  </button>
+</div>
+
+<script>
+  import { bindLightbox } from '../scripts/lightbox';
+
+  /*
+   * Bound once for the life of the tab.
+   *
+   * The listeners are delegated from `document`, which the router never
+   * replaces, so a second binding would open two dialogs on one click. The
+   * expand badges are stamped per page instead, from inside the module.
+   */
+  if (!(window as unknown as { __mhLightbox?: boolean }).__mhLightbox) {
+    (window as unknown as { __mhLightbox?: boolean }).__mhLightbox = true;
+    bindLightbox();
+  }
+</script>
+
+<style is:global>
+  /* ------------------------------------------------------------------ */
+  /* The invitation                                                      */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * Anything that can be opened says so, and says it the same way.
+   *
+   * The container is what carries this rather than the image: the badge is
+   * positioned against the frame, and the frame is what already has the
+   * rounding and the overflow clip the picture is cut to.
+   */
+  [data-zoom] {
+    position: relative;
+    cursor: zoom-in;
+  }
+
+  /*
+   * The badge.
+   *
+   * Four corner marks and nothing in the middle, which is what "this gets
+   * bigger" looks like without a magnifying glass on it — and it is the same
+   * hairline geometry the grid overlay and the nav's marks are drawn with. It
+   * sits on a dark scrim so it reads on a screenshot of anything, and the
+   * scrim is small enough to be furniture rather than a panel.
+   */
+  .zoom-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    background: rgba(20, 20, 22, 0.52);
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    pointer-events: none;
+    /*
+     * Held back until the pointer is on the picture. An always-lit control in
+     * the corner of every image is a watermark; appearing under the cursor is
+     * the picture answering.
+     */
+    opacity: 0;
+    scale: 0.86;
+    transition:
+      opacity 260ms var(--ease-out),
+      scale 260ms var(--ease-out);
+  }
+
+  [data-zoom]:hover .zoom-badge,
+  [data-zoom]:focus-visible .zoom-badge {
+    opacity: 1;
+    scale: 1;
+  }
+
+  /*
+   * On a touch screen there is no hover to answer, so it is simply there.
+   *
+   * Quieter than the hover state it replaces — it is permanent, and a
+   * permanent mark has to be lighter than one that arrives.
+   */
+  @media (hover: none) {
+    .zoom-badge {
+      opacity: 0.82;
+      scale: 1;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The dialog                                                          */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * Above the page and the nav, and below the storm.
+   *
+   * The shockwave lives at 9999 and its flash has to be over everything; the
+   * scrollbar is at 190 and has no business in front of a picture opened over
+   * the whole screen.
+   */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 320;
+    display: grid;
+    place-items: center;
+  }
+
+  .lightbox[hidden] {
+    display: none;
+  }
+
+  .lightbox__veil {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--surface-dark) 88%, transparent);
+    backdrop-filter: blur(18px) saturate(120%);
+    -webkit-backdrop-filter: blur(18px) saturate(120%);
+    opacity: 0;
+    /* The veil closes the page off, so it is what takes the click that opens
+       it back up. */
+    cursor: zoom-out;
+    transition: opacity 420ms var(--ease-glide);
+  }
+
+  .lightbox.is-open .lightbox__veil {
+    opacity: 1;
+  }
+
+  /*
+   * Where the picture ends up.
+   *
+   * Sized by the image itself rather than by the box: the stage is only a
+   * position, and the clone inside it is capped to the viewport with a margin
+   * so nothing ever meets an edge. The travel is a Web Animations flip from
+   * the thumbnail's own rectangle, which is why there is no transition here.
+   */
+  .lightbox__stage {
+    position: relative;
+    /*
+     * A definite box, not one the picture inflates.
+     *
+     * The stage is the room the picture is allowed: the script reads this
+     * rectangle and fits the image into it itself, which is the only way the
+     * arriving size is known on the frame the dialog opens. A clone of an
+     * <img> starts its own request even from cache, so for a frame or two it
+     * has no intrinsic size at all — and a stage sized by its content is
+     * therefore a stage of nothing, measured as nothing, animated from
+     * nothing. Fixing the room and fitting the picture to it needs neither
+     * the network nor a decode.
+     */
+    width: min(1400px, 92vw);
+    height: 88vh;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+  }
+
+  .lightbox__stage img {
+    display: block;
+    /* Belt to the script's braces: the fitted size is written inline, and
+       these stop a picture the script could not measure from ever covering
+       more than the room it was given. */
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: var(--r-lg);
+    /* The picture is the only lit thing on the screen, and a hard edge against
+       the blur is what stops it looking pasted on. */
+    box-shadow: 0 40px 120px rgba(0, 0, 0, 0.45);
+  }
+
+  .lightbox__close {
+    position: absolute;
+    top: clamp(14px, 2.4vw, 28px);
+    right: clamp(14px, 2.4vw, 28px);
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    cursor: pointer;
+    opacity: 0;
+    transition:
+      opacity 320ms var(--ease-out),
+      background 200ms var(--ease-out);
+  }
+
+  .lightbox.is-open .lightbox__close {
+    opacity: 1;
+    /* Last in and first out: the way out should not arrive before the thing it
+       closes has finished arriving. */
+    transition-delay: 180ms;
+  }
+
+  .lightbox__close:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  :root.has-custom-cursor .lightbox__close,
+  :root.has-custom-cursor [data-zoom],
+  :root.has-custom-cursor .lightbox__veil {
+    cursor: none;
+  }
+
+  /* His room takes it too — the veil is violet and the picture keeps its
+     halo. */
+  :root[data-super] .lightbox__veil {
+    background: color-mix(in srgb, var(--dm-deep) 88%, transparent);
+  }
+
+  :root[data-super] .lightbox__stage img {
+    box-shadow: 0 40px 120px color-mix(in srgb, var(--dm-core) 34%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lightbox__veil,
+    .lightbox__close,
+    .zoom-badge {
+      transition-duration: 1ms;
+    }
+  }
+</style>
