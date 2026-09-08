@@ -2083,16 +2083,23 @@ const TEAR_CAP = 14;
 /**
  * The screen giving out where the front crosses it.
  *
- * Three levels of RGB separation defined once in the markup and stepped
- * between here — not interpolated, because a glitch that eases is a dissolve.
- * The filter jumps to its worst on the frame the pressure arrives, drops,
- * jumps again, and is gone, and the element skips sideways with it along the
+ * Three levels of RGB separation defined once in the markup and cut between
+ * here — not interpolated, because a glitch that eases is a dissolve. The
+ * filter jumps to its worst on the frame the pressure arrives, drops, jumps
+ * again, and is gone, and the element skips sideways with it along the
  * direction the wave is travelling.
  *
- * The two halves are separate animations on purpose. The displacement is
- * composited onto whatever else is moving the element — it lands inside the
- * lift's own window and must not replace it — and the filter is not a
- * transform and cannot be added to anything.
+ * The cuts are timers writing `style.filter` rather than keyframes animating
+ * it, and that is not a stylistic choice. WebKit does not interpolate a
+ * `filter` value containing a `url()` reference at all — it drops the whole
+ * animation — so the keyframe version of this worked in Chrome and did
+ * literally nothing in Safari. A discrete property changing at four known
+ * instants is a thing timers do exactly, in every engine, so this is both the
+ * portable version and the honest one.
+ *
+ * The displacement stays a Web Animation: it is a transform, it composites
+ * onto whatever else is moving the element, and it must not replace the lift
+ * that is running underneath it.
  */
 function tear(el: HTMLElement, at: number, sx: number, bite: number): Animation[] {
   if (!CAN_LAYER) return [];
@@ -2114,28 +2121,52 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number): Animation[
   const peak = quiet ? 1 : bite > 0.62 ? 3 : bite > 0.28 ? 2 : 1;
   const mid = Math.max(1, peak - 1);
 
-  const url = (n: number) => `url(#dm-tear-${n})`;
+  /*
+   * Whatever it already had, kept.
+   *
+   * Nothing in the storm sets a filter today, but the page might: a card with
+   * a drop shadow, an image with a saturation tweak. Replacing it for a
+   * quarter of a second and then removing the property would take that with
+   * it, so the separation is written in front of what is there.
+   */
+  const had = el.style.filter;
+  const wear = (n: number) => {
+    el.style.filter = had ? `url(#dm-tear-${n}) ${had}` : `url(#dm-tear-${n})`;
+  };
+  const clear = () => {
+    if (had) el.style.filter = had;
+    else el.style.removeProperty('filter');
+  };
+
+  touched.push(el);
+  undo(clear);
 
   /*
    * Reduced motion keeps the fringe and loses the fit.
    *
    * Somebody who has asked for less motion has not asked for less colour —
    * the separation is not movement — but three hard cuts and a sideways jump
-   * plainly are. So it appears once, at its mildest, and fades rather than
-   * flickering, and there is nothing to translate.
+   * plainly are. So it appears once, at its mildest, and there is nothing to
+   * translate.
    */
   if (quiet) {
-    return [
-      el.animate(
-        [
-          { offset: 0, filter: 'none' },
-          { offset: 0.15, filter: url(1) },
-          { offset: 1, filter: 'none' },
-        ],
-        { duration: TEAR_MS * 1.6, delay: at, easing: 'ease-out', fill: 'none' }
-      ),
-    ];
+    after(at, () => wear(1));
+    after(at + TEAR_MS, clear);
+    return [];
   }
+
+  /*
+   * Cut, cut, cut.
+   *
+   * Four instants rather than a curve, and the uneven gaps are what stop the
+   * flicker having a rhythm. The last one is the recovery: by then it is at
+   * the mildest of the three, and the frame after that there is nothing.
+   */
+  after(at, () => wear(peak));
+  after(at + TEAR_MS * 0.26, () => wear(mid));
+  after(at + TEAR_MS * 0.42, () => wear(peak));
+  after(at + TEAR_MS * 0.68, () => wear(1));
+  after(at + TEAR_MS, clear);
 
   /*
    * Three to seven pixels, on the same gradient as everything else here.
@@ -2143,29 +2174,14 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number): Animation[
    * Floored rather than scaled from nothing, for the reason the bend's own
    * `give` is: a bare multiply puts most of the page at the bottom of the
    * range, and the bottom of this range is a displacement nobody can see in
-   * the four frames it is on screen. The far corner still moves less than the
+   * the few frames it is on screen. The far corner still moves less than the
    * near one — there is just no longer a version of this that does not move.
    */
   const amp = 3 + 4 * Math.max(0, Math.min(1, bite));
 
-  /*
-   * Cut, cut, cut. `steps(1)` holds each value for the whole of its own
-   * interval, so what plays is four still frames rather than a slide between
-   * them — and the uneven offsets are what stop the flicker having a rhythm.
-   */
+  // The same four instants the filter cuts on, so the skip and the separation
+  // are one event. `steps(1)` holds each value for the whole of its interval.
   const cut = 'steps(1, end)';
-
-  const broken = el.animate(
-    [
-      { offset: 0, filter: 'none', easing: cut },
-      { offset: 0.04, filter: url(peak), easing: cut },
-      { offset: 0.26, filter: url(mid), easing: cut },
-      { offset: 0.42, filter: url(peak), easing: cut },
-      { offset: 0.68, filter: url(1), easing: cut },
-      { offset: 1, filter: 'none' },
-    ],
-    { duration: TEAR_MS, delay: at, fill: 'none' }
-  );
 
   const slipped = el.animate(
     [
@@ -2179,7 +2195,7 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number): Animation[
     { duration: TEAR_MS, delay: at, composite: 'add', fill: 'none' }
   );
 
-  return [broken, slipped];
+  return [slipped];
 }
 
 /**
