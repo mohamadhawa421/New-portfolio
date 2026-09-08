@@ -789,10 +789,19 @@ figure {
 }
 
 /*
- * A wash of the deep end, under everything, while the field holds.
+ * The room closing in while the field holds, rather than a purple sheet over it.
  *
- * It is what stops the arcs reading as stray lines on a white page — they need
- * something to be electricity *in*.
+ * This used to be a bloom centred on the character: twenty per cent of the
+ * deep violet across the whole viewport, brightest in the middle. It did the
+ * job it was written for — the arcs need something to be electricity *in*, or
+ * they read as stray lines on a white page — and it did it by tinting
+ * everything the visitor was trying to look at, which is a poor trade at the
+ * one moment the page is most worth looking at.
+ *
+ * Inverted, it costs nothing and says more. The middle is left alone and the
+ * edges darken, so the arcs still have a ground and the eye is pushed towards
+ * the centre where the held pieces are. A vignette that closes is what being
+ * gripped looks like from inside; a wash is only a colour.
  */
 :root::after {
   content: '';
@@ -803,18 +812,25 @@ figure {
   opacity: 0;
   background: radial-gradient(
     circle at var(--dm-fx, 50%) var(--dm-fy, 50%),
-    color-mix(in srgb, var(--dm-field) 20%, transparent) 0%,
-    color-mix(in srgb, var(--dm-deep) 16%, transparent) 45%,
-    transparent 78%
+    transparent 0%,
+    transparent 34%,
+    color-mix(in srgb, var(--dm-deep) 18%, transparent) 68%,
+    color-mix(in srgb, var(--dm-deep) 42%, transparent) 100%
   );
-  transition: opacity 2600ms var(--ease-out);
+  /* Scaled from a little larger, so the darkness closes inward rather than
+     appearing. It is the only movement here and it is very slow. */
+  transform: scale(1.16);
+  transition:
+    opacity 2600ms var(--ease-out),
+    transform 2600ms var(--ease-out);
 }
 
 :root.dm-charged::after {
   opacity: 1;
-  /* In quickly, out slowly. It arrives with the shock and leaves with the
+  transform: scale(1);
+  /* In quickly, out slowly. It arrives with the grip and leaves with the
      weather. */
-  transition-duration: 420ms;
+  transition-duration: 520ms;
 }
 
 @media (prefers-reduced-motion: reduce) {

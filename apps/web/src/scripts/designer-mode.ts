@@ -110,7 +110,7 @@ const DECAY_MS = 3000;
  * stops being a front and becomes a flash; over about 500 you are waiting for
  * it.
  */
-const WAVE_MS = 380;
+const WAVE_MS = 300;
 
 /**
  * How long the shove lasts.
@@ -145,7 +145,7 @@ const WAVE_MS = 380;
  * unmistakable and quick enough that the whole page can be crossed and settled
  * before the shock catches up with it.
  */
-const SWELL_MS = 420;
+const SWELL_MS = 300;
 
 /**
  * The furthest a swell can be pushed back by the sweep across its own block.
@@ -161,7 +161,7 @@ const SWELL_MS = 420;
  * of a long line. Measured, the wide cap left 312ms of dead air on the
  * quickest elements, and dead air was the first thing that read as wrong.
  */
-const SWEEP_CAP = 150;
+const SWEEP_CAP = 110;
 
 /**
  * How long the pressure is felt before the force behind it lands.
@@ -171,8 +171,13 @@ const SWEEP_CAP = 150;
  * whole sequence depends on — every letter and every control has risen and
  * settled before the shock reaches it, so the three beats read as three beats
  * and not as one.
+ *
+ * All three parts came down together — 610ms to 434 — because six tenths of a
+ * second between the press and the shatter is felt as the site thinking about
+ * it. The order still holds; it simply happens at the speed of something being
+ * hit rather than the speed of something being demonstrated.
  */
-const PRELOAD_MS = SWELL_MS + SWEEP_CAP + 40;
+const PRELOAD_MS = SWELL_MS + SWEEP_CAP + 24;
 
 const BLAST_MS = 380;
 
@@ -289,12 +294,21 @@ const BEAT: Beat = {
   freeze: 70 + PRELOAD_MS + OUT_MS - 20,
   hold: 70 + PRELOAD_MS + OUT_MS - 20,
   homeward: homewardAt(70),
-  /* Well into the journey home, so the power is visibly going while things are
-     still moving through it rather than after they have stopped. */
-  decay: 2300,
-  drift: 2600,
-  /* Near the end, so the purple leaves him last. */
-  avatar: 4200,
+  /*
+   * Derived, because a typed number here went stale the moment the preload
+   * grew.
+   *
+   * The field comes up when the grip closes and goes when the grip opens —
+   * those are `freeze` and `homeward`, and both move with the flight. Written
+   * down as 2300 they eventually sat *before* the freeze that was supposed to
+   * precede them, so the vignette was switched off a hundred and sixty
+   * milliseconds before it was switched on and then stayed on until teardown.
+   * Nothing about that is visible in a diff; it is only visible on screen.
+   */
+  decay: homewardAt(70),
+  drift: homewardAt(70) + 200,
+  /* Unused now: he changes back off the measured landing. See run(). */
+  avatar: landedAt(70),
   landed: landedAt(70),
   /* Seven hundred milliseconds of quiet after the last piece is back. */
   done: landedAt(70) + 700,
@@ -311,9 +325,9 @@ const MOBILE_BEAT: Beat = {
   freeze: 80 + PRELOAD_MS + OUT_MS - 20,
   hold: 80 + PRELOAD_MS + OUT_MS - 20,
   homeward: homewardAt(80),
-  decay: 2300,
-  drift: 2700,
-  avatar: 4500,
+  decay: homewardAt(80),
+  drift: homewardAt(80) + 200,
+  avatar: landedAt(80),
   landed: landedAt(80),
   done: landedAt(80) + 700,
 };
@@ -841,7 +855,36 @@ export function run(options: DesignerModeOptions): Beat {
    */
   const swirl = (Math.random() * 2 - 1) * 0.8;
   const lean = { x: (Math.random() * 2 - 1) * 0.35, y: (Math.random() * 2 - 1) * 0.28 };
+
+  /*
+   * Every run carries the same energy; only its arrangement changes.
+   *
+   * The spread and the coast used to be drawn independently per piece, and on
+   * a page with five of them that is a small sample of a wide range — so one
+   * press could deal five low cards and be visibly weaker than the last, with
+   * nothing wrong anywhere. The variance was the whole of the difference
+   * between "the first one is the best one" and the rest.
+   *
+   * A ladder instead of five dice: fixed values spanning the range, shuffled
+   * and handed out one per piece. The mix is identical every time, which piece
+   * gets which is not, and the run's swirl and lean above still decide where
+   * it all goes. The only thing that differs between two presses is the
+   * direction, which is the only thing that should.
+   */
+  const rungs = (from: number, to: number, n: number) => {
+    const out = Array.from({ length: n }, (_, i) => (n === 1 ? (from + to) / 2 : from + ((to - from) * i) / (n - 1)));
+    for (let i = out.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
+  };
   const placed: Array<{ el: HTMLElement; anchor: Anchor; flight: Flight }> = [];
+
+  // One rung each, shuffled. See the note on rungs() above.
+  const spreads = rungs(0.86, 1.36, chosen.length);
+  const coasts = rungs(1.55, 1.72, chosen.length);
+  let rung = 0;
 
   for (const el of chosen) {
     const rect = el.getBoundingClientRect();
@@ -869,8 +912,11 @@ export function run(options: DesignerModeOptions): Beat {
      * shove and differ in how it scatters, not in whether it was hard — at a
      * floor of 0.55 a run could come out limp, which is the one thing none of
      * them should ever be.
+     *
+     * Taken off the ladder rather than rolled, so the set of values is the
+     * same on every press and only their arrangement moves.
      */
-    const spread = 0.86 + Math.random() * 0.5;
+    const spread = spreads[rung];
     const strength = push * falloff * spread;
 
     const nx = vx / distance;
@@ -891,8 +937,29 @@ export function run(options: DesignerModeOptions): Beat {
     const heft = Math.min(1, Math.sqrt(rect.width * rect.height) / 460);
     const inertia = 0.58 + 0.42 * (1 - heft);
 
-    const dx = (nx - ny * tangent + lean.x) * strength * inertia;
-    const dy = (ny + nx * tangent + lean.y) * strength * inertia;
+    /*
+     * The swirl turns the throw; it does not lengthen it.
+     *
+     * (nx - ny·t, ny + nx·t) is not a unit vector — its length is sqrt(1 + t²),
+     * and the run's swirl carries t as far as 1.35. So a run that happened to
+     * roll a strong swirl threw everything up to 1.7 times further than a run
+     * that rolled none, for no reason anybody could see, and the lean added
+     * more on top. Measured across three presses before this: total apex
+     * distance 3969, 3000, 2539 — a fifty-six per cent swing in how hard the
+     * page was hit, from two numbers that were only ever meant to aim it.
+     *
+     * Normalised, the direction is the swirl's and the distance is `strength`
+     * alone: `push` for the run, falloff for how far out it is, its rung of
+     * the ladder for grain, and inertia for what it weighs. Which is the whole
+     * of the brief — every press the same power, and only the direction
+     * different.
+     */
+    const aimX = nx - ny * tangent + lean.x;
+    const aimY = ny + nx * tangent + lean.y;
+    const aim = Math.hypot(aimX, aimY) || 1;
+
+    const dx = (aimX / aim) * strength * inertia;
+    const dy = (aimY / aim) * strength * inertia;
 
     /*
      * Rotation is torque, not decoration.
@@ -927,7 +994,8 @@ export function run(options: DesignerModeOptions): Beat {
      * look like work: it is still getting away for a second and a half, and
      * only just stops in time.
      */
-    const coast = 1.55 + Math.random() * 0.17;
+    const coast = coasts[rung];
+    rung += 1;
 
     /*
      * The whole attribute, saved and put back.
@@ -1032,6 +1100,19 @@ export function run(options: DesignerModeOptions): Beat {
     (p) => beat.impact + p.flight.wave + PRELOAD_MS + OUT_MS + GRIP_MS
   );
   const arrivals = placed.map((p, i) => turns[i] + p.flight.home);
+  /*
+   * The field is electric only while something is being held.
+   *
+   * The grip closes at each piece's own neutral point — its release minus the
+   * length of the hold — so the window is from the first of those to the last
+   * release. Measured from the flights rather than named, like everything else
+   * the sound and the field share.
+   */
+  if (placed.length) {
+    const at = performance.now();
+    armField(at + Math.min(...turns) - GRIP_MS, at + Math.max(...turns));
+  }
+
   const timed: Beat = placed.length
     ? {
         ...beat,
@@ -1234,10 +1315,15 @@ export function run(options: DesignerModeOptions): Beat {
 
       const journey = 2100 + Math.round(Math.random() * 900);
       const letterCoast = 1.58 + Math.random() * 0.2;
+      // Aimed, not lengthened — see the note in the piece loop above.
+      const aimX = nx - ny * tangent + lean.x;
+      const aimY = ny + nx * tangent + lean.y;
+      const aim = Math.hypot(aimX, aimY) || 1;
+
       const flight: Throw = {
         coast: letterCoast,
-        cx: (nx - ny * tangent + lean.x) * strength * letterCoast,
-        cy: (ny + nx * tangent + lean.y) * strength * letterCoast,
+        cx: (aimX / aim) * strength * letterCoast,
+        cy: (aimY / aim) * strength * letterCoast,
         // Torque, like everything else: it turns the way it was swung, and only
         // that way. A letter has no mass to resist it, so it turns further.
         cr: tangent * 20,
@@ -1453,7 +1539,17 @@ export function run(options: DesignerModeOptions): Beat {
 
   /* ---- Act seven: the character comes back ---------------------------- */
 
-  after(beat.avatar, () => {
+  /*
+   * He is the last thing to change back.
+   *
+   * The purple left him a second and a half before the last piece had landed,
+   * so the page finished putting itself together under a character who had
+   * already stopped doing anything — which reads as the effect ending and then
+   * some furniture still moving. He holds the purple until everything is home
+   * and then lets go, which is the order the story has: the field is his, so
+   * it goes out when he does and not before.
+   */
+  after(timed.landed + 120, () => {
     delete root.dataset.designer;
     character.classList.remove('dm-source');
   });
@@ -2080,10 +2176,46 @@ let decayFrom = 0;
  * off, so the last second is a few thin sparks a long way apart rather than a
  * steady glow that stops.
  */
+/**
+ * When the field is allowed to draw, and for how long.
+ *
+ * Absolute timestamps, set by run() from the flights it has just built.
+ */
+let armedFrom = 0;
+let armedTo = 0;
+
+/** Ninety milliseconds of ramp at each end, so it never clicks on or off. */
+const ARC_EDGE = 90;
+
+/**
+ * How much electricity there is right now.
+ *
+ * Only while things are being held. The arcs are the visible evidence of a
+ * grip, and a grip is a thing that exists between the moment the outward speed
+ * reaches zero and the moment the pull starts — so before that they were
+ * decorating a shove nothing was holding, and after it they were decorating a
+ * journey home that needs no explaining. Either way they were saying something
+ * the picture was not doing.
+ *
+ * Both edges are ramped inside the window rather than either side of it, so
+ * the arcs are at nothing on the frame the grip opens and closes.
+ */
 function power(now: number): number {
+  if (armedFrom) {
+    if (now < armedFrom || now > armedTo) return 0;
+    const edge = Math.min(now - armedFrom, armedTo - now);
+    return Math.max(0, Math.min(1, edge / ARC_EDGE));
+  }
+
   if (!decayFrom) return 1;
   const t = Math.min(1, (now - decayFrom) / DECAY_MS);
   return Math.max(0, Math.pow(1 - t, 1.7));
+}
+
+/** Hands the field the window it is allowed to be electric in. */
+export function armField(from: number, to: number): void {
+  armedFrom = from;
+  armedTo = to;
 }
 
 /** Starts the field exhausting itself. */
@@ -2163,6 +2295,8 @@ function stopField(): void {
   motes = [];
   ctx = null;
   canvas = null;
+  armedFrom = 0;
+  armedTo = 0;
 }
 
 /**
