@@ -110,7 +110,7 @@ const DECAY_MS = 3000;
  * stops being a front and becomes a flash; over about 500 you are waiting for
  * it.
  */
-const WAVE_MS = 300;
+const WAVE_MS = 380;
 
 /**
  * How long the shove lasts.
@@ -145,7 +145,7 @@ const WAVE_MS = 300;
  * unmistakable and quick enough that the whole page can be crossed and settled
  * before the shock catches up with it.
  */
-const SWELL_MS = 300;
+const SWELL_MS = 420;
 
 /**
  * The furthest a swell can be pushed back by the sweep across its own block.
@@ -161,7 +161,7 @@ const SWELL_MS = 300;
  * of a long line. Measured, the wide cap left 312ms of dead air on the
  * quickest elements, and dead air was the first thing that read as wrong.
  */
-const SWEEP_CAP = 110;
+const SWEEP_CAP = 150;
 
 /**
  * How long the pressure is felt before the force behind it lands.
@@ -172,12 +172,14 @@ const SWEEP_CAP = 110;
  * settled before the shock reaches it, so the three beats read as three beats
  * and not as one.
  *
- * All three parts came down together — 610ms to 434 — because six tenths of a
- * second between the press and the shatter is felt as the site thinking about
- * it. The order still holds; it simply happens at the speed of something being
- * hit rather than the speed of something being demonstrated.
+ * All three parts were once brought down together, 610ms to 434, on the theory
+ * that six tenths of a second between the press and the shatter reads as the
+ * site thinking about it. It does not. What it reads as is the lift being cut
+ * short: the bend is the one beat in this sequence that has to be *watched* to
+ * work at all, and at 434 there was not enough of it left to watch. Visible
+ * beats quick here, and it is not close.
  */
-const PRELOAD_MS = SWELL_MS + SWEEP_CAP + 24;
+const PRELOAD_MS = SWELL_MS + SWEEP_CAP + 40;
 
 const BLAST_MS = 380;
 
@@ -2054,12 +2056,15 @@ function lift(
  * How long one element is torn for, start to recovered.
  *
  * The damage is not the event — the wave is — so this has to be over before
- * anyone has finished registering it. A hundred and fifty milliseconds is
- * about four frames of visible break and four of recovery, which is where a
- * glitch stops reading as a fault in the screen and starts reading as an
- * effect somebody chose.
+ * anyone has finished registering it. It was a hundred and fifty, which is
+ * about four frames of break and four of recovery, and four frames turns out
+ * to be under the floor: the whole thing happens during the lift, before the
+ * shatter, while the impact flash is still up, and at that length nobody saw
+ * it at all. Two hundred and forty is still short enough to be a fault in the
+ * screen rather than an effect somebody chose, and long enough to be seen
+ * being one.
  */
-const TEAR_MS = 150;
+const TEAR_MS = 240;
 
 /**
  * The most elements one run is allowed to tear.
@@ -2068,10 +2073,12 @@ const TEAR_MS = 150;
  * them is not a stronger effect, it is a broken monitor: every filter is a
  * separate offscreen pass, and every tear that fires wants a sound with it, so
  * the honest version of "all of them" is a smear with dozens of clicks over
- * it. Ten, spread across the whole crossing rather than bunched where the
- * pressure is highest, is what makes it read as damage travelling.
+ * it. Fourteen, spread across the whole crossing rather than bunched where the
+ * pressure is highest, is what makes it read as damage travelling — and the
+ * spread matters more than the number, because the slices with nothing in
+ * them give up nothing.
  */
-const TEAR_CAP = 10;
+const TEAR_CAP = 14;
 
 /**
  * The screen giving out where the front crosses it.
@@ -2104,7 +2111,7 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number): Animation[
    * thing left standing on this page measured 0.5 — so the heaviest filter of
    * the three was written, shipped, and never once applied.
    */
-  const peak = quiet ? 1 : bite > 0.72 ? 3 : bite > 0.4 ? 2 : 1;
+  const peak = quiet ? 1 : bite > 0.62 ? 3 : bite > 0.28 ? 2 : 1;
   const mid = Math.max(1, peak - 1);
 
   const url = (n: number) => `url(#dm-tear-${n})`;
@@ -2130,8 +2137,16 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number): Animation[
     ];
   }
 
-  // Two to five pixels, on the same gradient as everything else here.
-  const amp = 2 + 3 * Math.max(0, Math.min(1, bite));
+  /*
+   * Three to seven pixels, on the same gradient as everything else here.
+   *
+   * Floored rather than scaled from nothing, for the reason the bend's own
+   * `give` is: a bare multiply puts most of the page at the bottom of the
+   * range, and the bottom of this range is a displacement nobody can see in
+   * the four frames it is on screen. The far corner still moves less than the
+   * near one — there is just no longer a version of this that does not move.
+   */
+  const amp = 3 + 4 * Math.max(0, Math.min(1, bite));
 
   /*
    * Cut, cut, cut. `steps(1)` holds each value for the whole of its own
@@ -2168,7 +2183,7 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number): Animation[
 }
 
 /**
- * Picks which ten, and cracks the speaker for each one.
+ * Picks which fourteen, and cracks the speaker for each one.
  *
  * The first version of this sorted by arrival and took every fourth, which is
  * only an even spread if the arrivals are evenly spaced — and they are not.
@@ -2224,9 +2239,10 @@ function damage(
     /*
      * The crackle belongs to the frame the screen actually breaks, not to the
      * schedule — which is why it is fired from here rather than placed with
-     * the wave. The sound throttles itself: ten tears across three hundred
-     * milliseconds is one every thirty, and `crackle` refuses anything inside
-     * forty, so about half of them are heard and the rest are only seen. That
+     * the wave. The sound throttles itself: fourteen tears across three
+     * hundred milliseconds is one every twenty-odd, and `crackle` refuses
+     * anything inside forty, so a third of them are heard and the rest are
+     * only seen. That
      * is the layering the effect needs — a few cracks over a continuous front,
      * rather than one click per broken thing.
      */
