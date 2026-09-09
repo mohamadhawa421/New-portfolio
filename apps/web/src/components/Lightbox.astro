@@ -191,7 +191,15 @@
   }
 
   .lightbox.is-open .lightbox__veil {
-    opacity: 1;
+    /*
+     * And it thins as the picture is pulled away.
+     *
+     * `--pull` runs 0 to 1 while a finger is dragging the picture off the
+     * screen. Letting the room come back through as it goes is what makes the
+     * gesture reversible by eye: halfway through, it looks halfway through, so
+     * letting go is an obvious way to change your mind rather than a gamble.
+     */
+    opacity: calc(1 - var(--pull, 0) * 0.72);
   }
 
   /*

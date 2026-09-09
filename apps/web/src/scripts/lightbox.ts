@@ -115,6 +115,20 @@ function box(el: Element): DOMRect {
  * land somewhere definite and be undoable by clicking again.
  */
 const ZOOM_MAX = 4;
+
+/**
+ * How far the picture has to be pulled before letting go closes it.
+ *
+ * Short enough that the gesture is not a haul, long enough that a scroll
+ * begun on the picture by mistake does not throw it away. A tenth of the
+ * screen is the number most viewers on a phone settle near.
+ */
+const PULL_AWAY = 90;
+
+/** The dialog, which is one element and is looked up rather than held. */
+function shellOf(): HTMLElement | null {
+  return document.querySelector<HTMLElement>('[data-lightbox]');
+}
 const ZOOM_STEP = 1.6;
 
 /**
@@ -508,6 +522,23 @@ function hide(): void {
   /*
    * And a promise is not a guarantee.
    *
+   * `finished` resolves when the animation finishes and rejects when it is
+   * cancelled, and there is a third case that does neither: an animation whose
+   * fill is replaced is removed from the timeline in the `idle` state, drops
+   * out of `getAnimations()`, and leaves its promise pending for good. Watched
+   * happening here — the surface's travel home vanished mid-flight, `done` was
+   * never called from either branch, and the dialog stayed up over a page
+   * nobody could reach or scroll. A backgrounded tab, where the frame clock
+   * stops, gets to the same place by a different road.
+   *
+   * So the teardown has a floor under it. `done` is idempotent; whichever
+   * arrives first takes the dialog down.
+   */
+  window.setTimeout(done, RETURN_MS + 140);
+
+  /*
+   * And a promise is not a guarantee.
+   *
    * `finished` never settles if the animation is cancelled by something else,
    * and it does not settle on time if the tab is in the background when the
    * visitor closes the picture and the frame clock stops. Either way the
@@ -586,6 +617,19 @@ function bindZoom(): void {
   let pinchFrom = 0;
   let pinchZoom = 1;
 
+  /*
+   * Pulling the picture out of the way, which is how a phone closes things.
+   *
+   * Only when it is not zoomed — once there is more picture than screen, a
+   * vertical drag is a pan and has somewhere to go. And only for a finger or a
+   * stylus: on a desktop the same gesture would be a mouse-drag that throws
+   * the picture away by accident, and that machine already has Escape, the
+   * veil and a 44px button.
+   */
+  let pulling = false;
+  let pullBaseLeft = 0;
+  let pullBaseTop = 0;
+
   const spread = () => {
     const [a, b] = [...down.values()];
     return Math.hypot(a.x - b.x, a.y - b.y);
@@ -613,7 +657,43 @@ function bindZoom(): void {
       return;
     }
 
-    if (zoom <= 1.001) return;
+    if (zoom <= 1.001) {
+      if (event.pointerType === 'mouse') return;
+      /*
+       * If it is still arriving, it stops arriving and stays where it is.
+       *
+       * The opening travel is a Web Animation on left/top/width/height with
+       * `fill: 'both'`, and a filling animation outranks an inline style — so
+       * a swipe begun before the picture had landed wrote the geometry and
+       * moved nothing, which is the effect of the gesture being ignored. It is
+       * a real case: tap, then flick, is a quarter of a second apart. Pinning
+       * the current rectangle and cancelling hands the box back to inline
+       * styles without shifting it by a pixel.
+       */
+      if (flight) {
+        const here = box(surface);
+        surface.style.left = `${here.left}px`;
+        surface.style.top = `${here.top}px`;
+        surface.style.width = `${here.width}px`;
+        surface.style.height = `${here.height}px`;
+        flight.cancel();
+        flight = null;
+      }
+
+      pulling = true;
+      dragged = false;
+      downX = event.clientX;
+      downY = event.clientY;
+      pullBaseLeft = parseFloat(surface.style.left) || box(surface).left;
+      pullBaseTop = parseFloat(surface.style.top) || box(surface).top;
+      try {
+        surface.setPointerCapture(event.pointerId);
+      } catch {
+        /* No active pointer with that id — nothing to capture, and the
+           document-level listeners below do not need it. */
+      }
+      return;
+    }
 
     dragging = true;
     dragged = false;
@@ -638,6 +718,27 @@ function bindZoom(): void {
       return;
     }
 
+    if (pulling && surface) {
+      const dx = event.clientX - downX;
+      const dy = event.clientY - downY;
+      if (!dragged && Math.hypot(dx, dy) > 3) dragged = true;
+
+      /*
+       * It follows the finger down and only leans sideways.
+       *
+       * Sideways travel is damped rather than blocked: a thumb never pulls
+       * straight down, and a picture that refuses the horizontal component
+       * feels stuck to a rail. A third of it is enough to look free without
+       * suggesting the picture can be thrown out sideways, which it cannot.
+       */
+      surface.style.left = `${pullBaseLeft + dx * 0.34}px`;
+      surface.style.top = `${pullBaseTop + dy}px`;
+      // The room comes back as the picture leaves, so the gesture is reversible
+      // by eye: let go halfway and you can see it is halfway.
+      shellOf()?.style.setProperty('--pull', String(Math.min(1, Math.abs(dy) / PULL_AWAY)));
+      return;
+    }
+
     if (!dragging) return;
     const dx = event.clientX - downX;
     const dy = event.clientY - downY;
@@ -651,6 +752,36 @@ function bindZoom(): void {
   const release = (event: PointerEvent) => {
     down.delete(event.pointerId);
     if (down.size < 2) pinching = false;
+
+    if (pulling) {
+      pulling = false;
+      const dy = event.clientY - downY;
+      const shell = shellOf();
+
+      if (Math.abs(dy) > PULL_AWAY) {
+        // Far enough. `hide()` measures the thumbnail again and flies home from
+        // wherever the finger left the picture, so the throw and the return are
+        // one movement rather than a snap back followed by a close.
+        shell?.style.removeProperty('--pull');
+        hide();
+      } else if (surface) {
+        // Not far enough, so it goes back — on the same curve everything else
+        // here travels on.
+        surface.animate(
+          [{ left: surface.style.left, top: surface.style.top }, { left: `${pullBaseLeft}px`, top: `${pullBaseTop}px` }],
+          { duration: 260, easing: 'cubic-bezier(0.33, 0.02, 0.18, 1)' }
+        );
+        surface.style.left = `${pullBaseLeft}px`;
+        surface.style.top = `${pullBaseTop}px`;
+        shell?.style.removeProperty('--pull');
+      }
+
+      window.setTimeout(() => {
+        dragged = false;
+      }, 0);
+      return;
+    }
+
     if (!dragging) return;
     dragging = false;
     // Cleared on the next task, not on this one: the click that follows this
@@ -689,9 +820,27 @@ function bindZoom(): void {
    */
   let sliding = false;
 
-  const setFrom = (bar: HTMLElement, clientY: number) => {
-    const r = box(bar);
-    const at = 1 - Math.max(0, Math.min(1, (clientY - r.top) / r.height));
+  const setFrom = (bar: HTMLElement, clientX: number, clientY: number) => {
+    /*
+     * Measured along the track, and along whichever way the track is lying.
+     *
+     * On a laptop it stands upright at the right edge; under 768px the
+     * stylesheet lays it down along the bottom, because that is where a
+     * control belongs on a phone and a vertical slider there sits under the
+     * thumb holding it. This read the vertical axis in both cases, against the
+     * height of the pill rather than of the track — so on a phone a drag along
+     * the 158px it invites did nothing at all, and the entire range was
+     * squeezed into the 33px of pill height crossing it. The cursor said
+     * `ew-resize` while the handler listened to north-south.
+     *
+     * The rail decides. Wider than it is tall means left-to-right; otherwise
+     * bottom-to-top, which is the way up on a vertical bar.
+     */
+    const rail = bar.querySelector<HTMLElement>('.lightbox__zoom-track') ?? bar;
+    const r = box(rail);
+    const along =
+      r.width >= r.height ? (clientX - r.left) / r.width : 1 - (clientY - r.top) / r.height;
+    const at = Math.max(0, Math.min(1, along));
     zoomTo(1 + at * (ZOOM_MAX - 1), undefined, undefined, false);
   };
 
@@ -704,7 +853,7 @@ function bindZoom(): void {
 
     sliding = true;
     bar.setPointerCapture(event.pointerId);
-    setFrom(bar, event.clientY);
+    setFrom(bar, event.clientX, event.clientY);
     event.preventDefault();
     event.stopPropagation();
   });
@@ -712,7 +861,7 @@ function bindZoom(): void {
   document.addEventListener('pointermove', (event) => {
     if (!sliding) return;
     const bar = document.querySelector<HTMLElement>('[data-zoom-bar]');
-    if (bar) setFrom(bar, event.clientY);
+    if (bar) setFrom(bar, event.clientX, event.clientY);
   });
 
   const stopSlide = () => {
