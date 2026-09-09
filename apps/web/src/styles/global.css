@@ -1237,7 +1237,10 @@ figure {
     transform: translate3d(0, 0, 0) scale(1);
   }
   38% {
-    transform: translate3d(0, -14px, 0) scale(1.012);
+    /* The sideways part is the wave's direction — see scheduleLift in
+       theme.ts. Zero unless something set it, so nothing else that borrows
+       this animation changes. */
+    transform: translate3d(var(--lift-lean, 0px), -14px, 0) scale(1.012);
   }
   100% {
     transform: translate3d(0, 0, 0) scale(1);

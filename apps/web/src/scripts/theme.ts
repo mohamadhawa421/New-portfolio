@@ -150,6 +150,17 @@ function apply(theme: Theme): void {
  * to where it started, which is the jolt that used to land right at the end of
  * the wave.
  */
+/**
+ * How far a section leans away from the toggle at the extreme.
+ *
+ * Against the 14px the hop already rises, twelve is a lean of about forty
+ * degrees for a toggle at the very edge of the viewport and a couple of pixels
+ * for one near the middle — which is the right shape for it. This is a
+ * direction, not a second gesture: it should be obvious which side the wave
+ * came from and never obvious that anything was added.
+ */
+const LIFT_LEAN = 12;
+
 function scheduleLift(
   originX: number,
   originY: number,
@@ -172,7 +183,30 @@ function scheduleLift(
     const delay = Math.round(timeAtProgress(distance / reach) * duration);
     lastDelay = Math.max(lastDelay, delay);
 
+    /*
+     * And which way it leans, which is the only part of this the toggle's own
+     * position could ever show.
+     *
+     * The delay above is a true radial arrival and always has been — but every
+     * element carrying [data-lift] is a full-bleed section, so the horizontal
+     * term in that distance is identically zero for all of them: the origin's
+     * x is inside every section, so the nearest point of each one is directly
+     * above or below the toggle. The wave therefore arrived correctly and
+     * looked like it came from the top edge, because a full-width block lifting
+     * as one cannot express a left or a right.
+     *
+     * The lean is what expresses it. A section pushed by a front that reached
+     * it from one side moves away from that side, so the hop is tilted away
+     * from the toggle by however far off the section's centre the toggle was —
+     * nothing when it is dead centre, the full amount at either edge. The hop
+     * itself, its 14px, its 620ms and its delay are all untouched; this only
+     * decides the direction it leaves in.
+     */
+    const off = (rect.left + rect.width / 2 - originX) / (rect.width / 2 || 1);
+    const lean = Math.max(-1, Math.min(1, off)) * LIFT_LEAN;
+
     el.style.setProperty('--lift-delay', `${delay}ms`);
+    el.style.setProperty('--lift-lean', `${lean.toFixed(1)}px`);
     el.classList.add('is-lifting');
   }
 
@@ -181,6 +215,7 @@ function scheduleLift(
       for (const el of targets) {
         el.classList.remove('is-lifting');
         el.style.removeProperty('--lift-delay');
+        el.style.removeProperty('--lift-lean');
       }
     },
     settlesIn: lastDelay + LIFT_MS,
