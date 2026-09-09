@@ -340,72 +340,30 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
   /* ------------------------------------------------------------------ */
 
   /*
-   * Light from above, across the whole sheet.
+   * Nothing is painted on this bar. Three attempts say it cannot be.
    *
-   * This is not the streak that was removed, and the difference is the one
-   * that matters. That was a band sitting over one part of the bar — a bright
-   * patch near Home whatever was underneath it — which is what made it read as
-   * decoration painted on rather than as a property of the surface. This is a
-   * single soft falloff from the top edge down, uniform across the width, at a
-   * few per cent. It is what a thin sheet of glass in a room lit from above
-   * actually looks like, it has no position to be noticed in, and there is no
-   * part of the bar it favours.
+   * A rim was tried and read as a border. A moving highlight was tried and
+   * read as a permanent streak over one part of the bar. A soft top-down
+   * falloff was tried and read as polished plastic — a light source that is
+   * always in the same place, which is what makes a surface look moulded
+   * rather than optical.
    *
-   * It stops well before the bottom, so the lower half of the pill is nothing
-   * but the material and the page through it. And it is inside the same box as
-   * the tint, so it darkens and brightens with the theme rather than being a
-   * fixed white wash over all three.
-   */
-  .nav::after,
-  .topbar::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    opacity: var(--nav-sheet, 0);
-    transition: opacity var(--nav-anim, 520ms) ease;
-    background: linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--nav-sheet-hue, #fff) 100%, transparent) 0%,
-      color-mix(in srgb, var(--nav-sheet-hue, #fff) 34%, transparent) 34%,
-      transparent 62%
-    );
-  }
-
-  /* The links sit on the sheet, not under it. */
-  .nav > *,
-  .topbar > * {
-    position: relative;
-    z-index: 1;
-  }
-
-  /* Nothing while the storm has the bar unpinned and unfiltered. */
-  .nav.dm-unpinned::after {
-    opacity: 0;
-  }
-
-  /*
-   * There is no rim and there is no moving highlight.
+   * They failed for one reason. A painted layer cannot respond to what is
+   * behind it: CSS has no way to sample the page, so any gradient is fixed
+   * relative to the bar and not to the environment. It cannot brighten over
+   * something bright, it cannot move with the content, and it cannot go away
+   * when there is nothing to catch. Whatever it is, it is decoration, and
+   * decoration on a surface that is meant to be optical is exactly what makes
+   * it read as plastic.
    *
-   * Both were tried and both are gone, for the same reason: a painted layer
-   * cannot be a property of the environment. The rim read as a border, which
-   * this is not supposed to have. The sweep read as a permanent bright streak
-   * sitting over one part of the bar — and it could only ever read that way,
-   * because CSS has no way to know what is behind it. It could be moved by the
-   * scroll, but it could not brighten over something bright, and it could not
-   * disappear over something quiet. A gradient that is always there is
-   * decoration whatever is driving its position.
-   *
-   * What is left is the only part of this that is genuinely environmental: the
-   * backdrop filter, which really does sample the page underneath. Saturation
-   * lets colour from behind reach the front of the glass, brightness lifts the
-   * material when something bright passes under it and lets it sit deep when
-   * nothing does, and contrast keeps the type legible through both. When the
-   * page below is quiet the bar is very nearly a clean solid pill; when
-   * something colourful or bright crosses beneath it, it picks that up — and
-   * it does so because it is actually looking at it, not because anything here
-   * is pretending to.
+   * So the material is the backdrop filter and the tint, and nothing else. The
+   * filter is the one part of this that genuinely looks at the page:
+   * saturation carries colour from behind to the front, and brightness and
+   * contrast lift or settle the surface according to what is actually under
+   * it. Over a quiet dark section the bar is very nearly the solid pill it
+   * always was. When something bright or coloured crosses beneath, it shows —
+   * and it shows because the browser is compositing what is really there, not
+   * because anything here is imitating it.
    */
 
   .nav__link {

@@ -1309,6 +1309,79 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
     voices.push(debris);
   }
 
+  /* ---- The front arriving at the ear ---------------------------------- */
+
+  /*
+   * The part of the blast that is close, and the reason the ringing follows.
+   *
+   * There was a gap in the physics. The wave buffer is the event at a
+   * distance — a sub drop with a long body of air behind it, which is what a
+   * large thing sounds like from far enough away to be safe — and then the
+   * hearing simply gave out, with nothing in between to have caused it. What
+   * was missing is the moment the pressure front actually reaches the head:
+   * not another explosion, the *near* part of the one already happening.
+   *
+   * Two components and no more, both over inside seventy milliseconds. A low
+   * punch whose pitch collapses from 190Hz to 52 in a twentieth of a second,
+   * which is the body of a front arriving rather than a tone; and a band of
+   * air around two kilohertz with an instantaneous attack, which is the crack.
+   * Between them they occupy exactly the register the wave buffer does not:
+   * the shock owns the bottom, this owns the punch and the slap, the ring owns
+   * the top.
+   *
+   * It peaks above the shock, briefly, because the closest part of a blast is
+   * the loudest part of it. Then the duck takes everything — including the
+   * back half of this — which is the correct order of events: the impact is
+   * not interrupted by the overload, it is the cause of it.
+   */
+  const slapAt = blastAt + 0.008;
+
+  const punch = audio.createOscillator();
+  punch.type = 'sine';
+  punch.frequency.setValueAtTime(190, slapAt);
+  punch.frequency.exponentialRampToValueAtTime(52, slapAt + 0.055);
+
+  const punchGain = audio.createGain();
+  punchGain.gain.setValueAtTime(0.0001, slapAt);
+  // Three milliseconds to full. Anything slower is a note being played.
+  punchGain.gain.exponentialRampToValueAtTime(0.95, slapAt + 0.003);
+  punchGain.gain.exponentialRampToValueAtTime(0.0001, slapAt + 0.075);
+
+  punch.connect(punchGain).connect(master);
+  punch.start(slapAt);
+  punch.stop(slapAt + 0.1);
+  voices.push(punch);
+
+  if (strikeBuf) {
+    const air = audio.createBufferSource();
+    air.buffer = strikeBuf;
+    air.playbackRate.value = 2.7;
+
+    /*
+     * Two kilohertz, which is deliberately below the crack above it.
+     *
+     * The structural crack that lands with the blast is bandpassed at 2.6 to
+     * 5.2k — that is something breaking. This sits under it, wider and lower,
+     * because a pressure front hitting the ear is air rather than material,
+     * and putting the two in the same band would make one sound like a louder
+     * version of the other.
+     */
+    const band = audio.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = 2050;
+    band.Q.value = 0.65;
+
+    const airGain = audio.createGain();
+    // No ramp in at all: the front does not arrive, it is already here.
+    airGain.gain.setValueAtTime(1.05, slapAt);
+    airGain.gain.exponentialRampToValueAtTime(0.0001, slapAt + 0.06);
+
+    air.connect(band).connect(airGain).connect(master);
+    air.start(slapAt);
+    air.stop(slapAt + 0.09);
+    voices.push(air);
+  }
+
   /* ---- And what it does to the ears ----------------------------------- */
 
   /*
@@ -1340,7 +1413,17 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
    * the ring is the clearest thing in the moment without being the loudest
    * thing in the sequence.
    */
-  const RING_IN = 0.03;
+  /**
+   * How long after the blast the ring arrives.
+   *
+   * Widened from thirty to fifty-five milliseconds to make room for the ear
+   * impact below, and no further. The whole point of that layer is that the
+   * ring is its consequence: leave a gap you can count and they become two
+   * events, one of which happens to follow the other. At fifty-five the
+   * impact's transient has peaked and the ring is already arriving underneath
+   * its decay.
+   */
+  const RING_IN = 0.055;
   /**
    * How long the hearing takes to come back, and it is the only clock here.
    *
