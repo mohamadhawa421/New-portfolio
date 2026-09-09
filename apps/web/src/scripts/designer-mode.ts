@@ -2118,52 +2118,126 @@ function lift(
     `perspective(700px) rotate3d(${(-ny).toFixed(3)}, ${nx.toFixed(3)}, 0, ${degrees.toFixed(1)}deg)`;
 
   /*
-   * Braced, and then let go of slowly.
+   * Loaded, and then let go of slowly.
    *
-   * The sheet dips a little the wrong way just before the front arrives — the
-   * pressure ahead of a pulse pushes down before the crest lifts anything —
-   * and that tiny counter-move is what makes the peak read as something
-   * arriving rather than something starting. Then the fall is much longer than
-   * the rise: a pulse has a near-vertical front and a decaying tail, and the
-   * old shape came back as fast as it went, which is a pump rather than a
-   * pressure wave.
-   *
-   * The offsets are the pressure curve of a decaying front, sampled: 85% of
-   * peak already reached a twelfth of the way before the top, then 55%, 20%
-   * and 5% on the way out. The peak stays at 0.38 because PRELOAD_MS is
-   * derived from it and the blast has to land on that exact frame.
+   * The fall is much longer than the rise: a pulse has a near-vertical front
+   * and a decaying tail, and an early version came back as fast as it went,
+   * which is a pump rather than a pressure wave. The peak stays at 0.38 of the
+   * span because the blast has to land on that exact frame, so the rise gets
+   * the first 38% and the decay the other 62%.
    */
 
   /*
-   * Three positions and one curve, which is what it was before any of this.
+   * The load, which is the pause before the rise and not a pause in it.
+   *
+   * Two of the three things a front does to a solid object were missing and
+   * they are the same moment: it does not begin travelling on the frame the
+   * pressure arrives, and it is squeezed before it is moved. Both are spent
+   * here, in one window at the head of the swell, and they cost one keyframe
+   * between them because they are one event — the thing is being loaded.
+   *
+   * Twenty-three milliseconds for a caption and forty-six for a cover, and
+   * that lag *is* mass: a small control answers the pressure almost at once
+   * and a large surface takes a moment to know about it. That is the
+   * difference in weight the page could never show, and it is free — there is
+   * no new animation, only a later start inside the one that was there.
+   *
+   * Critically the translate channel does not move during it. It is zero at
+   * the head of the window and zero at the end of it, so the rise still leaves
+   * from a standstill exactly as it did and there is no corner anywhere in the
+   * travel. The whole of the load is in the scale, at one and a half per cent,
+   * which is why it can be a reversal — compressing, then released — without
+   * being a bounce. This is what the old brace failed to be: that one spent
+   * four keyframes moving eight pixels the wrong way, and put its junction in
+   * the travel, right where the rise needed to be cleanest.
+   *
+   * The peak stays on offset 0.38 of the same span, so the blast still lands
+   * on the frame it always did. The rise is not delayed, it is shorter and
+   * correspondingly quicker — which is the release the compression is for.
+   */
+  /*
+   * How slow this particular thing is to hear about it.
+   *
+   * `heft` alone was not enough to tell the page apart. It is the real measure
+   * for a surface — a cover is 1 and a chip is a fifth — but a glyph's heft is
+   * its type size against 460, so body copy is 0.037 and a 92px heading 0.2,
+   * and the whole of the type on the page came out inside four milliseconds of
+   * each other. A heading is not four milliseconds heavier than a caption.
+   *
+   * So the lag reads the rise as well: how far above the floor this element's
+   * own size pushed it, which is exactly the quantity that separates the big
+   * type from the small and is 0 for everything sitting at the floor. Body
+   * copy and a phone's h1 are both at the floor and both answer in
+   * twenty-three milliseconds; a laptop's 92px heading and a full-width cover
+   * both take forty-six. The page now has two masses in it you can see.
+   */
+  const drag = Math.min(1, heft + Math.max(0, rise / FLOOR_RISE - 1));
+  const load = 0.05 + 0.06 * drag;
+  const squeeze = 1 - (0.012 + 0.006 * drag);
+
+  /*
+   * And a pixel and a half past home before it settles.
+   *
+   * A thing with any mass in it does not stop dead on its mark. The return is
+   * a long decay from up to a couple of hundred pixels, and it arrives with a
+   * little left over, so it goes a pixel or two past and comes back — always
+   * against the direction it was lifted, which is what residual momentum is.
+   *
+   * Fixed at one and a half pixels rather than scaled with the lift, and that
+   * is deliberate: an overshoot proportional to a 169px rise would be a bounce
+   * on a large screen, and the whole value of this is that it is under the
+   * threshold of being noticed as an effect on every screen there is. It is
+   * two frames' worth of movement at the very end of a settle.
+   */
+  const reachBack = Math.hypot(px, py) || 1;
+  const ox = (-px / reachBack) * 1.5;
+  const oy = (-py / reachBack) * 1.5;
+
+  /*
+   * One curve, and three junctions that are not corners.
    *
    * The version in between had seven keyframes — a brace, a sampled rise, a
    * hold, two decay points — and every junction between them was a place the
    * velocity changed abruptly. Sampling a curve and joining the samples with a
    * linear easing does not reproduce the curve, it reproduces a polyline, and
-   * the eye reads the corners. One easing across the whole flight cannot have a
-   * corner in it.
+   * the eye reads the corners.
    *
-   * So the shape is carried by the easing and the magnitude by the numbers
-   * above. It rises slowly at first, is quickest through the middle, and is
-   * still moving — barely — as it arrives at full bend on the frame the blast
-   * lands. Then the same curve unwinds it over the remaining 62%, which is the
-   * asymmetry a pulse has: a front that arrives and a pressure that decays.
+   * The rise and the decay are still one easing each and still the same
+   * easing, so the shape above is untouched: it rises slowly at first, is
+   * quickest through the middle, and is still moving — barely — as it arrives
+   * at full bend on the frame the blast lands. Then the same curve unwinds it,
+   * which is the asymmetry a pulse has: a front that arrives and a pressure
+   * that decays.
    *
-   * The brace is gone with the rest. It was four keyframes' worth of idea
-   * spent on eight pixels in the wrong direction, and it cost a junction right
-   * where the rise needed to be cleanest.
+   * What the two new frames add is a junction at each end, and neither is a
+   * corner in the travel. The first has no travel on either side of it. The
+   * second is a reversal at a pixel and a half, arriving with the decay nearly
+   * stopped and leaving on an easing that is flat almost immediately — the
+   * eye reads a settle, and there is nothing there to read as a bounce.
    */
+  const ROLL = 'cubic-bezier(0.33, 0.02, 0.18, 1)';
+
   return el.animate(
     [
-      { transform: 'translate3d(0, 0, 0) scale(1)', offset: 0 },
-      { transform: peak, offset: 0.38 },
+      {
+        transform: 'translate3d(0, 0, 0) scale(1)',
+        offset: 0,
+        // Still compressing when the release begins. An easing that arrived at
+        // the squeeze having stopped would make the load a beat of its own.
+        easing: 'cubic-bezier(0.32, 0, 0.67, 0.4)',
+      },
+      { transform: `translate3d(0, 0, 0) scale(${squeeze.toFixed(4)})`, offset: load, easing: ROLL },
+      { transform: peak, offset: 0.38, easing: ROLL },
+      {
+        transform: `translate3d(${ox.toFixed(2)}px, ${oy.toFixed(2)}px, 0) scale(1)`,
+        offset: 0.88,
+        easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)',
+      },
       { transform: 'translate3d(0, 0, 0) scale(1)', offset: 1 },
     ],
     {
       duration: span,
       delay: at,
-      easing: 'cubic-bezier(0.33, 0.02, 0.18, 1)',
       composite: 'add',
       fill: 'both',
     }
