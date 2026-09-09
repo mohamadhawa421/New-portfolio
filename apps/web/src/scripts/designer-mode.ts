@@ -506,6 +506,16 @@ let restorers: Array<() => void> = [];
 let timers: number[] = [];
 let frame = 0;
 
+/**
+ * What the front broke, kept until the page has finished landing.
+ *
+ * The settle at the end glitches the same elements the wave did rather than a
+ * fresh selection, because it is the same screen recovering from the same
+ * event — a second, different set would read as a new effect arriving after
+ * the story was over.
+ */
+let broke: Array<{ el: HTMLElement; sx: number; bite: number }> = [];
+
 /** Where the arcs reach to, in viewport space, fixed at the freeze. */
 let anchors: Anchor[] = [];
 let source: Anchor = { x: 0, y: 0 };
@@ -1583,7 +1593,20 @@ export function run(options: DesignerModeOptions): Beat {
    * and then lets go, which is the order the story has: the field is his, so
    * it goes out when he does and not before.
    */
-  after(timed.landed + 120, () => {
+  /*
+   * And then the screen itself has the last word.
+   *
+   * Everything is home and nothing is moving, and for a third of a second the
+   * picture breaks up anyway before it is finally clean. It sits here, between
+   * the last piece landing and the purple leaving him, because that is the
+   * order the story has: the page is back, the display it came back on is not
+   * quite over it, and he is the last thing on it to fail.
+   */
+  after(timed.landed, () => {
+    returning.push(...resettle(character, (strength) => onTear?.(strength)));
+  });
+
+  after(timed.landed + SETTLE_MS + 40, () => {
     delete root.dataset.designer;
     character.classList.remove('dm-source');
   });
@@ -2101,7 +2124,7 @@ const TEAR_CAP = 14;
  * onto whatever else is moving the element, and it must not replace the lift
  * that is running underneath it.
  */
-function tear(el: HTMLElement, at: number, sx: number, bite: number): Animation[] {
+function tear(el: HTMLElement, at: number, sx: number, bite: number, sy = 0): Animation[] {
   if (!CAN_LAYER) return [];
 
   const quiet = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -2179,18 +2202,32 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number): Animation[
    */
   const amp = 3 + 4 * Math.max(0, Math.min(1, bite));
 
+  /*
+   * And a little of it downward, or none at all.
+   *
+   * The front's tears are purely sideways, because a pressure wave crossing a
+   * screen displaces along its own direction and nothing else. The settle at
+   * the end passes a fraction here, and that fraction is most of what makes
+   * the second glitch read as a different event rather than the first one
+   * played again — a frame that slips both ways is a signal breaking up, not
+   * something being pushed.
+   */
+  const drop = amp * sy;
+
   // The same four instants the filter cuts on, so the skip and the separation
   // are one event. `steps(1)` holds each value for the whole of its interval.
   const cut = 'steps(1, end)';
 
+  const step = (x: number, y: number) => `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
+
   const slipped = el.animate(
     [
-      { offset: 0, transform: 'translate3d(0, 0, 0)', easing: cut },
-      { offset: 0.04, transform: `translate3d(${(sx * amp).toFixed(2)}px, 0, 0)`, easing: cut },
-      { offset: 0.26, transform: `translate3d(${(-sx * amp * 0.45).toFixed(2)}px, 0, 0)`, easing: cut },
-      { offset: 0.42, transform: `translate3d(${(sx * amp * 0.7).toFixed(2)}px, 0, 0)`, easing: cut },
-      { offset: 0.68, transform: `translate3d(${(-sx * amp * 0.22).toFixed(2)}px, 0, 0)`, easing: cut },
-      { offset: 1, transform: 'translate3d(0, 0, 0)' },
+      { offset: 0, transform: step(0, 0), easing: cut },
+      { offset: 0.04, transform: step(sx * amp, -drop), easing: cut },
+      { offset: 0.26, transform: step(-sx * amp * 0.45, drop * 0.6), easing: cut },
+      { offset: 0.42, transform: step(sx * amp * 0.7, -drop * 0.35), easing: cut },
+      { offset: 0.68, transform: step(-sx * amp * 0.22, drop * 0.2), easing: cut },
+      { offset: 1, transform: step(0, 0) },
     ],
     { duration: TEAR_MS, delay: at, composite: 'add', fill: 'none' }
   );
@@ -2207,11 +2244,11 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number): Animation[
  * through the sorted list handed back four tears bunched in the first quarter
  * of the crossing and nothing at all after it.
  *
- * So the crossing is divided into ten equal slices of time and each slice
- * gives up its hardest-hit element. The damage then arrives at a steady rate
- * from the first frame of the front to the last, which is what "it travels
- * with the wave" means, and each tear is the worst one available where it is,
- * which is what keeps the gradient across the page.
+ * So the crossing is divided into fourteen equal slices of time and each
+ * slice gives up its hardest-hit element. The damage then arrives at a steady
+ * rate from the first frame of the front to the last, which is what "it
+ * travels with the wave" means, and each tear is the worst one available where
+ * it is, which is what keeps the gradient across the page.
  */
 function damage(
   candidates: Array<{ el: HTMLElement; at: number; sx: number; force: number }>,
@@ -2248,24 +2285,101 @@ function damage(
   for (const one of picked) if (one && one.force > strongest) strongest = one.force;
 
   const made: Animation[] = [];
+  broke = [];
 
   for (const one of picked) {
     if (!one) continue;
-    made.push(...tear(one.el, one.at, one.sx, strongest ? one.force / strongest : 1));
+    const bite = strongest ? one.force / strongest : 1;
+    broke.push({ el: one.el, sx: one.sx, bite });
+    made.push(...tear(one.el, one.at, one.sx, bite));
     /*
      * The crackle belongs to the frame the screen actually breaks, not to the
      * schedule — which is why it is fired from here rather than placed with
      * the wave. The sound throttles itself: fourteen tears across three
      * hundred milliseconds is one every twenty-odd, and `crackle` refuses
      * anything inside forty, so a third of them are heard and the rest are
-     * only seen. That
-     * is the layering the effect needs — a few cracks over a continuous front,
-     * rather than one click per broken thing.
+     * only seen. That is the layering the effect needs — a few cracks over a
+     * continuous front, rather than one click per broken thing.
      */
     after(one.at, () => fire(one.force));
   }
 
   return made;
+}
+
+/**
+ * How far apart the second glitch is allowed to spread.
+ *
+ * Nearly nothing, and that is the point. The first one travels, because a
+ * front travels; this one is the whole frame failing at once, so the elements
+ * are only jittered off each other enough that fourteen of them do not look
+ * like one switch being thrown.
+ */
+const SETTLE_SPREAD = 110;
+
+/**
+ * The whole of the second glitch, from the first element to the clean frame.
+ *
+ * The scatter, plus the portrait's own late one, plus the length of a tear.
+ * Derived rather than typed, because the purple has to leave him after it and
+ * a number written down here would be wrong the first time TEAR_MS moved.
+ */
+const SETTLE_MS = SETTLE_SPREAD + 40 + TEAR_MS;
+
+/**
+ * The screen not quite over it.
+ *
+ * Everything is home, nothing is moving, and for a third of a second the
+ * picture breaks up anyway — then it is clean and the purple leaves the
+ * portrait. It is the last beat of the story rather than an extra effect: the
+ * page has been put back, and the display it was put back on is still
+ * recovering from what crossed it.
+ *
+ * Three things separate it from the tear that came with the wave. It does not
+ * travel — the delays are a scatter, not a sweep. It slips vertically as well
+ * as sideways, which is a signal breaking up rather than something being
+ * shoved. And every element is thrown the other way from the way the front
+ * threw it, so the frame snaps back rather than repeating itself.
+ *
+ * The portrait goes last and hardest, and it is the reason the beat exists
+ * here at all: he is the one still holding the field, so the screen fails on
+ * him a moment before he lets it go.
+ */
+function resettle(who: HTMLElement | null, fire: (strength: number) => void): Animation[] {
+  if (!CAN_LAYER || !broke.length) return [];
+
+  const order = broke
+    .map((one) => ({ ...one, at: Math.round(Math.random() * SETTLE_SPREAD) }))
+    .sort((a, b) => a.at - b.at);
+
+  // Him last, and at the top of the scale whatever the page did.
+  if (who) order.push({ el: who, sx: Math.random() < 0.5 ? -1 : 1, bite: 1, at: SETTLE_SPREAD + 40 });
+
+  const made: Animation[] = [];
+  let last = -Infinity;
+
+  for (const one of order) {
+    /*
+     * Floored at a third, unlike the front.
+     *
+     * Out at the edges of the page the wave had almost nothing left, and the
+     * gradient is right for a front arriving. Nothing is arriving now — the
+     * screen is failing, and a screen fails all over.
+     */
+    made.push(...tear(one.el, one.at, -one.sx, Math.max(0.34, one.bite * 0.9), 0.42));
+
+    if (one.at - last >= 40) {
+      last = one.at;
+      fireAt(one.at, one.bite * 0.55, fire);
+    }
+  }
+
+  return made;
+}
+
+/** A crackle placed on the storm's own timer, so teardown takes it with it. */
+function fireAt(at: number, strength: number, fire: (strength: number) => void): void {
+  after(at, () => fire(strength));
 }
 
 /**
@@ -2362,6 +2476,10 @@ export function teardown(): void {
    * that nobody asked for. Sweeping a frame later is the only point at which
    * everything has certainly finished having its say.
    */
+  // Nothing else holds these, and holding them would keep a whole page of
+  // detached elements alive until the next run.
+  broke = [];
+
   const swept = touched;
   touched = [];
   // A timer, not a frame: requestAnimationFrame does not run at all in a tab
