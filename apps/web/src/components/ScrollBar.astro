@@ -73,7 +73,25 @@
 
       root.style.setProperty('--scroller-shown', '1');
       root.style.setProperty('--scroller-size', String(height));
-      root.style.setProperty('--scroller-at', String(offset));
+      /*
+       * Where the thumb sits, in pixels, rather than as a fraction for CSS to
+       * turn into a `top`.
+       *
+       * `top` is a layout property. Writing it every scroll frame makes the
+       * browser lay the thumb out and repaint it every scroll frame, and keeps
+       * it off the compositor entirely — for an overlay whose only job is to
+       * move smoothly while the page is moving, which is the worst moment to
+       * be asking for layout. As a transform it is the same pixel in the same
+       * place and the compositor can carry it.
+       *
+       * The track is the viewport minus its own 12px inset top and bottom,
+       * which is exactly what the `100% - 24px` in the stylesheet meant — and
+       * this is measured rather than written as `100vh`, because on a phone
+       * with a collapsing URL bar those two are not the same number and the
+       * fixed element follows the measured one.
+       */
+      const travel = Math.max(0, view - 24) * (1 - height) * offset;
+      root.style.setProperty('--scroller-y', `${travel.toFixed(2)}px`);
     }
 
     function schedule(): void {
@@ -196,8 +214,9 @@
    * Fixed to the viewport, not the page. It is the full height of the window
    * and the thumb is positioned inside it as a fraction, so nothing here has
    * to know the document's height in CSS — the two numbers come from the
-   * script as --scroller-size and --scroller-at, and the browser does the
-   * arithmetic.
+   * script as --scroller-size and --scroller-y: the size is a fraction the
+   * browser resolves, and the offset arrives in pixels so that scrolling
+   * moves a transform rather than a box.
    */
   .scroller {
     position: fixed;
@@ -240,7 +259,14 @@
      * size and page length, with nothing to recompute on a breakpoint.
      */
     height: calc((100% - 24px) * var(--scroller-size, 0.2));
-    top: calc(12px + (100% - 24px) * (1 - var(--scroller-size, 0.2)) * var(--scroller-at, 0));
+    top: 12px;
+    /*
+     * Moved, not laid out. The offset arrives from the script already in
+     * pixels — see the note there — so the only thing that changes while the
+     * page scrolls is a transform, and the only thing that changes when the
+     * window or the document is resized is the height.
+     */
+    transform: translate3d(0, var(--scroller-y, 0px), 0);
     border-radius: 999px;
     background: var(--ink);
     opacity: 0.22;

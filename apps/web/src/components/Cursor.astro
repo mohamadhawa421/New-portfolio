@@ -451,8 +451,30 @@
     function wake(): void {
       if (looping) return;
       looping = true;
+      // No age on the first frame of a new run — see `steps` below.
+      lastFrame = 0;
       requestAnimationFrame(frame);
     }
+
+    /**
+     * When the previous frame was, so this one knows how much time it owes.
+     *
+     * Zero means there was no previous frame in this run and the first one is
+     * charged a single frame's worth, which is what it used to be charged
+     * unconditionally.
+     */
+    let lastFrame = 0;
+
+    /**
+     * One frame, as this file has always meant it.
+     *
+     * Not a constant anyone is free to change: it is the rate the three eases
+     * below were tuned against, and it is what the rest of the file means when
+     * it says a frame — "a wake-up every 16ms", "roughly a frame and a half of
+     * lag". Fixing those numbers to a duration is the whole point of `steps`;
+     * they stay attached to the display they were chosen on.
+     */
+    const FRAME_MS = 1000 / 60;
 
     function frame() {
       const now = performance.now();
@@ -470,9 +492,36 @@
        * drag is snapped shut rather than released, so the frame the rage ends
        * on is the frame the pointer is back under the mouse.
        */
+      /*
+       * How many sixtieths of a second this frame is worth.
+       *
+       * The three eases below are exponential smoothers with a per-*frame*
+       * coefficient, and a per-frame coefficient is a refresh-rate dependency:
+       * `x += (target - x) * 0.18` retains 82% of the error every frame, so a
+       * 144Hz display applies it 2.4 times as often and converges 2.4 times as
+       * fast. The ring genuinely sat closer to the pointer on a fast display
+       * and trailed on a slow one — the same code, two different amounts of
+       * weight, which is exactly the thing this pass exists to remove.
+       *
+       * Raising the retained fraction to the number of frames' worth of time
+       * that actually elapsed makes the curve a function of time instead. At
+       * 16.7ms this is 1 and every coefficient below is untouched, so a 60Hz
+       * display — the rate they were tuned at — is identical to the pixel.
+       * At 6.9ms each step is smaller, and 2.4 of them land where one used to.
+       *
+       * Deliberately not clamped. Coming back to a tab after a minute hands
+       * this an enormous dt, the retained fraction goes to nothing, and the
+       * ring arrives at the pointer on the first frame — which is where it
+       * should be, because that is where the mouse is.
+       */
+      const steps = lastFrame ? (now - lastFrame) / FRAME_MS : 1;
+      lastFrame = now;
+      const ease = (perFrame: number) => 1 - Math.pow(1 - perFrame, steps);
+
       if (rageUntil) {
-        dragX += (targetX - dragX) * 0.055;
-        dragY += (targetY - dragY) * 0.055;
+        const grip = ease(0.055);
+        dragX += (targetX - dragX) * grip;
+        dragY += (targetY - dragY) * grip;
       } else {
         dragX = targetX;
         dragY = targetY;
@@ -503,8 +552,9 @@
         ringToY = py + (cy - py) * RING_PULL;
       }
 
-      leanX += (wantX - leanX) * 0.2;
-      leanY += (wantY - leanY) * 0.2;
+      const pull = ease(0.2);
+      leanX += (wantX - leanX) * pull;
+      leanY += (wantY - leanY) * pull;
 
       const held = magnet?.el ?? releasing;
       if (held) {
@@ -516,10 +566,12 @@
         }
       }
 
-      // Exponential ease toward the pointer. 0.18 keeps roughly a frame and a
-      // half of lag: enough to feel like weight, not enough to feel broken.
-      ringX += (ringToX - ringX) * 0.18;
-      ringY += (ringToY - ringY) * 0.18;
+      // Exponential ease toward the pointer. 0.18 per sixtieth keeps roughly a
+      // frame and a half of lag: enough to feel like weight, not enough to
+      // feel broken. Per sixtieth, now, rather than per frame — see `steps`.
+      const chase = ease(0.18);
+      ringX += (ringToX - ringX) * chase;
+      ringY += (ringToY - ringY) * chase;
 
       // Within a tenth of a pixel of everything it is chasing, and with no
       // control left to release: nothing would change on the next frame.

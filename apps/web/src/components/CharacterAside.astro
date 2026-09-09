@@ -266,11 +266,34 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
       }
     }
 
+    /**
+     * Throttled to eight times a second, and never reading inside the event.
+     *
+     * `due` calls getBoundingClientRect, so running it from the scroll handler
+     * forces the browser to flush layout to answer — during a scroll, which is
+     * the one moment it is trying to avoid doing that. The 120ms throttle
+     * stays exactly as it was, because this is a reveal and not a continuous
+     * animation: moving it to a bare frame would run it sixty times a second
+     * instead of eight, which is more work rather than less. What moves is
+     * only *where* the read happens — on the frame that was going to lay out
+     * anyway, rather than in the middle of the event.
+     *
+     * `reached` is still decided by the clock at the moment of the scroll, not
+     * at the moment of the frame, so nothing about what it answers changes.
+     */
+    let queued = false;
     function onScroll() {
       const now = Date.now();
       if (now - last < 120) return;
       last = now;
-      pass(now - settledAt > OWN_SCROLL_AFTER);
+
+      if (queued) return;
+      queued = true;
+      const reached = now - settledAt > OWN_SCROLL_AFTER;
+      requestAnimationFrame(() => {
+        queued = false;
+        pass(reached);
+      });
     }
 
     /**

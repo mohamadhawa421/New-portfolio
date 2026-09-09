@@ -99,6 +99,15 @@ leaves a button's label untouched. Both paths write the same discrete cuts on
 the same timers, because WebKit will not interpolate a `filter` containing a
 `url()` and drops the whole animation.
 
+**Eases are per sixtieth of a second, not per frame.** `x += (target - x) * k`
+applied once per frame is a refresh-rate dependency: at 144Hz it runs 2.4 times
+as often and converges 2.4 times as fast, so the same code gives a different
+amount of weight on a different display. The cursor's three smoothers raise the
+retained fraction to the number of 16.7ms steps that actually elapsed, which
+leaves 60Hz identical to the pixel and brings every faster display onto the
+same curve. Any new smoother does the same, and no clamp on the elapsed time —
+returning to a tab should put the thing where the pointer is.
+
 **Reduced motion is honoured throughout**, and every effect has a quiet
 variant rather than being switched off.
 
