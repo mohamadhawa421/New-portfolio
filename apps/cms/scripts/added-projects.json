@@ -1,0 +1,227 @@
+{
+  "_comment": "Three projects added after Tahweel and before Wise Academy. Image paths are relative to the --images directory. 'shipped' becomes the What-shipped highlights; seo is derived by the importer from title and summary.",
+  "projects": [
+    {
+      "slug": "rm-luxury",
+      "title": "RM Luxury",
+      "categories": [
+        "Landing page / showcase website"
+      ],
+      "discipline": "Landing page design",
+      "role": "UI / UX Design",
+      "order": 6,
+      "featured": false,
+      "chipBg": "#f2f2f4",
+      "chipInk": "#86868b",
+      "summary": "A showcase site for a French private-chauffeur and concierge service, built to make an unlisted, quote-based offer feel as concrete as one with prices on it.",
+      "briefLead": "RM Luxury drives people to airports, weddings, and meetings, and arranges the parts of the trip that are not the drive. They needed a site that could sell all of that without a booking engine behind it.",
+      "briefBody": "Everything they offer is quoted rather than priced. The site's job is to get a stranger from arriving to sending an enquiry with enough confidence to say what they actually need.",
+      "problemLead": "A service with no prices and no availability calendar has nothing concrete to show, so the site has to make the offer legible some other way.",
+      "constraints": [
+        {
+          "title": "Transport, travel, restaurants, and hotels are four unrelated services sold by the same three people.",
+          "body": ""
+        },
+        {
+          "title": "Nothing has a public price, so every path has to end in a quote without that feeling like a dead end.",
+          "body": ""
+        },
+        {
+          "title": "The market judges this category on discretion, and an over-designed site reads as trying too hard.",
+          "body": ""
+        }
+      ],
+      "approachLead": "Let the fleet and the occasions do the explaining, and treat the quote as the product rather than as a fallback.",
+      "approachBody": "The service picker puts the four offers behind one set of tabs so the site can be broad without the home page having to be. Inside Transport, each vehicle gets the full width and a single specification line — the class and the fact that reservation is on quotation — because those are the two things a visitor is actually deciding between.\n\nThe rest is photography doing work the copy cannot. Where a competitor would write about discretion, this shows a driver holding a door, a family arriving at a hotel, a room set for an event. Type stays quiet and black on white so nothing competes with it.",
+      "approachCaption": "The service picker, with the fleet given the full width of the page.",
+      "decisions": [
+        {
+          "eyebrow": "Outcome",
+          "title": "One Picker, Four Services",
+          "body": "Transport, travel, restaurants, and hotels share a single tabbed surface instead of four competing sections."
+        },
+        {
+          "eyebrow": "Outcome",
+          "title": "Quote as the Destination",
+          "body": "Every route ends at the same enquiry, stated plainly on the card rather than hidden behind a price nobody can publish."
+        },
+        {
+          "eyebrow": "Outcome",
+          "title": "Photography Over Adjectives",
+          "body": "The standard of the service is shown in the images so the copy never has to claim it."
+        }
+      ],
+      "shippedHeading": "The pages that carry the offer.",
+      "reflectionLead": "The hardest part of a site with no prices is resisting the urge to compensate with adjectives.",
+      "reflectionBody": "Most of the work went into removing claims and letting the fleet, the occasions, and a very plain type treatment carry the positioning instead. If it goes further, the obvious next step is instrumenting which of the four services actually starts the enquiries, and rebalancing the page around the answer.",
+      "cover": "rm-luxury-cover.png",
+      "approachShot": "rm-luxury-1.png",
+      "gallery": [
+        "rm-luxury-2.png",
+        "rm-luxury-3.png"
+      ],
+      "shipped": [
+        {
+          "title": "Services Overview",
+          "body": "A horizontal set of offers with the enquiry available from the first screen."
+        },
+        {
+          "title": "About & Positioning",
+          "body": "The case for the company, split between two calls to action rather than one."
+        },
+        {
+          "title": "Fleet & Quotation",
+          "body": "One vehicle at a time, with class and reservation terms stated on the card."
+        }
+      ]
+    },
+    {
+      "slug": "club-expert-phonak",
+      "title": "Club Expert+ — Phonak",
+      "categories": [
+        "Mobile app"
+      ],
+      "discipline": "Mobile app design",
+      "role": "UI / UX Design",
+      "order": 7,
+      "featured": false,
+      "chipBg": "#101010",
+      "chipInk": "#8ac53f",
+      "summary": "A membership app for the hearing-care professionals in Phonak's Club Expert+ programme, gathering the news, training, product documents, and priority support they were chasing across other channels.",
+      "briefLead": "Phonak's partner professionals already had the benefits of the Club Expert+ programme. What they did not have was one place to use them, so the material lived in inboxes, portals, and phone calls.",
+      "briefBody": "The app had to serve people who open it between patient appointments, on a shop floor, with a few minutes at most — and who are the reason the programme exists rather than its audience of last resort.",
+      "problemLead": "A membership programme is only worth as much as the speed at which a member can use it, and this one was spread across every channel except a single one.",
+      "constraints": [
+        {
+          "title": "Five unrelated kinds of content — news, training, products, professional tools, communication tools — all belong on the first screen.",
+          "body": ""
+        },
+        {
+          "title": "Most of the value is PDFs and links, which is the least engaging material an app can be built from.",
+          "body": ""
+        },
+        {
+          "title": "Priority support is the headline benefit, and burying it two taps deep would undercut the whole proposition.",
+          "body": ""
+        }
+      ],
+      "approachLead": "Give each kind of content its own tab, make the documents scannable rather than beautiful, and keep the support line on screen at all times.",
+      "approachBody": "The five sections are peers in a bottom bar, so nothing is nested inside anything it does not belong to. Within Products, a second row of tabs separates innovations, range, pricing, and ordering — four questions a professional arrives with already formed, rather than four categories they have to browse.\n\nDocument rows state their format and their action before anything else: a PDF badge, a download control, an external-link mark. Someone scanning for the price list should not have to open anything to find out what a row is. The priority call button floats above all of it, because the benefit people joined for should never be somewhere you have to navigate to.\n\nThe onboarding does the one job onboarding can honestly do here — naming the three benefits before the member is dropped into a feed that assumes they know what the programme includes.",
+      "approachCaption": "The news feed, an article, an embedded video, and the empty state.",
+      "decisions": [
+        {
+          "eyebrow": "Outcome",
+          "title": "Five Peers, No Nesting",
+          "body": "Each kind of content gets a tab of its own instead of being filed under a section it only half belongs to."
+        },
+        {
+          "eyebrow": "Outcome",
+          "title": "Rows That Declare Themselves",
+          "body": "Format and action are visible before the title is read, so a document list can be scanned rather than opened."
+        },
+        {
+          "eyebrow": "Outcome",
+          "title": "Support Always in Reach",
+          "body": "The priority line floats over every screen, because it is the benefit the membership is actually sold on."
+        }
+      ],
+      "shippedHeading": "The screens a member actually opens.",
+      "reflectionLead": "Most of this app is a list of documents, and pretending otherwise would have made it worse.",
+      "reflectionBody": "The useful work was in the rows rather than the flourishes: what a member can tell about a file before tapping it, and how few taps sit between opening the app and reaching the thing they came for. The part I would want to test with real members is the five-way split, which is a reasonable model of the programme but not yet a proven model of their day.",
+      "cover": "club-expert-cover.png",
+      "approachShot": "club-expert-1.png",
+      "gallery": [
+        "club-expert-2.png",
+        "club-expert-3.png"
+      ],
+      "shipped": [
+        {
+          "title": "Onboarding",
+          "body": "Three benefits named before the member reaches the feed."
+        },
+        {
+          "title": "News & Media",
+          "body": "Articles, polls, and video in one feed, with a stated empty state."
+        },
+        {
+          "title": "Products & Documents",
+          "body": "Innovations, range, pricing, and ordering split across their own tabs."
+        }
+      ]
+    },
+    {
+      "slug": "archlist",
+      "title": "Archlist",
+      "categories": [
+        "Web app"
+      ],
+      "discipline": "Web app design",
+      "role": "UI / UX Design",
+      "order": 8,
+      "featured": false,
+      "chipBg": "#0d1b52",
+      "chipInk": "#ffffff",
+      "summary": "A project-management web app for architects and interior architects — phases, documents, suppliers, object catalogues, and finances — designed inside a strongly defined visual direction set by the client.",
+      "briefLead": "Archlist follows an architectural project from first sketch to handover: the phase it is in, the documents that prove it, the trades working on it, and the objects specified along the way.",
+      "briefBody": "The client arrived with a fully formed visual identity and a clear picture of how the product should look and read. The design work happened inside that picture rather than in place of it.",
+      "problemLead": "An architectural project has a chronology everybody in the profession knows and almost no software reflects, so the phase you are in has to be read off the documents that exist.",
+      "constraints": [
+        {
+          "title": "The design direction was established before the UX work began, and the brief was to develop it rather than to reconsider it.",
+          "body": ""
+        },
+        {
+          "title": "Five sections, each dense enough to be its own product, have to sit under one navigation without any of them feeling secondary.",
+          "body": ""
+        },
+        {
+          "title": "The phase timeline has to be legible to an architect at a glance and to a client who has never seen ESQ, APS, or APD written down.",
+          "body": ""
+        }
+      ],
+      "approachLead": "Work the improvements into the established direction rather than around it, and make every change one that could be argued for in the client's own terms.",
+      "approachBody": "This was the most constrained brief in this portfolio, and the constraint was the interesting part. The identity — the script wordmark, the navy, the topographic ground, the section titles set as watermarks — was not up for discussion, and neither was the overall shape of the product. Proposing a different direction would have been the wrong instinct as well as an unwelcome one.\n\nSo the case for each change was made in the client's language and against their own goals: legibility for their clients, fewer places to look, less repeated data entry. The phase timeline is the clearest example. It keeps the ornament and the profession's own vocabulary, and adds a state model underneath it — a phase lights up when a document is filed against it, and the furthest lit phase is marked as where the project has reached. The architect gets their chronology; their client gets a progress indicator; nothing about the look had to change to get both.\n\nThe same method runs through the rest. The object catalogue carries the fields a specification actually needs — type, sub-type, manufacturer — with the file thumbnails and their overflow count shown on the card, so a card answers a question rather than inviting a click. Inspirations sits next to an image generator, which is the client's idea, given a place in the flow where it supports the moodboard rather than interrupting it.",
+      "approachCaption": "The phase timeline, with phases lit by the documents filed against them.",
+      "decisions": [
+        {
+          "eyebrow": "Outcome",
+          "title": "Phases Lit by Evidence",
+          "body": "A phase activates when a document is filed against it, so progress is derived from the work rather than self-reported."
+        },
+        {
+          "eyebrow": "Outcome",
+          "title": "Cards That Answer First",
+          "body": "Type, sub-type, manufacturer, and the attachment count are on the card, so browsing a catalogue does not mean opening it."
+        },
+        {
+          "eyebrow": "Outcome",
+          "title": "Change Argued, Not Imposed",
+          "body": "Every UX proposal was framed against the client's own stated goals, which is what kept the direction intact and the improvements in it."
+        }
+      ],
+      "shippedHeading": "The sections the practice works in.",
+      "reflectionLead": "The design constraint here was stakeholder alignment rather than screen real estate, and it taught me more than a free hand would have.",
+      "reflectionBody": "Working inside a direction somebody else is attached to means every recommendation has to be worth the conversation it costs, which is a good filter. I lost some of them and I should have — a few were preferences dressed as principles. The ones that landed were the ones I could tie to something the client already wanted, and the product is better in the places where I did that work rather than in the places where I was simply right.",
+      "cover": "archlist-cover.png",
+      "approachShot": "archlist-1.png",
+      "gallery": [
+        "archlist-2.png",
+        "archlist-3.png"
+      ],
+      "shipped": [
+        {
+          "title": "Calendrier",
+          "body": "The profession's phase chronology, with state driven by filed documents."
+        },
+        {
+          "title": "Carnet",
+          "body": "Trades, inspirations, objects, and warranties under one set of tabs."
+        },
+        {
+          "title": "Objets",
+          "body": "A specification catalogue built to be scanned, with attachments shown on the card."
+        }
+      ]
+    }
+  ]
+}
