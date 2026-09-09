@@ -1321,8 +1321,8 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
    * was missing is the moment the pressure front actually reaches the head:
    * not another explosion, the *near* part of the one already happening.
    *
-   * Two components and no more, both over inside seventy milliseconds. A low
-   * punch whose pitch collapses from 190Hz to 52 in a twentieth of a second,
+   * Two components and no more, both over inside a ninth of a second. A low
+   * punch whose pitch collapses from 190Hz to 52 in a twelfth of a second,
    * which is the body of a front arriving rather than a tone; and a band of
    * air around two kilohertz with an instantaneous attack, which is the crack.
    * Between them they occupy exactly the register the wave buffer does not:
@@ -1339,17 +1339,17 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
   const punch = audio.createOscillator();
   punch.type = 'sine';
   punch.frequency.setValueAtTime(190, slapAt);
-  punch.frequency.exponentialRampToValueAtTime(52, slapAt + 0.055);
+  punch.frequency.exponentialRampToValueAtTime(52, slapAt + 0.085);
 
   const punchGain = audio.createGain();
   punchGain.gain.setValueAtTime(0.0001, slapAt);
   // Three milliseconds to full. Anything slower is a note being played.
   punchGain.gain.exponentialRampToValueAtTime(1.05, slapAt + 0.003);
-  punchGain.gain.exponentialRampToValueAtTime(0.0001, slapAt + 0.075);
+  punchGain.gain.exponentialRampToValueAtTime(0.0001, slapAt + 0.115);
 
   punch.connect(punchGain).connect(master);
   punch.start(slapAt);
-  punch.stop(slapAt + 0.1);
+  punch.stop(slapAt + 0.14);
   voices.push(punch);
 
   if (strikeBuf) {
@@ -1374,11 +1374,11 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
     const airGain = audio.createGain();
     // No ramp in at all: the front does not arrive, it is already here.
     airGain.gain.setValueAtTime(1.2, slapAt);
-    airGain.gain.exponentialRampToValueAtTime(0.0001, slapAt + 0.06);
+    airGain.gain.exponentialRampToValueAtTime(0.0001, slapAt + 0.095);
 
     air.connect(band).connect(airGain).connect(master);
     air.start(slapAt);
-    air.stop(slapAt + 0.09);
+    air.stop(slapAt + 0.13);
     voices.push(air);
   }
 
@@ -1416,12 +1416,14 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
   /**
    * How long after the blast the ring arrives.
    *
-   * Seventy milliseconds: long enough for the ear impact below to be heard
-   * out, short enough that the ring is still plainly its consequence rather
-   * than the next thing to happen. Leave a gap anybody can count and they
-   * become two events; leave none and the impact is never heard at all.
+   * A hundred and ten milliseconds. The impact below is the thing this is
+   * making room for: it runs about that long now, and a mute that arrives
+   * before it has finished is a mute that removes the very sound it is
+   * supposed to be caused by. Long enough for the impact to be heard out,
+   * short enough that the ring is still plainly its consequence rather than
+   * the next thing to happen.
    */
-  const RING_IN = 0.07;
+  const RING_IN = 0.11;
 
   /**
    * How long the mix stays at full before it is taken away.
