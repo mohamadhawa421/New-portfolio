@@ -340,7 +340,53 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
   /* ------------------------------------------------------------------ */
 
   /*
-   * There is no rim and there is no highlight.
+   * Light from above, across the whole sheet.
+   *
+   * This is not the streak that was removed, and the difference is the one
+   * that matters. That was a band sitting over one part of the bar — a bright
+   * patch near Home whatever was underneath it — which is what made it read as
+   * decoration painted on rather than as a property of the surface. This is a
+   * single soft falloff from the top edge down, uniform across the width, at a
+   * few per cent. It is what a thin sheet of glass in a room lit from above
+   * actually looks like, it has no position to be noticed in, and there is no
+   * part of the bar it favours.
+   *
+   * It stops well before the bottom, so the lower half of the pill is nothing
+   * but the material and the page through it. And it is inside the same box as
+   * the tint, so it darkens and brightens with the theme rather than being a
+   * fixed white wash over all three.
+   */
+  .nav::after,
+  .topbar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: var(--nav-sheet, 0);
+    transition: opacity var(--nav-anim, 520ms) ease;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--nav-sheet-hue, #fff) 100%, transparent) 0%,
+      color-mix(in srgb, var(--nav-sheet-hue, #fff) 34%, transparent) 34%,
+      transparent 62%
+    );
+  }
+
+  /* The links sit on the sheet, not under it. */
+  .nav > *,
+  .topbar > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Nothing while the storm has the bar unpinned and unfiltered. */
+  .nav.dm-unpinned::after {
+    opacity: 0;
+  }
+
+  /*
+   * There is no rim and there is no moving highlight.
    *
    * Both were tried and both are gone, for the same reason: a painted layer
    * cannot be a property of the environment. The rim read as a border, which

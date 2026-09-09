@@ -49,11 +49,12 @@ const REVEAL_AT = coarse ? 0.995 : 0.94;
  *
  * Twenty is frosted glass: shapes behind it stop being shapes and become a
  * wash of their average colour, and nothing about the page can then be seen to
- * influence the bar. Eight was the other extreme — the content read straight
- * through and the pill stopped being a surface. Fourteen keeps a moving form
- * recognisable as a form while still softening it into the material.
+ * influence the bar. Ten is the least that still reads as a surface: a form
+ * crossing underneath stays clearly that form, softened rather than dissolved,
+ * which is what makes the material look thin and polished instead of thick and
+ * frosted.
  */
-const NAV_BLUR_PX = coarse ? 10 : 14;
+const NAV_BLUR_PX = coarse ? 7 : 10;
 
 const REVEAL_SELECTOR = '[data-reveal],[data-rise],[data-num]';
 
@@ -543,10 +544,10 @@ function chromePass(): void {
     '--nav-bg',
     dressed
       ? root.hasAttribute('data-super')
-        ? 'rgba(22,8,42,0.64)'
+        ? 'rgba(20,7,40,0.52)'
         : overDark
-          ? 'rgba(24,24,28,0.62)'
-          : 'rgba(255,255,255,0.68)'
+          ? 'rgba(20,20,24,0.5)'
+          : 'rgba(255,255,255,0.6)'
       : 'transparent'
   );
   /*
@@ -587,10 +588,10 @@ function chromePass(): void {
    * is another backdrop root for the compositor to build on every frame, and
    * this bar is on screen for the whole visit.
    */
-  const lift = overDark ? 'brightness(1.07)' : 'brightness(1.01)';
+  const lift = overDark ? 'brightness(1.14)' : 'brightness(1.02)';
   styles.setProperty(
     '--nav-blur',
-    dressed ? `saturate(185%) contrast(1.06) ${lift} blur(${NAV_BLUR_PX}px)` : 'none'
+    dressed ? `saturate(210%) contrast(1.04) ${lift} blur(${NAV_BLUR_PX}px)` : 'none'
   );
   /*
    * The shadow separates the glass from the page rather than decorating it.
@@ -609,13 +610,24 @@ function chromePass(): void {
   );
 
   /*
-   * There is nothing else to set.
+   * The light on the sheet, and how much of it there is.
    *
-   * The rim, the lip and the sheen each had a token here and a painted layer
-   * in SiteNav.astro reading it. Both layers are gone — see the note there —
-   * so these would be three custom properties written on most frames with
-   * nothing on the page listening to any of them.
+   * One value and one colour, both constant for the theme — there is nothing
+   * per-frame here and nothing that tracks the scroll. The gradient itself is
+   * in SiteNav.astro; all this decides is whether it is on, and what colour
+   * the room is lit in.
+   *
+   * Stronger on the dark themes than on the light one, which is the whole
+   * reason it is a token rather than a fixed white. On a dark material a few
+   * per cent of light down the top face is the difference between glass and a
+   * grey rectangle; on a white one the same gradient is invisible at best and
+   * a smudge at worst, so it is barely there. Super designer mode is lit in
+   * its own violet, because white light in that room reads as a piece of
+   * another site's chrome.
    */
+  const superb = root.hasAttribute('data-super');
+  styles.setProperty('--nav-sheet-hue', superb ? 'rgba(216,180,254,0.16)' : overDark ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.2)');
+  styles.setProperty('--nav-sheet', dressed ? '1' : '0');
   styles.setProperty('--nav-ink', overDark ? '#ffffff' : '#1d1d1f');
   styles.setProperty('--logo-op', condensed ? '0' : '1');
   styles.setProperty('--logo-y', condensed ? '-10px' : '0px');

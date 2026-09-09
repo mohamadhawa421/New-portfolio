@@ -1348,7 +1348,7 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
    * this, in opposite directions, so there is no second number that could
    * drift out of step with the first.
    */
-  const RING_FADE = 1.6;
+  const RING_FADE = 2.0;
   /**
    * The shape of the hearing coming back, as a curve rather than a hold.
    *
@@ -1364,20 +1364,45 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
    * between the two curves is the whole illusion — hearing does not return in
    * proportion to the damage, it returns faster than the ringing leaves.
    */
-  const RETURN: Array<[number, number]> = [
-    [0, 0],
-    [0.25, 0.15],
-    [0.5, 0.45],
-    [0.75, 0.8],
-    [0.9, 1],
+  /**
+   * How long nothing else is audible at all.
+   *
+   * Eight hundred milliseconds of the two seconds, and this is the correction
+   * that mattered. The recovery used to begin the instant the ring did, which
+   * meant the world was already measurably back a quarter of the way in —
+   * technically a crossfade, and perceptually the storm never went away. There
+   * has to be a stretch long enough to be *noticed* as absence before anything
+   * is allowed to return, or the effect is a dip rather than a deafening.
+   */
+  const RING_SOLO = 0.4;
+
+  /**
+   * And then the two of them trade places, across the rest of it.
+   *
+   * Positions are fractions of the whole window, so the recovery occupies
+   * everything after the solo. The world is deliberately behind the ring for
+   * most of it — at the midpoint of the recovery the ring is at half and the
+   * world only at thirty per cent — because hearing coming back is not a
+   * crossfade between two equals. The ring is what is being taken away; the
+   * world is what is being let in, and it is let in slowly at first.
+   */
+  const RETURN: Array<[number, number, number]> = [
+    // through the window | ring | world
+    [0.4, 1, 0],
+    [0.5, 0.9, 0.05],
+    [0.6, 0.7, 0.15],
+    [0.7, 0.5, 0.3],
+    [0.8, 0.3, 0.55],
+    [0.9, 0.1, 0.8],
+    [1, 0, 1],
   ];
 
   if (ringBus && duck && muffle) {
     const ringAt = blastAt + RING_IN;
 
     for (const [hz, level] of [
-      [8150, 0.056],
-      [8221, 0.035],
+      [8720, 0.062],
+      [8797, 0.039],
     ] as const) {
       const tone = audio.createOscillator();
       tone.type = 'sine';
@@ -1399,19 +1424,23 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
       toneGain.gain.setValueAtTime(0.0001, ringAt);
       // Faster in than anything else in the sequence: it is a consequence of
       // the transient, so it has to arrive inside it.
-      toneGain.gain.exponentialRampToValueAtTime(level, ringAt + 0.015);
+      // Eight milliseconds. It is a consequence of the transient and has to
+      // arrive inside it — anything longer and the ring fades in, which is a
+      // sound effect starting rather than hearing being taken away.
+      toneGain.gain.exponentialRampToValueAtTime(level, ringAt + 0.008);
       /*
-       * Straight down, the whole way, and nothing else.
+       * Full through the solo, then down the table above.
        *
-       * Linear rather than exponential, because an exponential is already
-       * inaudible a third of the way down — which would put silence exactly
-       * where the world is supposed to be coming back and turn one event into
-       * two. A straight line keeps the ring present for the whole of its own
-       * fade, which is what the return curve above is measured against: at
-       * every instant, how much ring is left is simply how much of the window
-       * is left.
+       * Linear between the points rather than exponential: an exponential is
+       * already inaudible a third of the way down, which would put silence
+       * exactly where the world is supposed to be arriving and turn one event
+       * into two.
        */
-      toneGain.gain.linearRampToValueAtTime(0, ringAt + RING_FADE);
+      toneGain.gain.setValueAtTime(level, ringAt + RING_FADE * RING_SOLO);
+      for (const [at, ring] of RETURN) {
+        if (at <= RING_SOLO) continue;
+        toneGain.gain.linearRampToValueAtTime(level * ring, ringAt + RING_FADE * at);
+      }
 
       tone.connect(toneGain).connect(ringBus);
       tone.start(ringAt);
@@ -1428,17 +1457,17 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
      * hearing for a second, and for that second there is nothing else to hear:
      * the ring is not sitting on top of the storm, it has replaced it.
      *
-     * It leaves zero immediately and climbs the curve above, which is ahead of
-     * the ring the whole way — so the world is audibly returning while the
-     * ring is still the loudest thing, and is fully back before the ring has
-     * quite gone. That lead is what makes it a recovery rather than a
-     * crossfade between two effects.
+     * Zero, and held at zero for the whole of the solo. Not a twelfth, not a
+     * distant version of the storm — nothing, for eight hundred milliseconds,
+     * so that the absence is long enough to be registered as absence.
      *
-     * And it overshoots. Coming back to exactly 1 and stopping is a fader
-     * being restored; going a little past and settling is a room arriving all
-     * at once and then finding its level, which is what the ear expects after
-     * it has been shut out of something loud. Twelve per cent, on a wave that
-     * is well into its own decay by this point, so nothing peaks.
+     * Then it climbs the table above, behind the ring the whole way. And it
+     * overshoots at the end: coming back to exactly 1 and stopping is a fader
+     * being restored, while going a little past and settling is a room
+     * arriving all at once and then finding its level, which is what the ear
+     * expects after it has been shut out of something loud. The lowpass is
+     * still closing over the first part of that return, so what arrives first
+     * is heavy and dull and only then becomes the storm again.
      *
      * Both of these are also written at t0, not only at the blast. `end` puts
      * them back but it ramps, and a storm torn down mid-dip would otherwise
@@ -1465,13 +1494,14 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
     duck.gain.setValueAtTime(1, t0);
     duck.gain.setValueAtTime(1, blastAt);
     duck.gain.linearRampToValueAtTime(0, ringAt + 0.02);
-    for (const [at, level] of RETURN) {
-      if (at === 0) continue;
-      duck.gain.linearRampToValueAtTime(level, ringAt + RING_FADE * at);
+    duck.gain.setValueAtTime(0, ringAt + RING_FADE * RING_SOLO);
+    for (const [at, , world] of RETURN) {
+      if (at <= RING_SOLO) continue;
+      duck.gain.linearRampToValueAtTime(world, ringAt + RING_FADE * at);
     }
     // The brief heavy moment, and then its own level.
-    duck.gain.linearRampToValueAtTime(1.12, ringAt + RING_FADE * 0.96);
-    duck.gain.linearRampToValueAtTime(1, ringAt + RING_FADE * 1.25);
+    duck.gain.linearRampToValueAtTime(1.18, ringAt + RING_FADE * 1.04);
+    duck.gain.linearRampToValueAtTime(1, ringAt + RING_FADE * 1.3);
 
     /*
      * And the top comes off with it, and comes back sooner than the level.
@@ -1488,8 +1518,12 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
     muffle.frequency.cancelScheduledValues(t0);
     muffle.frequency.setValueAtTime(20000, t0);
     muffle.frequency.setValueAtTime(20000, blastAt);
-    muffle.frequency.exponentialRampToValueAtTime(700, ringAt + 0.025);
-    muffle.frequency.exponentialRampToValueAtTime(20000, ringAt + RING_FADE * 0.8);
+    muffle.frequency.exponentialRampToValueAtTime(520, ringAt + 0.025);
+    muffle.frequency.setValueAtTime(520, ringAt + RING_FADE * RING_SOLO);
+    // Opening well behind the level, so the first of the world back is muffled
+    // and heavy rather than simply quiet.
+    muffle.frequency.exponentialRampToValueAtTime(2600, ringAt + RING_FADE * 0.8);
+    muffle.frequency.exponentialRampToValueAtTime(20000, ringAt + RING_FADE * 1.1);
   }
 
   /* ---- The strikes' level, which follows the storm ------------------- */
