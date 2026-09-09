@@ -33,6 +33,9 @@ import EggSound from './EggSound.astro';
 {/* The ground under it all, flexing as the front crosses. A crest of caught
     light with a trough behind it, which is how a bend in a surface is drawn —
     and the only layer here that is not itself the wave. */}
+{/* What the crossing left behind: a displaced highlight that lingers a
+    fraction of a second where the pressure has already been, and is gone. */}
+<div class="scar" data-egg-scar aria-hidden="true"></div>
 <div class="bend" data-egg-bend aria-hidden="true"></div>
 <div class="shock" data-egg-shock aria-hidden="true"></div>
 <div class="ring" data-egg-ring aria-hidden="true"></div>
@@ -266,6 +269,7 @@ import EggSound from './EggSound.astro';
     const flash = document.querySelector<HTMLElement>('[data-egg-flash]');
     const shock = document.querySelector<HTMLElement>('[data-egg-shock]');
     const bend = document.querySelector<HTMLElement>('[data-egg-bend]');
+    const scar = document.querySelector<HTMLElement>('[data-egg-scar]');
     const field = document.querySelector<HTMLCanvasElement>('[data-egg-field]');
     const trigger = document.querySelector<HTMLElement>('[data-egg-trigger]');
     const toggle = document.querySelector<HTMLButtonElement>('[data-egg-sound]');
@@ -289,7 +293,7 @@ import EggSound from './EggSound.astro';
       root.style.setProperty('--dm-fx', `${originX}px`);
       root.style.setProperty('--dm-fy', `${originY}px`);
 
-      for (const el of [ring!, trail!, wash!, flash!, shock!, bend!]) {
+      for (const el of [ring!, trail!, wash!, flash!, shock!, bend!, scar!]) {
         el.style.setProperty('--egg-x', `${originX}px`);
         el.style.setProperty('--egg-y', `${originY}px`);
         el.style.setProperty('--egg-reach', `${Math.ceil(reach)}px`);
@@ -831,6 +835,89 @@ import EggSound from './EggSound.astro';
    * sheet always has about the same number of rings across it whatever it is
    * being drawn on and the crest always has something of its own size to lift.
    */
+  /*
+   * What the front left behind it.
+   *
+   * The bend is the sheet flexing *as* the pressure arrives, and it leaves
+   * with the pressure. This is the quarter of a second afterwards, where the
+   * screen has not quite finished having been hit — the same band, two thirds
+   * of a viewport-width behind the crest, at a fraction of the strength, and
+   * gone before anybody could decide whether they saw it.
+   *
+   * It is not a glow, and the structure is what stops it being one. A glow is
+   * light added to a page, which on the dark theme is the only thing it can
+   * be; this is a light edge with a dark one immediately behind it, which is
+   * what a displacement actually leaves and which adds almost no net luminance
+   * to either theme. Its own tokens rather than the bend's, at well under half
+   * the alpha, because the bend is meant to be seen and this is meant to be
+   * felt.
+   *
+   * Driven by the same origin, the same reach and the same click as every
+   * other layer — it is handed `--egg-x`, `--egg-y` and `--egg-reach` in the
+   * same loop, so it travels with the front by construction rather than by a
+   * number that has to be kept in step with one.
+   */
+  .scar {
+    background: radial-gradient(
+      circle,
+      transparent 34%,
+      color-mix(in srgb, var(--dm-scar-dark) 40%, transparent) 52%,
+      var(--dm-scar-dark) 63%,
+      var(--dm-scar-light) 74%,
+      color-mix(in srgb, var(--dm-scar-light) 30%, transparent) 84%,
+      transparent 93%
+    );
+  }
+
+  .scar.is-rippling {
+    /*
+     * Longer than the bend and starting behind it, which is the whole idea:
+     * 620ms of crossing and then a tail that is still fading 260ms after the
+     * crest has gone past. Linear for the same reason the bend is — the shape
+     * is in the keyframes, and an eased scale would put the trace in the wrong
+     * place relative to a front that is not eased.
+     */
+    animation: egg-scar 880ms linear both;
+  }
+
+  /*
+   * The trace, always behind the crest and never in front of it.
+   *
+   * The scale values are the bend's, shifted back: at any instant this ring is
+   * at roughly three quarters of the radius the bend has reached, so it is
+   * inside the front rather than racing it. Opacity peaks low and late and
+   * then spends the last third going out, which is the "remembers" part —
+   * the strongest moment of the scar is after the strongest moment of the
+   * pressure, not with it.
+   */
+  @keyframes egg-scar {
+    0% {
+      opacity: 0;
+      transform: scale(0.04);
+    }
+    /* Nothing yet: the front is still on top of its own trace. */
+    12% {
+      opacity: 0;
+      transform: scale(0.2);
+    }
+    30% {
+      opacity: 0.55;
+      transform: scale(0.46);
+    }
+    52% {
+      opacity: 1;
+      transform: scale(0.76);
+    }
+    70% {
+      opacity: 0.78;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.24);
+    }
+  }
+
   .bend::before {
     content: '';
     position: absolute;
@@ -900,7 +987,8 @@ import EggSound from './EggSound.astro';
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .bend.is-rippling {
+    .bend.is-rippling,
+    .scar.is-rippling {
       animation-duration: 0.001ms;
     }
   }
@@ -953,7 +1041,8 @@ import EggSound from './EggSound.astro';
   .ring,
   .shock,
   .wash,
-  .bend {
+  .bend,
+  .scar {
     position: fixed;
     left: var(--egg-x, 50%);
     top: var(--egg-y, 50%);

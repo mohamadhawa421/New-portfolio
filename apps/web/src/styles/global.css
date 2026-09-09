@@ -676,6 +676,19 @@ figure {
   --dm-bend-trough: color-mix(in srgb, var(--dm-deep) 30%, transparent);
   /* The rings. Faint enough to be texture rather than a diagram. */
   --dm-bend-line: color-mix(in srgb, var(--dm-deep) 32%, transparent);
+  /*
+   * The trace the crossing leaves, and why it is a pair.
+   *
+   * A single colour here is a glow, and a glow is the one thing this must not
+   * be: it would add light to a page that has just been hit rather than show
+   * that it was. A dark edge with a light one immediately outside it is what a
+   * displacement leaves behind, nets to almost no change in overall luminance,
+   * and reads on a white ground and a black one without being told which it is
+   * on. Roughly a third of the bend's strength on every theme — the bend is to
+   * be seen, this is to be felt.
+   */
+  --dm-scar-dark: color-mix(in srgb, var(--dm-deep) 11%, transparent);
+  --dm-scar-light: color-mix(in srgb, #fff 26%, transparent);
 
   /* Slow, because the purple draining out of the site is part of the storm
      passing rather than a colour being switched back. */
@@ -1256,6 +1269,8 @@ figure {
   --dm-bend-crest: color-mix(in srgb, var(--dm-core) 72%, transparent);
   --dm-bend-trough: color-mix(in srgb, #000 52%, transparent);
   --dm-bend-line: color-mix(in srgb, var(--dm-arc) 40%, transparent);
+  --dm-scar-dark: color-mix(in srgb, #000 24%, transparent);
+  --dm-scar-light: color-mix(in srgb, var(--dm-core) 26%, transparent);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1263,6 +1278,8 @@ figure {
     --dm-bend-crest: color-mix(in srgb, var(--dm-core) 72%, transparent);
     --dm-bend-trough: color-mix(in srgb, #000 52%, transparent);
     --dm-bend-line: color-mix(in srgb, var(--dm-arc) 40%, transparent);
+  --dm-scar-dark: color-mix(in srgb, #000 24%, transparent);
+  --dm-scar-light: color-mix(in srgb, var(--dm-core) 26%, transparent);
   }
 }
 
@@ -1285,4 +1302,6 @@ figure {
   --dm-bend-crest: color-mix(in srgb, var(--dm-arc) 74%, transparent);
   --dm-bend-trough: color-mix(in srgb, #10002a 62%, transparent);
   --dm-bend-line: color-mix(in srgb, var(--dm-arc) 46%, transparent);
+  --dm-scar-dark: color-mix(in srgb, #10002a 28%, transparent);
+  --dm-scar-light: color-mix(in srgb, var(--dm-arc) 28%, transparent);
 }
