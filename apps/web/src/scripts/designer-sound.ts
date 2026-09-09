@@ -1344,7 +1344,7 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
   const punchGain = audio.createGain();
   punchGain.gain.setValueAtTime(0.0001, slapAt);
   // Three milliseconds to full. Anything slower is a note being played.
-  punchGain.gain.exponentialRampToValueAtTime(0.95, slapAt + 0.003);
+  punchGain.gain.exponentialRampToValueAtTime(1.05, slapAt + 0.003);
   punchGain.gain.exponentialRampToValueAtTime(0.0001, slapAt + 0.075);
 
   punch.connect(punchGain).connect(master);
@@ -1373,7 +1373,7 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
 
     const airGain = audio.createGain();
     // No ramp in at all: the front does not arrive, it is already here.
-    airGain.gain.setValueAtTime(1.05, slapAt);
+    airGain.gain.setValueAtTime(1.2, slapAt);
     airGain.gain.exponentialRampToValueAtTime(0.0001, slapAt + 0.06);
 
     air.connect(band).connect(airGain).connect(master);
@@ -1416,14 +1416,31 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
   /**
    * How long after the blast the ring arrives.
    *
-   * Widened from thirty to fifty-five milliseconds to make room for the ear
-   * impact below, and no further. The whole point of that layer is that the
-   * ring is its consequence: leave a gap you can count and they become two
-   * events, one of which happens to follow the other. At fifty-five the
-   * impact's transient has peaked and the ring is already arriving underneath
-   * its decay.
+   * Seventy milliseconds: long enough for the ear impact below to be heard
+   * out, short enough that the ring is still plainly its consequence rather
+   * than the next thing to happen. Leave a gap anybody can count and they
+   * become two events; leave none and the impact is never heard at all.
    */
-  const RING_IN = 0.055;
+  const RING_IN = 0.07;
+
+  /**
+   * How long the mix stays at full before it is taken away.
+   *
+   * This is the fix for an impact nobody could hear. The duck used to ramp
+   * from 1 at the blast to 0 at the ring, which sounds harmless and is not: it
+   * is a fade-out laid over the loudest moment in the sequence. At fifty
+   * milliseconds past the blast the whole mix was already at a third of level,
+   * so the ear impact — which lives entirely inside that window — was being
+   * faded out while it played, and the shock's own transient boost was being
+   * halved underneath it.
+   *
+   * The mute has to be a cut, not a fade. Everything stays at full until
+   * eighteen milliseconds before the ring and is gone four milliseconds after
+   * it, which is fast enough to read as the sound being taken away rather than
+   * turned down, and late enough that the blast and the impact are both heard
+   * at the level they were written at.
+   */
+  const MUTE_MS = 0.018;
   /**
    * How long the hearing takes to come back, and it is the only clock here.
    *
@@ -1576,7 +1593,8 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
     duck.gain.cancelScheduledValues(t0);
     duck.gain.setValueAtTime(1, t0);
     duck.gain.setValueAtTime(1, blastAt);
-    duck.gain.linearRampToValueAtTime(0, ringAt + 0.02);
+    duck.gain.setValueAtTime(1, ringAt - MUTE_MS);
+    duck.gain.linearRampToValueAtTime(0, ringAt + 0.004);
     duck.gain.setValueAtTime(0, ringAt + RING_FADE * RING_SOLO);
     for (const [at, , world] of RETURN) {
       if (at <= RING_SOLO) continue;
@@ -1601,7 +1619,9 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
     muffle.frequency.cancelScheduledValues(t0);
     muffle.frequency.setValueAtTime(20000, t0);
     muffle.frequency.setValueAtTime(20000, blastAt);
-    muffle.frequency.exponentialRampToValueAtTime(520, ringAt + 0.025);
+    // Held open for the same reason, and shut on the same frame.
+    muffle.frequency.setValueAtTime(20000, ringAt - MUTE_MS);
+    muffle.frequency.exponentialRampToValueAtTime(520, ringAt + 0.004);
     muffle.frequency.setValueAtTime(520, ringAt + RING_FADE * RING_SOLO);
     // Opening well behind the level, so the first of the world back is muffled
     // and heavy rather than simply quiet.
