@@ -514,14 +514,25 @@ function chromePass(): void {
    * own tint rather than the neutral dark one: a grey pill on that ground reads
    * as a panel from another site sitting on top of the room.
    */
+  /*
+   * Thin enough to see through, which is most of what changed here.
+   *
+   * These were 0.72 to 0.78, and at that alpha the pill is a painted surface
+   * with a blur behind it: the page underneath contributes almost nothing, so
+   * nothing about the material reacts to what passes below. Around a half is
+   * the point where the content behind starts to actually drive the colour of
+   * the glass — which is the whole idea — and the readability that alpha used
+   * to buy is bought instead by the filter below, which now leans on contrast
+   * and brightness rather than on opacity.
+   */
   styles.setProperty(
     '--nav-bg',
     dressed
       ? root.hasAttribute('data-super')
-        ? 'rgba(22,8,42,0.78)'
+        ? 'rgba(22,8,42,0.46)'
         : overDark
-          ? 'rgba(28,28,32,0.72)'
-          : 'rgba(255,255,255,0.74)'
+          ? 'rgba(24,24,28,0.44)'
+          : 'rgba(255,255,255,0.5)'
       : 'transparent'
   );
   /*
@@ -544,8 +555,56 @@ function chromePass(): void {
    * it still interpolates: an empty filter list animates from the identity of
    * whatever it is going to, so the blur fades in on scroll exactly as before.
    */
-  styles.setProperty('--nav-blur', dressed ? `saturate(180%) blur(${NAV_BLUR_PX}px)` : 'none');
-  styles.setProperty('--nav-shadow', `0 1px 8px rgba(0,0,0,${dressed ? 0.07 : 0})`);
+  /*
+   * The filter does the work the opacity used to.
+   *
+   * Saturation is what lets colour behind the glass reach the front of it — a
+   * blue section or the storm's purple arrives as a tint rather than as grey —
+   * and it is pushed further than before because there is now half as much
+   * paint on top to hide it. Brightness and contrast are the readability: over
+   * a dark page the backdrop is lifted so the white type has something to sit
+   * on, over a light one it is pressed down, and in both cases the contrast
+   * term stops a busy photograph turning the bar into noise.
+   *
+   * One filter, not several stacked layers. Every additional backdrop-filter
+   * is another backdrop root for the compositor to build on every frame, and
+   * this bar is on screen for the whole visit.
+   */
+  const lift = overDark ? 'brightness(1.22)' : 'brightness(1.04)';
+  styles.setProperty(
+    '--nav-blur',
+    dressed ? `saturate(210%) contrast(1.08) ${lift} blur(${NAV_BLUR_PX}px)` : 'none'
+  );
+  /*
+   * The shadow separates the glass from the page rather than decorating it.
+   *
+   * Two of them now: a tight one that is the sheet's own contact shadow, and a
+   * wider soft one that is what gives it somewhere to float. Deeper over a
+   * dark page, because a light-coloured sheet on a dark ground needs less
+   * help to be seen than the other way round.
+   */
+  const cast = overDark ? 0.34 : 0.1;
+  styles.setProperty(
+    '--nav-shadow',
+    dressed
+      ? `0 1px 2px rgba(0,0,0,${(cast * 0.5).toFixed(3)}), 0 8px 28px rgba(0,0,0,${cast.toFixed(3)})`
+      : '0 1px 8px rgba(0,0,0,0)'
+  );
+
+  /*
+   * Which way the light is coming from, and how hard the lip under it is.
+   *
+   * The rim is the colour of whatever is lighting the room: white on the two
+   * neutral themes, and the mode's own violet in super designer mode, where a
+   * white edge reads as a piece of another site's chrome. Both are used at
+   * single-figure percentages — see the layers in SiteNav.astro — so what
+   * changes between themes is the hue of the highlight rather than its
+   * strength.
+   */
+  const superb = root.hasAttribute('data-super');
+  styles.setProperty('--nav-rim', superb ? '#d8b4fe' : '#ffffff');
+  styles.setProperty('--nav-lip', superb ? '#12002e' : '#000000');
+  styles.setProperty('--nav-glass', dressed ? '1' : '0');
   styles.setProperty('--nav-ink', overDark ? '#ffffff' : '#1d1d1f');
   styles.setProperty('--logo-op', condensed ? '0' : '1');
   styles.setProperty('--logo-y', condensed ? '-10px' : '0px');
@@ -553,7 +612,32 @@ function chromePass(): void {
 
   const mark = document.querySelector<HTMLElement>('[data-logo] img');
   if (mark) mark.style.filter = overDark ? 'brightness(0) invert(1)' : 'none';
+
+  /*
+   * Where the light is caught, which is a function of how far the page has
+   * moved and of nothing else.
+   *
+   * The brief for this material is that it should react to its environment
+   * rather than perform on a clock, so there is no animation behind the
+   * highlight: it is placed from the scroll offset, in the pass that was
+   * already running for the ink and the pill, and it is therefore perfectly
+   * still whenever the page is. A full sweep every two viewport-heights, so
+   * across a long page the highlight crosses the bar a handful of times and
+   * never fast enough to be watched.
+   *
+   * Quantised to two places and skipped when unchanged, because this is the
+   * one value here that moves on most frames and a custom property write is a
+   * style invalidation of everything that reads it.
+   */
+  const sweep = Math.round(((window.scrollY / (window.innerHeight * 2)) % 1) * 100) / 100;
+  if (sweep !== lastSheen) {
+    lastSheen = sweep;
+    styles.setProperty('--nav-sheen', String(sweep));
+  }
 }
+
+/** The last sheen written, so an unchanged one is not written again. */
+let lastSheen = -1;
 
 let observer: IntersectionObserver | null = null;
 /** The observer's last-resort timer, cancelled whenever the observer is. */

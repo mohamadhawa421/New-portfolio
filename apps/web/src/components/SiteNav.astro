@@ -327,6 +327,114 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
       backdrop-filter var(--nav-anim, 520ms) ease;
   }
 
+  /* ------------------------------------------------------------------ */
+  /* The material                                                        */
+  /*                                                                     */
+  /* The bar is meant to read as a thin piece of frosted glass rather     */
+  /* than as a blurred rectangle, and the difference between those two is */
+  /* almost entirely edges. A blur has none: it is uniformly soft, so it  */
+  /* has no thickness and no side facing the light. These two layers give */
+  /* it both, and neither of them filters anything — they are gradients   */
+  /* over the blur that is already there, so the compositor still builds  */
+  /* exactly one backdrop root for this element.                          */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * Thickness: a bright rim along the top edge and a darker one along the
+   * bottom, both hairline, both inset.
+   *
+   * This is what a real edge does — the top catches the light and the bottom
+   * is in the shadow of the sheet's own depth — and it is the single cheapest
+   * thing that stops a translucent panel looking like a hole cut in the page.
+   * Painted rather than bordered: a border would take part in layout and the
+   * bar's height is tuned.
+   */
+  .nav::before,
+  .topbar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: var(--nav-glass, 0);
+    transition: opacity var(--nav-anim, 520ms) ease;
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--nav-rim, #fff) 62%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, var(--nav-lip, #000) 22%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--nav-rim, #fff) 12%, transparent);
+  }
+
+  /*
+   * Light on the surface, and it moves because the page does.
+   *
+   * A broad, very low-contrast sweep across the glass, positioned by
+   * `--nav-sheen` — which chrome.ts sets from the scroll offset inside the
+   * frame it was already doing its other work in. So the highlight travels
+   * when the content travels and is still when the page is still, which is
+   * the difference between a material reacting to its environment and a
+   * rectangle with an animation on it.
+   *
+   * `plus-lighter` rather than an alpha white: it adds light instead of
+   * painting over, so the colour the backdrop-filter pulled through from
+   * behind survives underneath the highlight rather than being washed out by
+   * it. Over a quiet grey section there is nothing much to add to and the
+   * sweep is invisible; over something bright or saturated it catches.
+   */
+  .nav::after,
+  .topbar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: var(--nav-glass, 0);
+    transition: opacity var(--nav-anim, 520ms) ease;
+    mix-blend-mode: plus-lighter;
+    background: linear-gradient(
+      100deg,
+      transparent calc(var(--nav-sheen, 0.5) * 100% - 42%),
+      color-mix(in srgb, var(--nav-rim, #fff) 9%, transparent) calc(var(--nav-sheen, 0.5) * 100% - 6%),
+      color-mix(in srgb, var(--nav-rim, #fff) 15%, transparent) calc(var(--nav-sheen, 0.5) * 100%),
+      color-mix(in srgb, var(--nav-rim, #fff) 9%, transparent) calc(var(--nav-sheen, 0.5) * 100% + 6%),
+      transparent calc(var(--nav-sheen, 0.5) * 100% + 42%)
+    );
+  }
+
+  /*
+   * The links have to sit on the glass, not under it.
+   *
+   * Both layers are `inset: 0` siblings of the content, so without this the
+   * sheen would be painted over the type. A stacking context on the children
+   * rather than a z-index on the layers, because the layers are also what the
+   * rim is drawn with and it belongs above the tint.
+   */
+  .nav > *,
+  .topbar > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /*
+   * Nothing at all while the wave is taking the page apart.
+   *
+   * The storm unpins the bar and removes its backdrop-filter entirely (see
+   * `.nav.dm-unpinned` below); leaving a rim and a highlight behind would be
+   * a pill-shaped outline floating over a page that no longer has a pill.
+   */
+  .nav.dm-unpinned::before,
+  .nav.dm-unpinned::after {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav::before,
+    .nav::after,
+    .topbar::before,
+    .topbar::after {
+      transition: none;
+    }
+  }
+
   .nav__link {
     display: inline-flex;
     align-items: center;
