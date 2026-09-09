@@ -98,6 +98,16 @@ async function main() {
 }
 
 main().catch((error) => {
+  /*
+   * knex's pool abort arrives here, after everything has already committed.
+   *
+   * The process-level handlers above catch it while the script is running, but
+   * `strapi.destroy()` can also reject with it directly — and reporting that as
+   * a failure on a run that did all of its work is worse than saying nothing,
+   * because the obvious response is to run the script again and shift every
+   * order a second time.
+   */
+  if (error instanceof Error && error.message === 'aborted') return;
   console.error(error);
   process.exit(1);
 });

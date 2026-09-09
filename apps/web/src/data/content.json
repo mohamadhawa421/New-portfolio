@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-09T10:15:26.014Z",
+  "generatedAt": "2026-09-09T15:14:50.166Z",
   "siteSetting": {
     "id": 1,
     "siteName": "Mohamad Hawa",
@@ -1102,13 +1102,296 @@
       }
     },
     {
-      "id": 107,
+      "id": 115,
+      "title": "RM Luxury",
+      "slug": "rm-luxury",
+      "discipline": "Landing page redesign",
+      "summary": "A self-initiated redesign for a private-chauffeur and concierge service, working out how a quote-only offer sells itself with no prices to show. Concept work — never commissioned or built.",
+      "role": "UI / UX Design",
+      "order": 6,
+      "featured": false,
+      "chipBg": "#f2f2f4",
+      "chipInk": "#86868b",
+      "briefLead": "No client and no brief on this one. Chauffeur and concierge sites kept striking me as the same page every time — a lot of adjectives about discretion and excellence, and almost nothing a visitor can actually decide between — so I set myself the exercise of building one that sells the service without any of that.",
+      "briefBody": "Nothing here was commissioned by anyone, delivered to a team, or built. It is a personal study of a category I find badly served.",
+      "problemLead": "A service with no published prices and no availability calendar has nothing concrete to put on a page, which is why so many of them fall back on adjectives.",
+      "approachLead": "Let the fleet and the occasions do the explaining, and treat the quote as the product rather than as a fallback.",
+      "approachBody": "The service picker puts the four offers behind one set of tabs so the site can be broad without the home page having to be. Inside Transport, each vehicle gets the full width and a single specification line — the class and the fact that reservation is on quotation — because those are the two things a visitor is actually deciding between.\n\nThe rest is photography doing work the copy cannot. Where a competitor would write about discretion, this shows a driver holding a door, a family arriving at a hotel, a room set for an event. Type stays quiet and black on white so nothing competes with it.",
+      "approachCaption": "The service picker, with the fleet given the full width of the page.",
+      "shippedHeading": "The pages that carry the offer.",
+      "reflectionLead": "Redesigning a category rather than a product means the brief is entirely mine, which makes it easy to solve a problem nobody has.",
+      "reflectionBody": "The discipline I set myself was to remove a claim every time I wanted to add one, and let the fleet, the occasions, and a very plain type treatment carry the positioning instead. Whether that actually converts better than the adjectives is exactly the thing a self-initiated concept cannot tell you — it would need a real operator, real enquiries, and something to compare against.",
+      "categories": [
+        {
+          "id": 103,
+          "label": "Redesign web / mobile"
+        },
+        {
+          "id": 104,
+          "label": "Landing page / showcase website"
+        }
+      ],
+      "cover": null,
+      "approachShot": null,
+      "gallery": [],
+      "constraints": [
+        {
+          "id": 427,
+          "title": "Transport, travel, restaurants, and hotels are four unrelated offers coming from one small operation.",
+          "body": ""
+        },
+        {
+          "id": 428,
+          "title": "Nothing can carry a price, so every route has to end in a quote without that reading as a dead end.",
+          "body": ""
+        },
+        {
+          "id": 429,
+          "title": "The category is judged on discretion, and a site that tries too hard says the opposite of what it means to.",
+          "body": ""
+        }
+      ],
+      "decisions": [
+        {
+          "id": 427,
+          "eyebrow": "Outcome",
+          "title": "One Picker, Four Services",
+          "body": "Transport, travel, restaurants, and hotels share a single tabbed surface instead of four competing sections."
+        },
+        {
+          "id": 428,
+          "eyebrow": "Outcome",
+          "title": "Quote as the Destination",
+          "body": "Every route ends at the same enquiry, stated plainly on the card rather than hidden behind a price nobody can publish."
+        },
+        {
+          "id": 429,
+          "eyebrow": "Outcome",
+          "title": "Photography Over Adjectives",
+          "body": "The standard of the service is shown in the images so the copy never has to claim it."
+        }
+      ],
+      "metrics": [
+        {
+          "id": 445,
+          "value": "Services Overview",
+          "label": "A horizontal set of offers with the enquiry available from the first screen.",
+          "animate": false
+        },
+        {
+          "id": 446,
+          "value": "About & Positioning",
+          "label": "The case for the company, split between two calls to action rather than one.",
+          "animate": false
+        },
+        {
+          "id": 447,
+          "value": "Fleet & Quotation",
+          "label": "One vehicle at a time, with class and reservation terms stated on the card.",
+          "animate": false
+        }
+      ],
+      "seo": {
+        "id": 180,
+        "metaTitle": "RM Luxury — Mohamad Hawa",
+        "metaDescription": "A self-initiated redesign for a private-chauffeur and concierge service, working out how a quote-only offer sells itself with no prices to show.",
+        "shareImage": null
+      }
+    },
+    {
+      "id": 117,
+      "title": "Club Expert+ — Phonak",
+      "slug": "club-expert-phonak",
+      "discipline": "Mobile app design",
+      "summary": "A membership app for the hearing-care professionals in Phonak's Club Expert+ programme, gathering the news, training, product documents, and priority support they were chasing across other channels.",
+      "role": "UI / UX Design",
+      "order": 7,
+      "featured": false,
+      "chipBg": "#101010",
+      "chipInk": "#8ac53f",
+      "briefLead": "Phonak's partner professionals already had the benefits of the Club Expert+ programme. What they did not have was one place to use them, so the material lived in inboxes, portals, and phone calls.",
+      "briefBody": "The app had to serve people who open it between patient appointments, on a shop floor, with a few minutes at most — and who are the reason the programme exists rather than its audience of last resort.",
+      "problemLead": "A membership programme is only worth as much as the speed at which a member can use it, and this one was spread across every channel except a single one.",
+      "approachLead": "Give each kind of content its own tab, make the documents scannable rather than beautiful, and keep the support line on screen at all times.",
+      "approachBody": "The five sections are peers in a bottom bar, so nothing is nested inside anything it does not belong to. Within Products, a second row of tabs separates innovations, range, pricing, and ordering — four questions a professional arrives with already formed, rather than four categories they have to browse.\n\nDocument rows state their format and their action before anything else: a PDF badge, a download control, an external-link mark. Someone scanning for the price list should not have to open anything to find out what a row is. The priority call button floats above all of it, because the benefit people joined for should never be somewhere you have to navigate to.\n\nThe onboarding does the one job onboarding can honestly do here — naming the three benefits before the member is dropped into a feed that assumes they know what the programme includes.",
+      "approachCaption": "The news feed, an article, an embedded video, and the empty state.",
+      "shippedHeading": "The screens a member actually opens.",
+      "reflectionLead": "Most of this app is a list of documents, and pretending otherwise would have made it worse.",
+      "reflectionBody": "The useful work was in the rows rather than the flourishes: what a member can tell about a file before tapping it, and how few taps sit between opening the app and reaching the thing they came for. The part I would want to test with real members is the five-way split, which is a reasonable model of the programme but not yet a proven model of their day.",
+      "categories": [
+        {
+          "id": 106,
+          "label": "Mobile app"
+        }
+      ],
+      "cover": null,
+      "approachShot": null,
+      "gallery": [],
+      "constraints": [
+        {
+          "id": 433,
+          "title": "Five unrelated kinds of content — news, training, products, professional tools, communication tools — all belong on the first screen.",
+          "body": ""
+        },
+        {
+          "id": 434,
+          "title": "Most of the value is PDFs and links, which is the least engaging material an app can be built from.",
+          "body": ""
+        },
+        {
+          "id": 435,
+          "title": "Priority support is the headline benefit, and burying it two taps deep would undercut the whole proposition.",
+          "body": ""
+        }
+      ],
+      "decisions": [
+        {
+          "id": 433,
+          "eyebrow": "Outcome",
+          "title": "Five Peers, No Nesting",
+          "body": "Each kind of content gets a tab of its own instead of being filed under a section it only half belongs to."
+        },
+        {
+          "id": 434,
+          "eyebrow": "Outcome",
+          "title": "Rows That Declare Themselves",
+          "body": "Format and action are visible before the title is read, so a document list can be scanned rather than opened."
+        },
+        {
+          "id": 435,
+          "eyebrow": "Outcome",
+          "title": "Support Always in Reach",
+          "body": "The priority line floats over every screen, because it is the benefit the membership is actually sold on."
+        }
+      ],
+      "metrics": [
+        {
+          "id": 451,
+          "value": "Onboarding",
+          "label": "Three benefits named before the member reaches the feed.",
+          "animate": false
+        },
+        {
+          "id": 452,
+          "value": "News & Media",
+          "label": "Articles, polls, and video in one feed, with a stated empty state.",
+          "animate": false
+        },
+        {
+          "id": 453,
+          "value": "Products & Documents",
+          "label": "Innovations, range, pricing, and ordering split across their own tabs.",
+          "animate": false
+        }
+      ],
+      "seo": {
+        "id": 182,
+        "metaTitle": "Club Expert+ — Phonak — Mohamad Hawa",
+        "metaDescription": "A membership app for the hearing-care professionals in Phonak's Club Expert+ programme, gathering the news, training, product documents, and priority support…",
+        "shareImage": null
+      }
+    },
+    {
+      "id": 119,
+      "title": "Archlist",
+      "slug": "archlist",
+      "discipline": "Web app design",
+      "summary": "A project-management web app for architects and interior architects — phases, documents, suppliers, object catalogues, and finances — designed inside a strongly defined visual direction set by the client.",
+      "role": "UI / UX Design",
+      "order": 8,
+      "featured": false,
+      "chipBg": "#0d1b52",
+      "chipInk": "#ffffff",
+      "briefLead": "Archlist follows an architectural project from first sketch to handover: the phase it is in, the documents that prove it, the trades working on it, and the objects specified along the way.",
+      "briefBody": "The client arrived with a fully formed visual identity and a clear picture of how the product should look and read. The design work happened inside that picture rather than in place of it.",
+      "problemLead": "An architectural project has a chronology everybody in the profession knows and almost no software reflects, so the phase you are in has to be read off the documents that exist.",
+      "approachLead": "Work the improvements into the established direction rather than around it, and make every change one that could be argued for in the client's own terms.",
+      "approachBody": "This was the most constrained brief in this portfolio, and the constraint was the interesting part. The identity — the script wordmark, the navy, the topographic ground, the section titles set as watermarks — was not up for discussion, and neither was the overall shape of the product. Proposing a different direction would have been the wrong instinct as well as an unwelcome one.\n\nSo the case for each change was made in the client's language and against their own goals: legibility for their clients, fewer places to look, less repeated data entry. The phase timeline is the clearest example. It keeps the ornament and the profession's own vocabulary, and adds a state model underneath it — a phase lights up when a document is filed against it, and the furthest lit phase is marked as where the project has reached. The architect gets their chronology; their client gets a progress indicator; nothing about the look had to change to get both.\n\nThe same method runs through the rest. The object catalogue carries the fields a specification actually needs — type, sub-type, manufacturer — with the file thumbnails and their overflow count shown on the card, so a card answers a question rather than inviting a click. Inspirations sits next to an image generator, which is the client's idea, given a place in the flow where it supports the moodboard rather than interrupting it.",
+      "approachCaption": "The phase timeline, with phases lit by the documents filed against them.",
+      "shippedHeading": "The sections the practice works in.",
+      "reflectionLead": "The design constraint here was stakeholder alignment rather than screen real estate, and it taught me more than a free hand would have.",
+      "reflectionBody": "Working inside a direction somebody else is attached to means every recommendation has to be worth the conversation it costs, which is a good filter. I lost some of them and I should have — a few were preferences dressed as principles. The ones that landed were the ones I could tie to something the client already wanted, and the product is better in the places where I did that work rather than in the places where I was simply right.",
+      "categories": [
+        {
+          "id": 108,
+          "label": "Web app"
+        }
+      ],
+      "cover": null,
+      "approachShot": null,
+      "gallery": [],
+      "constraints": [
+        {
+          "id": 439,
+          "title": "The design direction was established before the UX work began, and the brief was to develop it rather than to reconsider it.",
+          "body": ""
+        },
+        {
+          "id": 440,
+          "title": "Five sections, each dense enough to be its own product, have to sit under one navigation without any of them feeling secondary.",
+          "body": ""
+        },
+        {
+          "id": 441,
+          "title": "The phase timeline has to be legible to an architect at a glance and to a client who has never seen ESQ, APS, or APD written down.",
+          "body": ""
+        }
+      ],
+      "decisions": [
+        {
+          "id": 439,
+          "eyebrow": "Outcome",
+          "title": "Phases Lit by Evidence",
+          "body": "A phase activates when a document is filed against it, so progress is derived from the work rather than self-reported."
+        },
+        {
+          "id": 440,
+          "eyebrow": "Outcome",
+          "title": "Cards That Answer First",
+          "body": "Type, sub-type, manufacturer, and the attachment count are on the card, so browsing a catalogue does not mean opening it."
+        },
+        {
+          "id": 441,
+          "eyebrow": "Outcome",
+          "title": "Change Argued, Not Imposed",
+          "body": "Every UX proposal was framed against the client's own stated goals, which is what kept the direction intact and the improvements in it."
+        }
+      ],
+      "metrics": [
+        {
+          "id": 457,
+          "value": "Calendrier",
+          "label": "The profession's phase chronology, with state driven by filed documents.",
+          "animate": false
+        },
+        {
+          "id": 458,
+          "value": "Carnet",
+          "label": "Trades, inspirations, objects, and warranties under one set of tabs.",
+          "animate": false
+        },
+        {
+          "id": 459,
+          "value": "Objets",
+          "label": "A specification catalogue built to be scanned, with attachments shown on the card.",
+          "animate": false
+        }
+      ],
+      "seo": {
+        "id": 184,
+        "metaTitle": "Archlist — Mohamad Hawa",
+        "metaDescription": "A project-management web app for architects and interior architects — phases, documents, suppliers, object catalogues, and finances — designed inside a…",
+        "shareImage": null
+      }
+    },
+    {
+      "id": 113,
       "title": "Wise Academy",
       "slug": "wise-academy",
       "discipline": "Web app design",
       "summary": "An admin system for a private school in the US: one place to follow enrolments, search student and parent records, schedule interviews, and send the messages that go with them.",
       "role": "UI / UX Design",
-      "order": 6,
+      "order": 9,
       "featured": false,
       "chipBg": "#efeff1",
       "chipInk": "#86868b",
@@ -1123,7 +1406,7 @@
       "reflectionBody": "Wise Academy expressed interest in extending the platform for managing other aspects of school operations.",
       "categories": [
         {
-          "id": 94,
+          "id": 100,
           "label": "Web app"
         }
       ],
@@ -1171,36 +1454,36 @@
       ],
       "constraints": [
         {
-          "id": 403,
+          "id": 421,
           "title": "Staff struggled with locating and updating student data quickly.",
           "body": ""
         },
         {
-          "id": 404,
+          "id": 422,
           "title": "New enrollments required multiple manual steps, leading to delays.",
           "body": ""
         },
         {
-          "id": 405,
+          "id": 423,
           "title": "A lack of filtering options for student records made tracking alumni difficult.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 403,
+          "id": 421,
           "eyebrow": "Outcome",
           "title": "Improved Efficiency",
           "body": "Reduced time spent managing student data by 40%."
         },
         {
-          "id": 404,
+          "id": 422,
           "eyebrow": "Outcome",
           "title": "Streamlined Enrollment",
           "body": "Created a path to view and find student records within seconds."
         },
         {
-          "id": 405,
+          "id": 423,
           "eyebrow": "Outcome",
           "title": "Enhanced Usability",
           "body": "A clean layout with intuitive navigation ensured ease of use for all staff levels."
@@ -1208,39 +1491,39 @@
       ],
       "metrics": [
         {
-          "id": 421,
+          "id": 439,
           "value": "Dashboard Analytics",
           "label": "Visualized enrollment trends across active and pending applications.",
           "animate": false
         },
         {
-          "id": 422,
+          "id": 440,
           "value": "Student Management",
           "label": "Easy-to-use interface for adding, editing, and searching student records.",
           "animate": false
         },
         {
-          "id": 423,
+          "id": 441,
           "value": "Automated Notifications",
           "label": "Reminds parents about upcoming payments, deadlines and interviews.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 172,
+        "id": 178,
         "metaTitle": "Wise Academy — Mohamad Hawa",
         "metaDescription": "An admin system for a private school in the US — enrolments, student and parent records, interviews and messaging, in one place.",
         "shareImage": null
       }
     },
     {
-      "id": 88,
+      "id": 112,
       "title": "Kabbara Office",
       "slug": "kabbara-office",
       "discipline": "Mobile app design",
       "summary": "Kabbara Office is a digital solution built to help Deputy Karim Kabbara manage and respond to public service requests efficiently.",
       "role": "UI / UX Design",
-      "order": 7,
+      "order": 10,
       "featured": false,
       "chipBg": "#e9e9ec",
       "chipInk": "#86868b",
@@ -1255,7 +1538,7 @@
       "reflectionBody": "The Deputy expressed interest in expanding the system to manage more public-facing initiatives.",
       "categories": [
         {
-          "id": 56,
+          "id": 99,
           "label": "Mobile app"
         }
       ],
@@ -1282,36 +1565,36 @@
       "gallery": [],
       "constraints": [
         {
-          "id": 346,
+          "id": 418,
           "title": "Manual request handling was time-consuming and prone to errors.",
           "body": ""
         },
         {
-          "id": 347,
+          "id": 419,
           "title": "There was no unified view of pending, approved, or rejected services.",
           "body": ""
         },
         {
-          "id": 348,
+          "id": 420,
           "title": "Categorizing and prioritizing new requests lacked a clear workflow.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 346,
+          "id": 418,
           "eyebrow": "Outcome",
           "title": "Centralized Request Management",
           "body": "All requests are now logged and easily trackable in one place."
         },
         {
-          "id": 347,
+          "id": 419,
           "eyebrow": "Outcome",
           "title": "Clear Status Indicators",
           "body": "Staff can instantly see which requests are new, pending, or completed."
         },
         {
-          "id": 348,
+          "id": 420,
           "eyebrow": "Outcome",
           "title": "Faster Response Times",
           "body": "Filtering and search tools significantly reduced the time to locate and act on requests."
@@ -1319,39 +1602,39 @@
       ],
       "metrics": [
         {
-          "id": 364,
+          "id": 436,
           "value": "Status at a Glance",
           "label": "A colour-coded system for request status across the whole queue.",
           "animate": false
         },
         {
-          "id": 365,
+          "id": 437,
           "value": "Filter & Categorise",
           "label": "Easy-to-use filters and categorisation tools for incoming requests.",
           "animate": false
         },
         {
-          "id": 366,
+          "id": 438,
           "value": "Arabic-First",
           "label": "Designed Arabic-first for accessibility to the intended audience.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 142,
+        "id": 177,
         "metaTitle": "Kabbara Office — Mohamad Hawa",
         "metaDescription": "Kabbara Office is a digital solution built to help Deputy Karim Kabbara manage and respond to public service requests efficiently.",
         "shareImage": null
       }
     },
     {
-      "id": 89,
+      "id": 111,
       "title": "CodingCLebanon",
       "slug": "coding-lebanon",
       "discipline": "Landing page design",
       "summary": "CodingCLebanon is an educational platform that empowers individuals to learn programming through personalized one-on-one online mentorship.",
       "role": "UI / UX Design",
-      "order": 8,
+      "order": 11,
       "featured": false,
       "chipBg": "#f2f2f4",
       "chipInk": "#86868b",
@@ -1366,7 +1649,7 @@
       "reflectionBody": "CodingCLebanon praised the redesign and reported increased engagement across the platform.",
       "categories": [
         {
-          "id": 58,
+          "id": 98,
           "label": "Landing page / showcase website"
         }
       ],
@@ -1393,36 +1676,36 @@
       "gallery": [],
       "constraints": [
         {
-          "id": 349,
+          "id": 415,
           "title": "Users were unclear about how to get started or book their first session.",
           "body": ""
         },
         {
-          "id": 350,
+          "id": 416,
           "title": "The homepage lacked a clear call-to-action and value proposition.",
           "body": ""
         },
         {
-          "id": 351,
+          "id": 417,
           "title": "There was no centralized dashboard to track progress or session history.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 349,
+          "id": 415,
           "eyebrow": "Outcome",
           "title": "Boosted Onboarding",
           "body": "Clear CTAs and guidance helped new users start their learning journey faster."
         },
         {
-          "id": 350,
+          "id": 416,
           "eyebrow": "Outcome",
           "title": "Seamless Booking",
           "body": "Booking sessions was simplified into an intuitive and fast workflow."
         },
         {
-          "id": 351,
+          "id": 417,
           "eyebrow": "Outcome",
           "title": "Learner Empowerment",
           "body": "The dashboard gave students more control and visibility over their learning journey."
@@ -1430,39 +1713,39 @@
       ],
       "metrics": [
         {
-          "id": 367,
+          "id": 433,
           "value": "Conversion-Focused Home",
           "label": "A welcoming homepage built around a clear call to action.",
           "animate": false
         },
         {
-          "id": 368,
+          "id": 434,
           "value": "Clear User Flows",
           "label": "Onboarding, session booking, and progress tracking, each with an obvious path.",
           "animate": false
         },
         {
-          "id": 369,
+          "id": 435,
           "value": "Mobile Responsive",
           "label": "Designed to support learners on any device.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 143,
+        "id": 176,
         "metaTitle": "CodingCLebanon — Mohamad Hawa",
         "metaDescription": "CodingCLebanon is an educational platform that empowers individuals to learn programming through personalized one-on-one online mentorship.",
         "shareImage": null
       }
     },
     {
-      "id": 90,
+      "id": 110,
       "title": "WFK Law Firm",
       "slug": "wfk-law-firm",
       "discipline": "Web app design",
       "summary": "WFK Law Firm is a professional legal firm that needed an internal tool to streamline employee task tracking, scheduling, and performance monitoring.",
       "role": "UI / UX Design",
-      "order": 9,
+      "order": 12,
       "featured": false,
       "chipBg": "#efeff1",
       "chipInk": "#86868b",
@@ -1477,7 +1760,7 @@
       "reflectionBody": "WFK Law Firm was impressed with how the tool improved internal transparency and organization.",
       "categories": [
         {
-          "id": 60,
+          "id": 97,
           "label": "Web app"
         }
       ],
@@ -1535,36 +1818,36 @@
       ],
       "constraints": [
         {
-          "id": 352,
+          "id": 412,
           "title": "Employees lacked a unified interface to view or manage their assigned tasks.",
           "body": ""
         },
         {
-          "id": 353,
+          "id": 413,
           "title": "There was no performance tracking mechanism or analytics overview for management.",
           "body": ""
         },
         {
-          "id": 354,
+          "id": 414,
           "title": "The solution needed to align with Power Apps limitations while maintaining good UX practices.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 352,
+          "id": 412,
           "eyebrow": "Outcome",
           "title": "Task Ownership",
           "body": "Employees can now clearly view and manage their assignments in real time."
         },
         {
-          "id": 353,
+          "id": 413,
           "eyebrow": "Outcome",
           "title": "Executive Overview",
           "body": "The dashboard provides management with performance insights and workload balance."
         },
         {
-          "id": 354,
+          "id": 414,
           "eyebrow": "Outcome",
           "title": "System Integration",
           "body": "The design was fully Power Apps compatible, ensuring smooth implementation within the existing IT infrastructure."
@@ -1572,39 +1855,39 @@
       ],
       "metrics": [
         {
-          "id": 370,
+          "id": 430,
           "value": "Task Board",
           "label": "A visually organised board with clear status indicators.",
           "animate": false
         },
         {
-          "id": 371,
+          "id": 431,
           "value": "High-Contrast Layout",
           "label": "Built for easy readability across legal teams.",
           "animate": false
         },
         {
-          "id": 372,
+          "id": 432,
           "value": "Power Apps Fit",
           "label": "Designed to sit naturally inside the existing Microsoft ecosystem.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 144,
+        "id": 175,
         "metaTitle": "WFK Law Firm — Mohamad Hawa",
         "metaDescription": "WFK Law Firm is a professional legal firm that needed an internal tool to streamline employee task tracking, scheduling, and performance monitoring.",
         "shareImage": null
       }
     },
     {
-      "id": 91,
+      "id": 109,
       "title": "Shipment Share",
       "slug": "shipment-share",
       "discipline": "Mobile app design",
       "summary": "Shipment Share is a smart delivery platform that connects people who need to send packages with travelers already heading to the same destination.",
       "role": "UI / UX Design",
-      "order": 10,
+      "order": 13,
       "featured": false,
       "chipBg": "#e9e9ec",
       "chipInk": "#86868b",
@@ -1619,7 +1902,7 @@
       "reflectionBody": "Shipment Share’s team appreciated the friendly UI and its appeal to both casual and business users.",
       "categories": [
         {
-          "id": 62,
+          "id": 96,
           "label": "Mobile app"
         }
       ],
@@ -1646,36 +1929,36 @@
       "gallery": [],
       "constraints": [
         {
-          "id": 355,
+          "id": 409,
           "title": "Travelers wanted an easy way to offer extra luggage space for delivery without being overwhelmed.",
           "body": ""
         },
         {
-          "id": 356,
+          "id": 410,
           "title": "Senders needed to trust the traveler, know the exact route, and have direct communication.",
           "body": ""
         },
         {
-          "id": 357,
+          "id": 411,
           "title": "A clear visual summary of the trip, shipment capacity, and fees was essential to both parties.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 355,
+          "id": 409,
           "eyebrow": "Outcome",
           "title": "Real-Time Matchmaking",
           "body": "Travelers and senders can easily connect based on route and availability."
         },
         {
-          "id": 356,
+          "id": 410,
           "eyebrow": "Outcome",
           "title": "Trust-Driven UI",
           "body": "Clear sender/recipient info, travel timelines, and secure communication features."
         },
         {
-          "id": 357,
+          "id": 411,
           "eyebrow": "Outcome",
           "title": "Mobile Focus",
           "body": "Designed with mobile-first principles for everyday accessibility and fast interactions."
@@ -1683,39 +1966,39 @@
       ],
       "metrics": [
         {
-          "id": 373,
+          "id": 427,
           "value": "Trip Matching",
           "label": "Browse and filter trips by date and destination, then request a shipment.",
           "animate": false
         },
         {
-          "id": 374,
+          "id": 428,
           "value": "Shipment Breakdown",
           "label": "Sender and recipient info, timeline, capacity, and pricing in one view.",
           "animate": false
         },
         {
-          "id": 375,
+          "id": 429,
           "value": "Direct Contact",
           "label": "Chat between sender and traveller, because trust is the product.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 145,
+        "id": 174,
         "metaTitle": "Shipment Share — Mohamad Hawa",
         "metaDescription": "Shipment Share is a smart delivery platform that connects people who need to send packages with travelers already heading to the same destination.",
         "shareImage": null
       }
     },
     {
-      "id": 92,
+      "id": 108,
       "title": "Shareb",
       "slug": "shareb",
       "discipline": "Web app design",
       "summary": "Shareb is a promotional lottery app designed to boost brand engagement through interactive weekly draws.",
       "role": "UI / UX Design",
-      "order": 11,
+      "order": 14,
       "featured": false,
       "chipBg": "#f2f2f4",
       "chipInk": "#86868b",
@@ -1730,7 +2013,7 @@
       "reflectionBody": "Shareb’s sponsors praised the exposure and engagement, especially during live campaigns.",
       "categories": [
         {
-          "id": 64,
+          "id": 95,
           "label": "Web app"
         }
       ],
@@ -1768,36 +2051,36 @@
       ],
       "constraints": [
         {
-          "id": 358,
+          "id": 406,
           "title": "QR code scanning had to be seamless and redirect users directly into the app or sign-up screen.",
           "body": ""
         },
         {
-          "id": 359,
+          "id": 407,
           "title": "The lottery button needed to feel satisfying and responsive — giving a mini dopamine hit.",
           "body": ""
         },
         {
-          "id": 360,
+          "id": 408,
           "title": "Showcasing past winners and brand sponsors built trust and encouraged participation.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 358,
+          "id": 406,
           "eyebrow": "Outcome",
           "title": "Instant Access",
           "body": "Users can enter the draw in seconds with no complicated forms."
         },
         {
-          "id": 359,
+          "id": 407,
           "eyebrow": "Outcome",
           "title": "Brand-Driven UI",
           "body": "Sponsors and partner logos are clearly featured for visibility."
         },
         {
-          "id": 360,
+          "id": 408,
           "eyebrow": "Outcome",
           "title": "Gamified Interaction",
           "body": "Tapping to participate adds a game-like layer to simple actions."
@@ -1805,26 +2088,26 @@
       ],
       "metrics": [
         {
-          "id": 376,
+          "id": 424,
           "value": "One-Tap Entry",
           "label": "Scan the QR code on the cup, tap once, and you are in the draw.",
           "animate": false
         },
         {
-          "id": 377,
+          "id": 425,
           "value": "Brand Carousel",
           "label": "Sponsors and partner logos featured for visibility.",
           "animate": false
         },
         {
-          "id": 378,
+          "id": 426,
           "value": "Winner Highlights",
           "label": "Past winners and prizes shown to build trust and encourage entry.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 146,
+        "id": 173,
         "metaTitle": "Shareb — Mohamad Hawa",
         "metaDescription": "Shareb is a promotional lottery app designed to boost brand engagement through interactive weekly draws.",
         "shareImage": null

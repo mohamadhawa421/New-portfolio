@@ -5,29 +5,30 @@
       "slug": "rm-luxury",
       "title": "RM Luxury",
       "categories": [
+        "Redesign web / mobile",
         "Landing page / showcase website"
       ],
-      "discipline": "Landing page design",
+      "discipline": "Landing page redesign",
       "role": "UI / UX Design",
       "order": 6,
       "featured": false,
       "chipBg": "#f2f2f4",
       "chipInk": "#86868b",
-      "summary": "A showcase site for a French private-chauffeur and concierge service, built to make an unlisted, quote-based offer feel as concrete as one with prices on it.",
-      "briefLead": "RM Luxury drives people to airports, weddings, and meetings, and arranges the parts of the trip that are not the drive. They needed a site that could sell all of that without a booking engine behind it.",
-      "briefBody": "Everything they offer is quoted rather than priced. The site's job is to get a stranger from arriving to sending an enquiry with enough confidence to say what they actually need.",
-      "problemLead": "A service with no prices and no availability calendar has nothing concrete to show, so the site has to make the offer legible some other way.",
+      "summary": "A self-initiated redesign for a private-chauffeur and concierge service, working out how a quote-only offer sells itself with no prices to show. Concept work — never commissioned or built.",
+      "briefLead": "No client and no brief on this one. Chauffeur and concierge sites kept striking me as the same page every time — a lot of adjectives about discretion and excellence, and almost nothing a visitor can actually decide between — so I set myself the exercise of building one that sells the service without any of that.",
+      "briefBody": "Nothing here was commissioned by anyone, delivered to a team, or built. It is a personal study of a category I find badly served.",
+      "problemLead": "A service with no published prices and no availability calendar has nothing concrete to put on a page, which is why so many of them fall back on adjectives.",
       "constraints": [
         {
-          "title": "Transport, travel, restaurants, and hotels are four unrelated services sold by the same three people.",
+          "title": "Transport, travel, restaurants, and hotels are four unrelated offers coming from one small operation.",
           "body": ""
         },
         {
-          "title": "Nothing has a public price, so every path has to end in a quote without that feeling like a dead end.",
+          "title": "Nothing can carry a price, so every route has to end in a quote without that reading as a dead end.",
           "body": ""
         },
         {
-          "title": "The market judges this category on discretion, and an over-designed site reads as trying too hard.",
+          "title": "The category is judged on discretion, and a site that tries too hard says the opposite of what it means to.",
           "body": ""
         }
       ],
@@ -52,8 +53,8 @@
         }
       ],
       "shippedHeading": "The pages that carry the offer.",
-      "reflectionLead": "The hardest part of a site with no prices is resisting the urge to compensate with adjectives.",
-      "reflectionBody": "Most of the work went into removing claims and letting the fleet, the occasions, and a very plain type treatment carry the positioning instead. If it goes further, the obvious next step is instrumenting which of the four services actually starts the enquiries, and rebalancing the page around the answer.",
+      "reflectionLead": "Redesigning a category rather than a product means the brief is entirely mine, which makes it easy to solve a problem nobody has.",
+      "reflectionBody": "The discipline I set myself was to remove a claim every time I wanted to add one, and let the fleet, the occasions, and a very plain type treatment carry the positioning instead. Whether that actually converts better than the adjectives is exactly the thing a self-initiated concept cannot tell you — it would need a real operator, real enquiries, and something to compare against.",
       "cover": "rm-luxury-cover.png",
       "approachShot": "rm-luxury-1.png",
       "gallery": [

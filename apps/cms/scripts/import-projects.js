@@ -19,6 +19,13 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 
 const { ensureWorkingDatabase } = require('./db');
+/*
+ * Strapi refuses to boot without app keys, and this script never asked for
+ * them — it predates build-env.js, so it worked only in a shell that happened
+ * to have the environment already set and failed with a middleware error
+ * anywhere else. The other maintenance scripts all call this first.
+ */
+const { ensureBuildEnv } = require('./build-env');
 
 // knex aborts queued pool operations while shutting down, which surfaces as an
 // unhandled 'aborted' rejection *after* every write has committed. Ignore that
@@ -64,10 +71,27 @@ const argOf = (flag) => {
 const DATA_FILE = argOf('--data');
 const IMAGE_DIR = argOf('--images');
 const PUSH_BACK = args.includes('--push-existing-back');
+/*
+ * Whether a project may be imported before its pictures exist.
+ *
+ * Off by default, and it has to stay off by default: a case study whose cover
+ * silently failed to upload looks exactly like one that was never given a
+ * cover, and the failure would not surface until somebody looked at the Work
+ * page. Throwing is the right behaviour for the normal case.
+ *
+ * The exception is writing the copy first. The text of a case study is worth
+ * reviewing on the real page before the images are cut, and refusing to import
+ * it until they are makes that impossible. With this flag the project lands
+ * with its placeholder tile — the chip colours in the schema exist for exactly
+ * that — and re-running the same import once the files are in place fills them
+ * in without touching anything else.
+ */
+const ALLOW_MISSING = args.includes('--allow-missing-images');
 
 if (!DATA_FILE || !IMAGE_DIR) {
   console.error(
-    'Usage: node scripts/import-projects.js --data <file.json> --images <dir> [--push-existing-back]'
+    'Usage: node scripts/import-projects.js --data <file.json> --images <dir> ' +
+      '[--push-existing-back] [--allow-missing-images]'
   );
   process.exit(1);
 }
@@ -111,7 +135,10 @@ async function upload(strapi, projectSlug, relPath, alt) {
 
   const filePath = path.join(IMAGE_DIR, relPath);
   if (!fs.existsSync(filePath)) {
-    throw new Error(`Image not found: ${relPath}`);
+    if (!ALLOW_MISSING) throw new Error(`Image not found: ${relPath}`);
+    console.warn(`    missing ${relPath} — imported without it`);
+    uploadCache.set(key, null);
+    return null;
   }
 
   const name = mediaName(projectSlug, relPath);
@@ -139,6 +166,7 @@ async function upload(strapi, projectSlug, relPath, alt) {
 }
 
 async function main() {
+  ensureBuildEnv();
   ensureWorkingDatabase();
 
   const { projects } = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
@@ -163,7 +191,9 @@ async function main() {
         : null;
       const galleryIds = [];
       for (const image of p.gallery || []) {
-        galleryIds.push(await upload(strapi, p.slug, image, `${p.title} screen`));
+        const id = await upload(strapi, p.slug, image, `${p.title} screen`);
+        // A hole in the gallery is not a gallery entry.
+        if (id) galleryIds.push(id);
       }
 
       const data = {
