@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import FigmaExplorer from '../../components/FigmaExplorer.astro';
 import { getProjects } from '../../lib/content';
 import type { Project } from '../../lib/types';
 
@@ -239,6 +240,17 @@ const coverStyle = project.cover
         </section>
       )
     }
+
+    {/* ---------------------------------------------------------------- */}
+    {/* Explore the design                                                */}
+    {/* ---------------------------------------------------------------- */}
+    {/*
+      After the work has been shown and before it is reflected on, which is
+      where somebody who has just been convinced wants to look closer. The
+      component decides whether it renders at all — a project with no explorer
+      configured contributes nothing to this page, not an empty section.
+    */}
+    <FigmaExplorer slug={project.slug} title={project.title} />
 
     {/* ---------------------------------------------------------------- */}
     {/* Looking back                                                      */}
@@ -537,7 +549,9 @@ const coverStyle = project.cover
 
   .case-shot {
     margin-top: clamp(40px, 6vh, 64px);
-    border-radius: var(--r-lg);
+    /* The same corner as the gallery below it, so every picture in a case
+       study is cut to one shape rather than two that are nearly the same. */
+    border-radius: var(--r-xl);
     overflow: hidden;
     background: var(--surface-parchment);
   }
@@ -599,7 +613,31 @@ const coverStyle = project.cover
     gap: clamp(18px, 2.4vw, 30px);
   }
 
+  /*
+   * Every tile the same size and the same corner, in every project.
+   *
+   * These were sized by their own pictures, which meant a row of two took the
+   * height of the taller one and the shorter one sat in a slab of empty
+   * surface — measured on Rowad at 1440px: a 327px image inside a 471px tile,
+   * 143px of nothing beneath it. It read as the picture failing to fill its
+   * frame, because that is what it was.
+   *
+   * A fixed ratio with `cover` fixes it by making the tile the constant and
+   * the picture the thing that yields, which is the right way round for a
+   * grid: the gallery is a set of equal openings onto the work, not a set of
+   * differently proportioned pictures. Four by three sits between the two
+   * shapes these screenshots come in — a wide desktop capture and a squarer
+   * app one — so neither is cropped hard.
+   *
+   * Cropping costs nothing here, and that is what makes it acceptable: the
+   * tile is a way in, and the tile opens. The lightbox fits the picture from
+   * its natural size, so what is trimmed to square up the grid is all there
+   * the moment somebody presses it — and the opening animation is built for
+   * exactly this, travelling from the tile's aspect to the picture's own with
+   * the crop resolving as it goes.
+   */
   .gallery__item {
+    aspect-ratio: 4 / 3;
     border-radius: var(--r-xl);
     overflow: hidden;
     background: var(--surface);
@@ -607,8 +645,10 @@ const coverStyle = project.cover
 
   .gallery__item img {
     width: 100%;
-    height: auto;
+    height: 100%;
     display: block;
+    object-fit: cover;
+    object-position: center;
   }
 
   .metrics {

@@ -1,0 +1,511 @@
+---
+/**
+ * The design file, opened inside the case study.
+ *
+ * One component for every project. It takes a slug, asks `lib/figma` what that
+ * project is configured with, and renders one of two things in the same box: a
+ * live Figma embed, or the placeholder that stands in for one until the links
+ * exist. Nothing about the page around it changes between those states, which
+ * is the point — the layout can be judged now and the source arrives later as
+ * a configuration change rather than a build.
+ *
+ * The states, all of which are reachable today:
+ *
+ *   placeholder  no links yet — development only, see explorerFor()
+ *   idle         configured, not scrolled to; no iframe exists yet
+ *   loading      iframe building, skeleton showing
+ *   ready        the embed is up
+ *   error        it did not arrive, and there is a way out to Figma
+ *
+ * `data-state` on the root carries which one, and every visual difference
+ * between them is a CSS rule keyed off it. The script's whole job is to move
+ * that one attribute.
+ */
+import { explorerFor } from '../lib/figma';
+
+interface Props {
+  /** The project's slug — the same key `figmaProjects` is written against. */
+  slug: string;
+  /** Falls back to the configured name; the page's own title is better. */
+  title?: string;
+}
+
+const { slug, title } = Astro.props;
+
+const design = explorerFor(slug, import.meta.env.DEV);
+const name = title || design.projectName;
+---
+
+{
+  design.show && (
+    <section class="section section--light case-figma" data-lift data-tile="light">
+      <div class="shell--narrow">
+        <div class="eyebrow--small" data-reveal="0">
+          Explore the design
+        </div>
+
+        <div
+          class="figma"
+          data-figma
+          data-state={design.live ? 'idle' : 'placeholder'}
+          data-embed={design.live ? design.embedUrl : undefined}
+          data-project-name={name}
+          data-full="no"
+          data-armed="no"
+          data-reveal="0"
+        >
+          {/* Label left, way out right. The only two things in the header,
+              because the controls that matter are Figma's own and they are
+              inside the canvas. */}
+          <div class="figma__bar">
+            <span class="figma__label">{name} — Figma</span>
+
+            {design.openUrl ? (
+              <a
+                class="figma__open"
+                href={design.openUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open in Figma
+                <svg viewBox="0 0 14 14" width="12" height="12" aria-hidden="true" focusable="false">
+                  <path
+                    d="M4 10L10 4M10 4H5.5M10 4V8.5"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </a>
+            ) : (
+              <span class="figma__open figma__open--dead">Not linked yet</span>
+            )}
+          </div>
+
+          {/* The box every state shares. Its height never depends on what is
+              inside it, so the page does not move when the embed arrives. */}
+          <div class="figma__stage" data-figma-stage>
+            {/* Waiting. Two bars breathing, no spinner — a spinner in a frame
+                this size reads as an error before it reads as progress. */}
+            <div class="figma__skeleton" aria-hidden="true">
+              <span />
+              <span />
+            </div>
+
+            {/* No links yet. Deliberately not dressed up as a design tool:
+                nobody should mistake this for a screenshot of Figma. */}
+            <div class="figma__placeholder">
+              <div class="figma__placeholder-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 36" width="20" height="30" focusable="false">
+                  <circle cx="18" cy="18" r="6" fill="none" stroke="currentColor" stroke-width="1.4" />
+                  <path
+                    d="M12 12H6a6 6 0 010-12h6zM12 12h6a6 6 0 010 12h-6zM12 24H6a6 6 0 000 12 6 6 0 006-6z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <p class="figma__placeholder-title">Figma design explorer</p>
+              <p class="figma__placeholder-note">Ready for Figma source — {name}</p>
+              <p class="figma__placeholder-dev">
+                Development placeholder. Not rendered in production.
+              </p>
+            </div>
+
+            {/* It did not arrive. The way out is the same link as the header's,
+                because that is the thing that still works. */}
+            <div class="figma__fallen">
+              <p class="figma__fallen-title">Design preview unavailable</p>
+              {design.openUrl && (
+                <a
+                  class="figma__fallen-link"
+                  href={design.openUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open the design in Figma ↗
+                </a>
+              )}
+            </div>
+
+            {/* Touch only. Takes the first tap so the page can be scrolled
+                past an embed that would otherwise swallow every gesture. */}
+            <button class="figma__shield" data-figma-arm type="button">
+              <span>Tap to explore the design</span>
+            </button>
+
+            {/* The one control here that is ours, because it is the one the
+                embed cannot do for us. Zoom belongs to Figma and is already
+                drawn inside the canvas. */}
+            <button class="figma__full" data-figma-full type="button" aria-label="Toggle fullscreen">
+              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+                <path
+                  class="figma__full-in"
+                  d="M6 2H2v4M10 2h4v4M6 14H2v-4M10 14h4v-4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  class="figma__full-out"
+                  d="M2 6h4V2M14 6h-4V2M2 10h4v4M14 10h-4v4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<script>
+  import { bindFigmaExplorer } from '../scripts/figma-explorer';
+
+  /*
+   * Bound once for the life of the tab.
+   *
+   * The listeners inside are on `document`, which the router never replaces,
+   * so a second binding would answer every click twice — and the observer
+   * inside re-scans on `astro:page-load`, which is what covers the pages this
+   * script does not itself run on.
+   */
+  if (!(window as unknown as { __mhFigma?: boolean }).__mhFigma) {
+    (window as unknown as { __mhFigma?: boolean }).__mhFigma = true;
+    bindFigmaExplorer();
+  }
+</script>
+
+<style>
+  /* ------------------------------------------------------------------ */
+  /* The frame                                                           */
+  /* ------------------------------------------------------------------ */
+
+  .case-figma {
+    padding-block: clamp(58px, min(12vh, 16vw), 132px);
+  }
+
+  .figma {
+    margin-top: clamp(22px, 3vh, 34px);
+  }
+
+  /*
+   * Label and exit, and nothing between them.
+   *
+   * Above the canvas rather than over it: a bar laid on top of the design is
+   * browser chrome by another name, and the brief for this was the opposite of
+   * that.
+   */
+  .figma__bar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    padding-inline: 2px;
+  }
+
+  .figma__label {
+    font-size: 14px;
+    letter-spacing: -0.01em;
+    color: var(--ink-muted);
+  }
+
+  .figma__open {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--blue);
+    text-decoration: none;
+    transition: opacity 200ms var(--ease-out);
+  }
+
+  .figma__open:hover {
+    opacity: 0.7;
+  }
+
+  .figma__open--dead {
+    color: var(--ink-faint);
+    cursor: default;
+  }
+
+  /*
+   * The box, which is the same box in every state.
+   *
+   * Its height is viewport-relative with a floor and a ceiling, so a laptop
+   * gets something immersive, a tall monitor does not get a canvas that runs
+   * off the bottom of the reading position, and a phone gets something it can
+   * still scroll past. Nothing inside it changes it: the skeleton, the
+   * placeholder, the failure and the embed are all absolutely positioned
+   * against it, so the page does not shift when one replaces another.
+   */
+  .figma__stage {
+    position: relative;
+    height: clamp(420px, 64vh, 780px);
+    border-radius: var(--r-xl);
+    overflow: hidden;
+    background: var(--surface-parchment);
+    /* Nothing here may push the page sideways, whatever the embed does with
+       its own layout. */
+    max-width: 100%;
+    isolation: isolate;
+  }
+
+  :global(.figma__frame) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+    opacity: 0;
+    transition: opacity 420ms var(--ease-out);
+  }
+
+  .figma[data-state='ready'] :global(.figma__frame) {
+    opacity: 1;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* What is in the box before the design is                             */
+  /* ------------------------------------------------------------------ */
+
+  .figma__skeleton,
+  .figma__placeholder,
+  .figma__fallen {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+    padding: 24px;
+  }
+
+  .figma[data-state='loading'] .figma__skeleton,
+  .figma[data-state='placeholder'] .figma__placeholder,
+  .figma[data-state='error'] .figma__fallen {
+    display: flex;
+  }
+
+  /* Two bars, breathing. Long enough to read as content arriving and slow
+     enough not to strobe under a section somebody is reading. */
+  .figma__skeleton span {
+    display: block;
+    height: 10px;
+    border-radius: var(--r-pill);
+    background: var(--ink);
+    opacity: 0.06;
+    animation: figma-breathe 1800ms var(--ease-out) infinite;
+  }
+
+  .figma__skeleton span:first-child {
+    width: min(220px, 40%);
+  }
+
+  .figma__skeleton span:last-child {
+    width: min(140px, 26%);
+    animation-delay: 220ms;
+  }
+
+  @keyframes figma-breathe {
+    0%,
+    100% {
+      opacity: 0.05;
+    }
+    50% {
+      opacity: 0.12;
+    }
+  }
+
+  .figma__placeholder-mark {
+    color: var(--ink);
+    opacity: 0.22;
+    margin-bottom: 4px;
+  }
+
+  .figma__placeholder-title {
+    font-size: clamp(17px, 1.8vw, 20px);
+    font-weight: 600;
+    letter-spacing: -0.016em;
+  }
+
+  .figma__placeholder-note {
+    font-size: 15px;
+    color: var(--ink-muted);
+  }
+
+  /*
+   * The line that says this is scaffolding.
+   *
+   * It is set in the interface monospace at the size of a footnote because it
+   * is addressed to whoever is building the page, not to whoever is reading
+   * it — and in production nobody reads it at all, because the section is not
+   * rendered. See `explorerFor`.
+   */
+  .figma__placeholder-dev {
+    margin-top: 6px;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    opacity: 0.7;
+  }
+
+  .figma__fallen-title {
+    font-size: clamp(17px, 1.8vw, 20px);
+    font-weight: 600;
+    letter-spacing: -0.016em;
+  }
+
+  .figma__fallen-link {
+    font-size: 15px;
+    color: var(--blue);
+    text-decoration: none;
+  }
+
+  .figma__fallen-link:hover {
+    opacity: 0.7;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Controls                                                            */
+  /* ------------------------------------------------------------------ */
+
+  .figma__full {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    width: 38px;
+    height: 38px;
+    display: none;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    color: #fff;
+    background: rgba(20, 20, 22, 0.55);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    z-index: 3;
+    transition: background 200ms var(--ease-out);
+  }
+
+  /* Only once there is something to look at full size. */
+  .figma[data-state='ready'] .figma__full {
+    display: grid;
+  }
+
+  .figma__full:hover {
+    background: rgba(20, 20, 22, 0.75);
+  }
+
+  .figma__full-out {
+    display: none;
+  }
+
+  .figma[data-full='yes'] .figma__full-in {
+    display: none;
+  }
+
+  .figma[data-full='yes'] .figma__full-out {
+    display: block;
+  }
+
+  /*
+   * The shield, on touch only.
+   *
+   * Hidden by default and by `data-armed`, so it appears for exactly one tap
+   * on a phone and never at all on a machine with a pointer. Without it the
+   * explorer is a trap: every finger that lands on the canvas is panning
+   * Figma, and the page cannot be scrolled past the section.
+   */
+  .figma__shield {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 22px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .figma__shield span {
+    font-size: 13px;
+    color: #fff;
+    background: rgba(20, 20, 22, 0.62);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    padding: 9px 16px;
+    border-radius: var(--r-pill);
+  }
+
+  @media (hover: none) {
+    .figma[data-state='ready'][data-armed='no'] .figma__shield {
+      display: flex;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Smaller screens                                                     */
+  /* ------------------------------------------------------------------ */
+
+  @media (max-width: 900px) {
+    .figma__stage {
+      height: clamp(360px, 56vh, 560px);
+      border-radius: var(--r-lg);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .figma__stage {
+      /* Shorter again, because on a phone this section has to be something a
+         thumb can get past, not a screen of its own. */
+      height: clamp(320px, 48vh, 460px);
+    }
+
+    .figma__bar {
+      /* The label wraps before it squeezes the link out of the row. */
+      flex-wrap: wrap;
+      gap: 4px 16px;
+    }
+  }
+
+  /* Fullscreen is the browser's box, not ours — the rounding and the height
+     both have to go or the design sits in a rounded rectangle in the middle of
+     a black screen. */
+  .figma__stage:fullscreen {
+    height: 100%;
+    border-radius: 0;
+    background: var(--surface);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .figma__skeleton span {
+      animation: none;
+      opacity: 0.08;
+    }
+
+    :global(.figma__frame) {
+      transition-duration: 1ms;
+    }
+  }
+</style>
