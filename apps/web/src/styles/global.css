@@ -1211,13 +1211,45 @@ figure {
  */
 :root.theme-waving::view-transition-old(root),
 :root.theme-waving::view-transition-new(root) {
-  animation: none;
   mix-blend-mode: normal;
+}
+
+/* The old snapshot just sits there and is revealed away. */
+:root.theme-waving::view-transition-old(root) {
+  animation: none;
 }
 
 /* The new theme is clipped in over the old, so it has to sit on top. */
 :root.theme-waving::view-transition-new(root) {
   z-index: 1;
+  /*
+   * The wipe itself, driven by four custom properties theme.ts sets on :root
+   * before it starts the transition. They reach here because the whole
+   * view-transition pseudo tree hangs off the document element and custom
+   * properties inherit into it.
+   *
+   * This is a CSS animation rather than a script one on purpose. It was
+   * `documentElement.animate(..., { pseudoElement })`, which is what the
+   * Chrome documentation shows and which an engine that does not support
+   * script animations on this pseudo-element ignores in silence — the theme
+   * then snapped while the section lift ran on as if nothing were wrong, with
+   * nothing to feature-test and no error to catch. A named keyframe is the
+   * portable way to do this and cannot fail quietly.
+   *
+   * The easing is WAVE_EASING in theme.ts written out. The two have to agree:
+   * the lift inverts that curve to work out when the circle reaches each
+   * section.
+   */
+  animation: mh-theme-wipe var(--wipe-ms, 700ms) cubic-bezier(0.4, 0, 0.75, 0.9) both;
+}
+
+@keyframes mh-theme-wipe {
+  from {
+    clip-path: circle(0px at var(--wipe-x, 50%) var(--wipe-y, 50%));
+  }
+  to {
+    clip-path: circle(var(--wipe-r, 150vmax) at var(--wipe-x, 50%) var(--wipe-y, 50%));
+  }
 }
 
 :root.theme-waving::view-transition-old(root) {

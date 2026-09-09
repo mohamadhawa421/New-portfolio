@@ -2476,6 +2476,18 @@ const PAINTED_TEAR = (() => {
 const SPLIT = [0, 4, 7, 10, 15, 22];
 
 /**
+ * The most glyphs the painted path will colour.
+ *
+ * Headings, labels, links and the subtitle are all well under this; the hero
+ * paragraph, at a hundred and fifty-three letters, is well over. It is a cap
+ * on cost, and the number is chosen so that everything the separation actually
+ * reads on keeps it — at forty glyphs the element is display type or a
+ * control, and the fringe is a good fraction of a stroke rather than a smear
+ * along a line of body copy.
+ */
+const PAINTED_GLYPH_CAP = 40;
+
+/**
  * The separation, as two coloured copies of every glyph.
  *
  * Not a fallback in the apologetic sense — for a page whose torn elements are
@@ -2563,6 +2575,27 @@ function tear(
    * its own — and reading the computed style of twelve elements in the middle
    * of the storm is a style recalculation nobody asked for.
    */
+  /*
+   * How many glyphs this element would ask the painted path to redraw.
+   *
+   * Only the painted path cares. `text-shadow` is an inherited property and
+   * every shattered block has already been split into one span per letter,
+   * each with its own running transform and therefore its own layer — so a
+   * value written on the block is two extra copies of every glyph in it, on
+   * every one of those layers, re-rastered at each of the cuts below. On a
+   * heading that is eleven letters. On the hero paragraph it is a hundred and
+   * fifty-three, which is four hundred and sixty glyph draws per cut, and it
+   * is the one element where the effect is least worth having: seven pixels of
+   * separation on 17px body copy is closer to illegibility than to damage.
+   *
+   * So the colour goes on the elements that can afford it and are improved by
+   * it, and the paragraphs keep the displacement and the flicker without it.
+   * The filter path has no such limit — one offscreen pass costs the same
+   * whatever is inside it — so nothing about Blink changes.
+   */
+  const glyphs = PAINTED_TEAR ? el.getElementsByClassName('dm-char').length : 0;
+  const colour = !PAINTED_TEAR || glyphs <= PAINTED_GLYPH_CAP;
+
   const prop = PAINTED_TEAR ? 'text-shadow' : 'filter';
   const had = PAINTED_TEAR ? el.style.textShadow : el.style.filter;
 
@@ -2583,10 +2616,12 @@ function tear(
    * question that started the whole investigation does not arise.
    */
   const wear = (n: number) => {
+    if (!colour) return;
     const one = PAINTED_TEAR ? fringe(SPLIT[n]) : `url(#dm-tear-${n})`;
     el.style.setProperty(prop, had ? `${one}${PAINTED_TEAR ? ',' : ''} ${had}` : one);
   };
   const clear = () => {
+    if (!colour) return;
     if (had) el.style.setProperty(prop, had);
     else el.style.removeProperty(prop);
   };

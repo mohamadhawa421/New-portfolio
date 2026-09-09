@@ -43,7 +43,21 @@ const LIFT_MS = 620;
  * and the pseudo-elements were torn down. This one still eases out of the
  * button, but it is still travelling at speed when it finishes.
  */
-const WAVE_EASING = 'cubic-bezier(0.4, 0, 0.75, 0.9)';
+/**
+ * The wipe's curve, as numbers, because two things read it from opposite ends.
+ *
+ * `timeAtProgress` below inverts it to work out when the circle passes each
+ * section, so the lift can be told. The keyframe that actually draws the
+ * circle — mh-theme-wipe in global.css — carries the same four numbers written
+ * out as a cubic-bezier(), because a stylesheet cannot read this one. If these
+ * change, that changes with them, or the sections will start moving at times
+ * the wave is no longer arriving.
+ *
+ * There used to be a string form of this here as well, passed to the script
+ * animation that drew the circle. That animation is gone (see the note further
+ * down) and so is the string: one curve, in one place, in the form the only
+ * remaining reader needs.
+ */
 const WAVE_BEZIER = [0.4, 0, 0.75, 0.9] as const;
 
 /**
@@ -246,12 +260,26 @@ function settleNow(): void {
   document.documentElement.classList.remove('theme-waving');
 }
 
-function toggle(button: HTMLElement): void {
+function toggle(button: HTMLElement, event?: MouseEvent): void {
   const next: Theme = resolvedTheme() === 'dark' ? 'light' : 'dark';
 
+  /*
+   * Where the finger actually landed, and the middle of the control only when
+   * there was no finger.
+   *
+   * These are viewport coordinates on both paths, which is the coordinate
+   * space the wipe and the lift both work in — `clientX` already is one, and
+   * getBoundingClientRect returns one. Nothing here adds scrollY, and nothing
+   * should: the circle is drawn on a snapshot of the viewport, and every
+   * element the lift measures is measured the same way a moment later.
+   *
+   * A keyboard press reports 0,0 rather than nothing at all, so the test is
+   * the same one the portrait uses — a real press is never exactly at the
+   * origin of the viewport, and a synthetic or keyboard one always is.
+   */
   const rect = button.getBoundingClientRect();
-  const originX = rect.left + rect.width / 2;
-  const originY = rect.top + rect.height / 2;
+  const originX = event?.clientX || rect.left + rect.width / 2;
+  const originY = event?.clientY || rect.top + rect.height / 2;
 
   // Far corner of the viewport — how far the circle must grow to cover it.
   const radius = Math.hypot(
@@ -289,29 +317,31 @@ function toggle(button: HTMLElement): void {
   clearLift = lift.done;
   document.documentElement.classList.add('theme-waving');
 
-  const transition = (document as any).startViewTransition(() => apply(next));
+  /*
+   * The circle is handed to CSS, not animated from here.
+   *
+   * This used to be `documentElement.animate(..., { pseudoElement:
+   * '::view-transition-new(root)' })`, which is correct, is what the Chrome
+   * documentation shows, and is a script animation targeting a pseudo-element
+   * that only exists inside a view transition. Where an engine does not
+   * support that combination it does not fail loudly — the promise chain below
+   * swallows it and the wipe simply never happens, leaving the theme to snap
+   * while the section lift runs on regardless. There is no way to feature-test
+   * for it and no error to catch.
+   *
+   * A named keyframe reading four custom properties has none of that problem:
+   * it is the portable way to animate a view-transition pseudo-element, the
+   * properties inherit down to it from :root because the whole pseudo tree
+   * hangs off the document element, and every engine that can run a view
+   * transition at all can run this.
+   */
+  const root = document.documentElement;
+  root.style.setProperty('--wipe-x', `${originX}px`);
+  root.style.setProperty('--wipe-y', `${originY}px`);
+  root.style.setProperty('--wipe-r', `${Math.ceil(radius * WAVE_OVERSHOOT)}px`);
+  root.style.setProperty('--wipe-ms', `${duration}ms`);
 
-  transition.ready
-    .then(() => {
-      if (gen !== generation) return;
-      document.documentElement.animate(
-        {
-          clipPath: [
-            `circle(0px at ${originX}px ${originY}px)`,
-            `circle(${radius * WAVE_OVERSHOOT}px at ${originX}px ${originY}px)`,
-          ],
-        },
-        {
-          duration,
-          easing: WAVE_EASING,
-          // Clip the incoming snapshot, so the new theme is wiped in over the old.
-          pseudoElement: '::view-transition-new(root)',
-        }
-      );
-    })
-    .catch(() => {
-      /* Transition was skipped; the theme is applied either way. */
-    });
+  const transition = (document as any).startViewTransition(() => apply(next));
 
   /*
    * The lift is cleared on its own clock, not the transition's.
@@ -349,7 +379,7 @@ function setup(): void {
     if (button.dataset.bound) return;
     button.dataset.bound = '1';
     button.setAttribute('aria-pressed', String(resolvedTheme() === 'dark'));
-    button.addEventListener('click', () => toggle(button));
+    button.addEventListener('click', (event) => toggle(button, event as MouseEvent));
   });
 }
 

@@ -1375,35 +1375,47 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
     }
 
     /*
-     * A third of the level, and the top gone from what is left.
+     * Everything else, gone — and then coming back the whole way up.
      *
-     * Not muted: the wave is the main event and the listener has to keep
-     * hearing that it is still happening. A third is far enough down to read
-     * as "my hearing went" and far enough up that the storm underneath is
-     * plainly still there.
-     */
-    /*
-     * Neutral from the first sample, not just from the blast.
+     * The duck used to bottom out at a third, on the reasoning that the storm
+     * is the main event and should stay audible under it. It should not. What
+     * is being described is a blast loud enough to take somebody's hearing for
+     * a moment, and at a third of level what you hear is a mixing decision. At
+     * a twelfth you hear the room go.
      *
-     * `end` puts both of these back, but it ramps — and a storm torn down
-     * during the half second these are engaged would leave the next one
-     * starting through a closed filter for as long as the ramp had left. Two
-     * writes at t0 cost nothing and mean the sequence can never begin part way
-     * through somebody else's recovery.
+     * Not to zero, though, and the difference matters: a trace of the storm
+     * still coming through is what stops this reading as the audio having been
+     * switched off. Something is still there, it is just a long way away.
+     *
+     * The recovery is one continuous ramp from the bottom of the dip to full,
+     * spanning exactly the ring's own fade, so the two cross rather than
+     * queue. No hold at the bottom and no gap at the top — the storm starts
+     * coming back on the same frame the ring starts leaving.
+     *
+     * Both of these are also written at t0, not only at the blast. `end` puts
+     * them back but it ramps, and a storm torn down mid-dip would otherwise
+     * leave the next one starting through a closed filter for whatever was
+     * left of that ramp.
      */
     duck.gain.cancelScheduledValues(t0);
     duck.gain.setValueAtTime(1, t0);
     duck.gain.setValueAtTime(1, blastAt);
-    duck.gain.linearRampToValueAtTime(0.34, ringAt + 0.02);
-    duck.gain.setValueAtTime(0.34, ringAt + 0.12);
-    duck.gain.linearRampToValueAtTime(1, ringAt + RING_FADE * 0.95);
+    duck.gain.linearRampToValueAtTime(0.08, ringAt + 0.025);
+    duck.gain.linearRampToValueAtTime(1, ringAt + RING_FADE);
 
+    /*
+     * And the top comes off with it, and comes back sooner than the level.
+     *
+     * Hearing returning is not a fader being pushed up: the dullness lifts
+     * first and the loudness follows it. So this reopens across three quarters
+     * of the window while the gain takes all of it — ending them together left
+     * the last third sounding merely quiet rather than distant.
+     */
     muffle.frequency.cancelScheduledValues(t0);
     muffle.frequency.setValueAtTime(20000, t0);
     muffle.frequency.setValueAtTime(20000, blastAt);
-    muffle.frequency.exponentialRampToValueAtTime(820, ringAt + 0.02);
-    muffle.frequency.setValueAtTime(820, ringAt + 0.12);
-    muffle.frequency.exponentialRampToValueAtTime(20000, ringAt + RING_FADE * 0.95);
+    muffle.frequency.exponentialRampToValueAtTime(700, ringAt + 0.025);
+    muffle.frequency.exponentialRampToValueAtTime(20000, ringAt + RING_FADE * 0.75);
   }
 
   /* ---- The strikes' level, which follows the storm ------------------- */
