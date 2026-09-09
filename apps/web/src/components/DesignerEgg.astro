@@ -59,6 +59,12 @@ import EggSound from './EggSound.astro';
   sRGB interpolation is not optional here: filters default to linearRGB, and
   the same maths in linear light comes back visibly paler than the element it
   was applied to, which reads as a flash rather than as damage.
+
+  The filter region is wide and barely taller than the element, because the
+  offsets are horizontal and the region is the area the engine has to render
+  offscreen for every filtered element on every frame. It was 124% both ways,
+  which is half again as many pixels as anything here needs vertically — free
+  in Blink and not free at all in WebKit.
 */}
 <svg
   class="dm-tear-defs"
@@ -72,9 +78,9 @@ import EggSound from './EggSound.astro';
     <filter
       id="dm-tear-1"
       x="-12%"
-      y="-12%"
+      y="-3%"
       width="124%"
-      height="124%"
+      height="106%"
       color-interpolation-filters="sRGB"
     >
       <feOffset in="SourceGraphic" dx="4" dy="0" result="rshift" />
@@ -103,9 +109,9 @@ import EggSound from './EggSound.astro';
     <filter
       id="dm-tear-2"
       x="-12%"
-      y="-12%"
+      y="-3%"
       width="124%"
-      height="124%"
+      height="106%"
       color-interpolation-filters="sRGB"
     >
       <feOffset in="SourceGraphic" dx="7" dy="0" result="rshift" />
@@ -134,9 +140,9 @@ import EggSound from './EggSound.astro';
     <filter
       id="dm-tear-3"
       x="-12%"
-      y="-12%"
+      y="-3%"
       width="124%"
-      height="124%"
+      height="106%"
       color-interpolation-filters="sRGB"
     >
       <feOffset in="SourceGraphic" dx="10" dy="0" result="rshift" />

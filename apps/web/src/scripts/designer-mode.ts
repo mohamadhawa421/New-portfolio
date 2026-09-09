@@ -2087,7 +2087,7 @@ function lift(
  * screen rather than an effect somebody chose, and long enough to be seen
  * being one.
  */
-const TEAR_MS = 280;
+const TEAR_MS = 240;
 
 /**
  * The most elements one run is allowed to tear.
@@ -2101,7 +2101,7 @@ const TEAR_MS = 280;
  * spread matters more than the number, because the slices with nothing in
  * them give up nothing.
  */
-const TEAR_CAP = 16;
+const TEAR_CAP = 12;
 
 /**
  * The screen giving out where the front crosses it.
@@ -2155,29 +2155,24 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number, sy = 0): An
   const had = el.style.filter;
 
   /*
-   * The channel split, and a ghost of it that does not need SVG.
+   * One pass, and no more than one.
    *
-   * `url()` is the only way to actually separate the channels — a red copy
-   * offset one way, a blue copy the other, the green left where it is — and it
-   * is what makes the interior of a glyph or a label fringe rather than just
-   * its outline. Nothing in CSS reproduces that.
+   * A pair of coloured drop-shadows was briefly added alongside the reference
+   * filter, on the theory that Safari was declining to build the reference and
+   * needed something plain to fall back on. Safari was not declining it — it
+   * was drawing it and struggling, which is the opposite problem, and asking
+   * for two more full filter passes per element made it measurably worse.
+   * WebKit's SVG filter path is much slower than Blink's, and with six
+   * elements torn at once during the busiest part of the storm the difference
+   * is a dropped frame rather than a subtlety.
    *
-   * But a referenced filter is also the one part of this that an engine can
-   * decline to build, and when it declines there is no error and no fallback:
-   * the element simply never wears anything. So a pair of coloured
-   * drop-shadows rides along in the same declaration. They are plain CSS
-   * filter functions, they are honoured everywhere, and at these offsets and
-   * this alpha they read as bleed either side of the split rather than as a
-   * second effect — while on their own, with the reference gone, they are
-   * still unmistakably the screen coming apart.
+   * So the separation is the reference filter alone — which is also the only
+   * thing that separates channels at all. The drop-shadows were coloured
+   * copies of the whole element: they fringe an outline and leave a button's
+   * label untouched, which is most of what the effect is for.
    */
-  const OFFSET = [0, 4, 7, 10];
   const wear = (n: number) => {
-    const d = OFFSET[n] * 0.7;
-    const bleed =
-      `drop-shadow(${d.toFixed(1)}px 0 0 rgba(255, 0, 0, 0.42)) ` +
-      `drop-shadow(${(-d).toFixed(1)}px 0 0 rgba(0, 255, 255, 0.42))`;
-    el.style.filter = `url(#dm-tear-${n}) ${bleed}${had ? ` ${had}` : ''}`;
+    el.style.filter = had ? `url(#dm-tear-${n}) ${had}` : `url(#dm-tear-${n})`;
   };
   const clear = () => {
     if (had) el.style.filter = had;
@@ -2202,16 +2197,18 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number, sy = 0): An
   }
 
   /*
-   * Cut, cut, cut.
+   * Cut, cut, gone.
    *
-   * Four instants rather than a curve, and the uneven gaps are what stop the
-   * flicker having a rhythm. The last one is the recovery: by then it is at
-   * the mildest of the three, and the frame after that there is nothing.
+   * Three instants rather than a curve, and the uneven gaps are what stop the
+   * flicker having a rhythm. There were four; the one dropped was a second
+   * return to the peak, which is a frame nobody picks out of a quarter-second
+   * burst and a fourth rebuild of the filter for every torn element. Every
+   * style change here makes the engine resolve the reference again, so the
+   * count is a cost as much as it is a shape.
    */
   after(at, () => wear(peak));
-  after(at + TEAR_MS * 0.26, () => wear(mid));
-  after(at + TEAR_MS * 0.42, () => wear(peak));
-  after(at + TEAR_MS * 0.68, () => wear(1));
+  after(at + TEAR_MS * 0.3, () => wear(mid));
+  after(at + TEAR_MS * 0.56, () => wear(peak));
   after(at + TEAR_MS, clear);
 
   /*
@@ -2247,9 +2244,8 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number, sy = 0): An
     [
       { offset: 0, transform: step(0, 0), easing: cut },
       { offset: 0.04, transform: step(sx * amp, -drop), easing: cut },
-      { offset: 0.26, transform: step(-sx * amp * 0.45, drop * 0.6), easing: cut },
-      { offset: 0.42, transform: step(sx * amp * 0.7, -drop * 0.35), easing: cut },
-      { offset: 0.68, transform: step(-sx * amp * 0.22, drop * 0.2), easing: cut },
+      { offset: 0.3, transform: step(-sx * amp * 0.45, drop * 0.6), easing: cut },
+      { offset: 0.56, transform: step(sx * amp * 0.72, -drop * 0.3), easing: cut },
       { offset: 1, transform: step(0, 0) },
     ],
     { duration: TEAR_MS, delay: at, composite: 'add', fill: 'none' }
