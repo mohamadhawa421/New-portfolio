@@ -137,8 +137,23 @@ function show(frame: HTMLElement): void {
    * stage is a fixed room. Fitting one into the other is two divisions, and
    * the answer does not wait on anything.
    */
-  const wide = source.naturalWidth || from.width;
-  const tall = source.naturalHeight || from.height;
+  /*
+   * Its real size, from whichever of the three sources actually knows it.
+   *
+   * `naturalWidth` is the truth once the picture has decoded, and zero before
+   * — which is not the rare case it sounds like: every gallery image is
+   * `loading="lazy"`, so one that has only just scrolled into view can be
+   * clicked before it has finished. The `width` and `height` attributes are
+   * the intrinsic size the CMS exported and are there from the first byte of
+   * HTML, so they answer while the bytes are still arriving.
+   *
+   * The rendered rectangle is the last resort and would be a poor primary: the
+   * thumbnail is smaller than the room it is about to open into, so a fit
+   * computed from it comes out capped at 1 and the picture opens at exactly
+   * the size it already was. Which is the whole of what this is for.
+   */
+  const wide = source.naturalWidth || Number(source.getAttribute('width')) || from.width;
+  const tall = source.naturalHeight || Number(source.getAttribute('height')) || from.height;
   const room = box(stage);
 
   if (wide && tall && room.width && room.height) {
