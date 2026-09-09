@@ -340,102 +340,27 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
   /* ------------------------------------------------------------------ */
 
   /*
-   * There is no rim.
+   * There is no rim and there is no highlight.
    *
-   * There was: a hairline highlight along the top edge and a darker one along
-   * the bottom, which is what gives a translucent sheet the sense of having a
-   * thickness. It read as a border, and a border is the one thing this bar is
-   * not supposed to have — so the edge is gone and the material is carried by
-   * the fill and the light on it alone. The outer shadow below still separates
-   * it from the page; what has been removed is anything that draws a line
-   * around it.
+   * Both were tried and both are gone, for the same reason: a painted layer
+   * cannot be a property of the environment. The rim read as a border, which
+   * this is not supposed to have. The sweep read as a permanent bright streak
+   * sitting over one part of the bar — and it could only ever read that way,
+   * because CSS has no way to know what is behind it. It could be moved by the
+   * scroll, but it could not brighten over something bright, and it could not
+   * disappear over something quiet. A gradient that is always there is
+   * decoration whatever is driving its position.
+   *
+   * What is left is the only part of this that is genuinely environmental: the
+   * backdrop filter, which really does sample the page underneath. Saturation
+   * lets colour from behind reach the front of the glass, brightness lifts the
+   * material when something bright passes under it and lets it sit deep when
+   * nothing does, and contrast keeps the type legible through both. When the
+   * page below is quiet the bar is very nearly a clean solid pill; when
+   * something colourful or bright crosses beneath it, it picks that up — and
+   * it does so because it is actually looking at it, not because anything here
+   * is pretending to.
    */
-
-  /*
-   * Light on the surface, and it moves because the page does.
-   *
-   * A broad, very low-contrast sweep across the glass, positioned by
-   * `--nav-sheen` — which chrome.ts sets from the scroll offset inside the
-   * frame it was already doing its other work in. So the highlight travels
-   * when the content travels and is still when the page is still, which is
-   * the difference between a material reacting to its environment and a
-   * rectangle with an animation on it.
-   *
-   * `plus-lighter` rather than an alpha white: it adds light instead of
-   * painting over, so the colour the backdrop-filter pulled through from
-   * behind survives underneath the highlight rather than being washed out by
-   * it. Over a quiet grey section there is nothing much to add to and the
-   * sweep is invisible; over something bright or saturated it catches.
-   */
-  .nav::after,
-  .topbar::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    opacity: var(--nav-glass, 0);
-    transition: opacity var(--nav-anim, 520ms) ease;
-    mix-blend-mode: plus-lighter;
-    background:
-      /*
-       * A narrow bright core with a broad soft wash behind it.
-       *
-       * One gradient gave a single soft band, which is a gloss. Two — a tight
-       * specular line inside a much wider, much fainter one — is how light
-       * actually behaves on a curved polished surface, and it is what lets the
-       * highlight be brighter at its centre without becoming a stripe.
-       */
-      linear-gradient(
-        100deg,
-        transparent calc(var(--nav-sheen, 0.5) * 100% - 14%),
-        color-mix(in srgb, var(--nav-rim, #fff) 16%, transparent) calc(var(--nav-sheen, 0.5) * 100% - 3%),
-        color-mix(in srgb, var(--nav-rim, #fff) 30%, transparent) calc(var(--nav-sheen, 0.5) * 100%),
-        color-mix(in srgb, var(--nav-rim, #fff) 16%, transparent) calc(var(--nav-sheen, 0.5) * 100% + 3%),
-        transparent calc(var(--nav-sheen, 0.5) * 100% + 14%)
-      ),
-      linear-gradient(
-        100deg,
-        transparent calc(var(--nav-sheen, 0.5) * 100% - 55%),
-        color-mix(in srgb, var(--nav-rim, #fff) 10%, transparent) calc(var(--nav-sheen, 0.5) * 100%),
-        transparent calc(var(--nav-sheen, 0.5) * 100% + 55%)
-      );
-  }
-
-  /*
-   * The links have to sit on the glass, not under it.
-   *
-   * Both layers are `inset: 0` siblings of the content, so without this the
-   * sheen would be painted over the type. A stacking context on the children
-   * rather than a z-index on the layers, because the layers are also what the
-   * rim is drawn with and it belongs above the tint.
-   */
-  .nav > *,
-  .topbar > * {
-    position: relative;
-    z-index: 1;
-  }
-
-  /*
-   * Nothing at all while the wave is taking the page apart.
-   *
-   * The storm unpins the bar and removes its backdrop-filter entirely (see
-   * `.nav.dm-unpinned` below); leaving a rim and a highlight behind would be
-   * a pill-shaped outline floating over a page that no longer has a pill.
-   */
-  .nav.dm-unpinned::before,
-  .nav.dm-unpinned::after {
-    opacity: 0;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .nav::before,
-    .nav::after,
-    .topbar::before,
-    .topbar::after {
-      transition: none;
-    }
-  }
 
   .nav__link {
     display: inline-flex;
