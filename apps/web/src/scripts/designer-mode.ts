@@ -579,6 +579,13 @@ interface Flight {
   /** Which way the front was travelling when it got here. */
   nx: number;
   ny: number;
+  /**
+   * The type size on this surface, measured in the pre-pass with everything
+   * else. Only the tear reads it, and only to pick how far it separates the
+   * channels — but it is measured here so that it is measured *before* the
+   * sequence starts writing, with all the other reads, in one flush.
+   */
+  type: number;
   /** How much further than the shove alone the momentum carried it. */
   coast: number;
 }
@@ -596,7 +603,7 @@ let frame = 0;
  * event — a second, different set would read as a new effect arriving after
  * the story was over.
  */
-let broke: Array<{ el: HTMLElement; sx: number; bite: number }> = [];
+let broke: Array<{ el: HTMLElement; sx: number; bite: number; type: number }> = [];
 
 /** Where the arcs reach to, in viewport space, fixed at the freeze. */
 let anchors: Anchor[] = [];
@@ -1001,9 +1008,11 @@ export function run(options: DesignerModeOptions): Beat {
    * else gets a vote.
    */
   const seat = new Array<number>(chosen.length);
+  const pieceType = new Array<number>(chosen.length);
   chosen
     .map((el, i) => {
       const r = el.getBoundingClientRect();
+      pieceType[i] = parseFloat(window.getComputedStyle(el).fontSize) || 17;
       return { i, bearing: Math.atan2(r.top + r.height / 2 - originY, r.left + r.width / 2 - originX) };
     })
     .sort((a, b) => a.bearing - b.bearing)
@@ -1049,6 +1058,10 @@ export function run(options: DesignerModeOptions): Beat {
      * their arrangement is the click's too.
      */
     const spread = spreads[seat[rung]];
+    // Taken here, where `rung` is still this piece's. It is advanced further
+    // down, well before the flight below is built — reading it there handed
+    // every piece the next one's measurement and the last one nothing at all.
+    const type = pieceType[rung];
     const strength = push * falloff * spread;
 
     const nx = vx / distance;
@@ -1178,6 +1191,7 @@ export function run(options: DesignerModeOptions): Beat {
       // how much there is to hold.
       grip: 1 - heft,
       bulk: rect.height * 0.2,
+      type,
       /*
        * The bend reads the pressure, not the throw.
        *
@@ -1661,10 +1675,22 @@ export function run(options: DesignerModeOptions): Beat {
      * is one pressure envelope crossing the page and the tear, the bend and
      * the crackle are three readings of it, not three effects.
      */
-    const wounds: Array<{ el: HTMLElement; at: number; sx: number; force: number }> = [];
+    const wounds: Array<{
+      el: HTMLElement;
+      at: number;
+      sx: number;
+      force: number;
+      type: number;
+    }> = [];
 
     for (const { el, flight } of placed) {
-      wounds.push({ el, at: flight.wave, sx: flight.nx >= 0 ? 1 : -1, force: flight.force });
+      wounds.push({
+        el,
+        at: flight.wave,
+        sx: flight.nx >= 0 ? 1 : -1,
+        force: flight.force,
+        type: flight.type,
+      });
     }
 
     words.forEach((el, w) => {
@@ -1677,6 +1703,8 @@ export function run(options: DesignerModeOptions): Beat {
         at: struckAt[w],
         sx: ex >= 0 ? 1 : -1,
         force: pressure(away, reach),
+        // Already measured, in the same pass that measured the boxes.
+        type: blockSize[w],
       });
     });
 
@@ -2457,7 +2485,14 @@ const SPLIT = [0, 4, 7, 10, 15, 22];
 const fringe = (d: number) =>
   `${d}px 0 0 rgba(255, 42, 92, 0.92), ${-d}px 0 0 rgba(0, 228, 255, 0.86)`;
 
-function tear(el: HTMLElement, at: number, sx: number, bite: number, sy = 0): Animation[] {
+function tear(
+  el: HTMLElement,
+  at: number,
+  sx: number,
+  bite: number,
+  type: number,
+  sy = 0
+): Animation[] {
   if (!CAN_LAYER) return [];
 
   const quiet = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -2490,8 +2525,15 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number, sy = 0): An
    * out at one — the phone gets the same three levels it has always had, to
    * the pixel. A laptop's h1 at 92 comes out at two and is pushed a level up;
    * a very large monitor's reaches three and is pushed two.
+   *
+   * `type` arrives measured. It used to be read here with getComputedStyle,
+   * which is a read *after* the sequence has already written styles onto the
+   * page — a forced synchronous layout, twelve of them, inside the setup task
+   * that is already the longest one in the run. The callers all had the number
+   * to hand: the words from `blockSize`, which is measured in the same pass as
+   * their boxes, and the pieces from a pre-pass taken before anything is
+   * written. Nothing here needs to ask the engine a question.
    */
-  const type = parseFloat(window.getComputedStyle(el).fontSize) || 17;
   const grown = Math.round(Math.max(1, type / 44)) - 1;
 
   const graded = quiet ? 1 : bite > 0.62 ? 3 : bite > 0.28 ? 2 : 1;
@@ -2635,7 +2677,7 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number, sy = 0): An
  * it is, which is what keeps the gradient across the page.
  */
 function damage(
-  candidates: Array<{ el: HTMLElement; at: number; sx: number; force: number }>,
+  candidates: Array<{ el: HTMLElement; at: number; sx: number; force: number; type: number }>,
   fire: (strength: number) => void
 ): Animation[] {
   if (!CAN_LAYER || !candidates.length) return [];
@@ -2648,7 +2690,7 @@ function damage(
   }
 
   const span = Math.max(1, last - first);
-  const picked: Array<{ el: HTMLElement; at: number; sx: number; force: number }> = [];
+  const picked: Array<{ el: HTMLElement; at: number; sx: number; force: number; type: number }> = [];
 
   for (const one of candidates) {
     const slice = Math.min(TEAR_CAP - 1, Math.floor(((one.at - first) / span) * TEAR_CAP));
@@ -2674,8 +2716,8 @@ function damage(
   for (const one of picked) {
     if (!one) continue;
     const bite = strongest ? one.force / strongest : 1;
-    broke.push({ el: one.el, sx: one.sx, bite });
-    made.push(...tear(one.el, one.at, one.sx, bite));
+    broke.push({ el: one.el, sx: one.sx, bite, type: one.type });
+    made.push(...tear(one.el, one.at, one.sx, bite, one.type));
     /*
      * The crackle belongs to the frame the screen actually breaks, not to the
      * schedule — which is why it is fired from here rather than placed with
@@ -2737,7 +2779,17 @@ function resettle(who: HTMLElement | null, fire: (strength: number) => void): An
     .sort((a, b) => a.at - b.at);
 
   // Him last, and at the top of the scale whatever the page did.
-  if (who) order.push({ el: who, sx: Math.random() < 0.5 ? -1 : 1, bite: 1, at: SETTLE_SPREAD + 40 });
+  // Body size for him: he is a picture, and the computed size this used to
+  // read off him was whatever he inherited — which is this, and which puts him
+  // on the base three levels rather than the two the large type reaches.
+  if (who)
+    order.push({
+      el: who,
+      sx: Math.random() < 0.5 ? -1 : 1,
+      bite: 1,
+      at: SETTLE_SPREAD + 40,
+      type: 17,
+    });
 
   const made: Animation[] = [];
   let last = -Infinity;
@@ -2750,7 +2802,7 @@ function resettle(who: HTMLElement | null, fire: (strength: number) => void): An
      * gradient is right for a front arriving. Nothing is arriving now — the
      * screen is failing, and a screen fails all over.
      */
-    made.push(...tear(one.el, one.at, -one.sx, Math.max(0.34, one.bite * 0.9), 0.42));
+    made.push(...tear(one.el, one.at, -one.sx, Math.max(0.34, one.bite * 0.9), one.type, 0.42));
 
     if (one.at - last >= 40) {
       last = one.at;
@@ -2909,6 +2961,23 @@ interface Mote {
 
 let ctx: CanvasRenderingContext2D | null = null;
 let canvas: HTMLCanvasElement | null = null;
+/**
+ * The viewport, read once when the field starts and not again.
+ *
+ * `window.innerWidth` looks free and is not. It is a viewport read, and a
+ * viewport read against a dirty layout tree forces the engine to flush layout
+ * before it can answer — which is normally nothing, and during this sequence
+ * is the one time on this page it is guaranteed to cost something: the storm
+ * has timers writing `style.filter` onto a dozen elements while this loop is
+ * running, so the tree is dirty on most frames. Two of these were being read
+ * per frame inside the draw, one of them inside a loop.
+ *
+ * The canvas is sized from the same numbers at the same instant, so caching
+ * them here is not an approximation of the viewport — it is the viewport the
+ * canvas actually has. A resize tears the whole sequence down anyway.
+ */
+let fieldW = 0;
+let fieldH = 0;
 let links: Link[] = [];
 let motes: Mote[] = [];
 let nextMote = 0;
@@ -3046,8 +3115,10 @@ function wireField(): void {
 function startField(el: HTMLCanvasElement): void {
   canvas = el;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  el.width = Math.round(window.innerWidth * dpr);
-  el.height = Math.round(window.innerHeight * dpr);
+  fieldW = window.innerWidth;
+  fieldH = window.innerHeight;
+  el.width = Math.round(fieldW * dpr);
+  el.height = Math.round(fieldH * dpr);
   el.style.opacity = '1';
 
   ctx = el.getContext('2d');
@@ -3109,7 +3180,7 @@ function drawFieldLines(now: number, strength: number): void {
 
   for (let i = 0; i < 2; i += 1) {
     const t = ((now / period + i / 2) % 1);
-    const radius = 60 + t * Math.max(window.innerWidth, window.innerHeight) * 0.62;
+    const radius = 60 + t * Math.max(fieldW, fieldH) * 0.62;
     // In at the start, out at the end, so a ring never appears or vanishes.
     const alpha = Math.sin(t * Math.PI) * 0.075 * strength * strength;
     if (alpha <= 0.002) continue;
@@ -3128,7 +3199,7 @@ function drawField(now: number): void {
   if (!ctx || !canvas || !links.length) return;
 
   const p = power(now);
-  ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+  ctx.clearRect(0, 0, fieldW, fieldH);
   // Spent. Nothing left to draw, and no reason to keep clearing a blank canvas.
   if (p <= 0.015) return;
   ctx.globalCompositeOperation = 'lighter';

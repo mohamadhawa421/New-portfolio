@@ -112,3 +112,23 @@ cannot watch anything. Say so rather than claiming to have seen it.
 
 The dev server serves stale files often enough to waste a debugging session.
 Restart it when a change does not appear.
+
+## Profiling the storm
+
+Measure the **first** press on a fresh load. Warm runs are not representative:
+the second storm on a page produces no long tasks at all, so profiling one
+tells you nothing and suggests there is nothing to find.
+
+Fire `pointerenter` on the portrait before the click, or don't, but know which
+you are doing. Hovering runs `sound.warm()`, which opens the audio device and
+builds the buffers; a synthetic `dispatchEvent(new MouseEvent('click'))` never
+fires it, so a naive harness measures a cost a hovering visitor never pays. The
+buffers are also built on idle now (`sound.prime()`, an OfflineAudioContext so
+no device is opened), which is what covers touch and keyboard — neither gets a
+useful hover.
+
+`requestAnimationFrame` does not advance in the preview pane, so frame pacing
+cannot be measured there at all. What can be measured is main-thread blocking:
+a `PerformanceObserver` on `longtask` across the run, and `performance.now()`
+around the click handler. Zero long tasks is the bar, and the current sequence
+meets it — cold, on mobile and desktop.

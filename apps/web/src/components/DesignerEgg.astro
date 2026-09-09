@@ -420,6 +420,22 @@ import EggSound from './EggSound.astro';
      */
     trigger.addEventListener('pointerenter', () => sound.warm(), { once: true });
 
+    /*
+     * And for everyone who never hovers.
+     *
+     * A touch screen's pointerenter arrives as part of the tap, which is too
+     * late to be a warm-up, and a keyboard press produces none at all. This
+     * builds the buffers on the first idle moment after the page has settled,
+     * with no audio device and no audio thread — see `prime`. If the visitor
+     * then hovers, the hover finds them already built and only opens the
+     * device; if they never touch the portrait, the cost was a few dozen
+     * milliseconds of idle time nobody was using.
+     */
+    const idle =
+      window.requestIdleCallback ??
+      ((fn: () => void) => window.setTimeout(fn, 1200));
+    idle(() => sound.prime());
+
     const alt = document.querySelector<HTMLImageElement>('.hero__portrait-alt');
     trigger.addEventListener(
       'pointerdown',

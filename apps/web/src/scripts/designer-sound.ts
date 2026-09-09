@@ -295,7 +295,7 @@ const fall = (k: number, p: number) => Math.pow(1 - k, p);
  * back at an eighth of its speed, and anything not brilliant to begin with
  * lands below hearing once it has been dropped that far.
  */
-function makeWave(audio: Ctx): AudioBuffer {
+function makeWave(audio: BaseAudioContext): AudioBuffer {
   const sr = audio.sampleRate;
   const buffer = audio.createBuffer(1, Math.floor(sr * WAVE_SECONDS), sr);
   const d = buffer.getChannelData(0);
@@ -325,7 +325,7 @@ function makeWave(audio: Ctx): AudioBuffer {
 }
 
 /** The same wave, back to front. Its transient ends up last. */
-function reverse(audio: Ctx, src: AudioBuffer): AudioBuffer {
+function reverse(audio: BaseAudioContext, src: AudioBuffer): AudioBuffer {
   const buffer = audio.createBuffer(1, src.length, audio.sampleRate);
   const d = buffer.getChannelData(0);
   const s = src.getChannelData(0);
@@ -340,7 +340,7 @@ function reverse(audio: Ctx, src: AudioBuffer): AudioBuffer {
  * source cuts in and out every couple of milliseconds at random, which is how
  * an arc behaves and nothing like a filtered click.
  */
-function makeStrike(audio: Ctx): AudioBuffer {
+function makeStrike(audio: BaseAudioContext): AudioBuffer {
   const sr = audio.sampleRate;
   const buffer = audio.createBuffer(1, Math.floor(sr * 0.6), sr);
   const d = buffer.getChannelData(0);
@@ -376,7 +376,7 @@ function makeStrike(audio: Ctx): AudioBuffer {
  * badly — which is the sound of the same event the eye is being shown, and not
  * a second spark after the storm is over.
  */
-function makeFault(audio: Ctx): AudioBuffer {
+function makeFault(audio: BaseAudioContext): AudioBuffer {
   const sr = audio.sampleRate;
   const buffer = audio.createBuffer(1, Math.floor(sr * 0.14), sr);
   const d = buffer.getChannelData(0);
@@ -419,13 +419,63 @@ function makeFault(audio: Ctx): AudioBuffer {
   return buffer;
 }
 
-function build(audio: Ctx): void {
+function build(audio: BaseAudioContext): void {
   if (waveBuf) return;
   waveBuf = makeWave(audio);
   backBuf = reverse(audio, waveBuf);
   strikeBuf = makeStrike(audio);
   faultBuf = makeFault(audio);
 }
+
+/**
+ * Makes the buffers before anybody has touched anything.
+ *
+ * There is already a warm-up on hover — see `warm` below — and on a desktop
+ * with a mouse it does the job: the pointer crosses the portrait long before
+ * the press, and by the time the click lands there is nothing left to build.
+ * Two cases never get it. A touch screen has no hover to speak of: pointerenter
+ * fires as part of the tap itself, so the synthesis lands inside the same
+ * gesture it was meant to precede. And a keyboard press never generates one at
+ * all.
+ *
+ * It is worth removing from both. Measured on this page, building the four
+ * buffers is about 75ms — a quarter of a million samples, each through a
+ * state-variable filter — which at 60Hz is four and a half frames of nothing
+ * happening between the press and the wave, landing on the one frame of the
+ * whole sequence that most needs to be on time.
+ *
+ * Nothing about the sound changes. These are the same samples from the same
+ * generators, made earlier.
+ *
+ * An OfflineAudioContext is used purely as a buffer factory, and that is the
+ * difference between this and `warm`. Opening a real context is the right
+ * thing to do on hover, where a press is plainly coming and the platform
+ * should start finding an output device; doing it on a timer after page load,
+ * for every visitor, most of whom will never click the portrait, is not. An
+ * offline context asks for no device and starts no audio thread. AudioBuffers
+ * are not bound to the context that made them, so these play on the real one
+ * when it eventually arrives, and its rate need not match: a buffer carries
+ * its own sampleRate and the source node resamples, so the pitch and the
+ * length are what they were written to be. Every generator here derives its
+ * coefficients from the rate it is handed.
+ */
+export function prime(): void {
+  if (waveBuf) return;
+
+  const Offline =
+    window.OfflineAudioContext ??
+    (window as unknown as { webkitOfflineAudioContext?: typeof OfflineAudioContext })
+      .webkitOfflineAudioContext;
+  if (!Offline) return;
+
+  try {
+    build(new Offline(1, 1, 44100));
+  } catch {
+    // No offline context, or the rate was refused. Hover or the click will
+    // build them, exactly as they did before this existed.
+  }
+}
+
 
 /* ---------------------------------------------------------------------- */
 /* Transport                                                               */
