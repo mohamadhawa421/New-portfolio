@@ -79,11 +79,19 @@ const coverStyle = project.cover
     {/* ---------------------------------------------------------------- */}
     <section class="section section--parchment case-brief" data-lift data-tile="parchment">
       <div class="shell--narrow">
+        {/*
+          The cover does not open.
+
+          It is the establishing shot, not evidence — the same picture the card
+          on the work grid carried, at the size the page already gives it, so
+          there is nothing behind a fullscreen view of it that the visitor is
+          not already looking at. The approach shot and the gallery open,
+          because those are the screens somebody came to read.
+        */}
         <div
           class="case-cover"
           data-morph
           data-slug={project.slug}
-          data-zoom={project.cover ? '' : undefined}
           style={coverStyle}
         >
           {
@@ -549,11 +557,33 @@ const coverStyle = project.cover
 
   .case-shot {
     margin-top: clamp(40px, 6vh, 64px);
-    /* The same corner as the gallery below it, so every picture in a case
-       study is cut to one shape rather than two that are nearly the same. */
-    border-radius: var(--r-xl);
+    /*
+     * The cover's corner, not the gallery's.
+     *
+     * It is the largest single image on the page — 768px on the short side
+     * against the gallery tile's 394 — so cutting it to the tile's radius made
+     * it the flattest surface in the case study at 3.9% of its short side. One
+     * shape for every picture was the right instinct and the wrong unit: what
+     * has to match is the ratio, and matching the ratio means these two take
+     * different numbers.
+     */
+    border-radius: var(--r-2xl);
     overflow: hidden;
     background: var(--surface-parchment);
+  }
+
+  /*
+   * The expand badge sits off the corner by ten pixels plus a share of the
+   * curve, which is what keeps its clearance even across two surfaces cut to
+   * different radii — and keeps it even again on a phone, where both radii
+   * shrink and a fixed inset would leave the badge stranded in open space.
+   */
+  .case-shot {
+    --zoom-inset: calc(10px + var(--r-2xl) * 0.28);
+  }
+
+  .gallery__item {
+    --zoom-inset: calc(10px + var(--r-lg) * 0.28);
   }
 
   .case-shot img {
@@ -638,7 +668,10 @@ const coverStyle = project.cover
    */
   .gallery__item {
     aspect-ratio: 4 / 3;
-    border-radius: var(--r-xl);
+    /* 394px on the short side puts it a band below the panels — and on the
+       same corner as the lightbox it opens into, so the morph does not have to
+       change shape as well as size. */
+    border-radius: var(--r-lg);
     overflow: hidden;
     background: var(--surface);
   }

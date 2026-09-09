@@ -111,8 +111,19 @@
    */
   .zoom-badge {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    /*
+     * Set in from the corner by an amount the corner decides.
+     *
+     * A single inset cannot serve surfaces with different radii: at a flat
+     * 14px the badge cleared the approach shot's 36px corner by five pixels
+     * and a gallery tile's 21px corner by eleven, so the same control looked
+     * crowded on one picture and comfortably placed on the next. The frame
+     * passes its own figure in `--zoom-inset` — see the case study's
+     * stylesheet, where it is derived from the same radius token the surface
+     * is cut with, so the relationship survives every breakpoint.
+     */
+    top: var(--zoom-inset, 14px);
+    right: var(--zoom-inset, 14px);
     width: 32px;
     height: 32px;
     display: grid;

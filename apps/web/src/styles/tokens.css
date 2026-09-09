@@ -144,20 +144,62 @@
    *
    * Pills and buttons deliberately sit outside this. They are sized by their
    * content, not by the layout, and they already read correctly.
+   *
+   * ── Re-tuned, because the family had drifted off its own rule ──────────
+   *
+   * Measured at 1440px before this pass: the approach shot 3.9% of its short
+   * side, the enquiry panel 5.5%, the Figma stage 5.2%, the gallery tile 7.6%,
+   * the case cover 8.3%. Every one of them under the 10-11% the paragraph
+   * above claims, and the largest surfaces furthest under it — which is
+   * exactly the failure this comment was written about, returning by degrees
+   * as new surfaces were added and given whichever token looked closest.
+   *
+   * Two things were wrong. The numbers were low, and there was a hole in the
+   * middle of the scale: nothing between 30px and 56px, so every surface
+   * between roughly 500 and 700px on the short side was rounded down to 30 and
+   * read flat. The steps now sit at 72 / 58 / 42, which closes that gap, and
+   * each one is aimed at a size band rather than at a place in an alphabet:
+   *
+   *     --r-2xl   680-780px surfaces   cover, featured tile, approach shot
+   *     --r-xl    520-600px surfaces   enquiry panel, Figma stage
+   *     --r-lg    350-420px surfaces   gallery tile, the opened lightbox
+   *
+   * A surface that changes size band should change token. That is the whole
+   * maintenance rule, and it is why the bands are written down here.
+   *
+   * ── And then halved, by eye ───────────────────────────────────────────
+   *
+   * The three surface steps are half the numbers the ratio above argues for.
+   * Taken to 72 / 58 / 42 the arithmetic was satisfied and the result was not:
+   * on the panels and the project imagery it read as soft rather than crisp,
+   * which is a different thing from the portrait it was matched against — a
+   * portrait is an object and a case study cover is a window, and a window
+   * with a very round corner starts to look like a sticker.
+   *
+   * So 36 / 29 / 21, which is the ratio holding for the smaller surfaces and
+   * deliberately relaxing on the largest. The band above is kept as written
+   * because it is still what decides *which* token a surface takes; only the
+   * values moved. The portrait keeps its own, since it is the one place the
+   * full ratio was always right.
    */
   --r-portrait: clamp(34px, 3.6vw, 48px);
-  /* Full-bleed imagery: the case study cover and the featured project tile. */
-  --r-2xl: clamp(24px, 4.2vw, 56px);
+  /*
+   * Full-bleed imagery at its largest: the case study cover, the featured
+   * project tile, and the approach shot. Around 680-770px on the short side at
+   * a desktop width, so 72px is the ratio above rather than a taste for round
+   * corners — the cover measured 8.3% before this and now measures 10.7%.
+   */
+  --r-2xl: clamp(14px, 2.5vw, 36px);
   /* Cards, the enquiry form, and the gallery. */
-  --r-xl: clamp(20px, 2.2vw, 30px);
+  --r-xl: clamp(12px, 2vw, 29px);
   /* Inset imagery inside a case study. */
-  --r-lg: clamp(18px, 1.8vw, 26px);
-  --r-md: 15px;
-  --r-sm: 12px;
-  --r-xs: 10px;
+  --r-lg: clamp(10px, 1.45vw, 21px);
+  --r-md: 18px;
+  --r-sm: 14px;
+  --r-xs: 12px;
   /* The home page's project thumbnails. Rounder than the ratio alone asks
      for: at 120x75 the squircle only starts to read as one past about 15%. */
-  --r-2xs: clamp(11px, 1vw, 14px);
+  --r-2xs: clamp(12px, 1.1vw, 16px);
   --r-pill: 9999px;
 
   /* ---- Layout -------------------------------------------------------- */
