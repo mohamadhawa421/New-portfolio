@@ -43,11 +43,21 @@ import EggSound from './EggSound.astro';
 {/*
   The screen coming apart, defined once.
 
-  Three filters rather than one animated one: SVG filter primitives are not
+  Five filters rather than one animated one: SVG filter primitives are not
   CSS and their attributes are not on the CSS animation clock, so the only way
   to change the separation over time is to change which filter is applied.
   Which suits it — a glitch cuts between states, it does not slide between
-  them, and stepping across three fixed levels is exactly the vocabulary.
+  them, and stepping across fixed levels is exactly the vocabulary.
+
+  Three of the five carry the pressure gradient, which is all this needed
+  while every screen showed type at the same size. The last two exist because
+  a large viewport does not: a seven pixel fringe is two fifths of a glyph in
+  17px body copy and a fifteenth of one in a 92px heading, so the same filter
+  that reads as damage on a phone reads as a soft edge on a laptop. Which of
+  the five an element gets is decided partly by how hard it was hit and partly
+  by how large its type is — see `tear` for the arithmetic. The two new
+  regions are wider to match their offsets; a filter region narrower than the
+  offset it contains clips the fringe off.
 
   Each one splits the source into its channels, offsets red one way and blue
   the other, and screens the three back together. Where nothing has moved the
@@ -159,6 +169,68 @@ import EggSound from './EggSound.astro';
         result="green"
       />
       <feOffset in="SourceGraphic" dx="-10" dy="0" result="bshift" />
+      <feColorMatrix
+        in="bshift"
+        type="matrix"
+        values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"
+        result="blue"
+      />
+      <feBlend in="red" in2="green" mode="screen" result="rg" />
+      <feBlend in="rg" in2="blue" mode="screen" />
+    </filter>
+    <filter
+      id="dm-tear-4"
+      x="-16%"
+      y="-3%"
+      width="132%"
+      height="106%"
+      color-interpolation-filters="sRGB"
+    >
+      <feOffset in="SourceGraphic" dx="15" dy="0" result="rshift" />
+      <feColorMatrix
+        in="rshift"
+        type="matrix"
+        values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"
+        result="red"
+      />
+      <feColorMatrix
+        in="SourceGraphic"
+        type="matrix"
+        values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"
+        result="green"
+      />
+      <feOffset in="SourceGraphic" dx="-15" dy="0" result="bshift" />
+      <feColorMatrix
+        in="bshift"
+        type="matrix"
+        values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"
+        result="blue"
+      />
+      <feBlend in="red" in2="green" mode="screen" result="rg" />
+      <feBlend in="rg" in2="blue" mode="screen" />
+    </filter>
+    <filter
+      id="dm-tear-5"
+      x="-20%"
+      y="-3%"
+      width="140%"
+      height="106%"
+      color-interpolation-filters="sRGB"
+    >
+      <feOffset in="SourceGraphic" dx="22" dy="0" result="rshift" />
+      <feColorMatrix
+        in="rshift"
+        type="matrix"
+        values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"
+        result="red"
+      />
+      <feColorMatrix
+        in="SourceGraphic"
+        type="matrix"
+        values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"
+        result="green"
+      />
+      <feOffset in="SourceGraphic" dx="-22" dy="0" result="bshift" />
       <feColorMatrix
         in="bshift"
         type="matrix"
@@ -748,6 +820,17 @@ import EggSound from './EggSound.astro';
    *
    * Idle it does not exist: the parent is at opacity 0 until the wave starts.
    */
+  /*
+   * The ground it reveals, at the scale of the ground.
+   *
+   * The rings this draws are what the displacement has to distort — a flat
+   * surface cannot be seen bending — so their spacing is the grain of the
+   * sheet, and a grain fixed at 22px is a fine texture on a phone and a
+   * near-invisible mist on a large monitor. Both the line and the period are
+   * shares of the reach now, floored at what a phone already gets, so the
+   * sheet always has about the same number of rings across it whatever it is
+   * being drawn on and the crest always has something of its own size to lift.
+   */
   .bend::before {
     content: '';
     position: absolute;
@@ -755,8 +838,9 @@ import EggSound from './EggSound.astro';
     border-radius: 50%;
     background: repeating-radial-gradient(
       circle,
-      var(--dm-bend-line) 0 1.5px,
-      transparent 1.5px 22px
+      var(--dm-bend-line) 0 max(1.5px, calc(var(--egg-reach, 600px) * 0.00227)),
+      transparent max(1.5px, calc(var(--egg-reach, 600px) * 0.00227))
+        max(22px, calc(var(--egg-reach, 600px) * 0.0333))
     );
     -webkit-mask-image: radial-gradient(
       circle,
@@ -890,8 +974,25 @@ import EggSound from './EggSound.astro';
    * in quantity — it is the strongest moment in the whole sequence, and it
    * lasts about half a second.
    */
+  /*
+   * Its thickness is a share of how far it has to travel, not six pixels.
+   *
+   * The rings, the wash and the bend are all sized off the click point, so the
+   * *band* they draw is proportional on every screen — and then the one part
+   * of the front that is a real length, the edge itself, was not. Six pixels
+   * is a heavy rule across a 375px phone and a hairline across a 2560px
+   * monitor, which is the same lost force the throw and the lift had: the
+   * further the wave has to go, the thinner the thing going was drawn.
+   *
+   * The coefficient is set from the phone rather than chosen: a 375×812
+   * viewport reaches about 660px from a hero click, and 6 ÷ 660 is 0.0091. So
+   * every phone lands on exactly the six it already had — the floor and the
+   * calculation agree there to the pixel — and a large desktop, crossing two
+   * and a half times as far, draws an edge two and a half times as thick.
+   */
   .ring {
-    border: 6px solid color-mix(in srgb, var(--dm-arc) 55%, #fff);
+    border: max(6px, calc(var(--egg-reach, 600px) * 0.0091)) solid
+      color-mix(in srgb, var(--dm-arc) 55%, #fff);
     box-shadow:
       0 0 54px color-mix(in srgb, var(--dm-core) 88%, transparent),
       0 0 16px color-mix(in srgb, var(--dm-arc) 95%, transparent),
@@ -901,7 +1002,7 @@ import EggSound from './EggSound.astro';
   /* A second, thinner ring a beat behind. One ring is an outline; two are a
      shock front with something behind it. */
   .ring--trail {
-    border-width: 2.5px;
+    border-width: max(2.5px, calc(var(--egg-reach, 600px) * 0.0038));
     border-color: var(--dm-arc);
     box-shadow: 0 0 18px color-mix(in srgb, var(--dm-arc) 55%, transparent);
   }

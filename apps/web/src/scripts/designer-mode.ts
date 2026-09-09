@@ -148,6 +148,24 @@ const WAVE_MS = 380;
 const SWELL_MS = 420;
 
 /**
+ * The smallest lift anything gets, and why it stays a flat number.
+ *
+ * A share of the viewport's height was tried here, on the reasoning that the
+ * lift is a vertical displacement so the height it happens inside is the
+ * denominator. It is not, and the measurement says so plainly: on a 1024×1366
+ * tablet a tenth of the height is 141px, which took 17px body copy from 0.64
+ * of its own height to 1.79 and a 48px button from 1.62 to 2.71 — everything
+ * on the page hurled about because the window was tall, with nothing on the
+ * page having got any bigger.
+ *
+ * The thing being lifted is the element. A 17px paragraph is 17px on a phone
+ * and on a wall-mounted display, so the force that hits it does not change
+ * either, and the floor that catches it must not. Only `bulk` — the element's
+ * own measured size — is allowed to lift anything above this.
+ */
+const FLOOR_RISE = 84;
+
+/**
  * The furthest a swell can be pushed back by the sweep across its own block.
  *
  * The sweep below travels along each line at about a millisecond per pixel, so
@@ -492,6 +510,17 @@ interface Flight {
   bow: number;
   /** How hard the field has to work to hold it. 0 for a cover, 1 for a chip. */
   grip: number;
+  /**
+   * The lift this surface's own size asks for, in pixels.
+   *
+   * A share of its height rather than of its area, because the lift is
+   * vertical and a wide flat banner is not lifted further for being wide. The
+   * share is small and the floor inside `lift` is 84, so it only decides
+   * anything for something taller than about six hundred pixels — which on
+   * this page means the one near-full-viewport cover, and that is exactly the
+   * element the wave used to appear not to touch.
+   */
+  bulk: number;
   /** How much pressure was left here when the front passed. Drives the bend. */
   force: number;
   /** Which way the front was travelling when it got here. */
@@ -854,8 +883,17 @@ export function run(options: DesignerModeOptions): Beat {
    * the shove times the coast — so making the momentum harder to beat had to
    * be paid for out of the shove, or the far pieces would spend the fight
    * off the side of the screen where nobody can watch them lose it.
+   *
+   * The absolute ceilings that used to sit in front of this are gone, and they
+   * are the single biggest reason the storm felt weaker the larger the screen
+   * got. A share of the short edge is already a scaled quantity: on a phone it
+   * is 233px, which is 62% of the width, and on a laptop 558px, which is 39%.
+   * A 560px ceiling barely touched the laptop and then held every screen above
+   * it at 560 — on a 2560×1440 monitor that is 22% of the width, a third of
+   * the throw the phone gets, for the same click. Nothing about the pixels was
+   * wrong; the cap was measuring force in pixels on a page that is not.
    */
-  const push = Math.min(narrow ? 340 : 560, Math.min(window.innerWidth, window.innerHeight) * 0.62);
+  const push = Math.min(window.innerWidth, window.innerHeight) * 0.62;
 
   /*
    * One bias for the whole run.
@@ -1050,6 +1088,7 @@ export function run(options: DesignerModeOptions): Beat {
       // How hard the field has to work to hold it, which is the inverse of
       // how much there is to hold.
       grip: 1 - heft,
+      bulk: rect.height * 0.2,
       /*
        * The bend reads the pressure, not the throw.
        *
@@ -1419,7 +1458,27 @@ export function run(options: DesignerModeOptions): Beat {
       const entry = Math.max(bx.left, Math.min(originX, bx.right));
       const sweep = Math.min(SWEEP_CAP, Math.abs(spot.left + spot.width / 2 - entry) * 0.85);
       const roll = Math.round(Math.min(1, distance / reach) * WAVE_MS + sweep);
-      const swell = lift(letter, roll, nx, ny, pressure(distance, reach), Math.min(1, sized[i] / 460));
+      /*
+       * A glyph is measured by its type size, and asks for twice it.
+       *
+       * Twice, because that is what the phone already does and the phone is
+       * the reference: 40px display type lifting 81 is 2.02 of itself. Body
+       * copy at 17 would ask for 34 by the same rule and is floored back to
+       * the 84 it has always had, which is correct — 17px type is 17px on a
+       * watch and on a wall, so the force that hits it does not change either.
+       * The only glyphs this moves are the ones a large viewport made large:
+       * the h1 at 92px asks for 184 and gets it, and lands at 1.69 of its own
+       * height against the phone's 1.58.
+       */
+      const swell = lift(
+        letter,
+        roll,
+        nx,
+        ny,
+        pressure(distance, reach),
+        Math.min(1, sized[i] / 460),
+        sized[i] * 2
+      );
       if (swell) returning.push(swell);
 
       /*
@@ -1474,7 +1533,15 @@ export function run(options: DesignerModeOptions): Beat {
        * The swell is over 240ms before the shove starts, which is the gap that
        * makes them two events instead of one.
        */
-      const lifted = lift(el, flight.wave, flight.nx, flight.ny, flight.force, 1 - flight.grip);
+      const lifted = lift(
+        el,
+        flight.wave,
+        flight.nx,
+        flight.ny,
+        flight.force,
+        1 - flight.grip,
+        flight.bulk
+      );
       if (lifted) returning.push(lifted);
     }
 
@@ -1955,6 +2022,7 @@ function lift(
   ny = 0,
   force = 1,
   heft = 0,
+  bulk = 0,
   span = SWELL_MS
 ): Animation | null {
   if (!CAN_LAYER) return null;
@@ -2013,8 +2081,35 @@ function lift(
    */
   const light = 1 - heft * 0.42;
 
-  const px = nx * 46 * give * light;
-  const py = (-84 + ny * 46) * give * light;
+  /*
+   * How far this thing has to move before the force reads as the same force.
+   *
+   * Eighty-four pixels was an absolute number, and an absolute number is the
+   * one thing a page rendered at every size cannot use for this. Measured:
+   * on a 375px phone the h1's glyphs are 40px and lift 81 — twice their own
+   * height, which is why the wave feels violent there. On a 1440 laptop the
+   * same glyphs are 92px and lift 78, because `light` takes *more* off the
+   * bigger type. Nine tenths of a letter-height. Same pixels, a third of the
+   * force, and that gap is the whole complaint.
+   *
+   * So the rise is whichever is larger: the floor the small end of the page
+   * has always had, or a share of the element's own size. The floor is
+   * what keeps a phone exactly where it is — 17px body copy and a 44px control
+   * are the same 17 and 44 on every machine ever made, so they ask for the
+   * same lift on all of them and get it. Nothing below the crossover moves by
+   * a pixel. Only the things that actually grew with the viewport grow with it
+   * here, which is the only place the perceived force was ever lost.
+   *
+   * `bulk` is the size in pixels the caller thinks this element should be
+   * measured by, already multiplied by whatever share of it is right for that
+   * kind of thing. A glyph and a card are not measured the same way and the
+   * two call sites know which they are holding; this does not need to.
+   */
+  const rise = Math.max(FLOOR_RISE, bulk);
+  const along = rise * (46 / 84);
+
+  const px = nx * along * give * light;
+  const py = (-rise + ny * along) * give * light;
   const stretch = 1 + 0.105 * give * light;
   const degrees = 30 * give * (1 - heft * 0.34);
 
@@ -2161,7 +2256,7 @@ const PAINTED_TEAR = (() => {
  * level; index nought is unused and only there so the numbering matches
  * `dm-tear-1` through `dm-tear-3`.
  */
-const SPLIT = [0, 4, 7, 10];
+const SPLIT = [0, 4, 7, 10, 15, 22];
 
 /**
  * The separation, as two coloured copies of every glyph.
@@ -2200,7 +2295,28 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number, sy = 0): An
    * thing left standing on this page measured 0.5 — so the heaviest filter of
    * the three was written, shipped, and never once applied.
    */
-  const peak = quiet ? 1 : bite > 0.62 ? 3 : bite > 0.28 ? 2 : 1;
+  /*
+   * And how much the size of the type here moves it up the scale.
+   *
+   * The three levels above grade the damage across the page, which is the
+   * right axis and, on a large screen, not the only one. A fringe is read
+   * against the stroke it is on: seven pixels beside 17px body copy is two
+   * fifths of the glyph and unmistakable, and the same seven beside a 92px
+   * heading is a fifteenth of it and reads as a soft edge. The heading is
+   * exactly the element a big viewport made big, so it is exactly the element
+   * whose damage quietly disappeared as the screen grew.
+   *
+   * Floored at the largest type a phone shows, so the reference does not move.
+   * Everything on a 375px viewport is at or under forty-four pixels and comes
+   * out at one — the phone gets the same three levels it has always had, to
+   * the pixel. A laptop's h1 at 92 comes out at two and is pushed a level up;
+   * a very large monitor's reaches three and is pushed two.
+   */
+  const type = parseFloat(window.getComputedStyle(el).fontSize) || 17;
+  const grown = Math.round(Math.max(1, type / 44)) - 1;
+
+  const graded = quiet ? 1 : bite > 0.62 ? 3 : bite > 0.28 ? 2 : 1;
+  const peak = quiet ? 1 : Math.min(SPLIT.length - 1, graded + grown);
   const mid = Math.max(1, peak - 1);
 
   /*
@@ -2277,15 +2393,20 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number, sy = 0): An
   after(at + TEAR_MS, clear);
 
   /*
-   * Three to seven pixels, on the same gradient as everything else here.
+   * Three to seven pixels on a phone, and more where the type is larger.
    *
    * Floored rather than scaled from nothing, for the reason the bend's own
    * `give` is: a bare multiply puts most of the page at the bottom of the
    * range, and the bottom of this range is a displacement nobody can see in
    * the few frames it is on screen. The far corner still moves less than the
    * near one — there is just no longer a version of this that does not move.
+   *
+   * The size term is the one the separation uses, continuous here rather than
+   * rounded to a level, because this is a number and not a choice between
+   * five filters. It multiplies to one on every phone, so the three-to-seven
+   * is exactly what it was; a 92px heading skips about fifteen.
    */
-  const amp = 3 + 4 * Math.max(0, Math.min(1, bite));
+  const amp = (3 + 4 * Math.max(0, Math.min(1, bite))) * Math.max(1, type / 44);
 
   /*
    * And a little of it downward, or none at all.
