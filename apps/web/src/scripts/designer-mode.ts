@@ -3192,6 +3192,7 @@ function startField(el: HTMLCanvasElement): void {
   motes = [];
   nextMote = 0;
   lastSlot = -1;
+  fieldLast = 0;
   frame = requestAnimationFrame(drawField);
 }
 
@@ -3256,9 +3257,25 @@ function drawFieldLines(now: number, strength: number): void {
   }
 }
 
+/**
+ * When the field last drew, so a mote can be moved by time rather than by
+ * frames. Reset by startField, because a new run must not inherit a gap.
+ */
+let fieldLast = 0;
+
 function drawField(now: number): void {
   frame = requestAnimationFrame(drawField);
   if (!ctx || !canvas || !links.length) return;
+
+  /*
+   * How long this frame is worth, in the sixtieths the motes were tuned in.
+   *
+   * Capped at four frames so a tab that has been in the background does not
+   * resume by throwing every mote across the screen in one step — the same
+   * guard the 404's field has, for the same reason.
+   */
+  const elapsed = fieldLast ? Math.min(now - fieldLast, 64) : 16.67;
+  fieldLast = now;
 
   const p = power(now);
   ctx.clearRect(0, 0, fieldW, fieldH);
@@ -3362,8 +3379,18 @@ function drawField(now: number): void {
   motes = motes.filter((mote) => now - mote.born < mote.life);
   for (const mote of motes) {
     const t = (now - mote.born) / mote.life;
-    mote.x += mote.vx * 16;
-    mote.y += mote.vy * 16;
+    /*
+     * Moved by the milliseconds that actually passed, not by a frame.
+     *
+     * This was `* 16` — a hard-coded sixtieth applied once per callback, which
+     * is a refresh-rate dependency of exactly the kind the cursor's `steps`
+     * and the 404 field's `dt` were written to avoid. A mote's life is
+     * measured in time and its travel was measured in frames, so on a 144Hz
+     * display it covered two and a half times the distance before dying: the
+     * same field, visibly different weather, decided by the panel.
+     */
+    mote.x += mote.vx * elapsed;
+    mote.y += mote.vy * elapsed;
 
     ctx.beginPath();
     ctx.arc(mote.x, mote.y, 1.15, 0, Math.PI * 2);

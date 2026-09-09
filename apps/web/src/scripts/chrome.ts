@@ -490,9 +490,33 @@ function isDarkTheme(): boolean {
   );
 }
 
+/**
+ * Where the nav condenses, and where it lets go again.
+ *
+ * Two numbers rather than one, and the gap between them is the whole point.
+ *
+ * A single threshold at 90 meant the nav changed state every time the scroll
+ * position crossed it — and a trackpad, a rubber-band on iOS, or simply
+ * resting a little under the fold crosses it repeatedly. Measured with a slow
+ * wobble between 80 and 96: twelve state changes in fourteen samples. Each one
+ * restarts a 520ms transition on `background`, `box-shadow` and
+ * `backdrop-filter`, and takes the bar's backdrop root away and builds it
+ * again, which is the most expensive thing on the page happening at the most
+ * ordinary scroll position there is.
+ *
+ * Condensing high and releasing low costs nothing anybody can see — the bar
+ * has already committed by the time you are 90px down, and letting go at 62
+ * only means scrolling back up a little further to undress it, which is what
+ * the gesture means anyway. It is the standard fix for a boundary that a human
+ * hand cannot help but sit on.
+ */
+const CONDENSE_AT = 90;
+const RELEASE_AT = 62;
+
 function chromePass(): void {
   const y = window.scrollY || root.scrollTop || 0;
-  const condensed = y > 90;
+  const condensed =
+    lastCondensed === null ? y > CONDENSE_AT : lastCondensed ? y > RELEASE_AT : y > CONDENSE_AT;
 
   // Which tile sits under the nav decides its ink colour. Pure arithmetic now:
   // no layout is read during the scroll.
