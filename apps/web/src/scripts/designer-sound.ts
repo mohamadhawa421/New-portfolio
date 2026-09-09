@@ -116,6 +116,26 @@ let master: GainNode | null = null;
  * a switch the visitor can no longer see.
  */
 let gate: GainNode | null = null;
+/**
+ * What the blast does to the listener, in two nodes.
+ *
+ * Everything the storm plays goes through these on its way to the gate, and
+ * one thing deliberately does not: the ringing. A blast loud enough to ring
+ * the ears does not get quieter along with everything else — it *is* what is
+ * left when everything else goes away — so the ring is wired past both of
+ * these straight to the gate, and these two take the rest of the mix down and
+ * shut the top off it for half a second.
+ *
+ * `muffle` is a lowpass sitting wide open at rest. Ducking on its own reads as
+ * the volume being turned down, which is a mixing decision the ear hears as
+ * one; taking the top off at the same time reads as hearing that has been
+ * briefly overloaded, which is the thing being described. The two together are
+ * "distant", and neither on its own is.
+ */
+let muffle: BiquadFilterNode | null = null;
+let duck: GainNode | null = null;
+/** The ringing's own level, past the duck, so `end` can still find it. */
+let ringBus: GainNode | null = null;
 /** Strike level, automated across the run so the arcs follow the storm. */
 let arcBus: GainNode | null = null;
 let stopped = true;
@@ -125,6 +145,8 @@ let lastStrike = 0;
 let lastTear = 0;
 /** And the last one of the final glitch's, which throttles separately. */
 let lastFault = 0;
+/** And the last surface that answered the front. */
+let lastMaterial = 0;
 /** Whether the output device has been forced open yet. */
 let opened = false;
 
@@ -178,9 +200,25 @@ function context(): Ctx | null {
   gate.gain.value = muted ? 0 : 1;
   gate.connect(ctx.destination);
 
+  duck = ctx.createGain();
+  duck.gain.value = 1;
+  duck.connect(gate);
+
+  muffle = ctx.createBiquadFilter();
+  muffle.type = 'lowpass';
+  // Above hearing at rest, so it is not a tone control — it does nothing at
+  // all until the blast closes it.
+  muffle.frequency.value = 20000;
+  muffle.Q.value = 0.4;
+  muffle.connect(duck);
+
+  ringBus = ctx.createGain();
+  ringBus.gain.value = 1;
+  ringBus.connect(gate);
+
   master = ctx.createGain();
   master.gain.value = 0;
-  master.connect(gate);
+  master.connect(muffle);
 
   arcBus = ctx.createGain();
   arcBus.gain.value = 1;
@@ -530,6 +568,25 @@ export function end(): void {
   master.gain.setValueAtTime(Math.max(master.gain.value, 0.0001), t);
   master.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
 
+  /*
+   * And the ring with it, because it is the one voice master does not carry.
+   *
+   * Also the duck and the muffle back to neutral: if the storm is cut off
+   * between the blast and the recovery, whatever they were mid-ramp would
+   * otherwise still be there the next time anything plays.
+   */
+  for (const node of [ringBus, duck]) {
+    if (!node) continue;
+    node.gain.cancelScheduledValues(t);
+    node.gain.setValueAtTime(Math.max(node.gain.value, 0.0001), t);
+    node.gain.exponentialRampToValueAtTime(node === duck ? 1 : 0.0001, t + 0.35);
+  }
+  if (muffle) {
+    muffle.frequency.cancelScheduledValues(t);
+    muffle.frequency.setValueAtTime(muffle.frequency.value, t);
+    muffle.frequency.exponentialRampToValueAtTime(20000, t + 0.35);
+  }
+
   // Stopped after the fade, never during it: cutting a voice mid-cycle is a
   // click, which is the one sound this layer is trying not to make.
   for (const voice of voices) {
@@ -810,6 +867,62 @@ export function crackle(strength = 1): void {
 }
 
 /**
+ * A surface answering the front that just reached it.
+ *
+ * The quietest layer in the sequence and the most numerous, so its whole
+ * design is about not being noticed individually. What it contributes is
+ * grain: eight small material responses spread across the six hundred
+ * milliseconds the pressure is building, each at the frame its own element
+ * starts to rise, so the swell has things happening inside it rather than
+ * being one smooth ramp.
+ *
+ * Weight decides the character, because that is what weight does. A chip
+ * answers high and briefly — a light thing struck rings and stops — and a
+ * full-width cover answers low and takes longer to give up, which is the same
+ * distinction the picture is already drawing with `light` and `inertia`. The
+ * numbers come straight off the element, so the two cannot disagree.
+ *
+ * `force` is the pressure left where it stands, so a surface at the edge of
+ * the page is quieter than one under the click for the same reason it bends
+ * less. Forty-five milliseconds of throttle: eight of these inside 600ms is
+ * one every seventy-five at worst, and two that land together are one event.
+ */
+export function material(heft = 0, force = 1): void {
+  const audio = context();
+  if (!audio || !master || !strikeBuf || stopped) return;
+
+  const t = audio.currentTime;
+  if (t - lastMaterial < 0.045) return;
+  lastMaterial = t;
+
+  const weight = Math.max(0, Math.min(1, heft));
+
+  const src = audio.createBufferSource();
+  src.buffer = strikeBuf;
+  // Heavy things are slower as well as lower: the same material read at a
+  // different speed, rather than two different materials.
+  src.playbackRate.value = (1.5 - weight * 0.95) * (0.92 + Math.random() * 0.16);
+
+  const body = audio.createBiquadFilter();
+  body.type = 'bandpass';
+  body.frequency.value = 1400 - weight * 1140;
+  body.Q.value = 1.6;
+
+  const gain = audio.createGain();
+  // A twentieth of the impact at its loudest. This is grain, not an event.
+  const level = 0.055 * (0.35 + 0.65 * Math.max(0, Math.min(1, force)));
+  const span = 0.09 + weight * 0.13;
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(level, t + 0.006);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + span);
+
+  src.connect(body).connect(gain).connect(master);
+  src.start(t);
+  src.stop(t + span + 0.05);
+  voices.push(src);
+}
+
+/**
  * The screen giving out one last time, heard.
  *
  * The same picture as the tear and a different sound on purpose, because it is
@@ -903,6 +1016,44 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
   master.gain.cancelScheduledValues(t0);
   master.gain.setValueAtTime(LEVEL, t0);
 
+  /* ---- Contact: the instant something enters the system --------------- */
+
+  /*
+   * The click is not a click.
+   *
+   * Everything else here develops — the pressure swells, the front travels,
+   * the blast decays. This is the only event in the sequence with no duration
+   * worth speaking of, and it exists because the picture has one too: the
+   * flash is up and gone in 240ms and the arcs start at the portrait on the
+   * first frame. Without it the sound begins with a swell, and a swell that
+   * begins from nothing reads as something approaching rather than as the
+   * moment of contact.
+   *
+   * Two milliseconds of very high, very quiet spark, and a fifth of a second
+   * of nothing underneath it before the pressure takes over. It is under the
+   * threshold of being identified as its own sound and over the threshold of
+   * being missed if it is removed.
+   */
+  if (strikeBuf) {
+    const spark = audio.createBufferSource();
+    spark.buffer = strikeBuf;
+    spark.playbackRate.value = 3.4;
+
+    const bright = audio.createBiquadFilter();
+    bright.type = 'highpass';
+    bright.frequency.value = 4200;
+    bright.Q.value = 0.7;
+
+    const sparkGain = audio.createGain();
+    sparkGain.gain.setValueAtTime(0.3, t0);
+    sparkGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.055);
+
+    spark.connect(bright).connect(sparkGain).connect(master);
+    spark.start(t0);
+    spark.stop(t0 + 0.09);
+    voices.push(spark);
+  }
+
   /* ---- The pressure, ahead of the force ------------------------------ */
 
   /*
@@ -985,6 +1136,50 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
     air.stop(t0 + swell + 0.08);
   }
 
+  /* ---- The ground, flexing under all of it ---------------------------- */
+
+  /*
+   * The sheet being displaced, which is a body and not a tone.
+   *
+   * The picture's bend runs for almost exactly the preload — 620ms of ridge
+   * crossing against 610ms of swell — and it is the one part of the sequence
+   * that had no sound at all. A pressure pulse moving under a surface is heard
+   * as the surface's own resonance being pushed around: a narrow band, low,
+   * that shifts upward as the ridge passes and falls away behind it.
+   *
+   * A bandpass on the arc buffer at a quarter speed rather than an oscillator,
+   * because a pure tone here is a sci-fi warp and the whole point is that this
+   * should not be identifiable. What comes through is a hundred and ten hertz
+   * of moving noise: felt on anything with a woofer, and on a laptop speaker
+   * mostly a change in the weight of the pressure it is already hearing.
+   *
+   * A fifth of the pressure's level. It is underneath the layer it belongs to,
+   * not beside it.
+   */
+  if (strikeBuf) {
+    const ground = audio.createBufferSource();
+    ground.buffer = strikeBuf;
+    ground.playbackRate.value = 0.25;
+
+    const flex = audio.createBiquadFilter();
+    flex.type = 'bandpass';
+    flex.frequency.setValueAtTime(84, t0);
+    flex.frequency.exponentialRampToValueAtTime(190, t0 + swell * 0.5);
+    flex.frequency.exponentialRampToValueAtTime(70, t0 + swell);
+    flex.Q.value = 3.2;
+
+    const groundGain = audio.createGain();
+    groundGain.gain.setValueAtTime(0.0001, t0);
+    groundGain.gain.exponentialRampToValueAtTime(0.13, t0 + 0.06);
+    groundGain.gain.exponentialRampToValueAtTime(0.09, t0 + swell * 0.62);
+    groundGain.gain.exponentialRampToValueAtTime(0.0001, t0 + swell + 0.03);
+
+    ground.connect(flex).connect(groundGain).connect(master);
+    ground.start(t0);
+    ground.stop(t0 + swell + 0.08);
+    voices.push(ground);
+  }
+
   /* ---- The wave, and time closing around it -------------------------- */
 
   /*
@@ -1041,6 +1236,175 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
   wave.connect(waveGain).connect(master);
   wave.start(blastAt);
   wave.stop(drift + 1.2);
+
+  /* ---- The break itself, in three pieces ------------------------------ */
+
+  /*
+   * The blast buffer is the body and the scale. It is not the break.
+   *
+   * What it has is weight — a sub drop with a long body of air falling away
+   * behind it — and weight tells the ear the event was large. It does not tell
+   * the ear that something *came apart*, because nothing in it has a hard edge.
+   * That is what these two add, both landing on the same frame the wave does
+   * and both an order of magnitude shorter than it, so the peak has an inside.
+   *
+   * The crack first: the arc buffer at four times its rate through a high
+   * bandpass, which is thirty milliseconds of structural snap and no body at
+   * all. It is the layer that survives a phone speaker, where the sub simply
+   * does not exist, and it is the reason the event still reads as a break
+   * there rather than as a thud.
+   */
+  if (strikeBuf) {
+    const crack = audio.createBufferSource();
+    crack.buffer = strikeBuf;
+    crack.playbackRate.value = 4;
+
+    const edge = audio.createBiquadFilter();
+    edge.type = 'bandpass';
+    edge.frequency.setValueAtTime(2600, blastAt);
+    edge.frequency.exponentialRampToValueAtTime(5200, blastAt + 0.03);
+    edge.Q.value = 0.9;
+
+    const crackGain = audio.createGain();
+    crackGain.gain.setValueAtTime(0.62, blastAt);
+    crackGain.gain.exponentialRampToValueAtTime(0.0001, blastAt + 0.075);
+
+    crack.connect(edge).connect(crackGain).connect(master);
+    crack.start(blastAt);
+    crack.stop(blastAt + 0.12);
+    voices.push(crack);
+
+    /*
+     * And then the debris, which is the only part of this that is allowed to
+     * take its time.
+     *
+     * Everything is in the air for a second and a half after the break and the
+     * mix went straight from the transient to the held freeze, which is an
+     * edit rather than an event. This is the material still moving: the same
+     * buffer at half speed with the top rolled off, opening a moment *after*
+     * the crack — never with it, or it is part of the transient instead of the
+     * thing the transient threw.
+     *
+     * A twelfth of the crack's level and four hundred milliseconds long. It
+     * should be impossible to point at and obvious if it is gone.
+     */
+    const debris = audio.createBufferSource();
+    debris.buffer = strikeBuf;
+    debris.playbackRate.value = 0.55;
+
+    const settle = audio.createBiquadFilter();
+    settle.type = 'lowpass';
+    settle.frequency.setValueAtTime(2400, blastAt + 0.05);
+    settle.frequency.exponentialRampToValueAtTime(600, blastAt + 0.45);
+    settle.Q.value = 0.5;
+
+    const debrisGain = audio.createGain();
+    debrisGain.gain.setValueAtTime(0.0001, blastAt + 0.05);
+    debrisGain.gain.exponentialRampToValueAtTime(0.05, blastAt + 0.11);
+    debrisGain.gain.exponentialRampToValueAtTime(0.0001, blastAt + 0.46);
+
+    debris.connect(settle).connect(debrisGain).connect(master);
+    debris.start(blastAt + 0.05);
+    debris.stop(blastAt + 0.5);
+    voices.push(debris);
+  }
+
+  /* ---- And what it does to the ears ----------------------------------- */
+
+  /*
+   * The room going away for half a second.
+   *
+   * This is not a tone laid over the impact, it is the impact taking the rest
+   * of the mix with it. Three things happen within about thirty milliseconds
+   * of the crack: a thin high ring appears, everything else drops to a third,
+   * and the top comes off everything else. Then all three unwind over the next
+   * six hundred milliseconds and the storm is simply there again, still
+   * running, having never stopped.
+   *
+   * That last part is why the duck is a duck and not a pause. Nothing is cut,
+   * nothing is rescheduled, and the wave's own automation underneath is
+   * untouched — it is only being listened to through something for a moment.
+   * If the ducking were removed the sequence would be exactly what it was.
+   *
+   * The ring is deliberately not a sine. Two of them a few hertz apart beat
+   * against each other slowly, which is what stops it reading as a
+   * notification: a single clean tone at this frequency is a beep, and two
+   * that drift are a sensation.
+   *
+   * Neither is loud, and the level is set with a safety margin rather than by
+   * ear: together they peak around 0.066 against a blast that peaks near 0.34,
+   * and the ear is roughly ten decibels more sensitive at six kilohertz than
+   * at one, so a number that looks conservative on a meter is not
+   * automatically conservative in a pair of headphones. The storm ducked to a
+   * third sits at about 0.10 underneath it, which is the balance this wants:
+   * the ring is the clearest thing in the moment without being the loudest
+   * thing in the sequence.
+   */
+  const RING_IN = 0.03;
+  const RING_FADE = 0.72;
+
+  if (ringBus && duck && muffle) {
+    const ringAt = blastAt + RING_IN;
+
+    for (const [hz, level] of [
+      [6280, 0.04],
+      [6337, 0.026],
+    ] as const) {
+      const tone = audio.createOscillator();
+      tone.type = 'sine';
+      tone.frequency.setValueAtTime(hz, ringAt);
+      /*
+       * And a little unstable, because a perfectly held pitch is electronic.
+       * Twelve hertz of drift over the whole fade is nothing anybody could
+       * name and enough that the tone is never quite still.
+       */
+      tone.frequency.linearRampToValueAtTime(hz - 12, ringAt + RING_FADE);
+
+      const toneGain = audio.createGain();
+      toneGain.gain.setValueAtTime(0.0001, ringAt);
+      // Faster in than anything else in the sequence: it is a consequence of
+      // the transient, so it has to arrive inside it.
+      toneGain.gain.exponentialRampToValueAtTime(level, ringAt + 0.018);
+      toneGain.gain.exponentialRampToValueAtTime(level * 0.45, ringAt + 0.22);
+      toneGain.gain.exponentialRampToValueAtTime(0.0001, ringAt + RING_FADE);
+
+      tone.connect(toneGain).connect(ringBus);
+      tone.start(ringAt);
+      tone.stop(ringAt + RING_FADE + 0.05);
+      voices.push(tone);
+    }
+
+    /*
+     * A third of the level, and the top gone from what is left.
+     *
+     * Not muted: the wave is the main event and the listener has to keep
+     * hearing that it is still happening. A third is far enough down to read
+     * as "my hearing went" and far enough up that the storm underneath is
+     * plainly still there.
+     */
+    /*
+     * Neutral from the first sample, not just from the blast.
+     *
+     * `end` puts both of these back, but it ramps — and a storm torn down
+     * during the half second these are engaged would leave the next one
+     * starting through a closed filter for as long as the ramp had left. Two
+     * writes at t0 cost nothing and mean the sequence can never begin part way
+     * through somebody else's recovery.
+     */
+    duck.gain.cancelScheduledValues(t0);
+    duck.gain.setValueAtTime(1, t0);
+    duck.gain.setValueAtTime(1, blastAt);
+    duck.gain.linearRampToValueAtTime(0.34, ringAt + 0.02);
+    duck.gain.setValueAtTime(0.34, ringAt + 0.12);
+    duck.gain.linearRampToValueAtTime(1, ringAt + RING_FADE * 0.95);
+
+    muffle.frequency.cancelScheduledValues(t0);
+    muffle.frequency.setValueAtTime(20000, t0);
+    muffle.frequency.setValueAtTime(20000, blastAt);
+    muffle.frequency.exponentialRampToValueAtTime(820, ringAt + 0.02);
+    muffle.frequency.setValueAtTime(820, ringAt + 0.12);
+    muffle.frequency.exponentialRampToValueAtTime(20000, ringAt + RING_FADE * 0.95);
+  }
 
   /* ---- The strikes' level, which follows the storm ------------------- */
 

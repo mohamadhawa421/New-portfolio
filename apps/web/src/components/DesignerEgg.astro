@@ -387,6 +387,7 @@ import EggSound from './EggSound.astro';
       mode.setArcListener(null);
       mode.setTearListener(null);
       mode.setFaultListener(null);
+      mode.setLiftListener(null);
       mode.teardown();
       sound.end();
       // The pattern outlives the picture if it is not cancelled, and a phone
@@ -509,6 +510,7 @@ import EggSound from './EggSound.astro';
       mode.setArcListener(sound.tick);
       mode.setTearListener(sound.crackle);
       mode.setFaultListener(sound.fault);
+      mode.setLiftListener(sound.material);
       showSwitch();
 
       /*

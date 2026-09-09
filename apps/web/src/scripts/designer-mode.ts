@@ -1662,6 +1662,16 @@ export function run(options: DesignerModeOptions): Beat {
         flight.bulk
       );
       if (lifted) returning.push(lifted);
+
+      /*
+       * And it is heard arriving, at the frame it arrives.
+       *
+       * The same instant the swell starts on this element, with the same two
+       * numbers the swell is shaped by — so a sound that is late or is the
+       * wrong weight is a sound that disagrees with something visible, and
+       * there is nothing to keep in step by hand.
+       */
+      after(flight.wave, () => onLift?.(1 - flight.grip, flight.force));
     }
 
     /*
@@ -2988,6 +2998,18 @@ let onArc: ((strength: number) => void) | null = null;
 /** Fired once per torn element, so the sound can crack where the screen does. */
 let onTear: ((strength: number) => void) | null = null;
 /**
+ * Fired as the front reaches a surface, with what it weighs and how hard it
+ * was hit — so the sound can answer a chip differently from a cover.
+ *
+ * Only the surfaces, never the letters. There are eight of the first and two
+ * hundred and sixty of the second, and a voice per letter is not a texture,
+ * it is a machine gun competing with the event it is supposed to be part of.
+ * The letters' contribution to the sound is the pressure layer they are all
+ * moving inside; these eight are what give it grain.
+ */
+let onLift: ((heft: number, force: number) => void) | null = null;
+
+/**
  * And the same for the last glitch, which is a separate voice.
  *
  * Two listeners rather than one with a flag, because the two are not the same
@@ -3072,6 +3094,11 @@ export function setTearListener(fn: ((strength: number) => void) | null): void {
  */
 export function setFaultListener(fn: ((strength: number) => void) | null): void {
   onFault = fn;
+}
+
+/** Who to tell when the front reaches a surface. See `onLift`. */
+export function setLiftListener(fn: ((heft: number, force: number) => void) | null): void {
+  onLift = fn;
 }
 
 /**
