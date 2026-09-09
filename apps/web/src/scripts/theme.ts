@@ -260,6 +260,90 @@ function settleNow(): void {
   document.documentElement.classList.remove('theme-waving');
 }
 
+/* --------------------------------------------------------------------- */
+/* Temporary: proving where the wipe actually starts                       */
+/*                                                                         */
+/* Off unless the URL carries ?wave-debug, so it costs one string test per */
+/* press and ships nothing to anybody who has not asked for it. Delete     */
+/* this block and its one call site once the origin is confirmed on a real */
+/* device — it exists to answer a question, not to stay.                   */
+/* --------------------------------------------------------------------- */
+
+const DEBUG_ORIGIN =
+  typeof location !== 'undefined' && location.search.includes('wave-debug');
+
+/**
+ * Puts a dot at the coordinates the wipe is about to be given, and prints
+ * every number that went into them.
+ *
+ * The dot is `position: fixed` at those exact pixels, which is the same
+ * coordinate space the circle uses — so if the dot is under the finger and the
+ * circle is not, the fault is in the rendering of the circle rather than in
+ * the arithmetic, and if the dot is in the wrong place too then it is the
+ * arithmetic. That is the whole point of it: the two cannot both be believed
+ * at once, and this makes them disagree out loud.
+ */
+function probe(
+  button: HTMLElement,
+  event: MouseEvent | undefined,
+  rect: DOMRect,
+  originX: number,
+  originY: number
+): void {
+  if (!DEBUG_ORIGIN) return;
+
+  const dot = document.createElement('div');
+  dot.style.cssText = [
+    'position:fixed',
+    `left:${originX}px`,
+    `top:${originY}px`,
+    'width:14px',
+    'height:14px',
+    'margin:-7px 0 0 -7px',
+    'border-radius:50%',
+    'background:#0f0',
+    'box-shadow:0 0 0 2px #000, 0 0 12px #0f0',
+    'z-index:2147483647',
+    'pointer-events:none',
+  ].join(';');
+
+  const panel = document.createElement('pre');
+  panel.style.cssText = [
+    'position:fixed',
+    'left:8px',
+    'bottom:8px',
+    'margin:0',
+    'padding:8px 10px',
+    'font:11px/1.45 ui-monospace,monospace',
+    'background:rgba(0,0,0,.86)',
+    'color:#0f0',
+    'z-index:2147483647',
+    'pointer-events:none',
+    'white-space:pre',
+    'border-radius:6px',
+  ].join(';');
+  panel.textContent = [
+    `event        ${event ? event.type : '(none)'}`,
+    `clientX/Y    ${event?.clientX ?? '-'} , ${event?.clientY ?? '-'}`,
+    `pageX/Y      ${event?.pageX ?? '-'} , ${event?.pageY ?? '-'}`,
+    `rect L/T     ${rect.left.toFixed(1)} , ${rect.top.toFixed(1)}`,
+    `rect W/H     ${rect.width.toFixed(1)} , ${rect.height.toFixed(1)}`,
+    `rect centre  ${(rect.left + rect.width / 2).toFixed(1)} , ${(rect.top + rect.height / 2).toFixed(1)}`,
+    `ORIGIN USED  ${originX.toFixed(1)} , ${originY.toFixed(1)}`,
+    `viewport     ${window.innerWidth} x ${window.innerHeight}`,
+    `viewport mid ${(window.innerWidth / 2).toFixed(0)} , ${(window.innerHeight / 2).toFixed(0)}`,
+    `scrollX/Y    ${Math.round(window.scrollX)} , ${Math.round(window.scrollY)}`,
+    `button       ${button.className || button.tagName}`,
+    `in panel     ${button.closest('[data-panel]') ? 'yes' : 'no'}`,
+  ].join('\n');
+
+  document.body.append(dot, panel);
+  window.setTimeout(() => {
+    dot.remove();
+    panel.remove();
+  }, 4000);
+}
+
 function toggle(button: HTMLElement, event?: MouseEvent): void {
   const next: Theme = resolvedTheme() === 'dark' ? 'light' : 'dark';
 
@@ -280,6 +364,8 @@ function toggle(button: HTMLElement, event?: MouseEvent): void {
   const rect = button.getBoundingClientRect();
   const originX = event?.clientX || rect.left + rect.width / 2;
   const originY = event?.clientY || rect.top + rect.height / 2;
+
+  probe(button, event, rect, originX, originY);
 
   // Far corner of the viewport — how far the circle must grow to cover it.
   const radius = Math.hypot(

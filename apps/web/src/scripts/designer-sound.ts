@@ -1341,32 +1341,69 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
    * thing in the sequence.
    */
   const RING_IN = 0.03;
-  const RING_FADE = 0.72;
+  /**
+   * How long the hearing takes to come back, and it is the only clock here.
+   *
+   * The ring's fall and the storm's return are both written across exactly
+   * this, in opposite directions, so there is no second number that could
+   * drift out of step with the first.
+   */
+  const RING_FADE = 1.6;
+  /**
+   * How much of that is spent with nothing else audible at all.
+   *
+   * The mute is not a moment, it is a stretch. Everything else goes to zero on
+   * the frame the ring arrives and stays there for the first half of the
+   * window — no trace, no distant version of the storm, nothing — and only in
+   * the back half do the two trade places. The whole recovery, both
+   * directions, happens inside that back half: the world fades in as the ring
+   * fades out, and neither starts before the other.
+   */
+  const RING_HOLD = 0.5;
 
   if (ringBus && duck && muffle) {
     const ringAt = blastAt + RING_IN;
 
     for (const [hz, level] of [
-      [6280, 0.04],
-      [6337, 0.026],
+      [7420, 0.048],
+      [7487, 0.03],
     ] as const) {
       const tone = audio.createOscillator();
       tone.type = 'sine';
       tone.frequency.setValueAtTime(hz, ringAt);
       /*
-       * And a little unstable, because a perfectly held pitch is electronic.
-       * Twelve hertz of drift over the whole fade is nothing anybody could
-       * name and enough that the tone is never quite still.
+       * And never quite still, because a held pitch is electronic.
+       *
+       * Not one slide but four short ones in alternating directions, a few
+       * hertz each and at uneven lengths. A single ramp is a glide, which is a
+       * musical gesture; this is a pitch refusing to settle, which is what the
+       * sensation actually does. Nothing in it is nameable as an interval.
        */
-      tone.frequency.linearRampToValueAtTime(hz - 12, ringAt + RING_FADE);
+      tone.frequency.linearRampToValueAtTime(hz + 9, ringAt + RING_FADE * 0.21);
+      tone.frequency.linearRampToValueAtTime(hz - 6, ringAt + RING_FADE * 0.47);
+      tone.frequency.linearRampToValueAtTime(hz + 4, ringAt + RING_FADE * 0.74);
+      tone.frequency.linearRampToValueAtTime(hz - 11, ringAt + RING_FADE);
 
       const toneGain = audio.createGain();
       toneGain.gain.setValueAtTime(0.0001, ringAt);
       // Faster in than anything else in the sequence: it is a consequence of
       // the transient, so it has to arrive inside it.
-      toneGain.gain.exponentialRampToValueAtTime(level, ringAt + 0.018);
-      toneGain.gain.exponentialRampToValueAtTime(level * 0.45, ringAt + 0.22);
-      toneGain.gain.exponentialRampToValueAtTime(0.0001, ringAt + RING_FADE);
+      toneGain.gain.exponentialRampToValueAtTime(level, ringAt + 0.015);
+      /*
+       * Held, and then handed over.
+       *
+       * For the first half of the window this barely moves — a slow sag to
+       * four fifths, which is a tone being sustained rather than a tone
+       * decaying — because for that half it is the only thing there is. Then
+       * it goes to nothing in a straight line across the back half, which is
+       * exactly the span the duck below uses to come back up.
+       *
+       * Straight, not exponential: an exponential is already inaudible a third
+       * of the way down, which would put silence where the handover is
+       * supposed to be happening and turn one event into two.
+       */
+      toneGain.gain.linearRampToValueAtTime(level * 0.8, ringAt + RING_FADE * RING_HOLD);
+      toneGain.gain.linearRampToValueAtTime(0, ringAt + RING_FADE);
 
       tone.connect(toneGain).connect(ringBus);
       tone.start(ringAt);
@@ -1377,45 +1414,70 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
     /*
      * Everything else, gone — and then coming back the whole way up.
      *
-     * The duck used to bottom out at a third, on the reasoning that the storm
-     * is the main event and should stay audible under it. It should not. What
-     * is being described is a blast loud enough to take somebody's hearing for
-     * a moment, and at a third of level what you hear is a mixing decision. At
-     * a twelfth you hear the room go.
+     * This went from a third, to a twelfth, to nothing at all, and nothing at
+     * all is right. A third is a mixing decision and a twelfth is a quiet
+     * mixing decision. What is being described is a blast that took somebody's
+     * hearing for a second, and for that second there is nothing else to hear:
+     * the ring is not sitting on top of the storm, it has replaced it.
      *
-     * Not to zero, though, and the difference matters: a trace of the storm
-     * still coming through is what stops this reading as the audio having been
-     * switched off. Something is still there, it is just a long way away.
+     * It stays at zero for the first half — see RING_HOLD — and then comes
+     * back in one straight line across the second, which is exactly the span
+     * the ring uses to fall to nothing. Two linear ramps in opposite
+     * directions over the same window is a crossfade in the strict sense:
+     * there is no frame in it where one has finished and the other has not
+     * started, and no frame anywhere where the mix is simply quiet.
      *
-     * The recovery is one continuous ramp from the bottom of the dip to full,
-     * spanning exactly the ring's own fade, so the two cross rather than
-     * queue. No hold at the bottom and no gap at the top — the storm starts
-     * coming back on the same frame the ring starts leaving.
+     * The hold is what makes it read as hearing rather than as mixing. A
+     * crossfade spread over the whole ring sounded like a long dissolve; the
+     * same crossfade with silence in front of it sounds like something coming
+     * back.
      *
      * Both of these are also written at t0, not only at the blast. `end` puts
      * them back but it ramps, and a storm torn down mid-dip would otherwise
      * leave the next one starting through a closed filter for whatever was
      * left of that ramp.
      */
+    /*
+     * The ring's own bus, put back before anything is scheduled on it.
+     *
+     * `end` fades this to nothing along with everything else, because the ring
+     * does not pass through master and would otherwise outlive a storm that
+     * was cut short. It never put it back — so the first activation on a page
+     * rang and every one after it was silent, which is not a subtle failure
+     * and was not caught because a second storm was never listened to.
+     *
+     * Every node this function touches is now restored here rather than in
+     * `end`: whatever state the last run left, the next one starts from the
+     * same place.
+     */
+    ringBus.gain.cancelScheduledValues(t0);
+    ringBus.gain.setValueAtTime(1, t0);
+
     duck.gain.cancelScheduledValues(t0);
     duck.gain.setValueAtTime(1, t0);
     duck.gain.setValueAtTime(1, blastAt);
-    duck.gain.linearRampToValueAtTime(0.08, ringAt + 0.025);
+    duck.gain.linearRampToValueAtTime(0, ringAt + 0.02);
+    duck.gain.setValueAtTime(0, ringAt + RING_FADE * RING_HOLD);
     duck.gain.linearRampToValueAtTime(1, ringAt + RING_FADE);
 
     /*
      * And the top comes off with it, and comes back sooner than the level.
      *
      * Hearing returning is not a fader being pushed up: the dullness lifts
-     * first and the loudness follows it. So this reopens across three quarters
-     * of the window while the gain takes all of it — ending them together left
-     * the last third sounding merely quiet rather than distant.
+     * first and the loudness follows it. So this reopens across three fifths
+     * of the window while the gain takes all of it — what comes back first is
+     * distant and dull, and it is bright again before it is loud again.
+     *
+     * It matters less than it did now the duck reaches zero, because at the
+     * bottom there is nothing passing through it to be filtered. What this
+     * shapes now is the return.
      */
     muffle.frequency.cancelScheduledValues(t0);
     muffle.frequency.setValueAtTime(20000, t0);
     muffle.frequency.setValueAtTime(20000, blastAt);
     muffle.frequency.exponentialRampToValueAtTime(700, ringAt + 0.025);
-    muffle.frequency.exponentialRampToValueAtTime(20000, ringAt + RING_FADE * 0.75);
+    muffle.frequency.setValueAtTime(700, ringAt + RING_FADE * RING_HOLD);
+    muffle.frequency.exponentialRampToValueAtTime(20000, ringAt + RING_FADE * 0.86);
   }
 
   /* ---- The strikes' level, which follows the storm ------------------- */
