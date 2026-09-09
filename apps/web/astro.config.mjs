@@ -29,4 +29,29 @@ export default defineConfig({
      */
     inlineStylesheets: 'always',
   },
+  vite: {
+    build: {
+      /*
+       * Old enough that the vendor prefixes survive minification.
+       *
+       * The CSS minifier removes whichever of two declarations for the same
+       * thing it decides is redundant, and what it decides depends on the
+       * browsers it is told to support. With the default target it treated
+       * `-webkit-backdrop-filter` and `backdrop-filter` as interchangeable and
+       * kept exactly one — so the production build shipped the nav with a tint
+       * and no blur behind it, while the dev server, which does not minify,
+       * looked correct. Measured on the built output: `backdrop-filter: none`
+       * on the deployed menu against a full filter on localhost.
+       *
+       * Naming Safari 15 is what makes the prefix necessary rather than
+       * redundant, so both are kept. It is the honest target as well as the
+       * convenient one: unprefixed `backdrop-filter` only arrived in Safari 18,
+       * and the phones this has to work on are older than that.
+       *
+       * The other targets are named so the floor is a decision rather than
+       * whatever esbuild happens to default to.
+       */
+      cssTarget: ['safari15', 'chrome100', 'firefox100', 'edge100'],
+    },
+  },
 });

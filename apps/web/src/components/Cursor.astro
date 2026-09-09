@@ -140,6 +140,22 @@
      */
     const MAGNETIC = '.btn, .enquiry__send, .chip, .theme-toggle, .text-link';
 
+    /**
+     * And the portrait, but only once the secret is out.
+     *
+     * The egg is deliberately unannounced — no label, no hover state, no cursor
+     * change — because a picture that turns out to do something is only a
+     * surprise if nobody told you to expect one. Making the portrait pull at the
+     * pointer would give that away on every visit.
+     *
+     * In super designer mode it is already given away: the visitor found the egg,
+     * the page is in his colours, and the portrait is the thing that fires the
+     * wave. Hiding the affordance at that point is not discretion, it is just a
+     * control nobody can tell is a control. So it joins the magnets for exactly
+     * as long as that mode is on, and leaves with it.
+     */
+    const SUPER_MAGNETIC = '[data-egg-trigger]';
+
     /** Fraction of the pointer's offset from centre that the control leans. */
     const LEAN = 0.22;
     /** Hard ceiling on that lean. Past about this the control stops looking
@@ -179,7 +195,11 @@
     function measureMagnets(): void {
       const sx = window.scrollX;
       const sy = window.scrollY;
-      magnets = Array.from(document.querySelectorAll<HTMLElement>(MAGNETIC)).map((el) => {
+      const selector = document.documentElement.hasAttribute('data-super')
+        ? `${MAGNETIC}, ${SUPER_MAGNETIC}`
+        : MAGNETIC;
+
+      magnets = Array.from(document.querySelectorAll<HTMLElement>(selector)).map((el) => {
         const r = el.getBoundingClientRect();
         return {
           el,
@@ -757,6 +777,12 @@
       { passive: true }
     );
     window.addEventListener('resize', measureMagnets, { passive: true });
+    /*
+     * Entering or leaving super mode changes what is magnetic, and the list is
+     * cached — so it has to be rebuilt on the same event the mode announces
+     * itself with, or the portrait would only start pulling at the next resize.
+     */
+    document.addEventListener('mh:super', measureMagnets);
     window.addEventListener('load', measureMagnets);
     measureMagnets();
 

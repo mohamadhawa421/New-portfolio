@@ -54,6 +54,24 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
           clipping box, because the bubble cannot have one — the tail hangs
           outside it. */}
       <span class="aside__bolt" aria-hidden="true"></span>
+      {/*
+        Where you are in what he has to say.
+
+        He loops back to the second line rather than the first, so pressing him
+        long enough quietly returns you to things you have already read with
+        nothing to mark the turn. This is that mark. It is `aria-hidden` because
+        the line itself is a live region and a screen reader announcing "3 of 5"
+        after every sentence would be reading the furniture.
+
+        `data-say-count` rather than `data-count`: the work page already has a
+        `[data-count]`, holding the number of projects, and reaches it with a
+        document-wide querySelector. Two elements answering that selector on one
+        page is a collision waiting for a DOM order to change, and this one is
+        the newcomer.
+      */}
+      {lines.length > 1 && (
+        <span class="aside__count" data-say-count aria-hidden="true">{`1/${lines.length}`}</span>
+      )}
       <span class="aside__say" data-say aria-live="polite">{lines[0]}</span>
     </p>
 
@@ -201,6 +219,18 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
       // Round to the second line, never the first: the opener only opens.
       const next = at + 1 >= script.length ? 1 : at + 1;
       el.dataset.line = String(next);
+
+      /*
+       * The count changes with the line, not with the bolt.
+       *
+       * It is written now rather than inside the 130ms swap below because it is
+       * not part of the illusion: the text is hidden mid-flash so one sentence
+       * does not dissolve into another, but a two-character counter has no
+       * legibility problem to solve and following the flash would only make it
+       * look like it was lagging.
+       */
+      const count = el.querySelector<HTMLElement>('[data-say-count]');
+      if (count) count.textContent = `${next + 1}/${script.length}`;
 
       /*
        * Pressing him is what gives him a voice.
@@ -613,6 +643,8 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
     min-width: 0;
     margin-bottom: clamp(14px, 2vw, 26px);
     padding: 13px 16px;
+    /* The corner the counter sits in, kept clear of the first line. */
+    padding-right: 46px;
     border-radius: var(--r-md);
     border: 1px solid var(--aside-line);
     background: var(--aside-surface);
@@ -680,6 +712,31 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
 
   /* On a dark ground a plain shadow does nothing, so the bubble is given the
      faintest purple lift instead — the only place the accent touches it. */
+  /*
+   * The counter, and the room kept for it.
+   *
+   * Absolutely placed so it is never in the text's flow — the bubble's width is
+   * locked to its longest line by a probe, and a counter that participated in
+   * wrapping would change what "longest" means. The padding above reserves the
+   * corner instead, and because the probe is a clone carrying this same class,
+   * it measures against the same reserved corner and the lock stays honest.
+   *
+   * Quiet on purpose. It is there for the moment you wonder whether you have
+   * been round twice, and invisible the rest of the time.
+   */
+  .aside__count {
+    position: absolute;
+    top: 9px;
+    right: 12px;
+    font-size: 11px;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--aside-ink);
+    opacity: 0.38;
+    pointer-events: none;
+  }
+
   .aside--dark .aside__bubble {
     box-shadow:
       var(--aside-shadow),

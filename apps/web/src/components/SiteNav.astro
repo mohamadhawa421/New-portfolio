@@ -308,8 +308,19 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     padding: var(--nav-pad, 2px 12px);
     border-radius: var(--r-pill);
     background: var(--nav-bg, rgba(255, 255, 255, 0));
-    backdrop-filter: var(--nav-blur, none);
+    /*
+     * Prefix first, standard last, and this order is load-bearing.
+     *
+     * The build minifier drops the earlier of two declarations that set the
+     * same thing, which with the standard property written first meant the
+     * production CSS shipped `-webkit-backdrop-filter` alone. Measured on the
+     * built output: the nav computed to `backdrop-filter: none` and the bar
+     * had its tint with no blur behind it, which is exactly the difference
+     * between the deployed menu and the one on localhost. Writing the standard
+     * property last means it is the one that survives.
+     */
     -webkit-backdrop-filter: var(--nav-blur, none);
+    backdrop-filter: var(--nav-blur, none);
     box-shadow: var(--nav-shadow, 0 1px 8px rgba(0, 0, 0, 0));
     max-width: calc(100vw - 20px);
     /*
@@ -414,8 +425,19 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     height: 68px;
     z-index: 199;
     background: var(--nav-bg, rgba(255, 255, 255, 0));
-    backdrop-filter: var(--nav-blur, none);
+    /*
+     * Prefix first, standard last, and this order is load-bearing.
+     *
+     * The build minifier drops the earlier of two declarations that set the
+     * same thing, which with the standard property written first meant the
+     * production CSS shipped `-webkit-backdrop-filter` alone. Measured on the
+     * built output: the nav computed to `backdrop-filter: none` and the bar
+     * had its tint with no blur behind it, which is exactly the difference
+     * between the deployed menu and the one on localhost. Writing the standard
+     * property last means it is the one that survives.
+     */
     -webkit-backdrop-filter: var(--nav-blur, none);
+    backdrop-filter: var(--nav-blur, none);
     box-shadow: var(--nav-shadow, 0 1px 8px rgba(0, 0, 0, 0));
     /* Same bargain as the pill above. */
     transition:
@@ -597,8 +619,8 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
   .nav.dm-unpinned {
     background: transparent;
     box-shadow: none;
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     transition:
       background 320ms var(--ease-out),
       box-shadow 320ms var(--ease-out);

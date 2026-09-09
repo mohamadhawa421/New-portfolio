@@ -210,7 +210,30 @@ function resetZoom(): void {
 function fit(source: HTMLImageElement, stage: HTMLElement) {
   const wide = source.naturalWidth || Number(source.getAttribute('width')) || 1;
   const tall = source.naturalHeight || Number(source.getAttribute('height')) || 1;
-  const room = box(stage);
+
+  /*
+   * The room is what is inside the stage, not the stage.
+   *
+   * getBoundingClientRect returns the border box, so a padded stage reported
+   * space it was not offering and the picture was fitted into the padding as
+   * well. On a laptop that never mattered because the stage has none. On a
+   * phone it does — the insets are what keep a tall screenshot from sliding
+   * under the close button at the top and the zoom bar at the bottom — and
+   * ignoring them put the picture over both.
+   */
+  const rect = box(stage);
+  const pad = window.getComputedStyle(stage);
+  const top = parseFloat(pad.paddingTop) || 0;
+  const right = parseFloat(pad.paddingRight) || 0;
+  const bottom = parseFloat(pad.paddingBottom) || 0;
+  const left = parseFloat(pad.paddingLeft) || 0;
+
+  const room = {
+    left: rect.left + left,
+    top: rect.top + top,
+    width: Math.max(1, rect.width - left - right),
+    height: Math.max(1, rect.height - top - bottom),
+  };
   // Never past its own resolution: a picture blown up beyond what it holds is
   // not the work at the size it was made, it is the work out of focus.
   const k = Math.min(room.width / wide, room.height / tall, 1);
@@ -505,15 +528,18 @@ function hide(): void {
 /**
  * Everything that happens to a picture once it has arrived.
  *
- * Bound to the dialog rather than to the surface, because the surface is
- * rebuilt for every opening and the dialog is not — and delegated for the
- * same reason every other listener in this file is.
+ * Every listener is on `document`, and that is the fix for a zoom that only
+ * worked after a refresh. These used to be bound to the dialog element, which
+ * looks safe — the dialog is markup that outlives any one picture — but it does
+ * not outlive a navigation: the router replaces the page, the old dialog is
+ * detached, and the listeners go with it while `bindLightbox` never runs again
+ * because it is guarded to once per tab. Opening a picture then did nothing at
+ * all until the page was reloaded, which is exactly the shape of the bug.
+ *
+ * `document` is the only node in this file that is never replaced, which is why
+ * everything else here was already delegated from it. This now is too.
  */
 function bindZoom(): void {
-  const shell = document.querySelector<HTMLElement>('[data-lightbox]');
-  const bar = shell?.querySelector<HTMLElement>('[data-zoom-bar]');
-  if (!shell) return;
-
   /*
    * A click steps in, and a click at the far end steps all the way out.
    *
@@ -526,8 +552,8 @@ function bindZoom(): void {
    * It zooms about the pointer, so the thing being aimed at is the thing that
    * stays still.
    */
-  shell.addEventListener('click', (event) => {
-    if (!open || !surface) return;
+  document.addEventListener('click', (event) => {
+    if (!open || !surface || pinching) return;
     const target = event.target;
     if (!(target instanceof Element)) return;
     if (target.closest('[data-lightbox-close]') || target.closest('[data-zoom-bar]')) return;
@@ -542,21 +568,52 @@ function bindZoom(): void {
    * Dragging moves the picture, not the page.
    *
    * Pointer events rather than mouse ones, so a finger and a stylus work
-   * without a second implementation, and capture so a drag that leaves the
-   * window still ends properly. `dragged` is what stops a drag from also
+   * without a second implementation. `dragged` is what stops a drag from also
    * counting as a click when the pointer comes back up — without it, panning
    * across a picture would zoom it at the end of every gesture.
+   *
+   * Two fingers are tracked as well as one. A phone has no wheel and no
+   * keyboard, so pinch is the only gesture anybody will actually reach for to
+   * zoom a photograph, and a viewer that ignores it feels broken however many
+   * other ways in it offers.
    */
+  const down = new Map<number, { x: number; y: number }>();
   let downX = 0;
   let downY = 0;
   let fromX = 0;
   let fromY = 0;
   let dragging = false;
+  let pinchFrom = 0;
+  let pinchZoom = 1;
 
-  shell.addEventListener('pointerdown', (event) => {
-    if (!open || !surface || zoom <= 1.001) return;
+  const spread = () => {
+    const [a, b] = [...down.values()];
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  };
+  const middle = () => {
+    const [a, b] = [...down.values()];
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  };
+
+  document.addEventListener('pointerdown', (event) => {
+    if (!open || !surface) return;
     const target = event.target;
     if (!(target instanceof Element) || !target.closest('.lightbox__surface')) return;
+
+    down.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    if (down.size === 2) {
+      // A second finger cancels the drag and starts a pinch from wherever the
+      // first one had got to, so the two gestures never fight over the pan.
+      dragging = false;
+      pinching = true;
+      dragged = true;
+      pinchFrom = spread();
+      pinchZoom = zoom;
+      return;
+    }
+
+    if (zoom <= 1.001) return;
 
     dragging = true;
     dragged = false;
@@ -568,7 +625,19 @@ function bindZoom(): void {
     event.preventDefault();
   });
 
-  shell.addEventListener('pointermove', (event) => {
+  document.addEventListener('pointermove', (event) => {
+    if (!open) return;
+
+    if (down.has(event.pointerId)) {
+      down.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    }
+
+    if (pinching && down.size === 2 && pinchFrom > 0) {
+      const at = middle();
+      zoomTo((pinchZoom * spread()) / pinchFrom, at.x, at.y, false);
+      return;
+    }
+
     if (!dragging) return;
     const dx = event.clientX - downX;
     const dy = event.clientY - downY;
@@ -579,7 +648,9 @@ function bindZoom(): void {
     paintZoom();
   });
 
-  const release = () => {
+  const release = (event: PointerEvent) => {
+    down.delete(event.pointerId);
+    if (down.size < 2) pinching = false;
     if (!dragging) return;
     dragging = false;
     // Cleared on the next task, not on this one: the click that follows this
@@ -588,17 +659,19 @@ function bindZoom(): void {
       dragged = false;
     }, 0);
   };
-  shell.addEventListener('pointerup', release);
-  shell.addEventListener('pointercancel', release);
+  document.addEventListener('pointerup', release);
+  document.addEventListener('pointercancel', release);
 
   /*
    * The wheel zooms rather than scrolls, because the page behind is locked and
    * a wheel that does nothing is a control that appears broken.
    */
-  shell.addEventListener(
+  document.addEventListener(
     'wheel',
     (event) => {
       if (!open || !surface) return;
+      const target = event.target;
+      if (!(target instanceof Element) || !target.closest('[data-lightbox]')) return;
       event.preventDefault();
       const k = Math.exp(-event.deltaY * 0.0016);
       zoomTo(zoom * k, event.clientX, event.clientY, false);
@@ -614,31 +687,39 @@ function bindZoom(): void {
    * It zooms about the middle, since there is no pointer position on the
    * picture to hold still.
    */
-  if (bar) {
-    let sliding = false;
+  let sliding = false;
 
-    const setFrom = (clientY: number) => {
-      const r = box(bar);
-      const at = 1 - Math.max(0, Math.min(1, (clientY - r.top) / r.height));
-      zoomTo(1 + at * (ZOOM_MAX - 1), undefined, undefined, false);
-    };
+  const setFrom = (bar: HTMLElement, clientY: number) => {
+    const r = box(bar);
+    const at = 1 - Math.max(0, Math.min(1, (clientY - r.top) / r.height));
+    zoomTo(1 + at * (ZOOM_MAX - 1), undefined, undefined, false);
+  };
 
-    bar.addEventListener('pointerdown', (event) => {
-      sliding = true;
-      bar.setPointerCapture(event.pointerId);
-      setFrom(event.clientY);
-      event.preventDefault();
-      event.stopPropagation();
-    });
-    bar.addEventListener('pointermove', (event) => {
-      if (sliding) setFrom(event.clientY);
-    });
-    const stop = () => {
-      sliding = false;
-    };
-    bar.addEventListener('pointerup', stop);
-    bar.addEventListener('pointercancel', stop);
-  }
+  document.addEventListener('pointerdown', (event) => {
+    if (!open) return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const bar = target.closest<HTMLElement>('[data-zoom-bar]');
+    if (!bar) return;
+
+    sliding = true;
+    bar.setPointerCapture(event.pointerId);
+    setFrom(bar, event.clientY);
+    event.preventDefault();
+    event.stopPropagation();
+  });
+
+  document.addEventListener('pointermove', (event) => {
+    if (!sliding) return;
+    const bar = document.querySelector<HTMLElement>('[data-zoom-bar]');
+    if (bar) setFrom(bar, event.clientY);
+  });
+
+  const stopSlide = () => {
+    sliding = false;
+  };
+  document.addEventListener('pointerup', stopSlide);
+  document.addEventListener('pointercancel', stopSlide);
 
   /*
    * Plus and minus, because a keyboard user has no wheel and no pointer to
@@ -654,6 +735,9 @@ function bindZoom(): void {
     event.preventDefault();
   });
 }
+
+/** Whether two fingers are on the picture, so no gesture answers twice. */
+let pinching = false;
 
 /** Whether the pointer moved far enough for this gesture to be a pan. */
 let dragged = false;

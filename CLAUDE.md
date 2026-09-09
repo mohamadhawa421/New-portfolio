@@ -108,6 +108,22 @@ leaves 60Hz identical to the pixel and brings every faster display onto the
 same curve. Any new smoother does the same, and no clamp on the elapsed time —
 returning to a tab should put the thing where the pointer is.
 
+**Listeners go on `document`, never on a page element.** The client router
+replaces the page on every navigation, so anything bound to an element in it is
+bound to a node that is about to be detached — and a binding guarded to run once
+per tab never comes back. This is how the lightbox's zoom shipped working only
+after a hard refresh: `bindZoom` attached to the dialog, which looks permanent
+and is not. `document` is the only node that survives a swap.
+
+**Prefixed property first, standard property last.** The CSS minifier drops the
+earlier of two declarations that set the same thing, so `backdrop-filter`
+written above `-webkit-backdrop-filter` is the one that disappears — and the dev
+server does not minify, so the difference only exists in production. It shipped
+a nav with its tint and no blur. `vite.build.cssTarget` in astro.config.mjs
+names Safari 15 so the prefix is considered necessary and both survive;
+unprefixed `backdrop-filter` only arrived in Safari 18 and the phones this has
+to work on are older.
+
 **Reduced motion is honoured throughout**, and every effect has a quiet
 variant rather than being switched off.
 

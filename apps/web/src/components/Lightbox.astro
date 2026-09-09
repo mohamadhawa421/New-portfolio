@@ -120,8 +120,8 @@
     border-radius: 50%;
     color: #fff;
     background: rgba(20, 20, 22, 0.52);
-    backdrop-filter: blur(10px) saturate(140%);
     -webkit-backdrop-filter: blur(10px) saturate(140%);
+    backdrop-filter: blur(10px) saturate(140%);
     pointer-events: none;
     /*
      * Held back until the pointer is on the picture. An always-lit control in
@@ -181,8 +181,8 @@
     position: absolute;
     inset: 0;
     background: color-mix(in srgb, var(--surface-dark) 88%, transparent);
-    backdrop-filter: blur(18px) saturate(120%);
     -webkit-backdrop-filter: blur(18px) saturate(120%);
+    backdrop-filter: blur(18px) saturate(120%);
     opacity: 0;
     /* The veil closes the page off, so it is what takes the click that opens
        it back up. */
@@ -342,6 +342,88 @@
     }
   }
 
+  /* ------------------------------------------------------------------ */
+  /* On a phone                                                          */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * The room gets bigger, not smaller.
+   *
+   * On a laptop the stage is inset so the veil reads as a room the picture is
+   * shown in. A phone has no room to give away: 92vw of a 390px screen leaves
+   * a case-study screenshot about 350 pixels wide, which is smaller than the
+   * thumbnail on the page behind it. The insets shrink to the width of the
+   * close button's reach and the picture takes what is left.
+   */
+  @media (max-width: 767px) {
+    .lightbox__stage {
+      width: 100vw;
+      height: 100dvh;
+      padding: 64px 10px 96px;
+      box-sizing: border-box;
+    }
+
+    /*
+     * The bar lies down along the bottom.
+     *
+     * Vertically at the right edge it sits under the thumb holding the phone
+     * and in front of the picture. Along the bottom it is where every other
+     * control on a phone is, out of the way of the image, and a horizontal
+     * drag is the gesture a slider there invites.
+     */
+    .lightbox__zoom {
+      right: auto;
+      left: 50%;
+      top: auto;
+      bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%);
+      grid-auto-flow: column;
+      align-items: center;
+      gap: 12px;
+      /* Its own ground, because a hairline over a photograph is invisible. */
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.55);
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+    }
+
+    .lightbox__zoom-track {
+      width: min(180px, 42vw);
+      height: 5px;
+      cursor: ew-resize;
+    }
+
+    /*
+     * Filled from the left rather than from the bottom, because the track is
+     * now horizontal and a fill that still grew upward would be a five pixel
+     * square that never moved.
+     */
+    .lightbox__zoom-fill {
+      top: 0;
+      bottom: 0;
+      right: auto;
+      height: auto;
+      width: calc(var(--at, 0) * 100%);
+    }
+
+    /*
+     * Always visible on touch, because there is no hover to reveal it with and
+     * a control that only appears once you have used it is not a control.
+     */
+    .lightbox.is-open .lightbox__zoom {
+      opacity: 1;
+    }
+
+    /* Clear of the notch, and a target a thumb can actually hit. */
+    .lightbox__close {
+      top: calc(10px + env(safe-area-inset-top, 0px));
+      right: 10px;
+      width: 48px;
+      height: 48px;
+    }
+  }
+
   .lightbox__close {
     position: absolute;
     top: clamp(14px, 2.4vw, 28px);
@@ -354,8 +436,8 @@
     border-radius: 50%;
     color: #fff;
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     cursor: pointer;
     opacity: 0;
     transition:
