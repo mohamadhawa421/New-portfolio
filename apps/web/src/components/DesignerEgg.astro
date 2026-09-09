@@ -60,7 +60,14 @@ import EggSound from './EggSound.astro';
   the same maths in linear light comes back visibly paler than the element it
   was applied to, which reads as a flash rather than as damage.
 */}
-<svg class="dm-tear-defs" aria-hidden="true" focusable="false">
+<svg
+  class="dm-tear-defs"
+  xmlns="http://www.w3.org/2000/svg"
+  width="1"
+  height="1"
+  aria-hidden="true"
+  focusable="false"
+>
   <defs>
     <filter
       id="dm-tear-1"
@@ -70,7 +77,7 @@ import EggSound from './EggSound.astro';
       height="124%"
       color-interpolation-filters="sRGB"
     >
-      <feOffset in="SourceGraphic" dx="3" dy="0" result="rshift" />
+      <feOffset in="SourceGraphic" dx="4" dy="0" result="rshift" />
       <feColorMatrix
         in="rshift"
         type="matrix"
@@ -83,7 +90,7 @@ import EggSound from './EggSound.astro';
         values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"
         result="green"
       />
-      <feOffset in="SourceGraphic" dx="-3" dy="0" result="bshift" />
+      <feOffset in="SourceGraphic" dx="-4" dy="0" result="bshift" />
       <feColorMatrix
         in="bshift"
         type="matrix"
@@ -101,7 +108,7 @@ import EggSound from './EggSound.astro';
       height="124%"
       color-interpolation-filters="sRGB"
     >
-      <feOffset in="SourceGraphic" dx="5.5" dy="0" result="rshift" />
+      <feOffset in="SourceGraphic" dx="7" dy="0" result="rshift" />
       <feColorMatrix
         in="rshift"
         type="matrix"
@@ -114,7 +121,7 @@ import EggSound from './EggSound.astro';
         values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"
         result="green"
       />
-      <feOffset in="SourceGraphic" dx="-5.5" dy="0" result="bshift" />
+      <feOffset in="SourceGraphic" dx="-7" dy="0" result="bshift" />
       <feColorMatrix
         in="bshift"
         type="matrix"
@@ -132,7 +139,7 @@ import EggSound from './EggSound.astro';
       height="124%"
       color-interpolation-filters="sRGB"
     >
-      <feOffset in="SourceGraphic" dx="8" dy="0" result="rshift" />
+      <feOffset in="SourceGraphic" dx="10" dy="0" result="rshift" />
       <feColorMatrix
         in="rshift"
         type="matrix"
@@ -145,7 +152,7 @@ import EggSound from './EggSound.astro';
         values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"
         result="green"
       />
-      <feOffset in="SourceGraphic" dx="-8" dy="0" result="bshift" />
+      <feOffset in="SourceGraphic" dx="-10" dy="0" result="bshift" />
       <feColorMatrix
         in="bshift"
         type="matrix"
@@ -542,8 +549,22 @@ import EggSound from './EggSound.astro';
    */
   .dm-tear-defs {
     position: absolute;
-    width: 0;
-    height: 0;
+    /*
+     * A pixel, not nothing — and that pixel is deliberate.
+     *
+     * WebKit builds a referenced filter lazily and has a long history of not
+     * building one whose defining <svg> is not itself rendered. A zero-sized
+     * box is the usual way to hide a sprite sheet of filters and it is exactly
+     * the case that has bitten people: the reference resolves in Blink and
+     * silently does nothing in WebKit. One transparent pixel out of flow costs
+     * no layout, paints nothing anybody can see, and is unambiguously rendered.
+     *
+     * It cannot be `display: none` for the same reason, only more so — a
+     * filter inside a display:none subtree is not resolvable in any engine.
+     */
+    width: 1px;
+    height: 1px;
+    opacity: 0;
     overflow: hidden;
     pointer-events: none;
   }

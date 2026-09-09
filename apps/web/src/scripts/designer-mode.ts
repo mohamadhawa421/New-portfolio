@@ -2087,7 +2087,7 @@ function lift(
  * screen rather than an effect somebody chose, and long enough to be seen
  * being one.
  */
-const TEAR_MS = 240;
+const TEAR_MS = 280;
 
 /**
  * The most elements one run is allowed to tear.
@@ -2101,7 +2101,7 @@ const TEAR_MS = 240;
  * spread matters more than the number, because the slices with nothing in
  * them give up nothing.
  */
-const TEAR_CAP = 14;
+const TEAR_CAP = 16;
 
 /**
  * The screen giving out where the front crosses it.
@@ -2153,8 +2153,31 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number, sy = 0): An
    * it, so the separation is written in front of what is there.
    */
   const had = el.style.filter;
+
+  /*
+   * The channel split, and a ghost of it that does not need SVG.
+   *
+   * `url()` is the only way to actually separate the channels — a red copy
+   * offset one way, a blue copy the other, the green left where it is — and it
+   * is what makes the interior of a glyph or a label fringe rather than just
+   * its outline. Nothing in CSS reproduces that.
+   *
+   * But a referenced filter is also the one part of this that an engine can
+   * decline to build, and when it declines there is no error and no fallback:
+   * the element simply never wears anything. So a pair of coloured
+   * drop-shadows rides along in the same declaration. They are plain CSS
+   * filter functions, they are honoured everywhere, and at these offsets and
+   * this alpha they read as bleed either side of the split rather than as a
+   * second effect — while on their own, with the reference gone, they are
+   * still unmistakably the screen coming apart.
+   */
+  const OFFSET = [0, 4, 7, 10];
   const wear = (n: number) => {
-    el.style.filter = had ? `url(#dm-tear-${n}) ${had}` : `url(#dm-tear-${n})`;
+    const d = OFFSET[n] * 0.7;
+    const bleed =
+      `drop-shadow(${d.toFixed(1)}px 0 0 rgba(255, 0, 0, 0.42)) ` +
+      `drop-shadow(${(-d).toFixed(1)}px 0 0 rgba(0, 255, 255, 0.42))`;
+    el.style.filter = `url(#dm-tear-${n}) ${bleed}${had ? ` ${had}` : ''}`;
   };
   const clear = () => {
     if (had) el.style.filter = had;
