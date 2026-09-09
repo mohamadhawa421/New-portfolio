@@ -69,10 +69,49 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
         page is a collision waiting for a DOM order to change, and this one is
         the newcomer.
       */}
-      {lines.length > 1 && (
-        <span class="aside__count" data-say-count aria-hidden="true">{`1/${lines.length}`}</span>
-      )}
       <span class="aside__say" data-say aria-live="polite">{lines[0]}</span>
+
+      {lines.length > 1 && (
+        <span class="aside__pager">
+          <button
+            class="aside__step"
+            type="button"
+            data-say-step="-1"
+            aria-label="Previous thing he said"
+          >
+            <svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true" focusable="false">
+              <path
+                d="M7.5 2L3.5 6l4 4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+
+          <span class="aside__count" data-say-count aria-hidden="true">{`1/${lines.length}`}</span>
+
+          <button
+            class="aside__step"
+            type="button"
+            data-say-step="1"
+            aria-label="Next thing he has to say"
+          >
+            <svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true" focusable="false">
+              <path
+                d="M4.5 2l4 4-4 4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </span>
+      )}
     </p>
 
     <button class="aside__figure" type="button" data-say-more aria-label="Ask him again">
@@ -210,14 +249,33 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
      * doing it rather than as a word replacement. Reduced motion swaps
      * straight over; the bolt is the animation, so there is nothing to soften.
      */
-    function speak(el: HTMLElement) {
+    function speak(el: HTMLElement, delta = 1, paging = false) {
       const say = el.querySelector<HTMLElement>('[data-say]');
       const script: string[] = JSON.parse(el.dataset.lines || '[]');
       if (!say || script.length < 2) return;
 
       const at = Number(el.dataset.line || 0);
-      // Round to the second line, never the first: the opener only opens.
-      const next = at + 1 >= script.length ? 1 : at + 1;
+      const last = script.length;
+
+      /*
+       * Pressing him and paging him are not quite the same gesture.
+       *
+       * Pressing him means "tell me something else", and it rounds to the
+       * second line rather than the first, because the opener only opens —
+       * being handed "Hi, I'm the one who made this" for a second time is the
+       * page forgetting it has already met you.
+       *
+       * The arrows are a pager, and a pager that skips a page is broken. If
+       * the counter can read 1/6 then 1/6 has to be somewhere the arrows can
+       * reach, so they run the whole cycle in both directions and wrap at both
+       * ends. The same script, addressed two ways: one asks him a question,
+       * the other turns the pages of what he has already said.
+       */
+      const next = paging
+        ? (at + delta + last) % last
+        : at + 1 >= last
+          ? 1
+          : at + 1;
       el.dataset.line = String(next);
 
       /*
@@ -397,6 +455,12 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
       el.querySelector<HTMLElement>('[data-say-more]')?.addEventListener('click', () =>
         speak(el)
       );
+
+      // The two arrows, which page rather than ask. `paging` is what tells
+      // speak() to treat the opener as a page like any other.
+      el.querySelectorAll<HTMLElement>('[data-say-step]').forEach((step) => {
+        step.addEventListener('click', () => speak(el, Number(step.dataset.sayStep) || 1, true));
+      });
       reserve(el);
       /*
        * And again once the webfont has landed. Measured against the fallback,
@@ -643,8 +707,6 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
     min-width: 0;
     margin-bottom: clamp(14px, 2vw, 26px);
     padding: 13px 16px;
-    /* The corner the counter sits in, kept clear of the first line. */
-    padding-right: 46px;
     border-radius: var(--r-md);
     border: 1px solid var(--aside-line);
     background: var(--aside-surface);
@@ -724,17 +786,114 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
    * Quiet on purpose. It is there for the moment you wonder whether you have
    * been round twice, and invisible the rest of the time.
    */
+  /*
+   * The pager, at the foot of what he just said.
+   *
+   * It used to be a bare counter in the top right corner, which told you there
+   * were six things and not how to get to the second one — the way through was
+   * pressing him, and nothing said so. These are that instruction, made of the
+   * control itself.
+   *
+   * At the foot rather than in the corner for two reasons. It is where the eye
+   * already is when the sentence ends, which is the moment somebody wants the
+   * next one. And a cluster in the corner has to be reserved against: the
+   * counter alone cost 46px of padding-right, and three items would cost
+   * ninety — a third of the bubble's width on a phone, taken out of the first
+   * line of every message to hold controls that belong after it. The bubble
+   * has its full width back.
+   */
+  .aside__pager {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
+    margin-top: 8px;
+    /* Pulled into the padding so the arrows sit against the bubble's own
+       edge rather than a step inside it, which is where a footer control
+       looks placed rather than parked. */
+    margin-right: -6px;
+  }
+
   .aside__count {
-    position: absolute;
-    top: 9px;
-    right: 12px;
     font-size: 11px;
     line-height: 1;
     letter-spacing: 0.02em;
     font-variant-numeric: tabular-nums;
     color: var(--aside-ink);
     opacity: 0.38;
+    /* Wide enough for two digits either side of the slash, so the arrows do
+       not shuffle sideways as the number changes. */
+    min-width: 30px;
+    text-align: center;
     pointer-events: none;
+  }
+
+  /*
+   * Quiet until wanted, and a real target the whole time.
+   *
+   * 30px square, which is bigger than the mark inside it: an 11px chevron is
+   * the right weight next to 11px type and the wrong size for a thumb, so the
+   * button is the target and the glyph is the drawing. Nothing here has a
+   * background until it is hovered — a filled control at the foot of a speech
+   * bubble reads as a form, and this is furniture.
+   */
+  .aside__step {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--aside-ink);
+    opacity: 0.42;
+    cursor: pointer;
+    transition:
+      opacity 200ms var(--ease-out),
+      background 200ms var(--ease-out);
+  }
+
+  .aside__step:hover,
+  .aside__step:focus-visible {
+    opacity: 0.95;
+    background: color-mix(in srgb, var(--aside-ink) 9%, transparent);
+  }
+
+  .aside__step:active {
+    opacity: 1;
+  }
+
+  /* A drawn pointer cannot also be a system one. */
+  :global(:root.has-custom-cursor) .aside__step {
+    cursor: none;
+  }
+
+  /*
+   * On a touch screen they are permanent and a little larger.
+   *
+   * There is no hover to find them with, so the resting state has to be
+   * legible on its own rather than being the quiet half of a pair — and 34px
+   * is the smallest square worth aiming a thumb at.
+   */
+  @media (hover: none) {
+    .aside__step {
+      width: 34px;
+      height: 34px;
+      opacity: 0.6;
+    }
+
+    .aside__pager {
+      gap: 4px;
+      margin-top: 6px;
+      margin-right: -8px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .aside__step {
+      transition-duration: 1ms;
+    }
   }
 
   .aside--dark .aside__bubble {
