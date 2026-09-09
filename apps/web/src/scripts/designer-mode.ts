@@ -214,11 +214,20 @@ const BLAST_MS = 380;
  * The shape is a stretched exponential, `exp(-(u/k)^1.4)`, fitted to the
  * profile a decaying front actually has:
  *
- *      at the front   1.00
- *      a fifth out    0.62
- *      a third out    0.32
- *      half way       0.09
- *      beyond that    ~0
+ *      a tenth out    0.95
+ *      a quarter out  0.77
+ *      half way       0.43
+ *      four fifths    0.15
+ *      at the edge    0.06
+ *
+ * Widened from 0.42/1.5 to these, which lifted the outer half of the page and
+ * touched the inner hardly at all: half way out went from 0.27 to 0.43 and
+ * four fifths from 0.07 to 0.15, while the near field moved 0.89 to 0.95. It
+ * is monotonically greater than the old curve at every single distance —
+ * checked across the whole range, not spot-checked — so nothing anywhere got
+ * less pressure than it had. What it fixes is a far half that had almost
+ * nothing left in it: a smooth attenuation should still be *visible* at the
+ * edge of a large screen, and at 0.07 it was not.
  *
  * The length scale is a fraction of `reach` rather than a pixel count, because
  * the same click has to read the same way on a phone and on a wide display —
@@ -234,7 +243,7 @@ const BLAST_MS = 380;
  */
 function pressure(distance: number, reach: number): number {
   const u = Math.min(1, distance / (reach || 1));
-  return Math.exp(-Math.pow(u / 0.42, 1.5));
+  return Math.exp(-Math.pow(u / 0.55, 1.7));
 }
 
 /**
@@ -256,6 +265,50 @@ function pressure(distance: number, reach: number): number {
  * the outer pieces travel — which the coast, the grip and the way home are all
  * tuned against — moves at all.
  */
+/**
+ * The spin a curved front puts on a body it sweeps across.
+ *
+ * A radial pressure field exerts no net torque on a symmetric body — the line
+ * of action passes through the centroid, and a rigorous model spins nothing at
+ * all. That is why there used to be a random swirl here. But the front is not
+ * a static field: it is an arc arriving, and it does not reach the whole of an
+ * element at once. It clips one part first, that part starts moving while the
+ * rest has not been touched, and the body turns about what the wave has not
+ * got to yet. The asymmetry is in the *timing*, not in the force, and it is
+ * completely determined by where the click was.
+ *
+ * So: find where the front touches the box first — the point of the box
+ * nearest the origin, which is the origin itself clamped into it — and take
+ * the part of the offset from the centre to that point which lies across the
+ * direction of travel. That cross product is the lever the front pushes on.
+ *
+ * It falls out of the geometry the way it should. A click square-on to an
+ * element, anywhere along the line through its centre, touches the near edge
+ * symmetrically, the cross product is zero, and the element is pushed without
+ * turning — which is right, a head-on blow does not spin anything. Move the
+ * click off that line and the front clips a corner first, the cross product
+ * grows, and the element turns the way the front swept. Two elements side by
+ * side get opposite spin from one click between them, and neither of them was
+ * told to.
+ *
+ * Normalised by the body's own half-diagonal, so it is a shape-independent
+ * ratio and a chip and a cover are on the same scale.
+ */
+function torque(
+  box: { left: number; top: number; right: number; bottom: number; width: number; height: number },
+  cx: number,
+  cy: number,
+  originX: number,
+  originY: number,
+  nx: number,
+  ny: number
+): number {
+  const ex = Math.max(box.left, Math.min(originX, box.right));
+  const ey = Math.max(box.top, Math.min(originY, box.bottom));
+  const arm = Math.hypot(box.width, box.height) / 2 || 1;
+  return Math.max(-1, Math.min(1, ((ex - cx) * ny - (ey - cy) * nx) / arm));
+}
+
 function carry(distance: number, reach: number): number {
   const u = Math.min(1, distance / (reach || 1));
   return 0.5 + 0.5 * Math.exp(-Math.pow(u / 0.38, 1.5));
@@ -896,15 +949,23 @@ export function run(options: DesignerModeOptions): Beat {
   const push = Math.min(window.innerWidth, window.innerHeight) * 0.62;
 
   /*
-   * One bias for the whole run.
+   * There is no bias for the run any more, and that is the change.
    *
-   * Without it every explosion is the same explosion: purely radial, evenly
-   * spread, statistically identical each time. A single swirl direction and
-   * lean, rolled once and applied to every piece, is what makes one run read as
-   * a different event from the last rather than a replay of it.
+   * A swirl and a lean used to be rolled once here and added to every piece's
+   * aim — up to 0.8 of tangent and a third of a unit of drift, the same for
+   * everything on the page. They were there because a purely radial explosion
+   * looked statistically identical each time, and they worked, but what they
+   * bought was four or five *kinds* of wave rather than one wave: two clicks
+   * on the same pixel came out visibly different, and the lean could push a
+   * piece against the direction the click actually implied. A click on the
+   * left is supposed to throw things right. Nothing rolled per run gets to
+   * overrule that.
+   *
+   * What replaces them is `torque`, below, which is not a roll at all — it is
+   * read off where the front meets each element. Same purpose, no dice: the
+   * page still never reads as one explosion diagram, and now the reason it
+   * does not is the geometry of the click rather than the seed.
    */
-  const swirl = (Math.random() * 2 - 1) * 0.8;
-  const lean = { x: (Math.random() * 2 - 1) * 0.35, y: (Math.random() * 2 - 1) * 0.28 };
 
   /*
    * Every run carries the same energy; only its arrangement changes.
@@ -915,23 +976,43 @@ export function run(options: DesignerModeOptions): Beat {
    * nothing wrong anywhere. The variance was the whole of the difference
    * between "the first one is the best one" and the rest.
    *
-   * A ladder instead of five dice: fixed values spanning the range, shuffled
-   * and handed out one per piece. The mix is identical every time, which piece
-   * gets which is not, and the run's swirl and lean above still decide where
-   * it all goes. The only thing that differs between two presses is the
-   * direction, which is the only thing that should.
+   * A ladder instead of five dice: fixed values spanning the range, handed out
+   * one per piece. The mix is identical every time and the seating is the
+   * click's, so the only thing that differs between two presses is where the
+   * pointer was — which is the only thing that should.
    */
-  const rungs = (from: number, to: number, n: number) => {
-    const out = Array.from({ length: n }, (_, i) => (n === 1 ? (from + to) / 2 : from + ((to - from) * i) / (n - 1)));
-    for (let i = out.length - 1; i > 0; i -= 1) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [out[i], out[j]] = [out[j], out[i]];
-    }
-    return out;
-  };
+  const rungs = (from: number, to: number, n: number) =>
+    Array.from({ length: n }, (_, i) => (n === 1 ? (from + to) / 2 : from + ((to - from) * i) / (n - 1)));
+
+  /*
+   * Which piece gets which rung, decided by the click rather than by a shuffle.
+   *
+   * The ladder itself was already the right idea — the same set of values every
+   * press, so no run can deal five low cards and come out limp — but it was
+   * handed out in a random order, and that is one more thing about a press that
+   * the pointer did not decide. Two clicks on the same pixel gave the same
+   * total energy arranged two different ways.
+   *
+   * Seated by bearing instead: each piece's angle around the origin, in order.
+   * The mix is still identical on every press, the seating is still different
+   * for every different click — because moving the pointer reorders the page
+   * around it — and clicking the same place twice now does the same thing
+   * twice. Which is the whole of the brief: the geometry decides, and nothing
+   * else gets a vote.
+   */
+  const seat = new Array<number>(chosen.length);
+  chosen
+    .map((el, i) => {
+      const r = el.getBoundingClientRect();
+      return { i, bearing: Math.atan2(r.top + r.height / 2 - originY, r.left + r.width / 2 - originX) };
+    })
+    .sort((a, b) => a.bearing - b.bearing)
+    .forEach((one, at) => {
+      seat[one.i] = at;
+    });
   const placed: Array<{ el: HTMLElement; anchor: Anchor; flight: Flight }> = [];
 
-  // One rung each, shuffled. See the note on rungs() above.
+  // One rung each, seated by bearing. See the note above.
   const spreads = rungs(0.86, 1.36, chosen.length);
   const coasts = rungs(1.55, 1.72, chosen.length);
   let rung = 0;
@@ -964,16 +1045,25 @@ export function run(options: DesignerModeOptions): Beat {
      * them should ever be.
      *
      * Taken off the ladder rather than rolled, so the set of values is the
-     * same on every press and only their arrangement moves.
+     * same on every press, and seated by bearing rather than shuffled, so
+     * their arrangement is the click's too.
      */
-    const spread = spreads[rung];
+    const spread = spreads[seat[rung]];
     const strength = push * falloff * spread;
 
     const nx = vx / distance;
     const ny = vy / distance;
-    // Up to a right angle off the radius. Purely radial reads as mechanical.
-    // The run's own swirl, plus this piece's share of chaos on top of it.
-    const tangent = swirl + (Math.random() * 2 - 1) * 0.55;
+    /*
+     * How far off the radius this one goes, read off the click.
+     *
+     * Purely radial reads as mechanical, and this is what stops it without
+     * anything being rolled: the lever the arriving front has on this
+     * particular box from this particular origin. The old pair of numbers here
+     * spanned about ±1.35 between them; the gain below keeps the same range,
+     * so nothing about how far off-axis the page can be thrown has changed —
+     * only what decides it.
+     */
+    const tangent = torque(rect, cx, cy, originX, originY, nx, ny) * 1.3;
 
     /*
      * Mass, so that the same wave does not move everything by the same amount.
@@ -988,24 +1078,23 @@ export function run(options: DesignerModeOptions): Beat {
     const inertia = 0.58 + 0.42 * (1 - heft);
 
     /*
-     * The swirl turns the throw; it does not lengthen it.
+     * The torque turns the throw; it does not lengthen it.
      *
      * (nx - ny·t, ny + nx·t) is not a unit vector — its length is sqrt(1 + t²),
-     * and the run's swirl carries t as far as 1.35. So a run that happened to
-     * roll a strong swirl threw everything up to 1.7 times further than a run
-     * that rolled none, for no reason anybody could see, and the lean added
-     * more on top. Measured across three presses before this: total apex
-     * distance 3969, 3000, 2539 — a fifty-six per cent swing in how hard the
-     * page was hit, from two numbers that were only ever meant to aim it.
+     * and t reaches 1.3 here. Unnormalised, a piece the front happens to catch
+     * off-centre would be thrown up to 1.65 times further than one it hits
+     * square, which would make the tangent a second, invisible strength term.
+     * It is not one. This was measured when the tangent was still a roll:
+     * across three presses the total apex distance came out 3969, 3000 and
+     * 2539, a fifty-six per cent swing in how hard the page was hit, from a
+     * number that was only ever meant to aim it.
      *
-     * Normalised, the direction is the swirl's and the distance is `strength`
-     * alone: `push` for the run, falloff for how far out it is, its rung of
-     * the ladder for grain, and inertia for what it weighs. Which is the whole
-     * of the brief — every press the same power, and only the direction
-     * different.
+     * Normalised, the torque decides only the direction and `strength` decides
+     * the distance: `push` for the viewport, falloff for how far out it is,
+     * its rung of the ladder for grain, and inertia for what it weighs.
      */
-    const aimX = nx - ny * tangent + lean.x;
-    const aimY = ny + nx * tangent + lean.y;
+    const aimX = nx - ny * tangent;
+    const aimY = ny + nx * tangent;
     const aim = Math.hypot(aimX, aimY) || 1;
 
     const dx = (aimX / aim) * strength * inertia;
@@ -1044,7 +1133,7 @@ export function run(options: DesignerModeOptions): Beat {
      * look like work: it is still getting away for a second and a half, and
      * only just stops in time.
      */
-    const coast = coasts[rung];
+    const coast = coasts[seat[rung]];
     rung += 1;
 
     /*
@@ -1102,9 +1191,9 @@ export function run(options: DesignerModeOptions): Beat {
        * The way it is actually going, not the way the source lies.
        *
        * The bend is about the axis across the direction of travel, so it has
-       * to be the travel — the throw carries the run's swirl and lean and this
-       * piece's own share of chaos on top of the radius, and bending along the
-       * radius while being thrown somewhere else is two forces disagreeing for
+       * to be the travel — the throw carries this piece's own torque on top of
+       * the radius, and bending along the radius while being thrown somewhere
+       * else is two forces disagreeing for
        * no reason.
        */
       nx: dx / (Math.hypot(dx, dy) || 1),
@@ -1219,7 +1308,7 @@ export function run(options: DesignerModeOptions): Beat {
      * them element by element costs a layout per heading; this costs one.
      *
      * A letter is the lightest thing in the sequence and is thrown like it —
-     * the same wave, the same falloff, the same swirl and lean the pieces got,
+     * the same wave and the same falloff the pieces got, off the same origin,
      * so a paragraph does not disperse in its own private direction. What it
      * does not get is any of the mass that holds a card back. This is what the
      * wave does to something with nothing to it.
@@ -1344,7 +1433,23 @@ export function run(options: DesignerModeOptions): Beat {
 
       const nx = lx / distance;
       const ny = ly / distance;
-      const tangent = swirl + (Math.random() * 2 - 1) * 0.75;
+      /*
+       * A letter's spin is its place in the word the front swept under.
+       *
+       * Same lever as a piece gets, with the word as the body rather than the
+       * glyph — a single letter is too small to have a meaningful arm of its
+       * own, and it is not what the front swept across anyway. So the offset
+       * is measured from where the wave entered the block, which means the
+       * letters on the two sides of that point turn opposite ways and the ones
+       * it entered under barely turn at all.
+       *
+       * That is the picture the lift is already drawing, read for rotation:
+       * the ground opens under one part of a word and it tips away from there.
+       */
+      const wb = wordBox[block[i]];
+      const tangent =
+        torque(wb, spot.left + spot.width / 2, spot.top + spot.height / 2, originX, originY, nx, ny) *
+        1.6;
 
       /*
        * The kerning correction, as position rather than as transform.
@@ -1367,8 +1472,8 @@ export function run(options: DesignerModeOptions): Beat {
       const journey = 2100 + Math.round(Math.random() * 900);
       const letterCoast = 1.58 + Math.random() * 0.2;
       // Aimed, not lengthened — see the note in the piece loop above.
-      const aimX = nx - ny * tangent + lean.x;
-      const aimY = ny + nx * tangent + lean.y;
+      const aimX = nx - ny * tangent;
+      const aimY = ny + nx * tangent;
       const aim = Math.hypot(aimX, aimY) || 1;
 
       const flight: Throw = {
