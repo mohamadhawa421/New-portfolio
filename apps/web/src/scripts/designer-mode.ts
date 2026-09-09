@@ -1603,7 +1603,7 @@ export function run(options: DesignerModeOptions): Beat {
    * quite over it, and he is the last thing on it to fail.
    */
   after(timed.landed, () => {
-    returning.push(...resettle(character, (strength) => onTear?.(strength)));
+    returning.push(...resettle(character, (strength) => onFault?.(strength)));
   });
 
   after(timed.landed + SETTLE_MS + 40, () => {
@@ -2124,6 +2124,65 @@ const TEAR_CAP = 12;
  * onto whatever else is moving the element, and it must not replace the lift
  * that is running underneath it.
  */
+
+/**
+ * Whether this engine gets the channels separated by paint rather than by a
+ * filter graph.
+ *
+ * WebKit and Blink both parse `filter: url(#id)` and both claim to apply it,
+ * and on this page only one of them puts colour on the screen. Two rounds have
+ * now gone into finding out which WebKit rule is responsible — the lazily
+ * built filter whose defining `<svg>` is not painted, the interpolation of a
+ * `url()` value, the cost of the offscreen pass — and each answer improved
+ * something without producing the separation. The next guess is not worth a
+ * third round, because the fix does not depend on the answer: what these
+ * elements need is a second way of drawing the effect that does not go through
+ * a filter at all.
+ *
+ * So Blink keeps the filter, unchanged and byte for byte, and WebKit gets the
+ * separation out of `text-shadow` instead.
+ *
+ * Sniffing an engine is normally the wrong instrument, and here it is the
+ * right one: this is a known difference between two rendering paths and not a
+ * feature either engine reports on. Everything on iOS is WebKit, including the
+ * browsers that call themselves something else, and they all need this — which
+ * is exactly what the test says.
+ */
+const PAINTED_TEAR = (() => {
+  const ua = navigator.userAgent;
+  return /AppleWebKit/.test(ua) && !/Chrom(e|ium)|Edg\//.test(ua);
+})();
+
+/**
+ * How far the channels are pulled apart at each of the three levels.
+ *
+ * The same three distances the filters in the markup are built around, so the
+ * two paths are the same effect drawn twice rather than two effects. Index by
+ * level; index nought is unused and only there so the numbering matches
+ * `dm-tear-1` through `dm-tear-3`.
+ */
+const SPLIT = [0, 4, 7, 10];
+
+/**
+ * The separation, as two coloured copies of every glyph.
+ *
+ * Not a fallback in the apologetic sense — for a page whose torn elements are
+ * headings, labels, links and paragraphs, doubling the glyphs in red and cyan
+ * is a *better* picture of a channel split than shifting the element's own
+ * pixels is, because it survives at the small sizes where an offset of four
+ * pixels inside a filter region is mostly the element's own background.
+ *
+ * `text-shadow` is inherited, which is what makes it usable here at all: the
+ * storm has already split these blocks into one span per letter, and a value
+ * written on the block reaches every one of them without touching any of them.
+ * Removing it from the block removes it from all of them too.
+ *
+ * Zero blur on both, because a blurred copy is a glow and the thing being
+ * described is a signal arriving twice.
+ */
+const fringe = (d: number) =>
+  `${d}px 0 0 rgba(255, 42, 92, 0.92), ${-d}px 0 0 rgba(0, 228, 255, 0.86)`;
+
 function tear(el: HTMLElement, at: number, sx: number, bite: number, sy = 0): Animation[] {
   if (!CAN_LAYER) return [];
 
@@ -2147,36 +2206,42 @@ function tear(el: HTMLElement, at: number, sx: number, bite: number, sy = 0): An
   /*
    * Whatever it already had, kept.
    *
-   * Nothing in the storm sets a filter today, but the page might: a card with
-   * a drop shadow, an image with a saturation tweak. Replacing it for a
-   * quarter of a second and then removing the property would take that with
-   * it, so the separation is written in front of what is there.
+   * Nothing in the storm sets either of these today, but the page might: a
+   * card with a drop shadow, a heading with a lift under its type. Replacing
+   * it for a quarter of a second and then removing the property would take
+   * that with it, so the separation is written in front of what is there.
+   *
+   * Only what is *inline* is read, on both paths. A value coming from the
+   * stylesheet is not lost by an inline one being removed — it comes back on
+   * its own — and reading the computed style of twelve elements in the middle
+   * of the storm is a style recalculation nobody asked for.
    */
-  const had = el.style.filter;
+  const prop = PAINTED_TEAR ? 'text-shadow' : 'filter';
+  const had = PAINTED_TEAR ? el.style.textShadow : el.style.filter;
 
   /*
-   * One pass, and no more than one.
+   * One pass, and no more than one — whichever pass this engine is getting.
    *
-   * A pair of coloured drop-shadows was briefly added alongside the reference
-   * filter, on the theory that Safari was declining to build the reference and
-   * needed something plain to fall back on. Safari was not declining it — it
-   * was drawing it and struggling, which is the opposite problem, and asking
-   * for two more full filter passes per element made it measurably worse.
-   * WebKit's SVG filter path is much slower than Blink's, and with six
-   * elements torn at once during the busiest part of the storm the difference
-   * is a dropped frame rather than a subtlety.
+   * A pair of coloured `drop-shadow()` filters was briefly added *alongside*
+   * the reference filter, on the theory that Safari needed something plain to
+   * fall back on. That failed twice over: two more full filter passes per
+   * element is measurably slower on WebKit's SVG filter path, and a drop
+   * shadow is a coloured copy of the element's silhouette, so it fringes an
+   * outline and leaves a button's label — most of what the effect is for —
+   * completely untouched.
    *
-   * So the separation is the reference filter alone — which is also the only
-   * thing that separates channels at all. The drop-shadows were coloured
-   * copies of the whole element: they fringe an outline and leave a button's
-   * label untouched, which is most of what the effect is for.
+   * The two paths here are alternatives rather than layers. Blink resolves one
+   * reference filter and nothing else; WebKit writes one `text-shadow` and no
+   * filter at all, so it never builds an offscreen pass for this and the cost
+   * question that started the whole investigation does not arise.
    */
   const wear = (n: number) => {
-    el.style.filter = had ? `url(#dm-tear-${n}) ${had}` : `url(#dm-tear-${n})`;
+    const one = PAINTED_TEAR ? fringe(SPLIT[n]) : `url(#dm-tear-${n})`;
+    el.style.setProperty(prop, had ? `${one}${PAINTED_TEAR ? ',' : ''} ${had}` : one);
   };
   const clear = () => {
-    if (had) el.style.filter = had;
-    else el.style.removeProperty('filter');
+    if (had) el.style.setProperty(prop, had);
+    else el.style.removeProperty(prop);
   };
 
   touched.push(el);
@@ -2553,6 +2618,15 @@ let lastSlot = -1;
 let onArc: ((strength: number) => void) | null = null;
 /** Fired once per torn element, so the sound can crack where the screen does. */
 let onTear: ((strength: number) => void) | null = null;
+/**
+ * And the same for the last glitch, which is a separate voice.
+ *
+ * Two listeners rather than one with a flag, because the two are not the same
+ * sound at different levels — the front's tears are contacts arcing and the
+ * one at the end is the frame itself giving out. Keeping them apart here is
+ * what lets the sound module say that in the buffers rather than in a branch.
+ */
+let onFault: ((strength: number) => void) | null = null;
 
 /** When the power started going, or 0 while the field is still at full. */
 let decayFrom = 0;
@@ -2618,6 +2692,17 @@ export function setArcListener(fn: ((strength: number) => void) | null): void {
 
 export function setTearListener(fn: ((strength: number) => void) | null): void {
   onTear = fn;
+}
+
+/**
+ * Who to tell when the screen gives out for the last time.
+ *
+ * Called at the instant each element reaches its worst separation — the frame
+ * the filter is written, not the frame its window opens — so the crack and the
+ * peak are one event rather than two that happen to be close.
+ */
+export function setFaultListener(fn: ((strength: number) => void) | null): void {
+  onFault = fn;
 }
 
 /**

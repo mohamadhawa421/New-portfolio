@@ -310,6 +310,7 @@ import EggSound from './EggSound.astro';
     function stop(): void {
       mode.setArcListener(null);
       mode.setTearListener(null);
+      mode.setFaultListener(null);
       mode.teardown();
       sound.end();
       // The pattern outlives the picture if it is not cancelled, and a phone
@@ -415,6 +416,7 @@ import EggSound from './EggSound.astro';
        */
       mode.setArcListener(sound.tick);
       mode.setTearListener(sound.crackle);
+      mode.setFaultListener(sound.fault);
       showSwitch();
 
       /*
@@ -654,6 +656,18 @@ import EggSound from './EggSound.astro';
    *
    * It shares the rings' sizing, so all four grow at the same rate and the
    * hairlines sit exactly on the band's edges rather than near them.
+   *
+   * The two coloured hairlines bracketing the hot edge are the same idea as
+   * the separation on the elements, one scale up: a front this bright, moving
+   * this fast, does not resolve to a single colour at its edge. Red leads and
+   * cyan trails, because outward is the direction of travel and that is the
+   * order the element tears put them in — the fringe on the wave and the
+   * fringe on the things it crosses are one optical effect seen twice, and
+   * they would contradict each other if the channels swapped sides.
+   *
+   * Under a per-cent and a half wide each, and translucent. It is meant to be
+   * noticed as intensity rather than as colour; at any more it stops being
+   * light under pressure and becomes a rainbow.
    */
   .shock {
     background: radial-gradient(
@@ -662,7 +676,10 @@ import EggSound from './EggSound.astro';
       color-mix(in srgb, var(--dm-deep) 26%, transparent) 58%,
       color-mix(in srgb, var(--dm-wave) 58%, transparent) 72%,
       color-mix(in srgb, var(--dm-core) 78%, transparent) 84%,
+      color-mix(in srgb, var(--dm-core) 78%, transparent) 89.4%,
+      rgba(0, 228, 255, 0.5) 90.6%,
       color-mix(in srgb, var(--dm-arc) 92%, #fff) 92%,
+      rgba(255, 42, 92, 0.58) 93.4%,
       color-mix(in srgb, var(--dm-arc) 40%, transparent) 96%,
       transparent 100%
     );

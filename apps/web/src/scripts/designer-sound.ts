@@ -123,6 +123,8 @@ let voices: AudioScheduledSourceNode[] = [];
 let lastStrike = 0;
 /** And the last tear, throttled separately — they are different rates. */
 let lastTear = 0;
+/** And the last one of the final glitch's, which throttles separately. */
+let lastFault = 0;
 /** Whether the output device has been forced open yet. */
 let opened = false;
 
@@ -152,6 +154,7 @@ function readMuted(): boolean {
 let waveBuf: AudioBuffer | null = null;
 let backBuf: AudioBuffer | null = null;
 let strikeBuf: AudioBuffer | null = null;
+let faultBuf: AudioBuffer | null = null;
 
 function context(): Ctx | null {
   if (ctx) return ctx;
@@ -356,11 +359,72 @@ function makeStrike(audio: Ctx): AudioBuffer {
   return buffer;
 }
 
+/**
+ * The last failure, which is a different kind of failure.
+ *
+ * The tears that travel with the front are contacts arcing — the strike buffer
+ * sped up, which is what an arc sounds like when there is no time for its
+ * body. The one at the end is not an arc. Everything has landed, nothing is
+ * moving, and what breaks up is the picture itself, so this is built to sound
+ * like a signal rather than like a spark: a sharp dry transient and then a
+ * couple of dozen milliseconds of quantised noise, dropping away steeply
+ * enough that there is no tail to notice.
+ *
+ * The quantising is the whole character. The noise is sampled and held at
+ * about five kilohertz and rounded to six bits before it is filtered, so what
+ * comes out has the stepped, slightly metallic edge of something being decoded
+ * badly — which is the sound of the same event the eye is being shown, and not
+ * a second spark after the storm is over.
+ */
+function makeFault(audio: Ctx): AudioBuffer {
+  const sr = audio.sampleRate;
+  const buffer = audio.createBuffer(1, Math.floor(sr * 0.14), sr);
+  const d = buffer.getChannelData(0);
+  const n = d.length;
+
+  const edge = svf(sr, 0.2);
+  /** The rate it fails at, and the depth it fails to. */
+  const hold = Math.max(4, Math.round(sr / 5200));
+  const steps = Math.pow(2, 5);
+
+  let held = 0;
+
+  for (let i = 0; i < n; i += 1) {
+    const k = i / n;
+    if (i % hold === 0) held = Math.round((Math.random() * 2 - 1) * steps) / steps;
+
+    /*
+     * The transient, which is half a millisecond and no more.
+     *
+     * A crack has to arrive before anything is heard about it. Everything
+     * after this is the recovery, and the recovery is the part that has to
+     * stay small.
+     */
+    const hit = i < sr * 0.0012 ? 2.4 : 0;
+    const body = edge(held, 2600 + 3800 * (1 - k)).band;
+
+    /*
+     * A steep decay and only as much saturation as the transient needs.
+     *
+     * The first shape here fell as the fifth power and was driven hard into
+     * the tanh, and the two together flattened it: measured in five
+     * millisecond blocks it lost three decibels over its first twenty, which
+     * is a burst rather than a crack. At the seventh power and two-thirds of
+     * the drive it loses eight over the same twenty, is twenty down by thirty
+     * milliseconds and forty down by sixty — an attack, and then nothing.
+     */
+    d[i] = Math.tanh((body + hit) * fall(k, 7.2) * 2.2) * 0.9;
+  }
+
+  return buffer;
+}
+
 function build(audio: Ctx): void {
   if (waveBuf) return;
   waveBuf = makeWave(audio);
   backBuf = reverse(audio, waveBuf);
   strikeBuf = makeStrike(audio);
+  faultBuf = makeFault(audio);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -692,6 +756,65 @@ export function crackle(strength = 1): void {
   src.connect(air).connect(gain).connect(master);
   src.start(t);
   src.stop(t + 0.16);
+  voices.push(src);
+}
+
+/**
+ * The screen giving out one last time, heard.
+ *
+ * The same picture as the tear and a different sound on purpose, because it is
+ * a different event: the tears are a front crossing things, this is the frame
+ * itself failing once after everything has stopped. Its buffer is quantised
+ * rather than arced (see makeFault) and it is played close to its own rate
+ * rather than at two or three times it, so where the tear is a tick this is a
+ * dry crack with a very short broken-up edge on it.
+ *
+ * Roughly a fifth of the impact, which puts it above the tears and a long way
+ * under the wave. It can be the loudest thing in the room at the moment it
+ * lands, because by then nothing else is playing — but the room by then is
+ * nearly silent, and a fifth of the impact into silence is a detail, not an
+ * event.
+ *
+ * Fifty milliseconds of throttle, because the final glitch scatters fourteen
+ * elements across a hundred and ten and the portrait's own comes last: without
+ * it this would be a burst of clicks where the picture is one failure.
+ */
+export function fault(strength = 1): void {
+  const audio = context();
+  if (!audio || !master || !faultBuf || stopped) return;
+
+  const t = audio.currentTime;
+  if (t - lastFault < 0.05) return;
+  lastFault = t;
+
+  const src = audio.createBufferSource();
+  src.buffer = faultBuf;
+  // A little either side of its own rate, so the repeats inside the scatter
+  // are the same failure and not the same recording.
+  src.playbackRate.value = 0.94 + Math.random() * 0.26;
+
+  /*
+   * Above fourteen hundred, which is a long way below the tear's cut.
+   *
+   * The tear is high-passed at three kilohertz to keep it off the wave's low
+   * end; nothing is competing with this one, and taking that much out of it
+   * would leave a hiss where the brief says a dry crack.
+   */
+  const air = audio.createBiquadFilter();
+  air.type = 'highpass';
+  air.frequency.value = 1400;
+  air.Q.value = 0.6;
+
+  const gain = audio.createGain();
+  const level = 0.22 * Math.max(0.1, Math.min(1, strength));
+  gain.gain.setValueAtTime(level, t);
+  // The buffer's own decay has it near nothing by seventy milliseconds; this
+  // is the guarantee that there is no tail at all by a hundred and ten.
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.11);
+
+  src.connect(air).connect(gain).connect(master);
+  src.start(t);
+  src.stop(t + 0.18);
   voices.push(src);
 }
 

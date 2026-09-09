@@ -87,6 +87,18 @@ beat it actually used, with the first release and last arrival read off the
 flights it created, and `play()` writes the rewind between exactly those two
 numbers. Retime the visuals and the audio follows. Do not hardcode either end.
 
+**The tear is drawn twice, once per engine.** Blink resolves the SVG reference
+filters (`dm-tear-1..3` in `DesignerEgg.astro`); WebKit gets the same three
+separations out of an inherited `text-shadow` and never builds a filter for
+this at all. Two rounds went into finding which WebKit rule swallows the
+filter and neither answer produced colour on screen, so the second path is
+there instead of a third guess. They are alternatives, not layers — stacking
+coloured `drop-shadow()` filters on top of the reference filter was tried, and
+it both costs two more offscreen passes and fringes only the silhouette, which
+leaves a button's label untouched. Both paths write the same discrete cuts on
+the same timers, because WebKit will not interpolate a `filter` containing a
+`url()` and drops the whole animation.
+
 **Reduced motion is honoured throughout**, and every effect has a quiet
 variant rather than being switched off.
 
