@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-09T19:15:40.720Z",
+  "generatedAt": "2026-09-09T19:20:28.120Z",
   "siteSetting": {
     "id": 1,
     "siteName": "Mohamad Hawa",
@@ -1102,7 +1102,7 @@
       }
     },
     {
-      "id": 120,
+      "id": 123,
       "title": "RM Luxury",
       "slug": "rm-luxury",
       "discipline": "Landing page redesign",
@@ -1123,49 +1123,88 @@
       "reflectionBody": "The discipline I set myself was to remove a claim every time I wanted to add one, and let the fleet, the occasions, and a very plain type treatment carry the positioning instead. Whether that actually converts better than the adjectives is exactly the thing a self-initiated concept cannot tell you — it would need a real operator, real enquiries, and something to compare against.",
       "categories": [
         {
-          "id": 111,
+          "id": 119,
           "label": "Redesign web / mobile"
         },
         {
-          "id": 112,
+          "id": 120,
           "label": "Landing page / showcase website"
         }
       ],
-      "cover": null,
-      "approachShot": null,
-      "gallery": [],
+      "cover": {
+        "id": 69,
+        "name": "rm-luxury-rm-luxury-cover",
+        "alternativeText": "RM Luxury",
+        "caption": "",
+        "focalPoint": null,
+        "width": 2880,
+        "height": 2048,
+        "url": "/media/rm_luxury_rm_luxury_cover_67b82262cf.webp"
+      },
+      "approachShot": {
+        "id": 70,
+        "name": "rm-luxury-rm-luxury-1",
+        "alternativeText": "RM Luxury screen",
+        "caption": "",
+        "focalPoint": null,
+        "width": 2880,
+        "height": 2048,
+        "url": "/media/rm_luxury_rm_luxury_1_0e5bb3ef39.webp"
+      },
+      "gallery": [
+        {
+          "id": 71,
+          "name": "rm-luxury-rm-luxury-2",
+          "alternativeText": "RM Luxury screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 2880,
+          "height": 2048,
+          "url": "/media/rm_luxury_rm_luxury_2_7f4ff7d781.webp"
+        },
+        {
+          "id": 72,
+          "name": "rm-luxury-rm-luxury-3",
+          "alternativeText": "RM Luxury screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 2880,
+          "height": 2048,
+          "url": "/media/rm_luxury_rm_luxury_3_0ccadee1c9.webp"
+        }
+      ],
       "constraints": [
         {
-          "id": 445,
+          "id": 465,
           "title": "Transport, travel, restaurants, and hotels are four unrelated offers coming from one small operation.",
           "body": ""
         },
         {
-          "id": 446,
+          "id": 466,
           "title": "Nothing can carry a price, so every route has to end in a quote without that reading as a dead end.",
           "body": ""
         },
         {
-          "id": 447,
+          "id": 467,
           "title": "The category is judged on discretion, and a site that tries too hard says the opposite of what it means to.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 445,
+          "id": 463,
           "eyebrow": "Outcome",
           "title": "One Picker, Four Services",
           "body": "Transport, travel, restaurants, and hotels share a single tabbed surface instead of four competing sections."
         },
         {
-          "id": 446,
+          "id": 464,
           "eyebrow": "Outcome",
           "title": "Quote as the Destination",
           "body": "Every route ends at the same enquiry, stated plainly on the card rather than hidden behind a price nobody can publish."
         },
         {
-          "id": 447,
+          "id": 465,
           "eyebrow": "Outcome",
           "title": "Photography Over Adjectives",
           "body": "The standard of the service is shown in the images so the copy never has to claim it."
@@ -1173,33 +1212,33 @@
       ],
       "metrics": [
         {
-          "id": 463,
+          "id": 481,
           "value": "Services Overview",
           "label": "A horizontal set of offers with the enquiry available from the first screen.",
           "animate": false
         },
         {
-          "id": 464,
+          "id": 482,
           "value": "About & Positioning",
           "label": "The case for the company, split between two calls to action rather than one.",
           "animate": false
         },
         {
-          "id": 465,
+          "id": 483,
           "value": "Fleet & Quotation",
           "label": "One vehicle at a time, with class and reservation terms stated on the card.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 186,
+        "id": 192,
         "metaTitle": "RM Luxury — Mohamad Hawa",
         "metaDescription": "A self-initiated redesign for a private-chauffeur and concierge service, working out how a quote-only offer sells itself with no prices to show.",
         "shareImage": null
       }
     },
     {
-      "id": 121,
+      "id": 124,
       "title": "Club Expert+ — Phonak",
       "slug": "club-expert-phonak",
       "discipline": "Mobile app design",
@@ -1220,45 +1259,84 @@
       "reflectionBody": "The useful work was in the rows rather than the flourishes: what a member can tell about a file before tapping it, and how few taps sit between opening the app and reaching the thing they came for. The part I would want to test with real members is the five-way split, which is a reasonable model of the programme but not yet a proven model of their day.",
       "categories": [
         {
-          "id": 114,
+          "id": 122,
           "label": "Mobile app"
         }
       ],
-      "cover": null,
-      "approachShot": null,
-      "gallery": [],
+      "cover": {
+        "id": 73,
+        "name": "club-expert-phonak-club-expert-cover",
+        "alternativeText": "Club Expert+ — Phonak",
+        "caption": "",
+        "focalPoint": null,
+        "width": 2880,
+        "height": 2048,
+        "url": "/media/club_expert_phonak_club_expert_cover_557784ebcc.webp"
+      },
+      "approachShot": {
+        "id": 74,
+        "name": "club-expert-phonak-club-expert-1",
+        "alternativeText": "Club Expert+ — Phonak screen",
+        "caption": "",
+        "focalPoint": null,
+        "width": 2880,
+        "height": 2048,
+        "url": "/media/club_expert_phonak_club_expert_1_394e90e580.webp"
+      },
+      "gallery": [
+        {
+          "id": 75,
+          "name": "club-expert-phonak-club-expert-2",
+          "alternativeText": "Club Expert+ — Phonak screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 2880,
+          "height": 2048,
+          "url": "/media/club_expert_phonak_club_expert_2_31fca6f25c.webp"
+        },
+        {
+          "id": 76,
+          "name": "club-expert-phonak-club-expert-3",
+          "alternativeText": "Club Expert+ — Phonak screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 2880,
+          "height": 2048,
+          "url": "/media/club_expert_phonak_club_expert_3_959ae1c3b5.webp"
+        }
+      ],
       "constraints": [
         {
-          "id": 451,
+          "id": 471,
           "title": "Five unrelated kinds of content — news, training, products, professional tools, communication tools — all belong on the first screen.",
           "body": ""
         },
         {
-          "id": 452,
+          "id": 472,
           "title": "Most of the value is PDFs and links, which is the least engaging material an app can be built from.",
           "body": ""
         },
         {
-          "id": 453,
+          "id": 473,
           "title": "Priority support is the headline benefit, and burying it two taps deep would undercut the whole proposition.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 451,
+          "id": 469,
           "eyebrow": "Outcome",
           "title": "Five Peers, No Nesting",
           "body": "Each kind of content gets a tab of its own instead of being filed under a section it only half belongs to."
         },
         {
-          "id": 452,
+          "id": 470,
           "eyebrow": "Outcome",
           "title": "Rows That Declare Themselves",
           "body": "Format and action are visible before the title is read, so a document list can be scanned rather than opened."
         },
         {
-          "id": 453,
+          "id": 471,
           "eyebrow": "Outcome",
           "title": "Support Always in Reach",
           "body": "The priority line floats over every screen, because it is the benefit the membership is actually sold on."
@@ -1266,33 +1344,33 @@
       ],
       "metrics": [
         {
-          "id": 469,
+          "id": 487,
           "value": "Onboarding",
           "label": "Three benefits named before the member reaches the feed.",
           "animate": false
         },
         {
-          "id": 470,
+          "id": 488,
           "value": "News & Media",
           "label": "Articles, polls, and video in one feed, with a stated empty state.",
           "animate": false
         },
         {
-          "id": 471,
+          "id": 489,
           "value": "Products & Documents",
           "label": "Innovations, range, pricing, and ordering split across their own tabs.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 188,
+        "id": 194,
         "metaTitle": "Club Expert+ — Phonak — Mohamad Hawa",
         "metaDescription": "A membership app for the hearing-care professionals in Phonak's Club Expert+ programme, gathering the news, training, product documents, and priority support…",
         "shareImage": null
       }
     },
     {
-      "id": 122,
+      "id": 125,
       "title": "Archlist",
       "slug": "archlist",
       "discipline": "Web app design",
@@ -1313,50 +1391,89 @@
       "reflectionBody": "I want to be straight about the outcome, because the process is the part worth showing. A number of the recommendations I believed in most — several of them about colour and about how much visual weight the interface carries — did not survive. They were heard, considered, and shipped the client's way. I kept returning to a few of them across months of reviews, and some of those eventually landed once I found the argument that connected them to something the client already wanted. Others never did.\n\nWorking inside a direction somebody else owns and is attached to means every recommendation costs a conversation, and you have to decide which ones are worth spending. That is a real skill and it is not the same skill as being right. The product is better in the places where I did that work patiently, and unchanged in the places where I could not — and a designer who only shows the projects where they had a free hand is not showing you very much about how they work.",
       "categories": [
         {
-          "id": 116,
+          "id": 124,
           "label": "Web app"
         }
       ],
-      "cover": null,
-      "approachShot": null,
-      "gallery": [],
+      "cover": {
+        "id": 77,
+        "name": "archlist-archlist-cover",
+        "alternativeText": "Archlist",
+        "caption": "",
+        "focalPoint": null,
+        "width": 2880,
+        "height": 2048,
+        "url": "/media/archlist_archlist_cover_d21d41d6b7.webp"
+      },
+      "approachShot": {
+        "id": 78,
+        "name": "archlist-archlist-1",
+        "alternativeText": "Archlist screen",
+        "caption": "",
+        "focalPoint": null,
+        "width": 2880,
+        "height": 2048,
+        "url": "/media/archlist_archlist_1_f6920808a0.webp"
+      },
+      "gallery": [
+        {
+          "id": 79,
+          "name": "archlist-archlist-2",
+          "alternativeText": "Archlist screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 2880,
+          "height": 2048,
+          "url": "/media/archlist_archlist_2_bc55c8f48b.webp"
+        },
+        {
+          "id": 80,
+          "name": "archlist-archlist-3",
+          "alternativeText": "Archlist screen",
+          "caption": "",
+          "focalPoint": null,
+          "width": 2880,
+          "height": 2048,
+          "url": "/media/archlist_archlist_3_d210e3ac5c.webp"
+        }
+      ],
       "constraints": [
         {
-          "id": 458,
+          "id": 478,
           "title": "The design direction — colour, typography, and the overall feel — was established and owned by the client before the UX work began, and the brief was to develop it rather than to reconsider it.",
           "body": ""
         },
         {
-          "id": 459,
+          "id": 479,
           "title": "Every improvement had to be argued on the client’s own terms and survive repeated review, which meant choosing carefully which recommendations were worth the conversation.",
           "body": ""
         },
         {
-          "id": 460,
+          "id": 480,
           "title": "Five sections, each dense enough to be its own product, have to sit under one navigation without any of them feeling secondary.",
           "body": ""
         },
         {
-          "id": 461,
+          "id": 481,
           "title": "The phase timeline has to be legible to an architect at a glance and to a client who has never seen ESQ, APS, or APD written down.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 457,
+          "id": 475,
           "eyebrow": "Outcome",
           "title": "Phases Lit by Evidence",
           "body": "A phase activates when a document is filed against it, so progress is derived from the work rather than self-reported."
         },
         {
-          "id": 458,
+          "id": 476,
           "eyebrow": "Outcome",
           "title": "Cards That Answer First",
           "body": "Type, sub-type, manufacturer, and the attachment count are on the card, so browsing a catalogue does not mean opening it."
         },
         {
-          "id": 459,
+          "id": 477,
           "eyebrow": "Outcome",
           "title": "Change Argued, Not Imposed",
           "body": "Every UX proposal was framed against the client's own stated goals, which is what kept the direction intact and the improvements in it."
@@ -1364,26 +1481,26 @@
       ],
       "metrics": [
         {
-          "id": 475,
+          "id": 493,
           "value": "Calendrier",
           "label": "The profession's phase chronology, with state driven by filed documents.",
           "animate": false
         },
         {
-          "id": 476,
+          "id": 494,
           "value": "Carnet",
           "label": "Trades, inspirations, objects, and warranties under one set of tabs.",
           "animate": false
         },
         {
-          "id": 477,
+          "id": 495,
           "value": "Objets",
           "label": "A specification catalogue built to be scanned, with attachments shown on the card.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 190,
+        "id": 196,
         "metaTitle": "Archlist — Mohamad Hawa",
         "metaDescription": "A project-management web app for architects — phases, documents, suppliers, object catalogues and finances — designed inside a visual direction owned by the…",
         "shareImage": null
