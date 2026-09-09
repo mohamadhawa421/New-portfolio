@@ -29,7 +29,32 @@
     it ever has one, and the same alt — and it is already decoded, because the
     browser has it on screen.
   */}
+  {/*
+    The room, and nothing in it.
+
+    The stage is measured, never filled: the script reads this rectangle to
+    work out how large the picture is allowed to be, and then places the
+    travelling surface over the whole dialog rather than inside here. A box
+    that also held the picture would clip it during the travel, when it is
+    still out at the thumbnail's rectangle and a long way outside this one.
+  */}
   <div class="lightbox__stage" data-lightbox-stage></div>
+
+  {/*
+    How far in the picture is, and a way to change it.
+
+    The same vocabulary as the page's own scrollbar — a hairline track and a
+    small rounded fill in the ink colour — because it is the same kind of
+    object: a thin indicator at the edge of the viewport that is also a
+    control. It is only useful once there is something to zoom, so the dialog
+    reveals it on open and the fill sits at nothing until it is asked for.
+  */}
+  <div class="lightbox__zoom" data-zoom-bar aria-hidden="true">
+    <div class="lightbox__zoom-track">
+      <div class="lightbox__zoom-fill" data-zoom-fill></div>
+    </div>
+    <span class="lightbox__zoom-label" data-zoom-label>100%</span>
+  </div>
 
   <button class="lightbox__close" data-lightbox-close type="button" aria-label="Close image">
     {/*
@@ -198,17 +223,123 @@
     pointer-events: none;
   }
 
-  .lightbox__stage img {
-    display: block;
-    /* Belt to the script's braces: the fitted size is written inline, and
-       these stop a picture the script could not measure from ever covering
-       more than the room it was given. */
-    max-width: 100%;
-    max-height: 100%;
-    border-radius: var(--r-lg);
+  /*
+   * The travelling surface.
+   *
+   * Fixed to the viewport and positioned in viewport coordinates, because the
+   * rectangle it starts from is a thumbnail's `getBoundingClientRect` and the
+   * one it ends at is the stage's — both of which are viewport coordinates,
+   * and converting between spaces mid-travel is how a shared element ends up
+   * landing a scrollbar's width away from home.
+   *
+   * `overflow: hidden` is not decoration here. It is the crop: the picture
+   * inside is `object-fit: cover`, so this box decides how much of it is
+   * visible, and animating the box is what opens the crop.
+   */
+  .lightbox__surface {
+    position: fixed;
+    overflow: hidden;
+    z-index: 1;
     /* The picture is the only lit thing on the screen, and a hard edge against
        the blur is what stops it looking pasted on. */
     box-shadow: 0 40px 120px rgba(0, 0, 0, 0.45);
+    /* Off the pointer until it has arrived — a click that lands on a surface
+       still travelling would zoom a picture that is not yet anywhere. */
+    cursor: zoom-in;
+    touch-action: none;
+  }
+
+  .lightbox__surface[data-zoomed='yes'] {
+    cursor: grab;
+  }
+
+  .lightbox__surface[data-zoomed='yes']:active {
+    cursor: grabbing;
+  }
+
+  .lightbox__pic {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /*
+     * The zoom lives on this, and the travel lives on the box around it, so
+     * the two never write to the same property and cannot cancel each other.
+     */
+    transform-origin: 50% 50%;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The zoom bar                                                        */
+  /* ------------------------------------------------------------------ */
+
+  .lightbox__zoom {
+    position: fixed;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    opacity: 0;
+    transition: opacity 320ms var(--ease-out);
+    pointer-events: none;
+  }
+
+  .lightbox.is-open .lightbox__zoom {
+    opacity: 0.55;
+    pointer-events: auto;
+  }
+
+  .lightbox.is-open .lightbox__zoom:hover,
+  .lightbox.is-zoomed .lightbox__zoom {
+    opacity: 1;
+  }
+
+  /*
+   * A hairline with a fill climbing it, which is the scrollbar's own idea.
+   *
+   * The whole strip is the target rather than the fill — five pixels is not
+   * something anybody hits on a phone — so the track carries the padding and
+   * the fill is only ever a readout of where the zoom is.
+   */
+  .lightbox__zoom-track {
+    position: relative;
+    width: 5px;
+    height: min(220px, 30vh);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ink-on-dark, #fff) 18%, transparent);
+    cursor: ns-resize;
+    touch-action: none;
+  }
+
+  .lightbox__zoom-fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(var(--at, 0) * 100%);
+    border-radius: 999px;
+    background: var(--ink-on-dark, #fff);
+    /* No transition on the height: it follows a drag, and a control that lags
+       the finger holding it does not feel like a control. */
+  }
+
+  .lightbox__zoom-label {
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-on-dark, #fff);
+    opacity: 0.7;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lightbox__zoom {
+      transition: none;
+    }
   }
 
   .lightbox__close {
