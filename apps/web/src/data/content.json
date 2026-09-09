@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-09T15:14:50.166Z",
+  "generatedAt": "2026-09-09T19:15:40.720Z",
   "siteSetting": {
     "id": 1,
     "siteName": "Mohamad Hawa",
@@ -1102,7 +1102,7 @@
       }
     },
     {
-      "id": 115,
+      "id": 120,
       "title": "RM Luxury",
       "slug": "rm-luxury",
       "discipline": "Landing page redesign",
@@ -1123,11 +1123,11 @@
       "reflectionBody": "The discipline I set myself was to remove a claim every time I wanted to add one, and let the fleet, the occasions, and a very plain type treatment carry the positioning instead. Whether that actually converts better than the adjectives is exactly the thing a self-initiated concept cannot tell you — it would need a real operator, real enquiries, and something to compare against.",
       "categories": [
         {
-          "id": 103,
+          "id": 111,
           "label": "Redesign web / mobile"
         },
         {
-          "id": 104,
+          "id": 112,
           "label": "Landing page / showcase website"
         }
       ],
@@ -1136,36 +1136,36 @@
       "gallery": [],
       "constraints": [
         {
-          "id": 427,
+          "id": 445,
           "title": "Transport, travel, restaurants, and hotels are four unrelated offers coming from one small operation.",
           "body": ""
         },
         {
-          "id": 428,
+          "id": 446,
           "title": "Nothing can carry a price, so every route has to end in a quote without that reading as a dead end.",
           "body": ""
         },
         {
-          "id": 429,
+          "id": 447,
           "title": "The category is judged on discretion, and a site that tries too hard says the opposite of what it means to.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 427,
+          "id": 445,
           "eyebrow": "Outcome",
           "title": "One Picker, Four Services",
           "body": "Transport, travel, restaurants, and hotels share a single tabbed surface instead of four competing sections."
         },
         {
-          "id": 428,
+          "id": 446,
           "eyebrow": "Outcome",
           "title": "Quote as the Destination",
           "body": "Every route ends at the same enquiry, stated plainly on the card rather than hidden behind a price nobody can publish."
         },
         {
-          "id": 429,
+          "id": 447,
           "eyebrow": "Outcome",
           "title": "Photography Over Adjectives",
           "body": "The standard of the service is shown in the images so the copy never has to claim it."
@@ -1173,33 +1173,33 @@
       ],
       "metrics": [
         {
-          "id": 445,
+          "id": 463,
           "value": "Services Overview",
           "label": "A horizontal set of offers with the enquiry available from the first screen.",
           "animate": false
         },
         {
-          "id": 446,
+          "id": 464,
           "value": "About & Positioning",
           "label": "The case for the company, split between two calls to action rather than one.",
           "animate": false
         },
         {
-          "id": 447,
+          "id": 465,
           "value": "Fleet & Quotation",
           "label": "One vehicle at a time, with class and reservation terms stated on the card.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 180,
+        "id": 186,
         "metaTitle": "RM Luxury — Mohamad Hawa",
         "metaDescription": "A self-initiated redesign for a private-chauffeur and concierge service, working out how a quote-only offer sells itself with no prices to show.",
         "shareImage": null
       }
     },
     {
-      "id": 117,
+      "id": 121,
       "title": "Club Expert+ — Phonak",
       "slug": "club-expert-phonak",
       "discipline": "Mobile app design",
@@ -1220,7 +1220,7 @@
       "reflectionBody": "The useful work was in the rows rather than the flourishes: what a member can tell about a file before tapping it, and how few taps sit between opening the app and reaching the thing they came for. The part I would want to test with real members is the five-way split, which is a reasonable model of the programme but not yet a proven model of their day.",
       "categories": [
         {
-          "id": 106,
+          "id": 114,
           "label": "Mobile app"
         }
       ],
@@ -1229,36 +1229,36 @@
       "gallery": [],
       "constraints": [
         {
-          "id": 433,
+          "id": 451,
           "title": "Five unrelated kinds of content — news, training, products, professional tools, communication tools — all belong on the first screen.",
           "body": ""
         },
         {
-          "id": 434,
+          "id": 452,
           "title": "Most of the value is PDFs and links, which is the least engaging material an app can be built from.",
           "body": ""
         },
         {
-          "id": 435,
+          "id": 453,
           "title": "Priority support is the headline benefit, and burying it two taps deep would undercut the whole proposition.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 433,
+          "id": 451,
           "eyebrow": "Outcome",
           "title": "Five Peers, No Nesting",
           "body": "Each kind of content gets a tab of its own instead of being filed under a section it only half belongs to."
         },
         {
-          "id": 434,
+          "id": 452,
           "eyebrow": "Outcome",
           "title": "Rows That Declare Themselves",
           "body": "Format and action are visible before the title is read, so a document list can be scanned rather than opened."
         },
         {
-          "id": 435,
+          "id": 453,
           "eyebrow": "Outcome",
           "title": "Support Always in Reach",
           "body": "The priority line floats over every screen, because it is the benefit the membership is actually sold on."
@@ -1266,37 +1266,37 @@
       ],
       "metrics": [
         {
-          "id": 451,
+          "id": 469,
           "value": "Onboarding",
           "label": "Three benefits named before the member reaches the feed.",
           "animate": false
         },
         {
-          "id": 452,
+          "id": 470,
           "value": "News & Media",
           "label": "Articles, polls, and video in one feed, with a stated empty state.",
           "animate": false
         },
         {
-          "id": 453,
+          "id": 471,
           "value": "Products & Documents",
           "label": "Innovations, range, pricing, and ordering split across their own tabs.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 182,
+        "id": 188,
         "metaTitle": "Club Expert+ — Phonak — Mohamad Hawa",
         "metaDescription": "A membership app for the hearing-care professionals in Phonak's Club Expert+ programme, gathering the news, training, product documents, and priority support…",
         "shareImage": null
       }
     },
     {
-      "id": 119,
+      "id": 122,
       "title": "Archlist",
       "slug": "archlist",
       "discipline": "Web app design",
-      "summary": "A project-management web app for architects and interior architects — phases, documents, suppliers, object catalogues, and finances — designed inside a strongly defined visual direction set by the client.",
+      "summary": "A project-management web app for architects — phases, documents, suppliers, object catalogues and finances — designed inside a visual direction owned by the client, and an exercise in advocating for UX changes within it.",
       "role": "UI / UX Design",
       "order": 8,
       "featured": false,
@@ -1306,14 +1306,14 @@
       "briefBody": "The client arrived with a fully formed visual identity and a clear picture of how the product should look and read. The design work happened inside that picture rather than in place of it.",
       "problemLead": "An architectural project has a chronology everybody in the profession knows and almost no software reflects, so the phase you are in has to be read off the documents that exist.",
       "approachLead": "Work the improvements into the established direction rather than around it, and make every change one that could be argued for in the client's own terms.",
-      "approachBody": "This was the most constrained brief in this portfolio, and the constraint was the interesting part. The identity — the script wordmark, the navy, the topographic ground, the section titles set as watermarks — was not up for discussion, and neither was the overall shape of the product. Proposing a different direction would have been the wrong instinct as well as an unwelcome one.\n\nSo the case for each change was made in the client's language and against their own goals: legibility for their clients, fewer places to look, less repeated data entry. The phase timeline is the clearest example. It keeps the ornament and the profession's own vocabulary, and adds a state model underneath it — a phase lights up when a document is filed against it, and the furthest lit phase is marked as where the project has reached. The architect gets their chronology; their client gets a progress indicator; nothing about the look had to change to get both.\n\nThe same method runs through the rest. The object catalogue carries the fields a specification actually needs — type, sub-type, manufacturer — with the file thumbnails and their overflow count shown on the card, so a card answers a question rather than inviting a click. Inspirations sits next to an image generator, which is the client's idea, given a place in the flow where it supports the moodboard rather than interrupting it.",
+      "approachBody": "This was the most constrained brief in this portfolio, and the constraint was the interesting part. The identity — the script wordmark, the navy, the topographic ground, the section titles set as watermarks — was not up for discussion, and neither was the overall shape of the product. Colour, typography and the general feel of the thing were the client's own work and they were closely attached to all of it. Proposing a different direction would have been the wrong instinct as well as an unwelcome one.\n\nSo the case for each change was made in the client's language and against their own goals: legibility for their clients, fewer places to look, less repeated data entry. That case rarely landed the first time it was made. Most of it was put, reviewed, set aside, and brought back in the next meeting with the reasoning rewritten around something the client had already said they wanted — over a long run of those meetings.\n\nThe phase timeline is where the method worked best. It keeps the ornament and the profession's own vocabulary, and adds a state model underneath it — a phase lights up when a document is filed against it, and the furthest lit phase is marked as where the project has reached. The architect gets their chronology; their client gets a progress indicator; nothing about the look had to change to get both. That last clause is why it was accepted.\n\nThe same method runs through the rest. The object catalogue carries the fields a specification actually needs — type, sub-type, manufacturer — with the file thumbnails and their overflow count shown on the card, so a card answers a question rather than inviting a click. Inspirations sits next to an image generator, which is the client's idea, given a place in the flow where it supports the moodboard rather than interrupting it.",
       "approachCaption": "The phase timeline, with phases lit by the documents filed against them.",
       "shippedHeading": "The sections the practice works in.",
-      "reflectionLead": "The design constraint here was stakeholder alignment rather than screen real estate, and it taught me more than a free hand would have.",
-      "reflectionBody": "Working inside a direction somebody else is attached to means every recommendation has to be worth the conversation it costs, which is a good filter. I lost some of them and I should have — a few were preferences dressed as principles. The ones that landed were the ones I could tie to something the client already wanted, and the product is better in the places where I did that work rather than in the places where I was simply right.",
+      "reflectionLead": "The hard part of this project was never a screen. It was making the case for a change again, in the next meeting, after it had already been turned down once.",
+      "reflectionBody": "I want to be straight about the outcome, because the process is the part worth showing. A number of the recommendations I believed in most — several of them about colour and about how much visual weight the interface carries — did not survive. They were heard, considered, and shipped the client's way. I kept returning to a few of them across months of reviews, and some of those eventually landed once I found the argument that connected them to something the client already wanted. Others never did.\n\nWorking inside a direction somebody else owns and is attached to means every recommendation costs a conversation, and you have to decide which ones are worth spending. That is a real skill and it is not the same skill as being right. The product is better in the places where I did that work patiently, and unchanged in the places where I could not — and a designer who only shows the projects where they had a free hand is not showing you very much about how they work.",
       "categories": [
         {
-          "id": 108,
+          "id": 116,
           "label": "Web app"
         }
       ],
@@ -1322,36 +1322,41 @@
       "gallery": [],
       "constraints": [
         {
-          "id": 439,
-          "title": "The design direction was established before the UX work began, and the brief was to develop it rather than to reconsider it.",
+          "id": 458,
+          "title": "The design direction — colour, typography, and the overall feel — was established and owned by the client before the UX work began, and the brief was to develop it rather than to reconsider it.",
           "body": ""
         },
         {
-          "id": 440,
+          "id": 459,
+          "title": "Every improvement had to be argued on the client’s own terms and survive repeated review, which meant choosing carefully which recommendations were worth the conversation.",
+          "body": ""
+        },
+        {
+          "id": 460,
           "title": "Five sections, each dense enough to be its own product, have to sit under one navigation without any of them feeling secondary.",
           "body": ""
         },
         {
-          "id": 441,
+          "id": 461,
           "title": "The phase timeline has to be legible to an architect at a glance and to a client who has never seen ESQ, APS, or APD written down.",
           "body": ""
         }
       ],
       "decisions": [
         {
-          "id": 439,
+          "id": 457,
           "eyebrow": "Outcome",
           "title": "Phases Lit by Evidence",
           "body": "A phase activates when a document is filed against it, so progress is derived from the work rather than self-reported."
         },
         {
-          "id": 440,
+          "id": 458,
           "eyebrow": "Outcome",
           "title": "Cards That Answer First",
           "body": "Type, sub-type, manufacturer, and the attachment count are on the card, so browsing a catalogue does not mean opening it."
         },
         {
-          "id": 441,
+          "id": 459,
           "eyebrow": "Outcome",
           "title": "Change Argued, Not Imposed",
           "body": "Every UX proposal was framed against the client's own stated goals, which is what kept the direction intact and the improvements in it."
@@ -1359,28 +1364,28 @@
       ],
       "metrics": [
         {
-          "id": 457,
+          "id": 475,
           "value": "Calendrier",
           "label": "The profession's phase chronology, with state driven by filed documents.",
           "animate": false
         },
         {
-          "id": 458,
+          "id": 476,
           "value": "Carnet",
           "label": "Trades, inspirations, objects, and warranties under one set of tabs.",
           "animate": false
         },
         {
-          "id": 459,
+          "id": 477,
           "value": "Objets",
           "label": "A specification catalogue built to be scanned, with attachments shown on the card.",
           "animate": false
         }
       ],
       "seo": {
-        "id": 184,
+        "id": 190,
         "metaTitle": "Archlist — Mohamad Hawa",
-        "metaDescription": "A project-management web app for architects and interior architects — phases, documents, suppliers, object catalogues, and finances — designed inside a…",
+        "metaDescription": "A project-management web app for architects — phases, documents, suppliers, object catalogues and finances — designed inside a visual direction owned by the…",
         "shareImage": null
       }
     },
