@@ -1350,23 +1350,34 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
    */
   const RING_FADE = 1.6;
   /**
-   * How much of that is spent with nothing else audible at all.
+   * The shape of the hearing coming back, as a curve rather than a hold.
    *
-   * The mute is not a moment, it is a stretch. Everything else goes to zero on
-   * the frame the ring arrives and stays there for the first half of the
-   * window — no trace, no distant version of the storm, nothing — and only in
-   * the back half do the two trade places. The whole recovery, both
-   * directions, happens inside that back half: the world fades in as the ring
-   * fades out, and neither starts before the other.
+   * The half-window of silence that used to be here made the recovery a second
+   * event: nothing, then a crossfade. What is wanted is one movement — the
+   * ring is alone at the instant it arrives and the world is already on its
+   * way back by the time the ring has lost anything at all.
+   *
+   * So the return is front-loaded against the ring's own linear fall. Read
+   * against how much ring is left: at three quarters the world is at 0.15, at
+   * a half it is at 0.45, at a quarter it is at 0.8, and by a tenth it is
+   * fully back with the ring still faintly there over the top of it. The gap
+   * between the two curves is the whole illusion — hearing does not return in
+   * proportion to the damage, it returns faster than the ringing leaves.
    */
-  const RING_HOLD = 0.5;
+  const RETURN: Array<[number, number]> = [
+    [0, 0],
+    [0.25, 0.15],
+    [0.5, 0.45],
+    [0.75, 0.8],
+    [0.9, 1],
+  ];
 
   if (ringBus && duck && muffle) {
     const ringAt = blastAt + RING_IN;
 
     for (const [hz, level] of [
-      [7420, 0.048],
-      [7487, 0.03],
+      [8150, 0.056],
+      [8221, 0.035],
     ] as const) {
       const tone = audio.createOscillator();
       tone.type = 'sine';
@@ -1390,19 +1401,16 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
       // the transient, so it has to arrive inside it.
       toneGain.gain.exponentialRampToValueAtTime(level, ringAt + 0.015);
       /*
-       * Held, and then handed over.
+       * Straight down, the whole way, and nothing else.
        *
-       * For the first half of the window this barely moves — a slow sag to
-       * four fifths, which is a tone being sustained rather than a tone
-       * decaying — because for that half it is the only thing there is. Then
-       * it goes to nothing in a straight line across the back half, which is
-       * exactly the span the duck below uses to come back up.
-       *
-       * Straight, not exponential: an exponential is already inaudible a third
-       * of the way down, which would put silence where the handover is
-       * supposed to be happening and turn one event into two.
+       * Linear rather than exponential, because an exponential is already
+       * inaudible a third of the way down — which would put silence exactly
+       * where the world is supposed to be coming back and turn one event into
+       * two. A straight line keeps the ring present for the whole of its own
+       * fade, which is what the return curve above is measured against: at
+       * every instant, how much ring is left is simply how much of the window
+       * is left.
        */
-      toneGain.gain.linearRampToValueAtTime(level * 0.8, ringAt + RING_FADE * RING_HOLD);
       toneGain.gain.linearRampToValueAtTime(0, ringAt + RING_FADE);
 
       tone.connect(toneGain).connect(ringBus);
@@ -1420,17 +1428,17 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
      * hearing for a second, and for that second there is nothing else to hear:
      * the ring is not sitting on top of the storm, it has replaced it.
      *
-     * It stays at zero for the first half — see RING_HOLD — and then comes
-     * back in one straight line across the second, which is exactly the span
-     * the ring uses to fall to nothing. Two linear ramps in opposite
-     * directions over the same window is a crossfade in the strict sense:
-     * there is no frame in it where one has finished and the other has not
-     * started, and no frame anywhere where the mix is simply quiet.
+     * It leaves zero immediately and climbs the curve above, which is ahead of
+     * the ring the whole way — so the world is audibly returning while the
+     * ring is still the loudest thing, and is fully back before the ring has
+     * quite gone. That lead is what makes it a recovery rather than a
+     * crossfade between two effects.
      *
-     * The hold is what makes it read as hearing rather than as mixing. A
-     * crossfade spread over the whole ring sounded like a long dissolve; the
-     * same crossfade with silence in front of it sounds like something coming
-     * back.
+     * And it overshoots. Coming back to exactly 1 and stopping is a fader
+     * being restored; going a little past and settling is a room arriving all
+     * at once and then finding its level, which is what the ear expects after
+     * it has been shut out of something loud. Twelve per cent, on a wave that
+     * is well into its own decay by this point, so nothing peaks.
      *
      * Both of these are also written at t0, not only at the blast. `end` puts
      * them back but it ramps, and a storm torn down mid-dip would otherwise
@@ -1457,8 +1465,13 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
     duck.gain.setValueAtTime(1, t0);
     duck.gain.setValueAtTime(1, blastAt);
     duck.gain.linearRampToValueAtTime(0, ringAt + 0.02);
-    duck.gain.setValueAtTime(0, ringAt + RING_FADE * RING_HOLD);
-    duck.gain.linearRampToValueAtTime(1, ringAt + RING_FADE);
+    for (const [at, level] of RETURN) {
+      if (at === 0) continue;
+      duck.gain.linearRampToValueAtTime(level, ringAt + RING_FADE * at);
+    }
+    // The brief heavy moment, and then its own level.
+    duck.gain.linearRampToValueAtTime(1.12, ringAt + RING_FADE * 0.96);
+    duck.gain.linearRampToValueAtTime(1, ringAt + RING_FADE * 1.25);
 
     /*
      * And the top comes off with it, and comes back sooner than the level.
@@ -1476,8 +1489,7 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
     muffle.frequency.setValueAtTime(20000, t0);
     muffle.frequency.setValueAtTime(20000, blastAt);
     muffle.frequency.exponentialRampToValueAtTime(700, ringAt + 0.025);
-    muffle.frequency.setValueAtTime(700, ringAt + RING_FADE * RING_HOLD);
-    muffle.frequency.exponentialRampToValueAtTime(20000, ringAt + RING_FADE * 0.86);
+    muffle.frequency.exponentialRampToValueAtTime(20000, ringAt + RING_FADE * 0.8);
   }
 
   /* ---- The strikes' level, which follows the storm ------------------- */

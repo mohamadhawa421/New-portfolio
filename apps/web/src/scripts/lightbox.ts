@@ -294,6 +294,17 @@ function show(frame: HTMLElement): void {
   shell.setAttribute('aria-modal', 'true');
   shell.classList.add('is-open');
   document.documentElement.style.overflow = 'hidden';
+  /*
+   * And the burger steps out of the way.
+   *
+   * It is fixed at z-index 402 against this dialog's 320, so it sits *above*
+   * the picture — in the top right, which is exactly where the close button
+   * is. Two controls in one place, one of which opens a menu over the image
+   * you are looking at. Hiding it is a class rather than a style so the nav
+   * keeps ownership of its own appearance, and it fades rather than vanishing
+   * because it is on screen at the moment the dialog opens.
+   */
+  document.documentElement.classList.add('lightbox-open');
 
   const land = () => {
     if (!surface) return;
@@ -406,6 +417,7 @@ function hide(): void {
     shell.removeAttribute('aria-modal');
     shell.classList.remove('is-zoomed');
     document.documentElement.style.removeProperty('overflow');
+    document.documentElement.classList.remove('lightbox-open');
     origin = null;
     camefrom?.focus({ preventScroll: true });
     camefrom = null;

@@ -340,29 +340,16 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
   /* ------------------------------------------------------------------ */
 
   /*
-   * Thickness: a bright rim along the top edge and a darker one along the
-   * bottom, both hairline, both inset.
+   * There is no rim.
    *
-   * This is what a real edge does — the top catches the light and the bottom
-   * is in the shadow of the sheet's own depth — and it is the single cheapest
-   * thing that stops a translucent panel looking like a hole cut in the page.
-   * Painted rather than bordered: a border would take part in layout and the
-   * bar's height is tuned.
+   * There was: a hairline highlight along the top edge and a darker one along
+   * the bottom, which is what gives a translucent sheet the sense of having a
+   * thickness. It read as a border, and a border is the one thing this bar is
+   * not supposed to have — so the edge is gone and the material is carried by
+   * the fill and the light on it alone. The outer shadow below still separates
+   * it from the page; what has been removed is anything that draws a line
+   * around it.
    */
-  .nav::before,
-  .topbar::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    opacity: var(--nav-glass, 0);
-    transition: opacity var(--nav-anim, 520ms) ease;
-    box-shadow:
-      inset 0 1px 0 color-mix(in srgb, var(--nav-rim, #fff) 62%, transparent),
-      inset 0 -1px 0 color-mix(in srgb, var(--nav-lip, #000) 22%, transparent),
-      inset 0 0 0 1px color-mix(in srgb, var(--nav-rim, #fff) 12%, transparent);
-  }
 
   /*
    * Light on the surface, and it moves because the page does.
@@ -390,14 +377,29 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     opacity: var(--nav-glass, 0);
     transition: opacity var(--nav-anim, 520ms) ease;
     mix-blend-mode: plus-lighter;
-    background: linear-gradient(
-      100deg,
-      transparent calc(var(--nav-sheen, 0.5) * 100% - 42%),
-      color-mix(in srgb, var(--nav-rim, #fff) 9%, transparent) calc(var(--nav-sheen, 0.5) * 100% - 6%),
-      color-mix(in srgb, var(--nav-rim, #fff) 15%, transparent) calc(var(--nav-sheen, 0.5) * 100%),
-      color-mix(in srgb, var(--nav-rim, #fff) 9%, transparent) calc(var(--nav-sheen, 0.5) * 100% + 6%),
-      transparent calc(var(--nav-sheen, 0.5) * 100% + 42%)
-    );
+    background:
+      /*
+       * A narrow bright core with a broad soft wash behind it.
+       *
+       * One gradient gave a single soft band, which is a gloss. Two — a tight
+       * specular line inside a much wider, much fainter one — is how light
+       * actually behaves on a curved polished surface, and it is what lets the
+       * highlight be brighter at its centre without becoming a stripe.
+       */
+      linear-gradient(
+        100deg,
+        transparent calc(var(--nav-sheen, 0.5) * 100% - 14%),
+        color-mix(in srgb, var(--nav-rim, #fff) 16%, transparent) calc(var(--nav-sheen, 0.5) * 100% - 3%),
+        color-mix(in srgb, var(--nav-rim, #fff) 30%, transparent) calc(var(--nav-sheen, 0.5) * 100%),
+        color-mix(in srgb, var(--nav-rim, #fff) 16%, transparent) calc(var(--nav-sheen, 0.5) * 100% + 3%),
+        transparent calc(var(--nav-sheen, 0.5) * 100% + 14%)
+      ),
+      linear-gradient(
+        100deg,
+        transparent calc(var(--nav-sheen, 0.5) * 100% - 55%),
+        color-mix(in srgb, var(--nav-rim, #fff) 10%, transparent) calc(var(--nav-sheen, 0.5) * 100%),
+        transparent calc(var(--nav-sheen, 0.5) * 100% + 55%)
+      );
   }
 
   /*
@@ -496,6 +498,22 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
   /* The bar is the surface; it must not sit above the open menu. */
   :global(html.menu-open) .topbar {
     opacity: 0;
+  }
+
+  /*
+   * And neither the burger nor the bar is on top of an open picture.
+   *
+   * The burger is fixed at z-index 402 against the lightbox's 320, so it wins
+   * — in the top right, which is where the dialog puts its close button. The
+   * two were sitting on each other. This is the nav's business rather than the
+   * dialog's: the dialog says it is open, and the nav decides what to do about
+   * it.
+   */
+  :global(html.lightbox-open) .burger,
+  :global(html.lightbox-open) .topbar {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms var(--ease-out);
   }
 
   /* ------------------------------------------------------------------ */

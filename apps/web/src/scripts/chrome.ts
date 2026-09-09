@@ -44,7 +44,17 @@ const REVEAL_AT = coarse ? 0.995 : 0.94;
  * anyone can see. Desktop, where the same bar is a small centred pill over a
  * discrete GPU, keeps the original.
  */
-const NAV_BLUR_PX = coarse ? 12 : 20;
+/*
+ * Enough blur to soften, not enough to hide.
+ *
+ * This was 20, which is frosted glass: shapes behind it stop being shapes and
+ * become a wash of their average colour. At 8 the thing behind is still
+ * legibly itself — a heading passing under the bar is a heading, an image is
+ * that image — and the material reads as a thin polished sheet rather than as
+ * a translucent panel. Readability is carried by the contrast and brightness
+ * in the filter and by the tint, not by destroying what is underneath.
+ */
+const NAV_BLUR_PX = coarse ? 6 : 8;
 
 const REVEAL_SELECTOR = '[data-reveal],[data-rise],[data-num]';
 
@@ -519,20 +529,23 @@ function chromePass(): void {
    *
    * These were 0.72 to 0.78, and at that alpha the pill is a painted surface
    * with a blur behind it: the page underneath contributes almost nothing, so
-   * nothing about the material reacts to what passes below. Around a half is
-   * the point where the content behind starts to actually drive the colour of
-   * the glass — which is the whole idea — and the readability that alpha used
-   * to buy is bought instead by the filter below, which now leans on contrast
-   * and brightness rather than on opacity.
+   * nothing about the material reacts to what passes below. Around a third is
+   * where the shapes behind stay shapes: enough paint to hold the type, and
+   * not so much that the page underneath is reduced to its average colour.
+   *
+   * The readability that alpha used to buy is bought instead by the contrast
+   * and brightness in the filter below. The one thing it must not be bought
+   * with is blur, which buys legibility by destroying exactly what this is
+   * meant to be showing.
    */
   styles.setProperty(
     '--nav-bg',
     dressed
       ? root.hasAttribute('data-super')
-        ? 'rgba(22,8,42,0.46)'
+        ? 'rgba(22,8,42,0.3)'
         : overDark
-          ? 'rgba(24,24,28,0.44)'
-          : 'rgba(255,255,255,0.5)'
+          ? 'rgba(24,24,28,0.28)'
+          : 'rgba(255,255,255,0.34)'
       : 'transparent'
   );
   /*
