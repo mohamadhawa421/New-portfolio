@@ -1321,13 +1321,21 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
    * was missing is the moment the pressure front actually reaches the head:
    * not another explosion, the *near* part of the one already happening.
    *
-   * Two components and no more, both over inside a ninth of a second. A low
-   * punch whose pitch collapses from 190Hz to 52 in a twelfth of a second,
-   * which is the body of a front arriving rather than a tone; and a band of
-   * air around two kilohertz with an instantaneous attack, which is the crack.
-   * Between them they occupy exactly the register the wave buffer does not:
-   * the shock owns the bottom, this owns the punch and the slap, the ring owns
-   * the top.
+   * Noise, not tone, and that is the whole character of it.
+   *
+   * This was a sine collapsing from 190Hz to 52, which is the standard way to
+   * build a boom — and a boom is what it sounded like: deep, pitched, and
+   * clearly a note being played. An explosion arriving at the ear has no pitch
+   * to it. It is a step change in air pressure, which is broadband by
+   * definition, and anything with a discernible fundamental reads as a drum
+   * instead.
+   *
+   * So the body is the arc buffer run wide and flat — everything from 130Hz to
+   * 3.2k passed at once rather than a band picked out of it — with a second,
+   * narrower pass at two kilohertz on top for the crack of the front itself.
+   * Nothing in it has a frequency you could hum. It occupies the register the
+   * wave buffer does not: the shock owns the long bottom end, this owns the
+   * flat middle, and the ring owns the top.
    *
    * It peaks above the shock, briefly, because the closest part of a blast is
    * the loudest part of it. Then the duck takes everything — including the
@@ -1336,21 +1344,41 @@ export function play(beat: SoundBeat, shape: SoundShape): void {
    */
   const slapAt = blastAt + 0.008;
 
-  const punch = audio.createOscillator();
-  punch.type = 'sine';
-  punch.frequency.setValueAtTime(190, slapAt);
-  punch.frequency.exponentialRampToValueAtTime(52, slapAt + 0.085);
+  if (strikeBuf) {
+    const body = audio.createBufferSource();
+    body.buffer = strikeBuf;
+    // Slow enough to have weight, fast enough not to become a rumble.
+    body.playbackRate.value = 1.6;
 
-  const punchGain = audio.createGain();
-  punchGain.gain.setValueAtTime(0.0001, slapAt);
-  // Three milliseconds to full. Anything slower is a note being played.
-  punchGain.gain.exponentialRampToValueAtTime(1.05, slapAt + 0.003);
-  punchGain.gain.exponentialRampToValueAtTime(0.0001, slapAt + 0.115);
+    /*
+     * Bounded at both ends rather than tuned to anything.
+     *
+     * The highpass takes off the sub, which is the shock's job and the one
+     * thing that would make this deep again. The lowpass takes off the fizz,
+     * which is the ring's register and would make it sound thin. What is left
+     * between them is about four and a half octaves passed flat — no peak
+     * anywhere in it, so there is nothing for the ear to hear as a pitch.
+     */
+    const floorCut = audio.createBiquadFilter();
+    floorCut.type = 'highpass';
+    floorCut.frequency.value = 130;
+    floorCut.Q.value = 0.5;
 
-  punch.connect(punchGain).connect(master);
-  punch.start(slapAt);
-  punch.stop(slapAt + 0.14);
-  voices.push(punch);
+    const ceilingCut = audio.createBiquadFilter();
+    ceilingCut.type = 'lowpass';
+    ceilingCut.frequency.value = 3200;
+    ceilingCut.Q.value = 0.5;
+
+    const bodyGain = audio.createGain();
+    // No ramp in. A pressure step does not have an attack time.
+    bodyGain.gain.setValueAtTime(1.5, slapAt);
+    bodyGain.gain.exponentialRampToValueAtTime(0.0001, slapAt + 0.1);
+
+    body.connect(floorCut).connect(ceilingCut).connect(bodyGain).connect(master);
+    body.start(slapAt);
+    body.stop(slapAt + 0.14);
+    voices.push(body);
+  }
 
   if (strikeBuf) {
     const air = audio.createBufferSource();
