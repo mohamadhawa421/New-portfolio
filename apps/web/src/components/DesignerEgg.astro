@@ -462,6 +462,109 @@ import EggSound from './EggSound.astro';
       { once: true }
     );
 
+    /* ------------------------------------------------------------------ */
+    /* Temporary: what the storm actually costs, on the device it costs it */
+    /*                                                                     */
+    /* Off unless the URL carries ?wave-perf. Delete this and its one call */
+    /* site once the iPhone question is settled.                           */
+    /* ------------------------------------------------------------------ */
+
+    const PERF = location.search.includes('wave-perf');
+
+    /**
+     * Records every frame the storm is given and reports what it did with them.
+     *
+     * There is no way to profile an iPhone from a laptop, and reasoning about
+     * WebKit's raster cost from the shape of the CSS is how the last two
+     * answers were arrived at — one of which was wrong. So the measurement has
+     * to happen on the device: a rAF loop for exactly as long as the sequence
+     * runs, and a panel afterwards, because Safari on a phone has no console
+     * anybody can read while a wave is crossing.
+     *
+     * What matters is not the average. A storm that holds 60fps and drops four
+     * frames in a row at the shatter feels worse than one that sits at 50 the
+     * whole way, so the numbers reported are the worst frame, how many missed
+     * a 60Hz deadline, and the longest unbroken run of misses — plus the same
+     * split across the three phases, because knowing *where* it stalls is the
+     * whole point of measuring rather than guessing.
+     */
+    function watchFrames(doneAt: number): void {
+      if (!PERF) return;
+
+      const started = performance.now();
+      const stamps: number[] = [];
+      let raf = 0;
+
+      const tick = (now: number) => {
+        stamps.push(now);
+        if (now - started < doneAt) raf = requestAnimationFrame(tick);
+        else report();
+      };
+
+      function report(): void {
+        cancelAnimationFrame(raf);
+        const gaps: Array<{ at: number; ms: number }> = [];
+        for (let i = 1; i < stamps.length; i += 1) {
+          gaps.push({ at: Math.round(stamps[i] - started), ms: stamps[i] - stamps[i - 1] });
+        }
+        if (!gaps.length) return;
+
+        const sorted = gaps.map((g) => g.ms).sort((a, b) => a - b);
+        const median = sorted[Math.floor(sorted.length / 2)];
+        // A frame is late if it took more than one and a half refreshes, which
+        // is the smallest gap the eye reliably reads as a stutter.
+        const late = (g: { ms: number }) => g.ms > median * 1.5;
+
+        let worstRun = 0;
+        let run = 0;
+        for (const g of gaps) {
+          run = late(g) ? run + 1 : 0;
+          if (run > worstRun) worstRun = run;
+        }
+
+        const phase = (from: number, to: number) => {
+          const slice = gaps.filter((g) => g.at >= from && g.at < to);
+          if (!slice.length) return '—';
+          const missed = slice.filter(late).length;
+          const worst = Math.max(...slice.map((g) => g.ms));
+          return `${missed}/${slice.length} late, worst ${worst.toFixed(0)}ms`;
+        };
+
+        const panel = document.createElement('pre');
+        panel.style.cssText = [
+          'position:fixed',
+          'left:8px',
+          'top:8px',
+          'right:8px',
+          'margin:0',
+          'padding:10px',
+          'font:11px/1.5 ui-monospace,monospace',
+          'background:rgba(0,0,0,.9)',
+          'color:#0f0',
+          'z-index:2147483647',
+          'white-space:pre-wrap',
+          'border-radius:6px',
+        ].join(';');
+        panel.textContent = [
+          `frames        ${stamps.length} over ${Math.round(doneAt)}ms`,
+          `median gap    ${median.toFixed(1)}ms  (~${Math.round(1000 / median)}fps)`,
+          `worst gap     ${Math.max(...sorted).toFixed(0)}ms`,
+          `late frames   ${gaps.filter(late).length} of ${gaps.length}`,
+          `worst streak  ${worstRun} in a row`,
+          '',
+          `pressure      ${phase(0, mode.PRELOAD_MS)}`,
+          `shatter       ${phase(mode.PRELOAD_MS, mode.PRELOAD_MS + 900)}`,
+          `recovery      ${phase(mode.PRELOAD_MS + 900, doneAt)}`,
+          '',
+          'tap to dismiss',
+        ].join('\n');
+        panel.addEventListener('click', () => panel.remove());
+        document.body.append(panel);
+      }
+
+      raf = requestAnimationFrame(tick);
+    }
+
     trigger.addEventListener('click', (event) => {
       // Already running: let it finish. Re-triggering mid-sequence would fight
       // its own teardown for the page's transforms.
@@ -538,6 +641,8 @@ import EggSound from './EggSound.astro';
         fieldDecay: mode.FIELD_DECAY_MS,
         preload: mode.PRELOAD_MS,
       });
+
+      watchFrames(beat.done);
 
       /*
        * And the phone feels it, where a phone can.
