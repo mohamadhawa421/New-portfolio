@@ -854,7 +854,27 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
       background 200ms var(--ease-out);
   }
 
-  .aside__step:hover,
+  /*
+   * Hover is only written where hover exists.
+   *
+   * iOS Safari resolves `:hover` on tap and then holds it until something else
+   * is tapped, so an unguarded hover rule on a control you press repeatedly —
+   * and these are pressed repeatedly, that is the whole point of a pager —
+   * leaves the last-pressed chevron lit and filled, looking selected when
+   * nothing is selected. Guarding the rule is the fix rather than chasing the
+   * state in script: a phone should never have been told what hovering looks
+   * like in the first place.
+   *
+   * `:focus-visible` stays outside the query, because a keyboard is a keyboard
+   * on any device and its ring is not a hover.
+   */
+  @media (hover: hover) and (pointer: fine) {
+    .aside__step:hover {
+      opacity: 0.95;
+      background: color-mix(in srgb, var(--aside-ink) 9%, transparent);
+    }
+  }
+
   .aside__step:focus-visible {
     opacity: 0.95;
     background: color-mix(in srgb, var(--aside-ink) 9%, transparent);
