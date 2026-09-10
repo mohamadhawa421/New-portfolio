@@ -22,6 +22,14 @@ let origin: HTMLElement | null = null;
 /** Whatever had focus before, so the visitor is put back where they were. */
 let camefrom: HTMLElement | null = null;
 let open = false;
+
+/*
+ * Attach and detach the zoom wheel, set by `bindZoom` once the handler it
+ * closes over exists. Held here so `show`/`hide` can reach them without
+ * either of them knowing how the wheel works.
+ */
+let bindWheel: () => void = () => {};
+let unbindWheel: () => void = () => {};
 let flight: Animation | null = null;
 
 /**
@@ -273,6 +281,8 @@ function show(frame: HTMLElement): void {
   origin = frame;
   camefrom = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   open = true;
+  // The wheel is only worth intercepting while there is a picture to zoom.
+  bindWheel();
 
   shell.hidden = false;
 
@@ -421,6 +431,8 @@ function hide(): void {
   if (!shell) return;
 
   open = false;
+  // And the page gets its scroll fast path back. See `onWheel`.
+  unbindWheel();
   flight?.cancel();
   flight = null;
 
@@ -796,19 +808,41 @@ function bindZoom(): void {
   /*
    * The wheel zooms rather than scrolls, because the page behind is locked and
    * a wheel that does nothing is a control that appears broken.
+   *
+   * Bound only while a picture is open, and that is the whole point of the
+   * two functions below rather than one permanent listener.
+   *
+   * A `wheel` listener has to be non-passive to zoom, because zooming means
+   * calling `preventDefault()` — and a non-passive wheel listener tells the
+   * browser it cannot scroll until the handler has run, since it has no way
+   * to know in advance whether the handler will cancel it. MDN is explicit
+   * that this is why the platform defaults these to passive on document-level
+   * nodes in the first place: "the browser is in general unable to start the
+   * default action until the event listener has finished".
+   *
+   * Registered once for the life of the tab, as it was, that cost is paid on
+   * every page and every scroll of the whole session, in exchange for a
+   * handler that returns immediately unless a picture happens to be open.
+   * `{ passive: false }` also overrides the platform's own default here — the
+   * same MDN note says `wheel` defaults to passive on `document` in every
+   * engine except Safari — so this was opting out of the fast path in
+   * browsers that had already opted in for us.
+   *
+   * It still has to live on `document` rather than the dialog: the router
+   * replaces the dialog on navigation, and a listener bound to it would go
+   * with it. So the node stays and the binding comes and goes instead.
    */
-  document.addEventListener(
-    'wheel',
-    (event) => {
-      if (!open || !surface) return;
-      const target = event.target;
-      if (!(target instanceof Element) || !target.closest('[data-lightbox]')) return;
-      event.preventDefault();
-      const k = Math.exp(-event.deltaY * 0.0016);
-      zoomTo(zoom * k, event.clientX, event.clientY, false);
-    },
-    { passive: false }
-  );
+  const onWheel = (event: WheelEvent) => {
+    if (!open || !surface) return;
+    const target = event.target;
+    if (!(target instanceof Element) || !target.closest('[data-lightbox]')) return;
+    event.preventDefault();
+    const k = Math.exp(-event.deltaY * 0.0016);
+    zoomTo(zoom * k, event.clientX, event.clientY, false);
+  };
+
+  bindWheel = () => document.addEventListener('wheel', onWheel, { passive: false });
+  unbindWheel = () => document.removeEventListener('wheel', onWheel);
 
   /*
    * And the bar, which is the same gesture in a different place.

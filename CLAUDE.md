@@ -169,8 +169,26 @@ buffers are also built on idle now (`sound.prime()`, an OfflineAudioContext so
 no device is opened), which is what covers touch and keyboard — neither gets a
 useful hover.
 
-`requestAnimationFrame` does not advance in the preview pane, so frame pacing
-cannot be measured there at all. What can be measured is main-thread blocking:
-a `PerformanceObserver` on `longtask` across the run, and `performance.now()`
-around the click handler. Zero long tasks is the bar, and the current sequence
-meets it — cold, on mobile and desktop.
+**Check your instrument before you trust it.** Two claims that used to be
+here were wrong, and both were wrong in the direction of a false all-clear.
+
+`PerformanceObserver` on `longtask` reports *nothing* in the preview pane,
+even though `supportedEntryTypes` lists it. Verified with a control: a
+deliberate 120ms block produced zero entries. Any "zero long tasks" result
+measured there means the observer is silent, not that the page is fast — so
+do not use it as a bar, and do not repeat the claim that the storm meets one.
+
+`requestAnimationFrame` *does* advance in the pane, at least sometimes — 6.9ms
+gaps, ~144Hz, measured. So frame pacing can be measured there after all, and
+recording rAF timestamps across an interaction is the honest way to do it.
+Check it with a few frames first rather than assuming either way.
+
+What that measurement says about the storm, on the production build served by
+`astro preview`, cold, with a synthetic click: the handler itself is 11–13ms,
+and then two frames of 105–139ms land at roughly +130ms and +250ms, with a
+handful of 34–56ms frames after them — five frames over 33ms out of 426. That
+is the stall people describe as the wave "freezing for a second". It is not
+the audio: with `AudioContext` neutralised the same stalls appear in the same
+places. It is not the click handler, which has finished long before. The
+specific cause inside the visual sequence has not been isolated; doing that
+needs a real profiler on the deployed site, not this pane.
