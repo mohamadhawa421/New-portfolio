@@ -853,6 +853,24 @@ export function run(options: DesignerModeOptions): Beat {
     delete root.dataset.designer;
   });
 
+  /*
+   * A second flag, for the whole of it.
+   *
+   * `data-designer` is the *look* — the purple — and it is deliberately let
+   * go early, at `landed + SETTLE_MS`, so the colour drains out of the page
+   * while the last pieces are still finding their places. That makes it the
+   * wrong thing to hang a lockout on: it clears with a good second of the
+   * sequence still to run.
+   *
+   * `data-storm` is the fact. It goes up here and comes down in `teardown()`,
+   * which is the same instant `isRunning()` starts answering false, so
+   * anything keyed to it is locked for exactly as long as the storm actually
+   * lasts and not a frame longer.
+   */
+  root.dataset.storm = '';
+  // The pointer stops treating the portrait as something to lean toward.
+  document.dispatchEvent(new CustomEvent('mh:storm'));
+
   character.classList.add('dm-source');
   undo(() => character.classList.remove('dm-source'));
 
@@ -2922,6 +2940,16 @@ export function shockPattern(): number[] {
 export function teardown(): void {
   if (!running) return;
   running = false;
+
+  // The lockout ends with the storm, not with the colour. See `data-storm`.
+  delete document.documentElement.dataset.storm;
+
+  /*
+   * And the pointer is told, because the portrait it was ignoring is a
+   * magnet again. Without this the lean does not come back until the next
+   * time the magnets are measured, which is a resize or a navigation.
+   */
+  document.dispatchEvent(new CustomEvent('mh:storm'));
 
   for (const id of timers) window.clearTimeout(id);
   timers = [];

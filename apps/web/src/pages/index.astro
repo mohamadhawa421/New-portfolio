@@ -449,6 +449,30 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     transition: opacity 1900ms var(--ease-glide);
   }
 
+  /*
+   * While the storm runs, the portrait is scenery.
+   *
+   * It was still a button the whole way through: it kept its pointer cursor,
+   * it still lit under the hover, and the pointer still leaned toward it —
+   * all of it advertising a press that `isRunning()` was quietly throwing
+   * away. A control that looks live and does nothing is worse than one that
+   * looks spent, because the visitor concludes the click missed and presses
+   * harder.
+   *
+   * `data-storm` rather than `data-designer`, because the purple is let go
+   * early by design and the lock has to hold until the last piece is home.
+   * `pointer-events: none` is what does the work — it takes the hover, the
+   * press, the cursor and the hit-testing in one, and it is also the signal
+   * the pointer reads to stop treating this as a magnet.
+   *
+   * The click handler keeps its own `isRunning()` guard, which is what
+   * covers a keyboard press; this is about what the thing looks like it will
+   * do, not about what it does.
+   */
+  :global(:root[data-storm]) [data-egg-trigger] {
+    pointer-events: none;
+  }
+
   :global(:root[data-designer]) .hero__portrait-alt {
     transition-duration: 420ms;
   }

@@ -124,6 +124,23 @@ names Safari 15 so the prefix is considered necessary and both survive;
 unprefixed `backdrop-filter` only arrived in Safari 18 and the phones this has
 to work on are older.
 
+**`data-designer` is the colour; `data-storm` is the fact.** The purple is
+let go at `landed + SETTLE_MS`, deliberately, so it drains while the last
+pieces are still travelling — which makes it the wrong flag for anything that
+has to hold for the whole event. Measured on a real run: the purple cleared at
+7.56s and the storm ended at 7.80s, so a lockout keyed to `data-designer`
+leaves the portrait live-looking and dead for a quarter of a second. Anything
+that must last exactly as long as `isRunning()` uses `data-storm`, which goes
+up in `run()` and comes down in `teardown()`.
+
+**A thing the pointer cannot reach is not a thing the pointer leans toward.**
+The cursor's magnets are hit-tested against measured rectangles, not against
+the document, so `pointer-events: none` does not stop the lean on its own —
+`measureMagnets()` filters on the computed value instead. A mode that disables
+a control therefore has to say so, by dispatching an event the cursor
+remeasures on (`mh:super`, `mh:storm`); the list is otherwise only rebuilt on
+load, resize and navigation.
+
 **Reduced motion is honoured throughout**, and every effect has a quiet
 variant rather than being switched off.
 
