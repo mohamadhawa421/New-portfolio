@@ -37,6 +37,11 @@
     <path class="cursor__bolt-fork" data-cursor-bolt-fork />
     <path class="cursor__bolt-core" data-cursor-bolt-core />
   </svg>
+  {/*
+    The contact. Drawn under the pointer's own ring, so the thing you are
+    aiming with stays on top of the mark it makes.
+  */}
+  <div class="cursor__bloom" data-cursor-bloom></div>
   <div class="cursor__ring" data-cursor-ring></div>
   <div class="cursor__dot" data-cursor-dot></div>
   {/*
@@ -89,6 +94,7 @@
     let ring = document.querySelector<HTMLElement>('[data-cursor-ring]');
     let dot = document.querySelector<HTMLElement>('[data-cursor-dot]');
     let zap = document.querySelector<SVGElement>('[data-cursor-zap]');
+    let bloom = document.querySelector<HTMLElement>('[data-cursor-bloom]');
     let boltGlow = document.querySelector<SVGPathElement>('[data-cursor-bolt-glow]');
     let boltFork = document.querySelector<SVGPathElement>('[data-cursor-bolt-fork]');
     let boltCore = document.querySelector<SVGPathElement>('[data-cursor-bolt-core]');
@@ -109,6 +115,7 @@
       ring = nextRing;
       dot = nextDot;
       zap = document.querySelector<SVGElement>('[data-cursor-zap]');
+      bloom = document.querySelector<HTMLElement>('[data-cursor-bloom]');
       boltGlow = document.querySelector<SVGPathElement>('[data-cursor-bolt-glow]');
       boltFork = document.querySelector<SVGPathElement>('[data-cursor-bolt-fork]');
       boltCore = document.querySelector<SVGPathElement>('[data-cursor-bolt-core]');
@@ -167,6 +174,8 @@
     /** How far outside a control the field reaches. The pull has to start
      *  before the pointer arrives or it is not magnetism, just a hover state. */
     const FIELD = 26;
+    /** How long the contact takes to arrive, swell and be gone. */
+    const BLOOM_MS = 180;
 
     /*
      * Positions are stored in document space and measured once per page rather
@@ -196,7 +205,22 @@
     function measureMagnets(): void {
       const sx = window.scrollX;
       const sy = window.scrollY;
-      magnets = Array.from(document.querySelectorAll<HTMLElement>(MAGNETIC)).map((el) => {
+      magnets = Array.from(document.querySelectorAll<HTMLElement>(MAGNETIC))
+        /*
+         * A thing the pointer cannot reach is not a thing the pointer leans
+         * toward.
+         *
+         * The magnets are hit-tested against measured rectangles rather than
+         * against the document, so `pointer-events: none` — which stops every
+         * other kind of pointing — did nothing to the lean: the portrait went
+         * on tugging at the cursor all the way through a storm it had stopped
+         * responding to. Reading the computed value here is the general form
+         * of that fix rather than a special case for one element, and it costs
+         * one style read per magnet on a function that runs at load, on
+         * resize, and on a mode change — never per frame.
+         */
+        .filter((el) => getComputedStyle(el).pointerEvents !== 'none')
+        .map((el) => {
         const r = el.getBoundingClientRect();
         return {
           el,
@@ -706,7 +730,43 @@
       paintInk();
     }
 
+    /*
+     * An iframe is a hole in the pointer stream.
+     *
+     * Once the pointer is over one, every move belongs to the framed document
+     * and this one hears nothing more until it comes back out — so the drawn
+     * pointer stops where it last was, which is on the frame's edge, and sits
+     * there looking frozen while the real one moves around inside. The Figma
+     * explorer is the case that made it obvious, because the canvas is large
+     * and people stay in it.
+     *
+     * Nothing here needs to notice the exit. `onMove` calls `show()` on the
+     * first move back in the parent document, and `show()`'s own first-time
+     * branch snaps the ring to the pointer rather than easing it in — so the
+     * pointer reappears where the hand actually is instead of flying back
+     * from the edge it was stranded on.
+     *
+     * The framed document keeps its own native cursor, which is correct: the
+     * `cursor: none` rule is written into this document and does not reach
+     * inside another one. Figma draws the pointer its own canvas needs.
+     */
+    const overFrame = (node: EventTarget | null): boolean =>
+      node instanceof Element && node.closest('iframe') !== null;
+
     function onMove(event: PointerEvent) {
+      /*
+       * Checked before anything else, and in both places, because the order of
+       * the crossing events is not something to rely on: a `pointerover` on the
+       * frame may or may not be followed by a `pointermove` naming it. Either
+       * one hides, and neither undoes the other.
+       */
+      if (overFrame(event.target)) {
+        targetX = event.clientX;
+        targetY = event.clientY;
+        hide();
+        return;
+      }
+
       const now = performance.now();
       /*
        * A gap in the stream means something took the pointer away — a native
@@ -782,6 +842,18 @@
      * reflows has to rebuild it or the pull lands beside the control.
      */
     document.addEventListener('mh:super', measureMagnets);
+
+    /*
+     * The storm starting and ending both change what is magnetic — the
+     * portrait leaves the set when it goes inert and rejoins when the page
+     * is itself again. `engage(null)` first, because a lean already applied
+     * belongs to a control that is no longer accepting one, and it would
+     * otherwise sit there until the pointer next moved.
+     */
+    document.addEventListener('mh:storm', () => {
+      engage(null);
+      measureMagnets();
+    });
     window.addEventListener('load', measureMagnets);
     measureMagnets();
 
@@ -822,7 +894,87 @@
       wake();
     });
 
-    const press = () => root!.classList.add('cursor--down');
+    /*
+     * The moment of contact.
+     *
+     * Not a ripple, and deliberately not the ring it replaces. A ring is a
+     * shape that travels, which makes it an event — something the eye
+     * follows and files as an animation that played. What belongs here is
+     * smaller than that: the press is not the story on this site, the wave
+     * that follows it is, and this only has to make the wave feel like it
+     * came from a touch rather than from a timer.
+     *
+     * So it is light rather than line. A soft radial fall-off with no edge
+     * anywhere in it — no border, no stroke, no ring, nothing that resolves
+     * into a silhouette — which appears at the point of contact, swells by
+     * about a fifth, and is gone inside a fifth of a second. Peak alpha at
+     * the centre is around a quarter, over roughly forty pixels. It is
+     * meant to be felt and not catalogued.
+     *
+     * It is drawn in `--cursor-bloom`, which follows the surface under the
+     * pointer rather than the page: light where the pointer is dark and dark
+     * where it is light, so the same rule reads as a highlight over a
+     * project cover and as a pressure mark over paper. The purple modes tint
+     * it toward the accent; nothing else does.
+     *
+     * Same coordinate as everything else the press starts. `event.clientX/Y`
+     * is what the storm reads too, so the bloom and the wave leave from one
+     * point by construction rather than by agreement.
+     */
+    let contact: Animation | null = null;
+    const press_ = (event: PointerEvent) => {
+      // The main button only. A right-click opens a menu, which is the
+      // response to that press; a second one underneath it is noise.
+      if (event.button !== 0 || !bloom) return;
+      // The storm has its own answer to a press, and it is not a whisper.
+      if (root!.classList.contains('cursor--raging')) return;
+
+      contact?.cancel();
+      const at = `translate3d(${event.clientX}px, ${event.clientY}px, 0) translate(-50%, -50%)`;
+
+      /*
+       * Three segments, and the shape of them is the whole effect.
+       *
+       * It arrives faster than it leaves — full strength by about forty
+       * milliseconds, then a long quiet decay — because that is the
+       * asymmetry every real impact has, and the reverse of it reads as a
+       * fade-in, which is a thing appearing rather than a thing being hit.
+       * The size barely moves across all of it: a fifth, not a doubling.
+       * Something that grows a long way is a wave, and there is already a
+       * wave.
+       *
+       * One `animate()` per press, no `fill`, so the CSS below is what this
+       * element is the rest of the time and there is nothing to clean up.
+       */
+      contact = bloom.animate(
+        [
+          {
+            transform: `${at} scale(0.5)`,
+            opacity: 0,
+            easing: 'cubic-bezier(0.2, 0.8, 0.4, 1)',
+          },
+          {
+            transform: `${at} scale(0.88)`,
+            opacity: 1,
+            offset: 0.22,
+            easing: 'cubic-bezier(0.4, 0, 0.5, 1)',
+          },
+          {
+            transform: `${at} scale(1.06)`,
+            opacity: 0.6,
+            offset: 0.5,
+            easing: 'cubic-bezier(0.4, 0, 0.7, 1)',
+          },
+          { transform: `${at} scale(1.18)`, opacity: 0 },
+        ],
+        { duration: BLOOM_MS }
+      );
+    };
+
+    const press = (event: PointerEvent) => {
+      root!.classList.add('cursor--down');
+      press_(event);
+    };
     const release = () => root!.classList.remove('cursor--down');
     window.addEventListener('pointerdown', press);
     window.addEventListener('pointerup', release);
@@ -847,6 +999,11 @@
       if ((event as MouseEvent).relatedTarget === null) hide();
     });
     document.addEventListener('mouseenter', show);
+
+    // The other half of the iframe guard. See `overFrame`.
+    document.addEventListener('pointerover', (event) => {
+      if (overFrame(event.target)) hide();
+    });
 
     // The ink follows the theme as well as the section, so it has to be
     // repainted when the switch is used or the OS changes underneath it.
@@ -969,9 +1126,41 @@
      */
     --cursor-ink: #1d1d1f;
     --cursor-veil: rgba(255, 255, 255, 0.7);
-    /* The accent, not a copy of it — so the pointer turns purple with
-       everything else when designer mode is running. */
+    /* The accent, referenced rather than copied, so a change to the site's
+       blue reaches the pointer too. It is the blue in every mode — the
+       purple the storm and the third theme use is `--dm-core`, which is
+       what the bloom below mixes toward. */
     --cursor-accent: var(--blue);
+    /*
+     * What a press is drawn in.
+     *
+     * `--cursor-ink` by default, which is not a colour decision so much as
+     * an inherited one: the ink already tracks the surface under the pointer
+     * rather than the page, so this comes out as a soft highlight over a
+     * dark project cover and as a soft pressure mark over a pale section,
+     * with no theme branching anywhere. The purple modes are the only case
+     * that wants a hue of its own, and they get it below.
+     */
+    --cursor-bloom: var(--cursor-ink);
+  }
+
+  /*
+   * Purple, but only barely.
+   *
+   * `--dm-core` rather than `--cursor-accent`, which was the obvious choice
+   * and the wrong one: measured under both modes, `--blue` stays #2997ff and
+   * never becomes purple, so mixing toward the accent produced a muddy blue
+   * where the rest of the interface had gone violet. `--dm-core` is the hue
+   * the storm and the third theme are actually drawn in.
+   *
+   * Mixed back toward the ink rather than used neat, so the bloom reads as
+   * the material catching the light it is already lit by — super mode has
+   * pushed `--ink` itself to a violet white, and this stays a shade of that
+   * — instead of as a coloured effect fired off on top of it.
+   */
+  :global(:root[data-super]) .cursor,
+  :global(:root[data-designer]) .cursor {
+    --cursor-bloom: color-mix(in srgb, var(--dm-core) 45%, var(--cursor-ink));
   }
 
   /* ------------------------------------------------------------------ */
@@ -1191,16 +1380,34 @@
     will-change: transform;
   }
 
-  .cursor__dot {
-    width: 6px;
-    height: 6px;
-    background: var(--cursor-ink);
-    box-shadow: 0 0 0 1px var(--cursor-veil);
-    transition:
-      width 240ms var(--ease-glide),
-      height 240ms var(--ease-glide),
-      background-color 260ms ease,
-      box-shadow 260ms ease;
+  /*
+   * The contact.
+   *
+   * Light with no edge in it: three stops of one radial fall-off, reaching
+   * transparent well before the box does, so there is no circle to find at
+   * any point in the animation. No border, no shadow, no veil pair — the
+   * ring above needs those to stay legible because it is a hairline, and
+   * this is the opposite kind of mark. Giving it an outline would make it
+   * the thing it was written to replace.
+   *
+   * Invisible at rest and invisible again the moment the press animation
+   * ends, because those keyframes carry no `fill`. This rule is the element
+   * between clicks, which is why there is nothing to reset.
+   */
+  .cursor__bloom {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--cursor-bloom) 26%, transparent),
+      color-mix(in srgb, var(--cursor-bloom) 11%, transparent) 38%,
+      transparent
+    );
+    opacity: 0;
   }
 
   .cursor__ring {
