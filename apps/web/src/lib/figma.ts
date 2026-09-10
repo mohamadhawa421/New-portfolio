@@ -30,7 +30,8 @@
  */
 
 /** The master file every project opens by default. Empty until it exists. */
-export const MASTER_FILE_URL = '';
+export const MASTER_FILE_URL =
+  'https://www.figma.com/design/fxIEjD7LMBBdeDC4CtlD8D/Portfolio-projects---iframe?node-id=0-1&t=0SGl1kXLiJr5aLo9-1';
 
 /**
  * How the embed is configured, in one place.
@@ -55,9 +56,11 @@ export const EMBED_OPTIONS = {
    *
    * With one master file holding every project, the page list is a way to
    * wander out of the case study you are reading and into another one with no
-   * indication that you have. Each explorer opens at its project's frame and
-   * stays in that neighbourhood; the way to the rest of the file is the
-   * "Open in Figma" link, which is honest about leaving.
+   * indication that you have — and, more to the point, the file is private
+   * working material. Each explorer opens at its project's frame and stays
+   * there. There is deliberately no route out of the embed into Figma: the
+   * site offers no link to the file, and this switch closes the one way the
+   * embed would otherwise provide.
    */
   pageSelector: false,
   /** Figma's own footer bar. Off: the surrounding page is the frame. */
@@ -114,36 +117,87 @@ export interface FigmaProject {
 /**
  * Every project, keyed by the slug its page is built at.
  *
- * All fifteen are on. `enabled` stays as the per-project switch — a project
- * set to false renders nothing however complete its links are — but the
- * default is that every case study gets an explorer, so filling one in is a
- * paste into `frameUrl` and nothing else.
+ * Nine have their frame and are on. The rest are off until theirs exists,
+ * because with a master file configured an empty `frameUrl` resolves to the
+ * master's first page rather than to nothing — see the note beside them.
+ * Turning one on is a paste into `frameUrl` and a boolean, nothing else.
  *
- * A project with no link yet costs a visitor nothing: `explorerFor` returns
- * `show: false` in production, so the section is simply absent from that page
- * until its URL exists.
+ * A project that is off costs a visitor nothing: `explorerFor` returns
+ * `show: false` in either environment, so the section is simply absent from
+ * that page until its URL exists.
  */
 export const figmaProjects: Record<string, FigmaProject> = {
-  'rm-luxury': { projectName: 'RM Luxury', frameUrl: '', enabled: true },
-  'club-expert-phonak': { projectName: 'Club Expert+ — Phonak', frameUrl: '', enabled: true },
-  archlist: { projectName: 'Archlist', frameUrl: '', enabled: true },
-  tahweel: { projectName: 'Tahweel', frameUrl: '', enabled: true },
-  'wise-academy': { projectName: 'Wise Academy', frameUrl: '', enabled: true },
-
-  kanz: { projectName: 'Kanz', frameUrl: '', enabled: true },
-  rowad: { projectName: 'Rowad', frameUrl: '', enabled: true },
-  'lebanese-prime-minister': {
-    projectName: 'Lebanese Prime Minister',
-    frameUrl: '',
+  'rm-luxury': {
+    projectName: 'RM Luxury',
+    frameUrl:
+      'https://www.figma.com/design/fxIEjD7LMBBdeDC4CtlD8D/Portfolio-projects---iframe?node-id=3-1923&t=0SGl1kXLiJr5aLo9-4',
     enabled: true,
   },
-  apamea: { projectName: 'Apamea', frameUrl: '', enabled: true },
-  mylebpass: { projectName: 'MyLebPass', frameUrl: '', enabled: true },
-  'kabbara-office': { projectName: 'Kabbara Office', frameUrl: '', enabled: true },
-  'coding-lebanon': { projectName: 'Coding Lebanon', frameUrl: '', enabled: true },
-  'wfk-law-firm': { projectName: 'WFK Law Firm', frameUrl: '', enabled: true },
-  'shipment-share': { projectName: 'Shipment Share', frameUrl: '', enabled: true },
-  shareb: { projectName: 'Shareb', frameUrl: '', enabled: true },
+  'club-expert-phonak': {
+    projectName: 'Club Expert+ — Phonak',
+    frameUrl:
+      'https://www.figma.com/design/fxIEjD7LMBBdeDC4CtlD8D/Portfolio-projects---iframe?node-id=3-1922&t=0SGl1kXLiJr5aLo9-4',
+    enabled: true,
+  },
+  archlist: {
+    projectName: 'Archlist',
+    frameUrl:
+      'https://www.figma.com/design/fxIEjD7LMBBdeDC4CtlD8D/Portfolio-projects---iframe?node-id=3-1921&t=0SGl1kXLiJr5aLo9-4',
+    enabled: true,
+  },
+  tahweel: {
+    projectName: 'Tahweel',
+    frameUrl:
+      'https://www.figma.com/design/fxIEjD7LMBBdeDC4CtlD8D/Portfolio-projects---iframe?node-id=3-1920&t=0SGl1kXLiJr5aLo9-4',
+    enabled: true,
+  },
+  kanz: {
+    projectName: 'Kanz',
+    frameUrl:
+      'https://www.figma.com/design/fxIEjD7LMBBdeDC4CtlD8D/Portfolio-projects---iframe?node-id=3-1918&t=0SGl1kXLiJr5aLo9-4',
+    enabled: true,
+  },
+  rowad: {
+    projectName: 'Rowad',
+    frameUrl:
+      'https://www.figma.com/design/fxIEjD7LMBBdeDC4CtlD8D/Portfolio-projects---iframe?node-id=1-23331&t=0SGl1kXLiJr5aLo9-4',
+    enabled: true,
+  },
+  'lebanese-prime-minister': {
+    projectName: 'Lebanese Prime Minister',
+    frameUrl:
+      'https://www.figma.com/design/fxIEjD7LMBBdeDC4CtlD8D/Portfolio-projects---iframe?node-id=1-23332&t=0SGl1kXLiJr5aLo9-4',
+    enabled: true,
+  },
+  apamea: {
+    projectName: 'Apamea',
+    frameUrl:
+      'https://www.figma.com/design/fxIEjD7LMBBdeDC4CtlD8D/Portfolio-projects---iframe?node-id=1-23333&t=0SGl1kXLiJr5aLo9-4',
+    enabled: true,
+  },
+  mylebpass: {
+    projectName: 'MyLebPass',
+    frameUrl:
+      'https://www.figma.com/design/fxIEjD7LMBBdeDC4CtlD8D/Portfolio-projects---iframe?node-id=3-1919&t=0SGl1kXLiJr5aLo9-4',
+    enabled: true,
+  },
+
+  /*
+   * No frame yet, so no explorer.
+   *
+   * These six are off rather than merely blank, because the master file now
+   * has a URL and `explorerFor` falls back to it: an empty `frameUrl` no
+   * longer means "nothing to show", it means "open the master at its first
+   * page" — which would put the same wrong screen on six case studies.
+   * `enabled` is the switch the file already has for exactly this. Paste a
+   * "copy link to selection" URL into one of these and flip it to true.
+   */
+  'wise-academy': { projectName: 'Wise Academy', frameUrl: '', enabled: false },
+  'kabbara-office': { projectName: 'Kabbara Office', frameUrl: '', enabled: false },
+  'coding-lebanon': { projectName: 'Coding Lebanon', frameUrl: '', enabled: false },
+  'wfk-law-firm': { projectName: 'WFK Law Firm', frameUrl: '', enabled: false },
+  'shipment-share': { projectName: 'Shipment Share', frameUrl: '', enabled: false },
+  shareb: { projectName: 'Shareb', frameUrl: '', enabled: false },
 };
 
 /** What a Figma URL turns out to contain. */
@@ -193,8 +247,6 @@ export interface FigmaExplorerData {
   projectName: string;
   /** The iframe source, or '' when there is nothing real to point at. */
   embedUrl: string;
-  /** Where "Open in Figma" goes. '' when there is nothing to open. */
-  openUrl: string;
   /** Whether a real embed is available, as opposed to the placeholder. */
   live: boolean;
   /** Whether to render anything at all. */
@@ -238,7 +290,6 @@ export function explorerFor(slug: string, isDev: boolean): FigmaExplorerData {
   const off: FigmaExplorerData = {
     projectName: '',
     embedUrl: '',
-    openUrl: '',
     live: false,
     show: false,
   };
@@ -252,7 +303,7 @@ export function explorerFor(slug: string, isDev: boolean): FigmaExplorerData {
   const target = frame ?? file;
 
   if (!target) {
-    return { projectName: project.projectName, embedUrl: '', openUrl: '', live: false, show: isDev };
+    return { projectName: project.projectName, embedUrl: '', live: false, show: isDev };
   }
 
   // A node id written by hand wins only where the frame URL had none, so
@@ -263,7 +314,6 @@ export function explorerFor(slug: string, isDev: boolean): FigmaExplorerData {
   return {
     projectName: project.projectName,
     embedUrl: embedUrlFor(resolved),
-    openUrl: project.frameUrl || project.fileUrl || MASTER_FILE_URL,
     live: true,
     show: true,
   };

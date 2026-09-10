@@ -12,10 +12,19 @@
  * The states, all of which are reachable today:
  *
  *   placeholder  no links yet — development only, see explorerFor()
- *   idle         configured, not scrolled to; no iframe exists yet
+ *   invite       configured, and waiting to be asked; no iframe exists yet
  *   loading      iframe building, skeleton showing
  *   ready        the embed is up
  *   error        it did not arrive, and there is a way out to Figma
+
+ *
+ * `invite` is the resting state and the only way out of it is the button in
+ * it. Nothing here is loaded on scroll, and that is a decision rather than an
+ * oversight: a Figma embed is an entire application, and starting one behind
+ * somebody's back — four sections into a case study they may well never reach
+ * the end of — spends their battery and their bandwidth on a guess. So the
+ * section introduces itself first and costs a single image until it is
+ * actually wanted.
  *
  * `data-state` on the root carries which one, and every visual difference
  * between them is a CSS rule keyed off it. The script's whole job is to move
@@ -47,51 +56,58 @@ const name = title || design.projectName;
         <div
           class="figma"
           data-figma
-          data-state={design.live ? 'idle' : 'placeholder'}
+          data-state={design.live ? 'invite' : 'placeholder'}
           data-embed={design.live ? design.embedUrl : undefined}
           data-project-name={name}
           data-full="no"
           data-armed="no"
           data-reveal="0"
         >
-          {/* Label left, way out right. The only two things in the header,
-              because the controls that matter are Figma's own and they are
-              inside the canvas. */}
+          {/* A label, and nothing else.
+              There is deliberately no way out of here into Figma. The embed
+              is a read-only view of one frame; a link to the file is a link
+              to the layers, the other projects, the version history and the
+              comments, and none of that is a visitor's to see. */}
           <div class="figma__bar">
             <span class="figma__label">{name} — Figma</span>
-
-            {design.openUrl ? (
-              <a
-                class="figma__open"
-                href={design.openUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Open in Figma
-                <svg viewBox="0 0 14 14" width="12" height="12" aria-hidden="true" focusable="false">
-                  <path
-                    d="M4 10L10 4M10 4H5.5M10 4V8.5"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.4"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </a>
-            ) : (
-              <span class="figma__open figma__open--dead">Not linked yet</span>
-            )}
           </div>
 
           {/* The box every state shares. Its height never depends on what is
               inside it, so the page does not move when the embed arrives. */}
           <div class="figma__stage" data-figma-stage>
+            {/* Before anything is loaded: the invitation.
+                He is doing the same job here he does beside the hero — saying
+                what the thing is, in a voice a page of body copy cannot. The
+                drawing is 560px wide and served at a third of that, so it is
+                sharp on a retina screen and still the only weight this
+                section carries until somebody presses the button. */}
+            <div class="figma__invite">
+              <span class="figma__invite-halo" aria-hidden="true">
+                <img
+                  class="figma__invite-face"
+                  src="/character-presenting.webp"
+                  alt=""
+                  width="560"
+                  height="496"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </span>
+              <p class="figma__invite-title">Explore the design</p>
+              <p class="figma__invite-note">
+                Want to see the work beyond the screenshots? The real file is right here.
+              </p>
+              <button class="figma__invite-go" data-figma-open type="button">
+                Explore the Figma
+              </button>
+            </div>
+
             {/* Waiting. Two bars breathing, no spinner — a spinner in a frame
                 this size reads as an error before it reads as progress. */}
             <div class="figma__skeleton" aria-hidden="true">
               <span />
               <span />
+              <span class="figma__skeleton-say">Loading design…</span>
             </div>
 
             {/* No links yet. Deliberately not dressed up as a design tool:
@@ -116,20 +132,13 @@ const name = title || design.projectName;
               </p>
             </div>
 
-            {/* It did not arrive. The way out is the same link as the header's,
-                because that is the thing that still works. */}
+            {/* It did not arrive, and there is nothing to offer instead —
+                the file is not somewhere a visitor can be sent. So this says
+                what happened and stops, rather than dressing a dead end up as
+                a choice. */}
             <div class="figma__fallen">
               <p class="figma__fallen-title">Design preview unavailable</p>
-              {design.openUrl && (
-                <a
-                  class="figma__fallen-link"
-                  href={design.openUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Open the design in Figma ↗
-                </a>
-              )}
+              <p class="figma__fallen-note">The rest of this case study still is.</p>
             </div>
 
             {/* Touch only. Takes the first tap so the page can be scrolled
@@ -176,10 +185,10 @@ const name = title || design.projectName;
   /*
    * Bound once for the life of the tab.
    *
-   * The listeners inside are on `document`, which the router never replaces,
-   * so a second binding would answer every click twice — and the observer
-   * inside re-scans on `astro:page-load`, which is what covers the pages this
-   * script does not itself run on.
+   * Every listener inside is on `document`, which the router never replaces,
+   * so a second binding would answer every press twice — and one binding is
+   * enough for every page, including the ones whose own copy of this script
+   * never runs, because nothing in there is bound to a page element.
    */
   if (!(window as unknown as { __mhFigma?: boolean }).__mhFigma) {
     (window as unknown as { __mhFigma?: boolean }).__mhFigma = true;
@@ -201,7 +210,7 @@ const name = title || design.projectName;
   }
 
   /*
-   * Label and exit, and nothing between them.
+   * A label, on its own.
    *
    * Above the canvas rather than over it: a bar laid on top of the design is
    * browser chrome by another name, and the brief for this was the opposite of
@@ -210,7 +219,6 @@ const name = title || design.projectName;
   .figma__bar {
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
     gap: 16px;
     margin-bottom: 12px;
     padding-inline: 2px;
@@ -220,25 +228,6 @@ const name = title || design.projectName;
     font-size: 14px;
     letter-spacing: -0.01em;
     color: var(--ink-muted);
-  }
-
-  .figma__open {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    color: var(--blue);
-    text-decoration: none;
-    transition: opacity 200ms var(--ease-out);
-  }
-
-  .figma__open:hover {
-    opacity: 0.7;
-  }
-
-  .figma__open--dead {
-    color: var(--ink-faint);
-    cursor: default;
   }
 
   /*
@@ -284,7 +273,8 @@ const name = title || design.projectName;
 
   .figma__skeleton,
   .figma__placeholder,
-  .figma__fallen {
+  .figma__fallen,
+  .figma__invite {
     position: absolute;
     inset: 0;
     display: none;
@@ -298,8 +288,185 @@ const name = title || design.projectName;
 
   .figma[data-state='loading'] .figma__skeleton,
   .figma[data-state='placeholder'] .figma__placeholder,
-  .figma[data-state='error'] .figma__fallen {
+  .figma[data-state='error'] .figma__fallen,
+  .figma[data-state='invite'] .figma__invite {
     display: flex;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The invitation                                                      */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * He stands in the empty canvas rather than on top of it.
+   *
+   * Which is mostly a matter of what is *not* here: no card, no border, no
+   * panel behind him, no drop shadow under the drawing. The stage already has
+   * a surface and a corner radius, so anything else would be a second box
+   * inside the first, and the brief for this section was the opposite of
+   * browser chrome. What he gets instead is room — the gap below him is wider
+   * than the gaps between the lines, so the eye reads him as standing in the
+   * space and the words as captions to him.
+   */
+  .figma__invite {
+    gap: 0;
+    /*
+     * Sits a little high. Centred by the flexbox and then lifted, because a
+     * figure with a raised arm reads as centred when its *mass* is centred,
+     * and his mass is his shoulders. Dead-centring the bounding box hangs him
+     * low in the frame.
+     */
+    padding-bottom: 34px;
+  }
+
+  /*
+   * Something for him to stand in.
+   *
+   * He is drawn in a black jacket with a black outline, and on the dark theme
+   * the stage behind him is #131316 — so without this most of his body is the
+   * same value as the surface and only his face and hands survive. A pool of
+   * light behind him fixes that, and it is also the honest answer to
+   * "integrated into the canvas rather than pasted onto it": the reason a
+   * figure looks placed in a space is that the space is lit around them.
+   *
+   * One wash serves both themes because it is mixed from `--ink`, which is
+   * near-black on the light theme and near-white on the dark one. So this is
+   * a soft ground shadow where the surface is pale and a halo where it is
+   * not — the same rule doing the opposite thing, correctly, in each.
+   *
+   * `closest-side` on an ellipse wider than it is tall, so the falloff
+   * reaches the edge of the box in every direction at once and there is no
+   * visible circle. Behind the drawing via `z-index`, never over it.
+   */
+  .figma__invite-halo {
+    position: relative;
+    display: block;
+    line-height: 0;
+  }
+
+  .figma__invite-halo::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 54%;
+    width: 178%;
+    height: 152%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--ink) 11%, transparent),
+      transparent
+    );
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .figma__invite-face {
+    width: clamp(132px, 15vw, 188px);
+    height: auto;
+    margin-bottom: 4px;
+    /* The drawing is his own artwork on transparency: nothing tints it, and
+       nothing rounds it. */
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  .figma__invite-title {
+    font-size: clamp(19px, 2vw, 23px);
+    font-weight: 600;
+    letter-spacing: -0.018em;
+  }
+
+  .figma__invite-note {
+    margin-top: 6px;
+    max-width: 34ch;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+  }
+
+  /*
+   * The invitation itself.
+   *
+   * A filled button, and the only one in this section — everything else here
+   * is furniture. It is the accent rather than the ink because it is a choice
+   * being offered, not a control being provided.
+   */
+  .figma__invite-go {
+    margin-top: 20px;
+    /* Laid out as a box rather than as text with padding, so the 44px floor
+       below is a floor and not a suggestion the line height can undercut. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 22px;
+    border: 0;
+    border-radius: var(--r-pill);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--surface);
+    background: var(--ink);
+    cursor: pointer;
+    transition:
+      transform 240ms var(--ease-out),
+      opacity 240ms var(--ease-out);
+  }
+
+  /* Guarded, for the reason the pager's hover is: iOS resolves `:hover` on
+     tap and then keeps it, which would leave this lifted after the press. */
+  @media (hover: hover) and (pointer: fine) {
+    .figma__invite-go:hover {
+      transform: translateY(-1px);
+      opacity: 0.88;
+    }
+  }
+
+  .figma__invite-go:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  /* A drawn pointer cannot also be a system one. */
+  :global(:root.has-custom-cursor) .figma__invite-go {
+    cursor: none;
+  }
+
+  /*
+   * Going. One fade, one degree of shrink, and out of the way.
+   *
+   * Written as a class rather than a state, because it has to overlap the
+   * next state rather than follow it — the skeleton is already showing
+   * underneath by the time this finishes. The brief asked for the canvas to
+   * change mode rather than for the character to leave, and something that
+   * leaves quietly while the next thing is already there is what that looks
+   * like.
+   */
+  .figma__invite--going {
+    display: flex !important;
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(0.985);
+    transition:
+      opacity 260ms var(--ease-out),
+      transform 260ms var(--ease-out);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .figma__invite--going {
+      transition-duration: 1ms;
+    }
+  }
+
+  /* The word under the bars while the design arrives. Deliberately the only
+     spinner-shaped thing in the section: the bars already carry the motion. */
+  .figma__skeleton-say {
+    margin-top: 6px;
+    font-size: 13px;
+    letter-spacing: -0.01em;
+    color: var(--ink-faint);
   }
 
   /* Two bars, breathing. Long enough to read as content arriving and slow
@@ -373,24 +540,30 @@ const name = title || design.projectName;
     letter-spacing: -0.016em;
   }
 
-  .figma__fallen-link {
+  .figma__fallen-note {
     font-size: 15px;
-    color: var(--blue);
-    text-decoration: none;
-  }
-
-  .figma__fallen-link:hover {
-    opacity: 0.7;
+    color: var(--ink-muted);
   }
 
   /* ------------------------------------------------------------------ */
   /* Controls                                                            */
   /* ------------------------------------------------------------------ */
 
+  /*
+   * Top right, because Figma owns the bottom right.
+   *
+   * The embed draws its own zoom and pan controls in the lower-right corner of
+   * the canvas — that is `viewportControls`, and it is on deliberately, since
+   * they are the real thing and we cannot script a replacement. A fullscreen
+   * button in the same corner sits on top of them, which is both a collision
+   * and a trap: the two controls a visitor reaches for most end up in one
+   * 38px square. The opposite corner is empty in every embed state, because
+   * the page selector and the footer are both off.
+   */
   .figma__full {
     position: absolute;
     right: 14px;
-    bottom: 14px;
+    top: 14px;
     width: 38px;
     height: 38px;
     display: none;
@@ -482,20 +655,68 @@ const name = title || design.projectName;
       height: clamp(320px, 48vh, 460px);
     }
 
-    .figma__bar {
-      /* The label wraps before it squeezes the link out of the row. */
-      flex-wrap: wrap;
-      gap: 4px 16px;
+    /*
+     * He gets smaller before the words do.
+     *
+     * The stage is barely 320px tall here and the hierarchy has to survive
+     * that: a drawing sized off the viewport would eat the copy and the
+     * button, and what is left would be a picture with a caption rather than
+     * an invitation. So the character takes the whole reduction, the type
+     * stays where it is, and the button keeps a 44px target.
+     */
+    .figma__invite {
+      padding: 20px;
+      padding-bottom: 24px;
+    }
+
+    .figma__invite-face {
+      width: 104px;
+    }
+
+    .figma__invite-note {
+      max-width: 30ch;
+      font-size: 14px;
+    }
+
+    .figma__invite-go {
+      margin-top: 16px;
     }
   }
 
-  /* Fullscreen is the browser's box, not ours — the rounding and the height
-     both have to go or the design sits in a rounded rectangle in the middle of
-     a black screen. */
-  .figma__stage:fullscreen {
-    height: 100%;
-    border-radius: 0;
-    background: var(--surface);
+  /* ------------------------------------------------------------------ */
+  /* Expanded                                                            */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * The expanded stage, and the space it leaves behind.
+   *
+   * The box is pinned to the size and place it already had — the script
+   * writes those four numbers — and the growing is done entirely by a
+   * transform. That is not a shortcut, it is the requirement: resizing this
+   * element resizes the iframe, and a resized Figma embed keeps the zoom and
+   * the top-left anchor it was fitted with, which leaves the design in the
+   * corner of a much larger canvas. Magnifying it instead keeps the fit that
+   * was already correct. `figma-explorer.ts` has the measurements.
+   *
+   * Not the browser's fullscreen either. Real fullscreen changes the
+   * viewport, so the page behind relays out mid-flight and there is no longer
+   * a place for the box to have grown *from*. An overlay keeps one viewport
+   * from the first frame to the last, which is what the pictures on this site
+   * already do when they open.
+   *
+   * `figma__hold` keeps the stage's height in the section while it is out of
+   * flow, so the page underneath does not jump.
+   */
+  :global(.figma__stage.figma__stage--big) {
+    position: fixed;
+    z-index: 90;
+    max-width: none;
+    transform-origin: top left;
+    box-shadow: 0 40px 120px rgb(0 0 0 / 0.45);
+  }
+
+  :global(.figma__hold) {
+    width: 100%;
   }
 
   @media (prefers-reduced-motion: reduce) {
