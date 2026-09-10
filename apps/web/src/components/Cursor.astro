@@ -37,11 +37,6 @@
     <path class="cursor__bolt-fork" data-cursor-bolt-fork />
     <path class="cursor__bolt-core" data-cursor-bolt-core />
   </svg>
-  {/*
-    The contact. Drawn under the pointer's own ring, so the thing you are
-    aiming with stays on top of the mark it makes.
-  */}
-  <div class="cursor__bloom" data-cursor-bloom></div>
   <div class="cursor__ring" data-cursor-ring></div>
   <div class="cursor__dot" data-cursor-dot></div>
   {/*
@@ -94,7 +89,6 @@
     let ring = document.querySelector<HTMLElement>('[data-cursor-ring]');
     let dot = document.querySelector<HTMLElement>('[data-cursor-dot]');
     let zap = document.querySelector<SVGElement>('[data-cursor-zap]');
-    let bloom = document.querySelector<HTMLElement>('[data-cursor-bloom]');
     let boltGlow = document.querySelector<SVGPathElement>('[data-cursor-bolt-glow]');
     let boltFork = document.querySelector<SVGPathElement>('[data-cursor-bolt-fork]');
     let boltCore = document.querySelector<SVGPathElement>('[data-cursor-bolt-core]');
@@ -115,7 +109,6 @@
       ring = nextRing;
       dot = nextDot;
       zap = document.querySelector<SVGElement>('[data-cursor-zap]');
-      bloom = document.querySelector<HTMLElement>('[data-cursor-bloom]');
       boltGlow = document.querySelector<SVGPathElement>('[data-cursor-bolt-glow]');
       boltFork = document.querySelector<SVGPathElement>('[data-cursor-bolt-fork]');
       boltCore = document.querySelector<SVGPathElement>('[data-cursor-bolt-core]');
@@ -174,8 +167,6 @@
     /** How far outside a control the field reaches. The pull has to start
      *  before the pointer arrives or it is not magnetism, just a hover state. */
     const FIELD = 26;
-    /** How long the contact takes to arrive, swell and be gone. */
-    const BLOOM_MS = 180;
 
     /*
      * Positions are stored in document space and measured once per page rather
@@ -607,10 +598,29 @@
         }
       }
 
-      // Exponential ease toward the pointer. 0.18 per sixtieth keeps roughly a
-      // frame and a half of lag: enough to feel like weight, not enough to
-      // feel broken. Per sixtieth, now, rather than per frame — see `steps`.
-      const chase = ease(0.18);
+      /*
+       * Exponential ease toward the pointer, at one frame of give.
+       *
+       * The dot has always been exact — outside the storm `dragX = targetX`,
+       * so the thing you aim with is on the pointer to the pixel. All of the
+       * weight was in the ring, and at 0.18 per sixtieth there was far too
+       * much of it: the steady-state lag of an exponential chase is
+       * `(1 - k) / k` frames of travel, which at 0.18 is 4.6 frames. On a
+       * quick movement that leaves the ring visibly crossing the screen after
+       * the dot, and because the ring is the larger shape it is the one the
+       * eye tracks — so the whole pointer reads as slow.
+       *
+       * A half puts that ratio at exactly 1.0: the ring sits one frame's
+       * travel behind, whatever the speed and whatever the display. Short
+       * enough to answer immediately, long enough that the ring and the dot
+       * still read as one object rather than two glued together — 0.7 was
+       * tried and is too rigid for that reason.
+       *
+       * Eased rather than removed for a second reason: `ringToX` is also
+       * where the magnetism lives, and a ring with no give turns the drift
+       * toward a control's centre into a jump.
+       */
+      const chase = ease(0.5);
       ringX += (ringToX - ringX) * chase;
       ringY += (ringToY - ringY) * chase;
 
@@ -894,87 +904,7 @@
       wake();
     });
 
-    /*
-     * The moment of contact.
-     *
-     * Not a ripple, and deliberately not the ring it replaces. A ring is a
-     * shape that travels, which makes it an event — something the eye
-     * follows and files as an animation that played. What belongs here is
-     * smaller than that: the press is not the story on this site, the wave
-     * that follows it is, and this only has to make the wave feel like it
-     * came from a touch rather than from a timer.
-     *
-     * So it is light rather than line. A soft radial fall-off with no edge
-     * anywhere in it — no border, no stroke, no ring, nothing that resolves
-     * into a silhouette — which appears at the point of contact, swells by
-     * about a fifth, and is gone inside a fifth of a second. Peak alpha at
-     * the centre is around a quarter, over roughly forty pixels. It is
-     * meant to be felt and not catalogued.
-     *
-     * It is drawn in `--cursor-bloom`, which follows the surface under the
-     * pointer rather than the page: light where the pointer is dark and dark
-     * where it is light, so the same rule reads as a highlight over a
-     * project cover and as a pressure mark over paper. The purple modes tint
-     * it toward the accent; nothing else does.
-     *
-     * Same coordinate as everything else the press starts. `event.clientX/Y`
-     * is what the storm reads too, so the bloom and the wave leave from one
-     * point by construction rather than by agreement.
-     */
-    let contact: Animation | null = null;
-    const press_ = (event: PointerEvent) => {
-      // The main button only. A right-click opens a menu, which is the
-      // response to that press; a second one underneath it is noise.
-      if (event.button !== 0 || !bloom) return;
-      // The storm has its own answer to a press, and it is not a whisper.
-      if (root!.classList.contains('cursor--raging')) return;
-
-      contact?.cancel();
-      const at = `translate3d(${event.clientX}px, ${event.clientY}px, 0) translate(-50%, -50%)`;
-
-      /*
-       * Three segments, and the shape of them is the whole effect.
-       *
-       * It arrives faster than it leaves — full strength by about forty
-       * milliseconds, then a long quiet decay — because that is the
-       * asymmetry every real impact has, and the reverse of it reads as a
-       * fade-in, which is a thing appearing rather than a thing being hit.
-       * The size barely moves across all of it: a fifth, not a doubling.
-       * Something that grows a long way is a wave, and there is already a
-       * wave.
-       *
-       * One `animate()` per press, no `fill`, so the CSS below is what this
-       * element is the rest of the time and there is nothing to clean up.
-       */
-      contact = bloom.animate(
-        [
-          {
-            transform: `${at} scale(0.5)`,
-            opacity: 0,
-            easing: 'cubic-bezier(0.2, 0.8, 0.4, 1)',
-          },
-          {
-            transform: `${at} scale(0.88)`,
-            opacity: 1,
-            offset: 0.22,
-            easing: 'cubic-bezier(0.4, 0, 0.5, 1)',
-          },
-          {
-            transform: `${at} scale(1.06)`,
-            opacity: 0.6,
-            offset: 0.5,
-            easing: 'cubic-bezier(0.4, 0, 0.7, 1)',
-          },
-          { transform: `${at} scale(1.18)`, opacity: 0 },
-        ],
-        { duration: BLOOM_MS }
-      );
-    };
-
-    const press = (event: PointerEvent) => {
-      root!.classList.add('cursor--down');
-      press_(event);
-    };
+    const press = () => root!.classList.add('cursor--down');
     const release = () => root!.classList.remove('cursor--down');
     window.addEventListener('pointerdown', press);
     window.addEventListener('pointerup', release);
@@ -1127,41 +1057,10 @@
     --cursor-ink: #1d1d1f;
     --cursor-veil: rgba(255, 255, 255, 0.7);
     /* The accent, referenced rather than copied, so a change to the site's
-       blue reaches the pointer too. It is the blue in every mode — the
-       purple the storm and the third theme use is `--dm-core`, which is
-       what the bloom below mixes toward. */
+       blue reaches the pointer too. */
     --cursor-accent: var(--blue);
-    /*
-     * What a press is drawn in.
-     *
-     * `--cursor-ink` by default, which is not a colour decision so much as
-     * an inherited one: the ink already tracks the surface under the pointer
-     * rather than the page, so this comes out as a soft highlight over a
-     * dark project cover and as a soft pressure mark over a pale section,
-     * with no theme branching anywhere. The purple modes are the only case
-     * that wants a hue of its own, and they get it below.
-     */
-    --cursor-bloom: var(--cursor-ink);
   }
 
-  /*
-   * Purple, but only barely.
-   *
-   * `--dm-core` rather than `--cursor-accent`, which was the obvious choice
-   * and the wrong one: measured under both modes, `--blue` stays #2997ff and
-   * never becomes purple, so mixing toward the accent produced a muddy blue
-   * where the rest of the interface had gone violet. `--dm-core` is the hue
-   * the storm and the third theme are actually drawn in.
-   *
-   * Mixed back toward the ink rather than used neat, so the bloom reads as
-   * the material catching the light it is already lit by — super mode has
-   * pushed `--ink` itself to a violet white, and this stays a shade of that
-   * — instead of as a coloured effect fired off on top of it.
-   */
-  :global(:root[data-super]) .cursor,
-  :global(:root[data-designer]) .cursor {
-    --cursor-bloom: color-mix(in srgb, var(--dm-core) 45%, var(--cursor-ink));
-  }
 
   /* ------------------------------------------------------------------ */
   /* The punishment                                                      */
@@ -1378,36 +1277,6 @@
     left: 0;
     border-radius: 50%;
     will-change: transform;
-  }
-
-  /*
-   * The contact.
-   *
-   * Light with no edge in it: three stops of one radial fall-off, reaching
-   * transparent well before the box does, so there is no circle to find at
-   * any point in the animation. No border, no shadow, no veil pair — the
-   * ring above needs those to stay legible because it is a hairline, and
-   * this is the opposite kind of mark. Giving it an outline would make it
-   * the thing it was written to replace.
-   *
-   * Invisible at rest and invisible again the moment the press animation
-   * ends, because those keyframes carry no `fill`. This rule is the element
-   * between clicks, which is why there is nothing to reset.
-   */
-  .cursor__bloom {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 46px;
-    height: 46px;
-    border-radius: 50%;
-    background: radial-gradient(
-      closest-side,
-      color-mix(in srgb, var(--cursor-bloom) 26%, transparent),
-      color-mix(in srgb, var(--cursor-bloom) 11%, transparent) 38%,
-      transparent
-    );
-    opacity: 0;
   }
 
   .cursor__ring {
