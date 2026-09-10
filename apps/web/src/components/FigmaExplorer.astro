@@ -77,10 +77,14 @@ const name = title || design.projectName;
           <div class="figma__stage" data-figma-stage>
             {/* Before anything is loaded: the invitation.
                 He is doing the same job here he does beside the hero — saying
-                what the thing is, in a voice a page of body copy cannot. The
-                drawing is 560px wide and served at a third of that, so it is
-                sharp on a retina screen and still the only weight this
-                section carries until somebody presses the button. */}
+                what the thing is, in a voice a page of body copy cannot, and
+                holding the Figma mark so the section names itself before the
+                heading does. The drawing is 560px wide and served at a third
+                of that, so it is sharp on a retina screen and still the only
+                weight this section carries until somebody presses the
+                button. `width`/`height` are the file's real dimensions: they
+                reserve the right box before it decodes, and a wrong pair
+                there is a layout shift on every case study. */}
             <div class="figma__invite">
               <span class="figma__invite-halo" aria-hidden="true">
                 <img
@@ -88,7 +92,7 @@ const name = title || design.projectName;
                   src="/character-presenting.webp"
                   alt=""
                   width="560"
-                  height="496"
+                  height="510"
                   loading="lazy"
                   decoding="async"
                 />
