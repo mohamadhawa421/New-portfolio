@@ -1155,6 +1155,53 @@ document.addEventListener('astro:page-load', () => {
   lastPath = window.location.pathname;
 });
 
+/*
+ * "Work" in the nav means back, on the pages where back is where Work is.
+ *
+ * This is the other half of the case study's own back link, and it exists
+ * because the nav was quietly the weaker of the two. It is fixed, so it is
+ * reachable from the foot of a five-thousand-pixel article where that link
+ * is not — but it was a plain forward navigation, which pushes a new entry
+ * and lands at the top of fifteen projects. A visitor who opened the
+ * eleventh card and pressed Work to go back to it did not go back to it.
+ *
+ * Now the two agree. When the listing really is the previous page, the nav
+ * does what the article's link does: steps back, so the browser restores the
+ * scroll position and the cover morphs into the card that was opened. The
+ * destination is identical either way — this only decides whether they
+ * arrive at the right part of it.
+ *
+ * Guarded three ways, because a control that silently means something else
+ * is worse than one that means too little:
+ *
+ *   only on a case study        — /work itself has no "back" to offer
+ *   only when /work is behind   — arriving from a shared link, or from
+ *                                 another project via "Next project", makes
+ *                                 the previous page something else entirely
+ *   only a plain left click     — a modified click is a request for a tab,
+ *                                 and history has no tab to give
+ *
+ * Desktop only, deliberately: the panel's copy of this link is reached
+ * through a menu that has its own close animation to coordinate with a
+ * navigation, and a phone already has an edge-swipe that does this properly.
+ */
+document.addEventListener('click', (event) => {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+    return;
+  }
+
+  const target = event.target;
+  if (!(target instanceof Element)) return;
+  const link = target.closest<HTMLAnchorElement>('a.nav__link');
+  if (!link || new URL(link.href, location.origin).pathname !== '/work') return;
+
+  if (!location.pathname.startsWith('/work/')) return;
+  if ((window as unknown as { __mhFrom?: string }).__mhFrom !== '/work') return;
+
+  event.preventDefault();
+  history.back();
+});
+
 document.addEventListener('astro:page-load', () => {
   // After the restore has been applied, hand anchors their smooth scroll back.
   window.setTimeout(() => {
