@@ -144,13 +144,53 @@ load, resize and navigation.
 **Reduced motion is honoured throughout**, and every effect has a quiet
 variant rather than being switched off.
 
+## Dependencies, and the one command never to run
+
+**Never `npm audit fix --force` in this repo.** npm's "fix" for the Strapi
+advisories is `@strapi/strapi@4.26.2` — a downgrade from 5 to 4, which would
+take the schema, the export script and the database with it. npm suggests it
+because no Strapi 5 release fixes them yet, not because it is a fix.
+
+`npm audit` reports two dozen advisories and every one of them is in
+`apps/cms` or in build tooling. None reaches a visitor, and the reason is
+structural rather than lucky: `apps/web` has exactly two production
+dependencies, `astro` and `@astrojs/sitemap`; `output` is `'static'`; and
+Vercel's `buildCommand` is `npm run build:site`, which boots Strapi only to
+read a committed SQLite file and write `content.json` and `public/media`
+before the build. Nothing of Strapi is deployed and nothing serves untrusted
+input. `vite`, `esbuild` and `sharp` are in the web tree as build-time
+dependencies of Astro; the esbuild and vite advisories are dev-server issues
+that need you browsing a hostile page while `npm run dev` is running.
+
+Plain `npm audit fix` was tried and reverted: it left the count at 24 while
+removing 60 packages from the lockfile, including Astro's own dev tooling.
+Zero benefit, real risk.
+
+The honest state is that these wait on upstream Strapi. Check again when
+Strapi ships fixes; do not fight it in the meantime.
+
 ## Environment
 
-The preview pane **does not composite frames**. `requestAnimationFrame`,
-IntersectionObserver, CSS animations and view transitions do not advance there,
-timers are throttled, and screenshots of scrolled content are often stale. You
-can measure geometry and seek animations with `animation.currentTime`; you
-cannot watch anything. Say so rather than claiming to have seen it.
+The preview pane is **unreliable, not uniformly dead**, and the difference
+matters because assuming either extreme has wasted a session.
+
+What is reliably broken: IntersectionObserver does not fire, so reveals and
+lazy images stay in their initial state; view transitions do not run; timers
+are throttled hard, so a `setTimeout(40)` can land well past a 420ms
+animation; screenshots of scrolled content are often stale — take a second
+one before believing the first; and `PerformanceObserver` on `longtask`
+reports nothing at all (see "Profiling the storm").
+
+What does work, sometimes: `requestAnimationFrame` and CSS transitions. Both
+have been measured running normally here at ~144Hz. **Test the instrument
+before you use it** — record a handful of rAF gaps, or read a transition's
+target off `getAnimations()` rather than trusting a computed value that may
+never have advanced.
+
+What always works: geometry, computed styles, seeking an animation with
+`animation.currentTime`, and reading keyframes off `getAnimations()`. Prefer
+those. And say which of these you used rather than claiming to have watched
+anything.
 
 The dev server serves stale files often enough to waste a debugging session.
 Restart it when a change does not appear.
@@ -183,12 +223,37 @@ gaps, ~144Hz, measured. So frame pacing can be measured there after all, and
 recording rAF timestamps across an interaction is the honest way to do it.
 Check it with a few frames first rather than assuming either way.
 
-What that measurement says about the storm, on the production build served by
-`astro preview`, cold, with a synthetic click: the handler itself is 11–13ms,
-and then two frames of 105–139ms land at roughly +130ms and +250ms, with a
-handful of 34–56ms frames after them — five frames over 33ms out of 426. That
-is the stall people describe as the wave "freezing for a second". It is not
-the audio: with `AudioContext` neutralised the same stalls appear in the same
-places. It is not the click handler, which has finished long before. The
-specific cause inside the visual sequence has not been isolated; doing that
-needs a real profiler on the deployed site, not this pane.
+### What the storm actually costs, and why it is not a bug
+
+Measured on the production build served by `astro preview`, cold, with a
+synthetic click. The stall people describe as the wave "freezing for a second"
+is two frames of 105–139ms at roughly +130ms and +250ms, plus a handful of
+34–56ms frames — five frames over 33ms out of 426.
+
+Four things it is **not**, each ruled out by measurement rather than by
+reading:
+
+- **Not the audio.** With `AudioContext` replaced by a constructor that
+  throws — 70 blocked constructions — the same stalls appear in the same
+  places.
+- **Not the click handler**, which finishes in 11–13ms, long before.
+- **Not scheduled JavaScript.** Wrapping every `setTimeout` callback the
+  storm runs: exactly one exceeded 3ms across the whole sequence, and that
+  was the 26ms teardown at +8.2s.
+- **Not a `will-change` or filter blowup.** At impact only 5 elements carry
+  `will-change` and only 3 have a filter.
+
+What it *is*: at +120ms there are **850 concurrent animations** across **260
+split letters and 5 pieces** — and 820 of those 850 animate `transform` or
+`opacity` alone. So the storm is already doing the compositable thing; the
+30 that are not are the nav's own colour and padding transitions, unrelated.
+
+Cheap script and very long frames means the time is going where script cannot
+see it: the browser's style, layer and first-raster pass over 800-odd newly
+animated elements. That is the shatter working as designed, not a defect.
+There is no property to swap and no listener to fix.
+
+**So do not "optimise" this without being asked.** The only lever that would
+move it is the number of elements that shatter, and fewer letters is a
+different wave — a design decision, not a performance fix. If it ever has to
+come down, that is the knob, and the cost scales with it.

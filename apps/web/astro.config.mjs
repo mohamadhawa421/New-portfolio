@@ -43,15 +43,22 @@ export default defineConfig({
        * looked correct. Measured on the built output: `backdrop-filter: none`
        * on the deployed menu against a full filter on localhost.
        *
-       * Naming Safari 15 is what makes the prefix necessary rather than
-       * redundant, so both are kept. It is the honest target as well as the
-       * convenient one: unprefixed `backdrop-filter` only arrived in Safari 18,
-       * and the phones this has to work on are older than that.
+       * Naming a Safari old enough that the prefix is necessary rather than
+       * redundant is what keeps both. Unprefixed `backdrop-filter` only
+       * arrived in Safari 18, so anything below that does the job.
+       *
+       * 16.4 rather than 15, because 15 was not the truth. The stylesheets
+       * use `color-mix()` in 139 places — it is how every translucent ink,
+       * border and wash in the site is written — and `color-mix()` is
+       * Baseline May 2023, which is Safari 16.2. Declaring 15 did not make it
+       * work there; it only meant the declared floor and the real one
+       * disagreed, and a floor nobody can meet is not a floor. 16.4 is the
+       * first Safari that supports everything actually used here.
        *
        * The other targets are named so the floor is a decision rather than
        * whatever esbuild happens to default to.
        */
-      cssTarget: ['safari15', 'chrome100', 'firefox100', 'edge100'],
+      cssTarget: ['safari16.4', 'chrome111', 'firefox113', 'edge111'],
     },
   },
 });
