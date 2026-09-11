@@ -640,6 +640,21 @@ figure {
   initial-value: #0a72d8;
 }
 
+/*
+ * The hero's field colour, registered so it can be animated.
+ *
+ * A custom property is a string to the engine unless it is told otherwise,
+ * and an unregistered one jumps between values rather than interpolating —
+ * so the air would snap from blue to purple while his eyes cross-faded over
+ * nine hundred milliseconds. Declaring the syntax is what buys the
+ * interpolation; the transition itself lives with the element in index.astro.
+ */
+@property --aura {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #2997ff;
+}
+
 :root {
   /*
    * The energy palette, and the balance between its parts.

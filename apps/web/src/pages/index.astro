@@ -56,44 +56,105 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     <section class="section section--light hero" data-lift data-tile="light">
       <div class="shell hero__inner">
         <div class="hero__copy">
+          {/*
+            Tiny editorial metadata, and it is the CMS's own words.
+
+            `roleTitle` and `location` already existed for the footer and the
+            contact block, so this states what the site already knows rather
+            than inventing a tagline. It is here because a hero that opens
+            with a name and nothing else could be anyone's — two lines of
+            small print are what make a page feel authored rather than
+            assembled.
+          */}
+          <div class="hero__meta" data-reveal="0">
+            <span>{settings.roleTitle}</span>
+            <span aria-hidden="true">·</span>
+            <span>{settings.location}</span>
+          </div>
+
           <h1 class="hero__title"><span data-rise="0">{home.heroTitle}</span></h1>
-          <div class="hero__subtitle"><span data-rise="1">{home.heroSubtitle}</span></div>
-          <p class="hero__intro" data-reveal="3">{home.heroIntro}</p>
-          <div class="hero__actions" data-reveal="4">
-            <a class="btn btn--primary" href="/work">{home.primaryCtaLabel}</a>
-            <a class="btn btn--secondary" href="/contact">{home.secondaryCtaLabel}</a>
+
+          {/* Everything the name is not. Grouped so the grid can place it as
+              one block beside the picture, under the full-width title. */}
+          <div class="hero__body">
+            <div class="hero__subtitle"><span data-rise="1">{home.heroSubtitle}</span></div>
+            <p class="hero__intro" data-reveal="3">{home.heroIntro}</p>
+            <div class="hero__actions" data-reveal="4">
+              <a class="btn btn--primary" href="/work">{home.primaryCtaLabel}</a>
+              <a class="btn btn--secondary" href="/contact">{home.secondaryCtaLabel}</a>
+            </div>
           </div>
         </div>
 
         <div class="hero__portrait" data-reveal="1">
+          {/*
+            The atmosphere the character stands in.
+
+            The portrait is a square of flat purple with a drawing on it, and
+            clipping that to a rounded rectangle made a card — the single
+            most template-like thing on the page. The picture is the CMS's, so
+            it is not recut here; instead the hard edge is dissolved and this
+            sits behind it, a soft field larger than the picture that bleeds
+            into the page with no boundary of its own.
+
+            It is also where the storm's charge now lives. A glow on a frame
+            with no edge would be a soft rectangle hanging in space; on a
+            field that already has no edge it is simply the air getting
+            brighter.
+          */}
+          <div class="hero__aura" aria-hidden="true"></div>
+
           {/* No label, no hover state, no cursor change. The portrait is a
               picture; that it also does something is the whole point. */}
           <div class="hero__portrait-frame" data-egg-trigger>
-            {
-              settings.portrait && (
-                <img
-                  src={settings.portrait.url}
-                  alt={settings.portrait.alt}
-                  width={settings.portrait.width}
-                  height={settings.portrait.height}
-                  loading="eager"
-                  fetchpriority="high"
-                  decoding="async"
-                  style={`object-position:${settings.portraitFocus}`}
-                />
-              )
-            }
-            {/* The same drawing with purple eyes, cross-faded in while designer
-                mode runs. A second <img> rather than a swapped src: swapping
-                the source would blank the portrait for however long the new
-                file took to decode, and the whole effect is meant to land in
-                one beat. */}
+            {/*
+              The drawing, cut out of its own background.
+
+              The CMS asset is a square of flat purple with him on it, and no
+              amount of masking turns a filled square into atmosphere — it
+              only turns it into a softer square. This is the same drawing
+              with that purple keyed out, so the field behind him can be
+              built in CSS and reach as far as it likes.
+
+              Generated from `settings.portrait`, not drawn separately: the
+              background was flat to within a few values, so a distance key
+              against rgb(106,88,197) lifts it with no fringe on his outline.
+              If the avatar in the CMS is ever replaced this has to be made
+              again — see the note in the commit — which is the one cost of
+              doing it here rather than in the pipeline.
+            */}
+            <img
+              src="/portrait-cutout.webp"
+              alt={settings.portrait?.alt ?? ''}
+              width="883"
+              height="892"
+              loading="eager"
+              fetchpriority="high"
+              decoding="async"
+            />
+            {/*
+              The same drawing with purple eyes, cross-faded in while designer
+              mode runs. A second <img> rather than a swapped src: swapping the
+              source would blank the portrait for however long the new file
+              took to decode, and the whole effect is meant to land in one
+              beat.
+
+              "The same drawing" is now true. It used to be a separately drawn
+              avatar, and measured against this one twelve and a half per cent
+              of its opaque pixels differed — a different face, not a different
+              eye colour, so the cross-fade showed the whole head shifting
+              underneath. This is generated from the cut-out itself: the two
+              eyes are found by their sclera, which is the only white in the
+              picture, and the dark pixels inside those two boxes are tinted to
+              the purple the old avatar used. Four thousand pixels change and
+              nothing else can.
+            */}
             <img
               class="hero__portrait-alt"
-              src="/avatar-designer.webp"
+              src="/portrait-cutout-designer.webp"
               alt=""
-              width="1024"
-              height="1024"
+              width="883"
+              height="892"
               loading="lazy"
               decoding="async"
               aria-hidden="true"
@@ -335,11 +396,90 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     padding-bottom: clamp(42px, min(8vh, 11vw), 104px);
   }
 
+  /*
+   * One field, not two columns.
+   *
+   * The hero was a flex row — copy on the left, picture on the right, each
+   * minding its own half — which is the arrangement every generated portfolio
+   * arrives with and the reason this one read as familiar. It is a grid now,
+   * and the name is given both columns: it runs the full width of the shell
+   * as the architecture of the page, and everything else is placed underneath
+   * it rather than beside it.
+   *
+   * The picture then sits in the right cell but is pulled up into the name's
+   * own line, so the two overlap instead of sitting in separate boxes. That
+   * single overlap is what stops the composition reading as a template: there
+   * is no longer a seam down the middle for the eye to find.
+   */
   .hero__inner {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: clamp(30px, 4.4vw, 72px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.78fr);
+    grid-template-areas:
+      'meta    meta'
+      'name    name'
+      'body    portrait';
+    column-gap: clamp(24px, 4vw, 64px);
+    align-items: start;
+  }
+
+  .hero__copy {
+    display: contents;
+  }
+
+  /*
+   * One column below the fold of a phone.
+   *
+   * The overlap the grid exists for needs two columns and a wide name to
+   * overlap with, and there is neither here — forced into 375px the two
+   * tracks collapsed to 174 and 136 pixels, which is a squashed paragraph
+   * beside a thumbnail. So the arrangement simply stops: name, then what it
+   * is about, then him, in the order they are read. He keeps the lift off
+   * the bottom of the copy but nothing is asked to share a line.
+   */
+  @media (max-width: 860px) {
+    .hero__inner {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        'meta'
+        'name'
+        'body'
+        'portrait';
+      row-gap: 0;
+    }
+
+    .hero__body {
+      padding-top: clamp(14px, 2vh, 24px);
+    }
+  }
+
+  .hero__meta {
+    grid-area: meta;
+  }
+  .hero__title {
+    grid-area: name;
+  }
+  .hero__body {
+    grid-area: body;
+    align-self: center;
+    min-width: 0;
+    /* Clear of the name above it, and of the picture beside it. */
+    padding-top: clamp(18px, 3vh, 34px);
+  }
+  .hero__portrait {
+    grid-area: portrait;
+    /*
+     * Lifted into the name's line.
+     *
+     * The grid puts the picture in the row below the title, which left him
+     * sitting politely beside the paragraph — the two-column arrangement the
+     * composition was supposed to break. Pulling him up by roughly a third of
+     * his own height makes him overlap the name instead, so the type and the
+     * figure occupy one another's space and the hero reads as a single scene.
+     * The negative margin is taken off the bottom as well, so the lift costs
+     * the section no height.
+     */
+    margin-top: clamp(-150px, -13vw, -56px);
+    margin-bottom: clamp(-40px, -3vw, -12px);
   }
 
   .hero__copy {
@@ -347,10 +487,38 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     min-width: 0;
   }
 
+  /*
+   * The metadata line, which is the smallest thing in the hero and the one
+   * that makes it read as authored.
+   *
+   * Above the name rather than below it: it is the masthead line a printed
+   * page opens with, and putting it under the title would make it a subtitle
+   * competing with the one that already exists.
+   */
+  .hero__meta {
+    grid-area: meta;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: clamp(14px, 2vh, 22px);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /*
+   * Architecture, not a label.
+   *
+   * A little larger and considerably tighter than it was. At 92px the old
+   * tracking left the name looking set rather than built; pulling it in
+   * makes the two words a single mass, which is what lets everything under
+   * it be quiet without the composition going soft.
+   */
   .hero__title {
-    font-size: clamp(40px, 6.6vw, 92px);
-    line-height: 1.02;
-    letter-spacing: -0.021em;
+    font-size: clamp(42px, 7.4vw, 104px);
+    line-height: 0.98;
+    letter-spacing: -0.032em;
     font-weight: 600;
     overflow: hidden;
     /*
@@ -381,13 +549,20 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     margin-bottom: -0.1em;
   }
 
+  /*
+   * Quieter than it was, because the statement above it is doing the talking.
+   *
+   * Same words, a notch smaller and a shade further back. The hero had three
+   * things asking to be read at once; this is the one that can afford to be
+   * third.
+   */
   .hero__intro {
     margin-top: clamp(20px, 3.4vh, 30px);
-    max-width: 46ch;
-    font-size: 17px;
-    line-height: 1.52;
-    letter-spacing: -0.022em;
-    color: var(--ink-muted);
+    max-width: 44ch;
+    font-size: 16px;
+    line-height: 1.56;
+    letter-spacing: -0.018em;
+    color: var(--ink-faint);
     text-wrap: pretty;
   }
 
@@ -403,10 +578,15 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   .hero__portrait {
     /* The egg's card hangs off this on a wide screen. */
     position: relative;
-    flex: 1 1 300px;
-    min-width: 230px;
-    max-width: 420px;
-    margin-inline: auto;
+    /*
+     * Grid sizing, not flex. The `flex: 1 1 300px` left over from the old row
+     * does nothing in a grid item, so the box fell back to its `min-width`
+     * and the drawing rendered at 230px in a 518px column. It fills the
+     * column now, up to the size it was always meant to be.
+     */
+    width: 100%;
+    max-width: 460px;
+    justify-self: end;
   }
 
   /*
@@ -423,26 +603,250 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     }
   }
 
+  /*
+   * No frame, no card, no corner.
+   *
+   * This was a rounded rectangle with a background, and the picture inside it
+   * is a square of flat purple — so what the page showed was an avatar tile,
+   * which is the one shape that makes a hero look generated. The picture
+   * belongs to the CMS and is not recut here. What is removed is the
+   * container's opinion about it: no radius to read as a card, no background
+   * to show through, and a mask that lets the flat purple stop being a square
+   * and become the near edge of the field behind it.
+   *
+   * The mask is centred slightly right and high, following `portraitFocus` —
+   * the drawing is not in the middle of its own file, and a mask centred on
+   * the box would fade his shoulder before it faded the empty corner.
+   */
+  /*
+   * No frame, no card, no corner, and nothing to mask.
+   *
+   * This was a rounded rectangle with a background, holding a square of flat
+   * purple — an avatar tile, which is the one shape that makes a hero look
+   * generated. Masking it was tried first and is the wrong tool: softening
+   * the edges of a filled square gives a softer square, because the purple
+   * is inside the picture rather than around it. The picture is cut out
+   * instead, and the purple is now the field below.
+   */
   .hero__portrait-frame {
     position: relative;
     width: 100%;
     aspect-ratio: 1 / 1;
-    border-radius: var(--r-portrait);
-    overflow: hidden;
-    background: var(--surface-parchment);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
   }
 
+  /*
+   * The field, which is the thing the card turned into.
+   *
+   * Wider and taller than the picture on purpose: it has to reach past the
+   * dissolving edge so there is purple beyond where the photograph stops,
+   * which is what stops the eye finding a boundary. Two stops rather than
+   * one, because a single radial falls off too evenly and reads as a
+   * spotlight; a brighter core inside a slow haze reads as light in air.
+   *
+   * `--dm-field` and `--dm-core` are the storm's own colours, so the hero is
+   * lit by the thing that is about to go off in it.
+   */
+  .hero__aura {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    /*
+     * Wider than the picture, but not wider than the room beside it.
+     *
+     * 150% overhung the portrait by three quarters of its width on each
+     * side, and with the picture sitting at the end of its column that
+     * reached past the shell's margin and gave the document 26px of
+     * horizontal scroll at 1440. The bleed upward and downward is free —
+     * nothing is to the top or bottom of it — so the height keeps its
+     * generosity and only the width is reined in.
+     */
+    width: 128%;
+    height: 142%;
+    translate: -50% -50%;
+    pointer-events: none;
+    /*
+     * No `z-index`, deliberately. It was -1, which sent the field behind the
+     * section's own background and made it invisible — a negative index
+     * escapes to the nearest stacking context, and this parent does not make
+     * one. Two positioned siblings paint in document order instead, and the
+     * field is written first, so it is behind the drawing and in front of
+     * the page without anyone having to say so.
+     */
+    /*
+     * Blue at rest, and purple only when his eyes are.
+     *
+     * The field is the site's own accent until the egg is running, at which
+     * point it becomes the storm's — so the colour of the air and the colour
+     * of his eyes are the same fact, changing at the same moment. Written as
+     * a variable rather than two background rules so the change is one token
+     * and the two gradients cannot drift apart.
+     */
+    --aura: var(--blue);
+    background:
+      radial-gradient(closest-side, color-mix(in srgb, var(--aura) 42%, transparent), transparent 70%),
+      radial-gradient(closest-side, color-mix(in srgb, var(--aura) 26%, transparent), transparent 100%);
+    transition: --aura 900ms var(--ease-out);
+    /*
+     * Latent energy, and it is deliberately almost nothing.
+     *
+     * Eighteen seconds for a four per cent change in scale and a tenth of
+     * opacity — slow enough that it is never caught moving, present enough
+     * that the hero is not a still image. The brief for this was anticipation
+     * before the press, not an animation to watch; anything faster becomes
+     * the page breathing at you.
+     */
+    animation: hero-latent 18s var(--ease-glide) infinite alternate;
+  }
+
+  /*
+   * The field is reined in before it can push the page sideways.
+   *
+   * At 150% of a portrait that is itself most of a phone's width, the glow
+   * reaches past the viewport and the document gains 63px of horizontal
+   * scroll — measured. Clipping the section would have been the quick answer
+   * and is the wrong one: the storm throws pieces out of the hero, and a
+   * clip here would cut them off mid-flight. So the field is simply smaller
+   * where there is no room for it, and keeps its bleed upward and downward
+   * where there is.
+   */
+  @media (max-width: 900px) {
+    .hero__aura {
+      width: 100%;
+      height: 128%;
+    }
+  }
+
+  @keyframes hero-latent {
+    from {
+      opacity: 0.82;
+      scale: 1;
+    }
+    to {
+      opacity: 1;
+      scale: 1.04;
+    }
+  }
+
+  /*
+   * The air reacts, and the picture no longer has to.
+   *
+   * `portrait-charge` used to put this glow on the frame itself, which worked
+   * when the frame was a rounded card and would now be a soft-edged rectangle
+   * floating behind a picture with no edge. Same colours, same curve, same
+   * beat — moved onto the field, where a brightening has somewhere to happen.
+   */
+  /*
+   * The eyes go purple and the air goes with them.
+   *
+   * `data-designer` rather than `data-storm`, deliberately and unusually:
+   * this one *is* the colour, and it should arrive and leave with the purple
+   * everywhere else rather than outlasting it. The charge below is the
+   * brightening, and that keeps the storm's own flag because it has to hold
+   * for the whole event.
+   */
+  :global(:root[data-designer]) .hero__aura,
+  :global(:root[data-super]) .hero__aura {
+    --aura: var(--dm-core);
+  }
+
+  :global(:root[data-storm]) .hero__aura {
+    animation: hero-charge 1900ms var(--ease-glide) infinite alternate;
+  }
+
+  @keyframes hero-charge {
+    from {
+      opacity: 1;
+      scale: 1.04;
+    }
+    to {
+      opacity: 1.6;
+      scale: 1.16;
+    }
+  }
+
+  /*
+   * Sized to the box and standing on its floor.
+   *
+   * `contain` rather than `cover`, because there is no longer a background
+   * to crop against — cropping a cut-out just removes his shoulder. Bottom
+   * aligned so he stands in the field rather than floating in the middle of
+   * it, and a little wider than the box so the drawing is the size it was
+   * before the purple came off.
+   */
+  /*
+   * Sized to the box, standing on its floor, and dissolving into it.
+   *
+   * `contain` rather than `cover`, because there is no longer a background to
+   * crop against — cropping a cut-out just removes his shoulder.
+   *
+   * The mask is the bottom edge. The drawing ends where the original square
+   * ended, which is a straight horizontal cut across his jacket, and a
+   * cut-out makes that far more obvious than the purple card ever did: a
+   * figure with a sliced-off bottom floating in the page. Fading the last
+   * fifth of it lets him go into the field instead of stopping in it. It is
+   * safe to do here in a way it was not on the square, because what fades is
+   * his jacket rather than a block of flat colour.
+   */
+  /*
+   * Both layers, one rule, so they cannot disagree.
+   *
+   * They were written separately and drifted: the global `img { max-width:
+   * 100% }` clamped the base to the frame's width while the twin above it
+   * kept its full height, so the two were 437 and 454 pixels tall over the
+   * same box. That seventeen-pixel difference is the whole of the "obvious"
+   * overlap — the same drawing at two scales, sliding as it faded. Declaring
+   * them together is what guarantees the only difference between the layers
+   * is the colour of two irises.
+   *
+   * Both absolutely positioned and bottom-anchored: the frame takes its
+   * height from `aspect-ratio`, so nothing depends on the picture being in
+   * flow, and standing them on the same floor is what makes them line up.
+   *
+   * `max-width: none` because the global rule would otherwise clamp the
+   * width and not the height, which is exactly how they came apart.
+   *
+   * The mask hides the bottom cut. The drawing ends where the original
+   * square ended — a straight slice across his jacket — and on a cut-out
+   * that reads as a figure with no bottom rather than a cropped photograph.
+   * Fading the last fifth lets him go into the field instead of stopping.
+   */
   .hero__portrait-frame img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    translate: -50% 0;
+    width: 104%;
+    height: 104%;
+    max-width: none;
+    object-fit: contain;
+    object-position: 50% 100%;
     display: block;
+    -webkit-mask-image: linear-gradient(to bottom, #000 72%, rgb(0 0 0 / 0.55) 88%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 72%, rgb(0 0 0 / 0.55) 88%, transparent 100%);
   }
 
   /* Stacked exactly over the portrait, and invisible until the egg runs. */
+  /*
+   * The purple-eyed twin, laid exactly over its double.
+   *
+   * `inset: 0` was making it the size of the frame while the drawing beneath
+   * it is 104% and stands on the frame's floor — two copies of the same
+   * figure at different scales, which is why the cross-fade read as two
+   * pictures sliding over each other rather than as a pair of eyes changing
+   * colour. Every box property here now matches the rule above, mask
+   * included, so the only pixels that differ between the two layers are the
+   * four thousand in his irises.
+   *
+   * The one beneath stays fully opaque throughout, on purpose. Fading both
+   * would drop the composite's alpha through the middle of the transition
+   * and the whole character would go momentarily see-through; leaving the
+   * base alone means the body is always exactly itself and the fade is only
+   * ever happening where the two differ.
+   */
   .hero__portrait-alt {
-    position: absolute;
-    inset: 0;
     opacity: 0;
     /*
      * On fast, off slow. The purple-eyed version arrives with the shock, and
@@ -502,26 +906,16 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
    * runs — everything else is being thrown about by it, and a controller that
    * is also being thrown is just another victim. It charges instead.
    */
-  :global(.hero__portrait-frame.dm-source) {
-    animation: portrait-charge 1900ms var(--ease-glide) infinite alternate;
-  }
-
   /*
    * The source shutting down. Losing the animation on its own would drop the
    * glow in a single frame; this lets it go out over the same long beat the
-   * eyes take to fade.
+   * eyes take to fade. The glow itself lives on `.hero__aura` now — see
+   * `hero-charge` — because a frame with no edge cannot carry one.
    */
-  .hero__portrait-frame {
-    transition: box-shadow 1700ms var(--ease-out);
-  }
-
-  @keyframes portrait-charge {
-    from {
-      box-shadow: 0 0 30px -8px color-mix(in srgb, var(--dm-field) 80%, transparent);
-    }
-    to {
-      box-shadow: 0 0 74px -4px color-mix(in srgb, var(--dm-core) 85%, transparent);
-    }
+  .hero__aura {
+    transition:
+      opacity 1700ms var(--ease-out),
+      scale 1700ms var(--ease-out);
   }
 
   /*
@@ -550,6 +944,12 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   @media (prefers-reduced-motion: reduce) {
     :global(.hero__portrait-frame.is-hit),
     :global(.hero__portrait-frame.dm-source) {
+      animation: none;
+    }
+
+    /* The field stays, the breathing goes. It is atmosphere, not motion. */
+    .hero__aura,
+    :global(:root[data-storm]) .hero__aura {
       animation: none;
     }
 
@@ -977,5 +1377,40 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   /* ---- Contact ------------------------------------------------------- */
   .contact {
     padding-block: clamp(68px, min(14vh, 19vw), 160px);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The portrait's size on a phone — last, so it wins                    */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * He was taking the full width of the shell: a 334px drawing under a 42px
+   * name on a 375px screen, which made the picture the loudest thing in the
+   * hero and pushed the buttons off the first screenful.
+   *
+   * Written at the end of the file on purpose. Three separate rules set this
+   * element's width — the grid placement, the base `width: 100%`, and an
+   * older narrow-screen block — all at the same specificity, so the last one
+   * in source order is the one that lands. Two earlier attempts at this
+   * override were placed above `width: 100%` and were silently overruled.
+   * Nothing follows this.
+   */
+  @media (max-width: 860px) {
+    .hero__portrait {
+      justify-self: center;
+      width: min(58vw, 240px);
+      max-width: none;
+      /*
+       * Real air above him.
+       *
+       * Stacked, he sits directly under the buttons, and sixteen pixels read
+       * as the picture belonging to them — a third element in the same group
+       * rather than the thing the introduction is about. The gap is now
+       * larger than any spacing inside the copy block, which is what makes
+       * the two read as separate parts of the hero instead of one list.
+       */
+      margin-top: clamp(44px, 7.5vh, 84px);
+      margin-bottom: 0;
+    }
   }
 </style>

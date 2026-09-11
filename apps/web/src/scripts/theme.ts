@@ -378,6 +378,28 @@ function toggle(button: HTMLElement, event?: MouseEvent): void {
     'startViewTransition' in document &&
     typeof (document as any).startViewTransition === 'function';
 
+  /*
+   * The wipe gets a voice.
+   *
+   * Imported on demand rather than at the top of this module: the synth is
+   * the largest script on the site and the theme is restored on every page
+   * load, so a static import would pull the whole of it into the critical
+   * path for a sound that only plays when somebody presses the toggle. The
+   * promise is deliberately unawaited — the wipe must not wait for audio, and
+   * a device that has not been unlocked yet simply declines inside `sweep`.
+   *
+   * Skipped entirely when there is no wipe to accompany. A palette that
+   * changes instantly, or a visitor who has asked for less motion, should not
+   * be narrated.
+   */
+  if (!reduced && canWipe) {
+    void import('./designer-sound')
+      .then((sound) => sound.sweep())
+      .catch(() => {
+        /* no audio is not a failure of the theme toggle */
+      });
+  }
+
   if (reduced || !canWipe) {
     settleNow();
     apply(next);

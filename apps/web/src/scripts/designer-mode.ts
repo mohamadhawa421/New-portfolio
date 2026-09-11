@@ -435,14 +435,27 @@ const PIECES = [
   '.text-link',
   '.chip',
   '.card',
-  '.row',
+  /*
+   * The selected-work index: the entry, and the picture beside it.
+   *
+   * `.index__item` rather than the link inside it, because the entry is the
+   * rule and the highlight as well as the words — throwing the link alone
+   * left its own hairline behind, hanging in the air. Outermost wins does the
+   * rest: the link and the number inside it are skipped once the item is
+   * taken, and the title still comes apart on it, the way a card's does.
+   *
+   * `.index__stack` is the frame, not the sticky wrapper around it. The
+   * wrapper is a positioning device with no surface; the stack is the picture
+   * the visitor is actually looking at, and all five layers inside it move as
+   * the one object they appear to be.
+   */
+  '.index__item',
+  '.index__stack',
   '.service',
-  '.featured',
   '.process__step',
   '.stat',
   '.skill',
   '.experience',
-  '.work__rule',
   '.services__rule',
   '.footer__logo',
   '.footer__links a',
@@ -451,6 +464,7 @@ const PIECES = [
   '.contact-block__line',
   '.eyebrow',
   '.eyebrow--small',
+  '.hero__meta',
   '.h2',
   'h1',
   'h2',
@@ -466,7 +480,11 @@ const SHATTER = [
   '.eyebrow',
   '.nav__link',
   '.card__title',
-  '.row__title',
+  '.index__title',
+  '.index__num',
+  '.index__tag',
+  '.index__cap',
+  '.hero__meta',
   '.service__title',
   '.hero__subtitle',
   '.footer__location',
@@ -484,7 +502,6 @@ const SHATTER = [
   '.lead',
   '.about__body',
   '.card__summary',
-  '.row__summary',
   /*
    * And the controls, which were the last things standing.
    *
@@ -512,6 +529,28 @@ const SHATTER = [
  * hit.
  */
 const SHELLS = '.btn, .chip, .text-link, .enquiry__send, .footer__links a';
+
+/*
+ * How far past the fold the wave still reaches.
+ *
+ * The rule used to be the viewport exactly: anything whose box was off screen
+ * was skipped. That is right for a page of prose and wrong for this one,
+ * because the portrait sits at the top and the section immediately under it
+ * begins below the fold — so pressing the egg from where everybody presses it
+ * left Selected Work completely untouched while everything around it came
+ * apart. Measured at 1440x900: zero of its rows, titles or pictures were
+ * inside the test.
+ *
+ * Three quarters of a viewport past each edge is enough to take in the
+ * section that follows the hero without walking the whole document. The
+ * physics do not change — force is still distance from the origin and the
+ * falloff still decides what a piece gets — this only widens the set of
+ * things asked. The ceilings below are what stop that costing anything: the
+ * letters are still served shortest-first out of one budget, so a section
+ * further down is served after the labels around the impact, not instead of
+ * them.
+ */
+const REACH_PAST_FOLD = 0.75;
 
 /** Ceilings, so a long page cannot ask a weak GPU for hundreds of layers. */
 const MAX_PIECES_WIDE = 84;
@@ -899,13 +938,14 @@ export function run(options: DesignerModeOptions): Beat {
 
   let allowance = narrow ? MAX_LETTERS_NARROW : MAX_LETTERS;
   const words: HTMLElement[] = [];
+  const foldReach = window.innerHeight * REACH_PAST_FOLD;
 
   for (const el of shortestFirst) {
     if (allowance <= 0) break;
     if (character.contains(el)) continue;
 
     const rect = el.getBoundingClientRect();
-    if (rect.bottom < 0 || rect.top > window.innerHeight) continue;
+    if (rect.bottom < -foldReach || rect.top > window.innerHeight + foldReach) continue;
     // Small print stays whole. Letters flying off a 13px label is noise.
     if (narrow && parseFloat(window.getComputedStyle(el).fontSize) < 17) continue;
 
@@ -942,7 +982,7 @@ export function run(options: DesignerModeOptions): Beat {
 
     const rect = el.getBoundingClientRect();
     if (rect.width < 8 || rect.height < 2) continue;
-    if (rect.bottom < 0 || rect.top > window.innerHeight) continue;
+    if (rect.bottom < -foldReach || rect.top > window.innerHeight + foldReach) continue;
 
     // Outermost wins: a card moves as a card, not as a pile of its own parts.
     if (chosen.some((kept) => kept.contains(el))) continue;

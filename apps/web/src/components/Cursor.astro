@@ -194,6 +194,24 @@
     const clamp = (v: number, max: number) => (v > max ? max : v < -max ? -max : v);
 
     function measureMagnets(): void {
+      /*
+       * Nothing is magnetic while the storm runs.
+       *
+       * Every control on the page is being thrown across it, and a button in
+       * flight that still leans toward the pointer is being pulled by two
+       * forces at once — the lean writes `translate` on the same element the
+       * storm is animating, so they fight and the piece stutters. The lockout
+       * on the portrait alone was not enough: it only covered the one control
+       * the visitor had just pressed.
+       *
+       * `mh:storm` fires at both ends of the event and remeasures, so the set
+       * empties when it starts and fills again when the page is itself.
+       */
+      if (document.documentElement.hasAttribute('data-storm')) {
+        magnets = [];
+        return;
+      }
+
       const sx = window.scrollX;
       const sy = window.scrollY;
       magnets = Array.from(document.querySelectorAll<HTMLElement>(MAGNETIC))

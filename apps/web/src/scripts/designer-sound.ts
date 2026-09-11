@@ -633,6 +633,67 @@ export function spark(level = 0.3): void {
 }
 
 /**
+ * The theme wipe, heard rather than listened to.
+ *
+ * The circular wipe is the one piece of motion on this site that crosses the
+ * whole screen and makes no sound at all, which leaves it feeling like a
+ * repaint rather than an event. This is the smallest thing that fixes that:
+ * the storm's own shockwave buffer, slowed to a third and taken right down,
+ * under a lowpass that opens as the wipe expands and closes again as it
+ * settles. No new material — it is the same air moving, quietly.
+ *
+ * Deliberately far below the storm. The storm is the thing that is allowed to
+ * be loud; a preference being changed is not, and anything with an attack on
+ * it would turn a toggle into an alert. There is no transient here at all:
+ * the gain ramps up over eighty milliseconds, which is slow enough that the
+ * sound has no beginning to notice.
+ *
+ * Refuses if nothing has opened the device yet, like `spark()` — a page that
+ * has not been touched has no right to make a noise.
+ */
+export function sweep(level = 0.16): void {
+  if (!ctx || ctx.state !== 'running' || !waveBuf) return;
+
+  const t = ctx.currentTime;
+  const dur = 0.52;
+
+  const src = ctx.createBufferSource();
+  src.buffer = waveBuf;
+  // A third speed: the shockwave is a hit, and this has to be a movement.
+  src.playbackRate.value = 0.34;
+
+  /*
+   * The filter is the wipe.
+   *
+   * It opens while the circle is growing and shuts as it reaches the corners,
+   * which is the same shape the light makes — so the sound is not an
+   * accompaniment to the animation, it is the animation's own curve played on
+   * a different instrument.
+   */
+  const tone = ctx.createBiquadFilter();
+  tone.type = 'lowpass';
+  tone.Q.value = 0.7;
+  tone.frequency.setValueAtTime(320, t);
+  tone.frequency.linearRampToValueAtTime(1750, t + dur * 0.42);
+  tone.frequency.linearRampToValueAtTime(420, t + dur);
+
+  // And a highpass, so none of it lands in the range a voice would occupy.
+  const thin = ctx.createBiquadFilter();
+  thin.type = 'highpass';
+  thin.frequency.value = 240;
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.linearRampToValueAtTime(level, t + 0.08);
+  gain.gain.linearRampToValueAtTime(level * 0.72, t + dur * 0.55);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+
+  src.connect(thin).connect(tone).connect(gain).connect(ctx.destination);
+  src.start(t);
+  src.stop(t + dur + 0.05);
+}
+
+/**
  * The real thing: a crack and a roll behind it.
  *
  * spark() is a tick — right for a character arriving and for the small
