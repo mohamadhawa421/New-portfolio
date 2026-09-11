@@ -689,6 +689,20 @@ figure {
    */
   --dm-bend-crest: color-mix(in srgb, var(--dm-core) 26%, transparent);
   --dm-bend-trough: color-mix(in srgb, var(--dm-deep) 30%, transparent);
+  /*
+   * How the glitch and the shards are mixed into the page, which is the same
+   * problem the crest and the trough above have and has the same answer.
+   *
+   * `screen` can only lighten. On the near-black themes that is exactly right
+   * — the rift is light leaking through a break and the shards are light being
+   * split, and both should add. On the light theme it is not a weaker effect,
+   * it is no effect at all: screen against #ffffff is #ffffff whatever is on
+   * top of it, so the rift disappeared completely and the shards came out as
+   * pastels. Multiply is the same statement the other way up, and it is what
+   * the trough already does four lines above: on a white page the only way to
+   * show something is to take light away.
+   */
+  --dm-cut-blend: multiply;
   /* The rings. Faint enough to be texture rather than a diagram. */
   --dm-bend-line: color-mix(in srgb, var(--dm-deep) 32%, transparent);
   /*
@@ -1321,6 +1335,7 @@ figure {
   --dm-bend-line: color-mix(in srgb, var(--dm-arc) 40%, transparent);
   --dm-scar-dark: color-mix(in srgb, #000 24%, transparent);
   --dm-scar-light: color-mix(in srgb, var(--dm-core) 26%, transparent);
+  --dm-cut-blend: screen;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1330,6 +1345,7 @@ figure {
     --dm-bend-line: color-mix(in srgb, var(--dm-arc) 40%, transparent);
   --dm-scar-dark: color-mix(in srgb, #000 24%, transparent);
   --dm-scar-light: color-mix(in srgb, var(--dm-core) 26%, transparent);
+  --dm-cut-blend: screen;
   }
 }
 
@@ -1354,6 +1370,7 @@ figure {
   --dm-bend-line: color-mix(in srgb, var(--dm-arc) 46%, transparent);
   --dm-scar-dark: color-mix(in srgb, #10002a 28%, transparent);
   --dm-scar-light: color-mix(in srgb, var(--dm-arc) 28%, transparent);
+  --dm-cut-blend: screen;
 }
 
 /*

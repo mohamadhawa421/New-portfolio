@@ -1892,6 +1892,40 @@ export function run(options: DesignerModeOptions): Beat {
    */
   after(timed.landed, () => {
     returning.push(...resettle(character, (strength) => onFault?.(strength)));
+
+    /*
+     * And the light that got in comes apart on its way back out.
+     *
+     * On the same frame as the settle glitch, not after it: they are one beat
+     * seen two ways — the signal failing, and what the signal was carrying.
+     * Giving the prism its own moment was tried first and reads as a second
+     * ending, which this sequence cannot afford at seven and a half seconds.
+     *
+     * The class is removed rather than left, because the layer is a blend mode
+     * over the whole viewport and anything that stays composited there is a
+     * cost the page keeps paying for an effect that is over.
+     *
+     * Taken off the animation's own end rather than on a timer, and that is
+     * not tidiness. The first version scheduled the removal through `after`,
+     * which is the storm's scheduler — and `teardown` clears everything still
+     * pending on it. Measured: the shards start at 7447ms and the clear was
+     * due at 8146, and teardown came through at about 7.9s and cancelled it.
+     * So the class was never removed, and a full-viewport blend layer with
+     * fourteen `will-change` children stayed composited for the rest of the
+     * visit, which is the exact cost this removal exists to avoid. The
+     * animation knows when it is finished; nothing else has to.
+     */
+    const prism = document.querySelector<HTMLElement>('[data-egg-prism]');
+    if (prism) {
+      const done = (): void => prism.classList.remove('is-breaking');
+      prism.classList.remove('is-breaking');
+      void prism.offsetWidth;
+      prism.addEventListener('animationend', done, { once: true });
+      // Cancelled rather than finished — a second click restarting it, or a
+      // teardown pulling the page apart underneath it. Same cleanup either way.
+      prism.addEventListener('animationcancel', done, { once: true });
+      prism.classList.add('is-breaking');
+    }
   });
 
   after(timed.landed + SETTLE_MS + 40, () => {
@@ -2874,6 +2908,7 @@ const SETTLE_SPREAD = 110;
  * a number written down here would be wrong the first time TEAR_MS moved.
  */
 const SETTLE_MS = SETTLE_SPREAD + 40 + TEAR_MS;
+
 
 /**
  * The screen not quite over it.

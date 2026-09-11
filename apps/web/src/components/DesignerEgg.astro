@@ -35,6 +35,10 @@ import EggSound from './EggSound.astro';
     and the only layer here that is not itself the wave. */}
 {/* What the crossing left behind: a displaced highlight that lingers a
     fraction of a second where the pressure has already been, and is gone. */}
+{/* The break in the signal, carried on the front itself rather than left
+    behind it. Same keyframes as the bend below, so it is not a second event
+    travelling at a similar speed — it is the same ridge, drawn as damage. */}
+<div class="rift" data-egg-rift aria-hidden="true"></div>
 <div class="scar" data-egg-scar aria-hidden="true"></div>
 <div class="bend" data-egg-bend aria-hidden="true"></div>
 <div class="shock" data-egg-shock aria-hidden="true"></div>
@@ -42,6 +46,15 @@ import EggSound from './EggSound.astro';
 <div class="ring ring--trail" data-egg-ring-trail aria-hidden="true"></div>
 <div class="wash" data-egg-wash aria-hidden="true"></div>
 <canvas class="dm-field" data-egg-field aria-hidden="true"></canvas>
+
+{/* The last beat: light coming apart through the break, for half a second,
+    once the page is already back. Fourteen slivers around the edges of the
+    frame — see the note in the stylesheet for why they are this narrow, this
+    few, and nowhere near the middle. */}
+<div class="prism" data-egg-prism aria-hidden="true">
+  <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+  <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+</div>
 
 {/*
   The screen coming apart, defined once.
@@ -270,6 +283,7 @@ import EggSound from './EggSound.astro';
     const shock = document.querySelector<HTMLElement>('[data-egg-shock]');
     const bend = document.querySelector<HTMLElement>('[data-egg-bend]');
     const scar = document.querySelector<HTMLElement>('[data-egg-scar]');
+    const rift = document.querySelector<HTMLElement>('[data-egg-rift]');
     const field = document.querySelector<HTMLCanvasElement>('[data-egg-field]');
     const trigger = document.querySelector<HTMLElement>('[data-egg-trigger]');
     const toggle = document.querySelector<HTMLButtonElement>('[data-egg-sound]');
@@ -293,7 +307,7 @@ import EggSound from './EggSound.astro';
       root.style.setProperty('--dm-fx', `${originX}px`);
       root.style.setProperty('--dm-fy', `${originY}px`);
 
-      for (const el of [ring!, trail!, wash!, flash!, shock!, bend!, scar!]) {
+      for (const el of [ring!, trail!, wash!, flash!, shock!, bend!, scar!, rift!]) {
         el.style.setProperty('--egg-x', `${originX}px`);
         el.style.setProperty('--egg-y', `${originY}px`);
         el.style.setProperty('--egg-reach', `${Math.ceil(reach)}px`);
@@ -1109,9 +1123,189 @@ import EggSound from './EggSound.astro';
     }
   }
 
+  /*
+   * The glitch, riding the ridge instead of following it.
+   *
+   * The per-element tears in `designer-mode.ts` fire when the blast reaches
+   * each element, and measured against the bend sheet that puts every one of
+   * them in the last third of the crossing: the ridge leaves at 22ms and is
+   * gone by 642, and the first torn element does not break until 393. So the
+   * front crossed most of the page cleanly and the damage arrived behind it,
+   * which is why the only glitch anybody could see was the one at the end,
+   * where the page is finally still enough to read it.
+   *
+   * This is the missing half, and it is deliberately not more per-element
+   * tears — forty of those is forty more offscreen passes on the frames that
+   * are already the most expensive in the sequence. It is one layer wearing
+   * the bend's own keyframes, so it is the same front by construction and
+   * cannot drift from it, and what makes it damage rather than decoration is
+   * the blend: the stripes are screened over whatever is underneath, so every
+   * element the ridge passes over is pulled apart into colour for as long as
+   * the ridge is on it, and is clean again the moment it has gone by.
+   */
+  .rift {
+    /*
+     * The magenta channel, and only that one.
+     *
+     * The first version put both colours on this element as two concentric
+     * radial gradients, and concentric is the whole problem: two rings at the
+     * same centre and nearly the same radius simply mix, and what arrived on
+     * screen was one smooth violet glow travelling outward — a light effect,
+     * and rather a pretty one, which is the opposite of what this is for.
+     *
+     * Channel separation only reads when the channels are somewhere different.
+     * So the red end is here, the blue end is on `::before` shifted sideways
+     * off it, and the gap between them is the effect. The stops are hard on
+     * purpose too: a band that ramps over 18% of the radius is a glow, and the
+     * same band over 6% is an edge.
+     */
+    background: radial-gradient(
+      circle,
+      transparent 79%,
+      color-mix(in srgb, #ff0090 78%, transparent) 83%,
+      color-mix(in srgb, #ff0090 88%, transparent) 86%,
+      transparent 89%
+    );
+    /*
+     * Mixed into the page rather than laid on top of it, which is what makes
+     * this damage to the elements instead of a ribbon passing over them.
+     *
+     * The mode has to change with the theme and the token carries that — see
+     * `--dm-cut-blend` in global.css. `difference` was tried as one value for
+     * both and is the wrong effect in either: it inverts, so the ridge reads
+     * as a hole punched in the page rather than as interference crossing it.
+     */
+    mix-blend-mode: var(--dm-cut-blend, screen);
+    opacity: 0;
+  }
+
+  /*
+   * The blue channel, pushed off the red one.
+   *
+   * Sideways rather than outward: a pressure front crossing the page is
+   * travelling horizontally where it meets most of the layout, and a signal
+   * breaking under it tears along that direction — which is the same reasoning
+   * the per-element tears in `designer-mode.ts` use for displacing purely on
+   * x. The shift is a share of the reach rather than a fixed number of pixels,
+   * so the separation is the same fraction of the band on a phone and on a
+   * monitor instead of vanishing on one of them.
+   */
+  .rift::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    translate: max(3px, calc(var(--egg-reach, 600px) * 0.012)) 0;
+    background: radial-gradient(
+      circle,
+      transparent 79%,
+      color-mix(in srgb, #00e5ff 72%, transparent) 83%,
+      color-mix(in srgb, #00e5ff 82%, transparent) 86%,
+      transparent 89%
+    );
+  }
+
+  /*
+   * The scan breakup, and why it is a separate layer again.
+   *
+   * The two channels above are continuous and this is not: horizontal lines,
+   * hard edged, with more gap than line. Keeping them apart means the
+   * separation can sit on the whole band while the breakup only cuts part of
+   * it, which is the difference between a band of colour and a band of broken
+   * signal.
+   *
+   * The pitch is a share of the reach for the same reason the front's edge is,
+   * and it is deliberately coarse: at one pixel in seven the lines disappeared
+   * into the glow entirely — they have to be thick enough to be seen cutting
+   * the band rather than shading it.
+   */
+  .rift::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: repeating-linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--dm-arc) 82%, transparent) 0
+        max(2px, calc(var(--egg-reach, 600px) * 0.005)),
+      transparent max(2px, calc(var(--egg-reach, 600px) * 0.005))
+        max(9px, calc(var(--egg-reach, 600px) * 0.0145))
+    );
+    /* Only on the band, and with edges as hard as the band's own. */
+    -webkit-mask-image: radial-gradient(circle, transparent 78%, #000 82%, #000 87%, transparent 90%);
+    mask-image: radial-gradient(circle, transparent 78%, #000 82%, #000 87%, transparent 90%);
+  }
+
+  /*
+   * The bend's keyframes, not a copy of them.
+   *
+   * `egg-bend` is shared rather than duplicated so the two cannot be retimed
+   * apart by somebody editing one of them — the whole point of this layer is
+   * that it is the same ridge. Only the flicker is its own, and it runs on a
+   * step timing function: a glitch that eases is a dissolve, which is the
+   * same reason the per-element tears are timers writing discrete values
+   * rather than an interpolation.
+   */
+  .rift.is-rippling {
+    animation:
+      egg-bend 620ms linear both,
+      egg-rift-flicker 620ms steps(1, end) both;
+  }
+
+  /*
+   * On for two frames, off for one, and never fully on.
+   *
+   * A band at a steady opacity reads as a coloured ring, which is a thing the
+   * page would look like it meant. Cutting it in and out at an irregular rate
+   * is what makes it a fault, and the irregularity matters more than the
+   * depth — the values here are low throughout and the effect still reads,
+   * because the eye is catching the interruption rather than the colour.
+   */
+  @keyframes egg-rift-flicker {
+    0%,
+    12% {
+      opacity: 0;
+    }
+    13% {
+      opacity: 0.85;
+    }
+    22% {
+      opacity: 0.3;
+    }
+    27% {
+      opacity: 0.95;
+    }
+    38% {
+      opacity: 0.45;
+    }
+    44% {
+      opacity: 0.9;
+    }
+    56% {
+      opacity: 0.25;
+    }
+    61% {
+      opacity: 0.8;
+    }
+    72% {
+      opacity: 0.4;
+    }
+    79% {
+      opacity: 0.7;
+    }
+    88% {
+      opacity: 0.22;
+    }
+    94%,
+    100% {
+      opacity: 0;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .bend.is-rippling,
-    .scar.is-rippling {
+    .scar.is-rippling,
+    .rift.is-rippling {
       animation-duration: 0.001ms;
     }
   }
@@ -1165,7 +1359,8 @@ import EggSound from './EggSound.astro';
   .shock,
   .wash,
   .bend,
-  .scar {
+  .scar,
+  .rift {
     position: fixed;
     left: var(--egg-x, 50%);
     top: var(--egg-y, 50%);
@@ -1299,6 +1494,344 @@ import EggSound from './EggSound.astro';
     100% {
       opacity: 0;
       transform: scale(1.5);
+    }
+  }
+
+  /*
+   * What the screen refracts on its way back.
+   *
+   * The settle glitch says the display is still recovering; this says what it
+   * is recovering *from*. It is the one moment in the sequence that is allowed
+   * to look like nothing else on the site — no purple gradient, no accent, no
+   * rounded anything — because it is not the site, it is what got in.
+   *
+   * Restraint is the whole design. The reference for this is a full frame of
+   * shattered colour, and a full frame of it here would be a screensaver: the
+   * page has just been put back together and covering it in shards would undo
+   * that in the last half second. So there are fourteen of them, none wider
+   * than a ninth of the screen, they are screened rather than painted over,
+   * they keep out of the middle of the frame where the portrait and the
+   * headline are, and the longest lives 620ms. What survives the reduction is the part that matters —
+   * saturated spectral colour at hard angles, which is a different visual
+   * language from anything else here and reads as light being split rather
+   * than as a brand colour being used.
+   *
+   * Fixed, not a random scatter, for the same reason the tear cap is a number:
+   * a random field has to be generated on the frame it appears, and this
+   * appears at `landed`, which is the frame the whole page is finishing its
+   * return. These are static clip paths the compositor has had since load, and
+   * all that happens at that moment is opacity and transform.
+   */
+  .prism {
+    position: fixed;
+    inset: 0;
+    z-index: 9991;
+    pointer-events: none;
+    opacity: 0;
+    overflow: hidden;
+    /*
+     * The dark violet ground the shards are cut out of.
+     *
+     * Barely there — it exists so the colour has something to be bright
+     * against rather than sitting directly on the page's own white or black,
+     * which made the same shards read as stickers on the light theme.
+     */
+    background: radial-gradient(
+      ellipse 130% 100% at 50% 50%,
+      transparent 34%,
+      color-mix(in srgb, #2a0a4a 20%, transparent) 78%,
+      color-mix(in srgb, #2a0a4a 34%, transparent)
+    );
+  }
+
+  .prism i {
+    position: absolute;
+    display: block;
+    /* Each one is a flat facet catching a different part of the spectrum,
+       mixed the way the theme needs it — see `--dm-cut-blend`. On white,
+       screened shards came out as pastel confetti. */
+    mix-blend-mode: var(--dm-cut-blend, screen);
+    opacity: 0;
+  }
+
+  /*
+   * Fourteen slivers: position, shape, colour and angle.
+   *
+   * This took three goes and both failures are worth keeping, because they are
+   * the two obvious ways to draw this and neither of them is broken glass.
+   *
+   * The first was nine broad quadrilaterals, and on screen they were nine
+   * tilted squares of soft colour lying across the headline and across his
+   * face — wallpaper, and wallpaper that hid the page at the exact moment the
+   * page had finished being put back.
+   *
+   * The second fixed the size and the placement and still read as confetti,
+   * because every polygon was symmetrical: four points, each near the middle
+   * of an edge, which is the construction for a diamond. Fourteen diamonds
+   * evenly spaced around a frame is a pattern, and a pattern is the one thing
+   * a fracture is not.
+   *
+   * So the angle is baked into the outline rather than applied to the box. No
+   * two of these share a slant, the long axis of each one runs off-vertical by
+   * a different amount, and the four points are deliberately uneven — one end
+   * comes to a needle and the other is cut square, which is what a piece
+   * broken off something actually looks like. Doing it in the polygon rather
+   * than in a `rotate()` also keeps the transform free for the animation,
+   * which is already using it.
+   *
+   * Being small is what lets them be saturated. Spread over a quarter of the
+   * screen a strong colour has to come down to 0.2 to stay out of the way, at
+   * which point it is a grey-violet smear; concentrated into a sliver it keeps
+   * its own colour and still covers almost nothing.
+   *
+   * Percentages throughout, so the set is the same composition on a phone and
+   * on a monitor rather than fourteen shards huddled in a corner of one of
+   * them. They are pushed out towards the edges and the corners, and there is
+   * deliberately a hole in the middle of the frame: the centre is where the
+   * portrait and the headline are, and the one thing this must not do is
+   * arrive at the end of the story and cover the person it is about.
+   */
+  .prism i:nth-child(1) {
+    left: 2%;
+    top: 12%;
+    width: 7%;
+    height: 34%;
+    background: linear-gradient(160deg, #ff0090, #ff6a00);
+    clip-path: polygon(52% 0, 66% 14%, 40% 100%, 30% 74%);
+  }
+  .prism i:nth-child(2) {
+    left: 12%;
+    top: 50%;
+    width: 6%;
+    height: 30%;
+    background: linear-gradient(28deg, #00ffa3, #00b7ff);
+    clip-path: polygon(38% 0, 56% 22%, 62% 100%, 44% 66%);
+  }
+  .prism i:nth-child(3) {
+    left: 23%;
+    top: 3%;
+    width: 4%;
+    height: 24%;
+    background: linear-gradient(196deg, #b400ff, #ff00c8);
+    clip-path: polygon(60% 0, 72% 30%, 34% 100%, 26% 52%);
+  }
+  .prism i:nth-child(4) {
+    left: 5%;
+    top: 72%;
+    width: 5%;
+    height: 24%;
+    background: linear-gradient(96deg, #00e5ff, #7cff00);
+    clip-path: polygon(42% 0, 62% 20%, 56% 100%, 34% 72%);
+  }
+  .prism i:nth-child(5) {
+    left: 87%;
+    top: 8%;
+    width: 6%;
+    height: 30%;
+    background: linear-gradient(148deg, #ffd400, #ff1f6b);
+    clip-path: polygon(30% 0, 48% 18%, 70% 100%, 48% 78%);
+  }
+  .prism i:nth-child(6) {
+    left: 79%;
+    top: 56%;
+    width: 8%;
+    height: 34%;
+    background: linear-gradient(16deg, #ff00c8, #6a00ff);
+    clip-path: polygon(44% 0, 64% 26%, 38% 100%, 22% 62%);
+  }
+  .prism i:nth-child(7) {
+    left: 93%;
+    top: 42%;
+    width: 5%;
+    height: 26%;
+    background: linear-gradient(70deg, #00b7ff, #b400ff);
+    clip-path: polygon(34% 0, 54% 20%, 66% 100%, 46% 72%);
+  }
+  .prism i:nth-child(8) {
+    left: 67%;
+    top: 78%;
+    width: 4%;
+    height: 18%;
+    background: linear-gradient(236deg, #7cff00, #00ffa3);
+    clip-path: polygon(34% 0, 56% 26%, 62% 100%, 40% 66%);
+  }
+  .prism i:nth-child(9) {
+    left: 45%;
+    top: 1%;
+    width: 5%;
+    height: 18%;
+    background: linear-gradient(306deg, #ff6a00, #ffd400);
+    clip-path: polygon(48% 0, 68% 26%, 42% 100%, 28% 58%);
+  }
+  .prism i:nth-child(10) {
+    left: 34%;
+    top: 85%;
+    width: 5%;
+    height: 14%;
+    background: linear-gradient(124deg, #ff1f6b, #b400ff);
+    clip-path: polygon(36% 0, 58% 24%, 64% 100%, 40% 70%);
+  }
+  .prism i:nth-child(11) {
+    left: 61%;
+    top: 6%;
+    width: 3%;
+    height: 21%;
+    background: linear-gradient(210deg, #00e5ff, #ff00c8);
+    clip-path: polygon(56% 0, 74% 34%, 38% 100%, 22% 48%);
+  }
+  .prism i:nth-child(12) {
+    left: 17%;
+    top: 30%;
+    width: 3%;
+    height: 17%;
+    background: linear-gradient(44deg, #ffd400, #7cff00);
+    clip-path: polygon(40% 0, 60% 18%, 54% 100%, 32% 74%);
+  }
+  .prism i:nth-child(13) {
+    left: 83%;
+    top: 28%;
+    width: 4%;
+    height: 13%;
+    background: linear-gradient(268deg, #6a00ff, #00b7ff);
+    clip-path: polygon(30% 0, 52% 22%, 68% 100%, 44% 68%);
+  }
+  .prism i:nth-child(14) {
+    left: 51%;
+    top: 84%;
+    width: 4%;
+    height: 14%;
+    background: linear-gradient(12deg, #ff0090, #ffd400);
+    clip-path: polygon(50% 0, 70% 28%, 40% 100%, 26% 56%);
+  }
+
+  /*
+   * The break itself.
+   *
+   * The container cuts in hard and leaves slowly, and the shards inside it
+   * each arrive on their own few-frame stagger — so the frame does not light
+   * up as one piece, which would be a flash rather than a fracture. They move
+   * a little as they go, outward and turning a degree or two, because light
+   * through a moving crack does not hold still.
+   */
+  .prism.is-breaking {
+    animation: egg-prism 620ms steps(1, end) both;
+  }
+
+  /*
+   * `will-change` belongs to the half second these are moving and to nothing
+   * else. On the base rule it promoted fourteen elements to their own layers
+   * for the whole visit, to pay for an animation that runs once and lasts
+   * 560ms — which is the thing `will-change` is specifically documented not to
+   * be used for. Here it arrives with the class and leaves with it.
+   */
+  .prism.is-breaking i {
+    will-change: transform, opacity;
+    animation: egg-shard 560ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  }
+
+  .prism.is-breaking i:nth-child(2) {
+    animation-delay: 26ms;
+  }
+  .prism.is-breaking i:nth-child(3) {
+    animation-delay: 12ms;
+  }
+  .prism.is-breaking i:nth-child(4) {
+    animation-delay: 40ms;
+  }
+  .prism.is-breaking i:nth-child(5) {
+    animation-delay: 18ms;
+  }
+  .prism.is-breaking i:nth-child(6) {
+    animation-delay: 54ms;
+  }
+  .prism.is-breaking i:nth-child(7) {
+    animation-delay: 32ms;
+  }
+  .prism.is-breaking i:nth-child(8) {
+    animation-delay: 62ms;
+  }
+  .prism.is-breaking i:nth-child(9) {
+    animation-delay: 8ms;
+  }
+  .prism.is-breaking i:nth-child(10) {
+    animation-delay: 46ms;
+  }
+  .prism.is-breaking i:nth-child(11) {
+    animation-delay: 20ms;
+  }
+  .prism.is-breaking i:nth-child(12) {
+    animation-delay: 58ms;
+  }
+  .prism.is-breaking i:nth-child(13) {
+    animation-delay: 36ms;
+  }
+  .prism.is-breaking i:nth-child(14) {
+    animation-delay: 14ms;
+  }
+
+  /*
+   * Stepped, so the ground behind the shards cuts rather than fades — the fade
+   * belongs to the shards, and a container fading underneath them turned the
+   * whole thing into a soft violet bloom.
+   */
+  @keyframes egg-prism {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    4%,
+    62% {
+      opacity: 1;
+    }
+    74% {
+      opacity: 0.6;
+    }
+    88% {
+      opacity: 0.25;
+    }
+  }
+
+  @keyframes egg-shard {
+    0% {
+      opacity: 0;
+      transform: translate3d(0, 0, 0) scale(0.82) rotate(-2deg);
+    }
+    /* In on one frame. It is a fracture, so there is no arrival. */
+    6% {
+      opacity: 0.62;
+      transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+    }
+    40% {
+      opacity: 0.5;
+    }
+    /* And out, drifting off the centre it was cut from. */
+    100% {
+      opacity: 0;
+      transform: translate3d(0, -1.5%, 0) scale(1.1) rotate(1.5deg);
+    }
+  }
+
+  /*
+   * Asked for less of exactly this.
+   *
+   * Not removed — the beat is part of the story and cutting it would leave the
+   * sequence ending on nothing. The shards hold still and only the colour comes
+   * and goes, which is the quiet variant every other effect here has.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .prism.is-breaking i {
+      animation: egg-shard-quiet 380ms linear both;
+    }
+
+    @keyframes egg-shard-quiet {
+      0%,
+      100% {
+        opacity: 0;
+      }
+      30%,
+      60% {
+        opacity: 0.18;
+      }
     }
   }
 </style>
