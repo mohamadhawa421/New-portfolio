@@ -1,0 +1,552 @@
+---
+/**
+ * Selected work, as an index with one picture.
+ *
+ * This replaced a large featured tile above four small rows, and the reason
+ * was not the layout — it was what the pictures were of. Every cover in this
+ * CMS is the client's brand mark on a field of their colour, so the biggest
+ * element in the section was 1240x698 pixels of flat green with a wordmark in
+ * it: maximum area, almost no information. The eye reads that as decoration
+ * and moves on, which is exactly what the section was accused of. Meanwhile
+ * every project already carries an `approachShot` — real screens, real work —
+ * and the home page was not using any of them.
+ *
+ * So: the logos go, the work arrives, and the five projects share one frame
+ * instead of one project getting a poster and four getting footnotes.
+ *
+ * ────────────────────────────────────────────────────────────────────────
+ * Two layouts, and only one of them has a preview
+ * ────────────────────────────────────────────────────────────────────────
+ * Wide: a column of five rows beside a sticky frame. The frame shows whichever
+ * row is active, and a row becomes active by being pointed at, focused, or
+ * simply being the one at reading height as the page scrolls. Scroll is what
+ * makes this work rather than hover alone — it means the picture changes five
+ * times for somebody who never moves the mouse, which is the whole point of
+ * making the section harder to pass through.
+ *
+ * Narrow: no preview at all. A sticky picture column cannot fit beside
+ * anything on a phone, and there is no pointer to drive it, so each row simply
+ * carries its own picture. Same information, no mechanism.
+ *
+ * ────────────────────────────────────────────────────────────────────────
+ * The morph, which must not break
+ * ────────────────────────────────────────────────────────────────────────
+ * `chrome.ts` resolves the shared-element transition by slug at navigation
+ * time — `[data-morph][data-slug="kanz"]` — not from whatever was clicked. Two
+ * elements answering to the same slug would be given the same
+ * `view-transition-name`, and a duplicate name makes the browser drop the
+ * transition entirely.
+ *
+ * Both layouts therefore contain a candidate, and `work-index.ts` hands
+ * `data-morph` to exactly one of them for the viewport in play: the sticky
+ * frame when there is one, the row's own picture when there is not. On a wide
+ * screen the frame is already showing the project you are about to open,
+ * because pointing at the row is what put it there — so the thing that flies
+ * into the case study is the thing you were looking at.
+ */
+import type { Project } from '../lib/types';
+
+interface Props {
+  projects: Project[];
+}
+
+const { projects } = Astro.props;
+---
+
+<div class="index" data-work-index>
+  <ol class="index__list">
+    {
+      projects.map((project, i) => (
+        <li class="index__item">
+          <a
+            class="index__row"
+            href={`/work/${project.slug}`}
+            data-work-row
+            data-slug={project.slug}
+            data-i={String(i)}
+            data-reveal={String(i)}
+          >
+            <span class="index__num" aria-hidden="true">
+              {project.num}
+            </span>
+
+            <span class="index__text">
+              <span class="index__title">{project.title}</span>
+              <span class="index__tag">{project.discipline}</span>
+            </span>
+
+            {/*
+              The narrow layout's picture, and its morph anchor. Hidden on a
+              wide screen, where the sticky frame does this job instead.
+            */}
+            <span class="index__inline" data-work-inline data-slug={project.slug}>
+              {project.approachShot ? (
+                <img
+                  src={project.approachShot.url}
+                  alt=""
+                  width={project.approachShot.width}
+                  height={project.approachShot.height}
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <span class="index__initials" style={`color:${project.chipInk}`}>
+                  {project.initials}
+                </span>
+              )}
+            </span>
+
+            <span class="index__chev" aria-hidden="true">
+              ›
+            </span>
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+
+  {/*
+    The frame, and all five pictures inside it at once.
+
+    Stacked rather than one <img> with its `src` swapped: swapping the source
+    blanks the frame for however long the new file takes to decode, and the
+    change is supposed to be one movement. Five real elements cost five
+    requests the browser schedules itself, and the crossfade is then pure
+    opacity and transform with nothing to wait for.
+
+    `aria-hidden`, because it is a picture of whatever the list already says
+    in words. A screen reader walking the five links should not also meet five
+    unlabelled images of them.
+  */}
+  <div class="index__preview" data-work-preview aria-hidden="true">
+    <div class="index__stack">
+      {
+        projects.map((project, i) => (
+          <figure
+            class="index__frame"
+            data-work-frame
+            data-i={String(i)}
+            data-slug={project.slug}
+            data-active={i === 0 ? 'yes' : 'no'}
+            style={project.approachShot ? undefined : `background:${project.chipBg}`}
+          >
+            {project.approachShot ? (
+              <img
+                src={project.approachShot.url}
+                alt=""
+                width={project.approachShot.width}
+                height={project.approachShot.height}
+                loading="lazy"
+                decoding="async"
+                fetchpriority={i === 0 ? 'high' : 'low'}
+              />
+            ) : (
+              <span class="index__initials" style={`color:${project.chipInk}`}>
+                {project.initials}
+              </span>
+            )}
+          </figure>
+        ))
+      }
+    </div>
+
+    {/*
+      The caption belongs to the frame rather than to the row, so the picture
+      is never an unlabelled rectangle. It carries the project's own words
+      about the shot where there are any.
+    */}
+    <figcaption class="index__caption" data-work-caption>
+      {projects.map((project, i) => (
+        <span class="index__cap" data-i={String(i)} data-active={i === 0 ? 'yes' : 'no'}>
+          {project.approachCaption || project.summary}
+        </span>
+      ))}
+    </figcaption>
+  </div>
+</div>
+
+<script>
+  import { bindWorkIndex } from '../scripts/work-index';
+
+  /*
+   * Bound once for the life of the tab. Every listener inside is on
+   * `document` or on `window`, which the router never replaces.
+   */
+  if (!(window as unknown as { __mhWorkIndex?: boolean }).__mhWorkIndex) {
+    (window as unknown as { __mhWorkIndex?: boolean }).__mhWorkIndex = true;
+    bindWorkIndex();
+  }
+</script>
+
+<style>
+  /* ------------------------------------------------------------------ */
+  /* The two columns                                                     */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * List left, picture right, and the picture is the wider of the two.
+   *
+   * The old section gave the image the full column width and the text
+   * underneath it, which is a poster with a caption. Setting them side by
+   * side is what lets the heading, the five projects and the work all be on
+   * screen at once — the thing that was impossible before, when a full
+   * viewport of image sat between the heading and the first row.
+   */
+  .index {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+    gap: clamp(28px, 4vw, 72px);
+    align-items: start;
+  }
+
+  .index__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    /* No top rule. The masthead above already closes with one, and a second
+       hairline a few pixels under it reads as a mistake rather than as a
+       table edge. The rows carry their own bottom rules from here down. */
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* A row                                                               */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * The item is the full width of the column, so the highlight is too.
+   *
+   * The link shrank to the project so the pointer would only answer over
+   * something real — but the *feedback* should not shrink with it. A fill
+   * that hugged the title read as a floating chip rather than as a row
+   * being picked out of a list. So the trigger stays narrow and the mark it
+   * makes stays wide: the fill lives on the item, which never shrank.
+   */
+  .index__item {
+    position: relative;
+    border-bottom: 1px solid var(--line);
+    isolation: isolate;
+  }
+
+  .index__item::before {
+    content: '';
+    position: absolute;
+    inset: 0 calc(-1 * clamp(6px, 0.8vw, 12px));
+    border-radius: var(--r-sm);
+    background: var(--surface-row-hover);
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 320ms var(--ease-glide);
+  }
+
+  .index__item[data-active='yes']::before {
+    opacity: 1;
+  }
+
+  /*
+   * The whole row is the target, and the whole row is the mark.
+   *
+   * A narrower link was tried while chasing a bug where rows lit up for no
+   * reason. That turned out to be the wheel — the browser fires boundary
+   * events at every row that slides under a parked cursor — and shrinking
+   * the target was treating a symptom. With the real cause fixed in
+   * `work-index.ts`, the row goes back to being the whole entry: a bigger
+   * thing to point at, a bigger thing to press, and a highlight that reads
+   * as a row being picked out of a list rather than a chip floating in one.
+   */
+  .index__row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: clamp(14px, 1.8vw, 26px);
+    padding: clamp(18px, 2.6vh, 30px) clamp(6px, 0.8vw, 12px);
+    color: inherit;
+    text-decoration: none;
+    position: relative;
+  }
+
+  /*
+   * The number, which is the thing that makes this an index.
+   *
+   * Tabular figures so 01 through 05 occupy identical width and the titles
+   * start on one line — proportional digits would shuffle them by a pixel or
+   * two each and the column edge would wobble.
+   */
+  .index__num {
+    font-size: clamp(12px, 1.05vw, 14px);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+    transition:
+      color 320ms var(--ease-glide),
+      opacity 320ms var(--ease-glide);
+    opacity: 0.7;
+  }
+
+  .index__row[data-active='yes'] .index__num {
+    color: var(--blue);
+    opacity: 1;
+  }
+
+  .index__text {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  /*
+   * The title carries the weight the summaries used to spend.
+   *
+   * Four rows of 150-200 character summaries was around seven hundred
+   * characters of body copy at row scale, which reads as grey texture rather
+   * than as prose — and the picture beside it now says what they were saying.
+   * What is left is the name and the discipline.
+   */
+  .index__title {
+    font-size: clamp(21px, 2.3vw, 32px);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    /* Shifted, not scaled: scaling text re-rasterises it, translating does
+       not, and a couple of pixels toward the picture is all this needs. */
+    transition: translate 380ms var(--ease-glide);
+  }
+
+  .index__row[data-active='yes'] .index__title {
+    translate: 6px 0;
+  }
+
+  .index__tag {
+    font-size: clamp(12px, 1.1vw, 14px);
+    color: var(--ink-muted);
+    letter-spacing: -0.005em;
+  }
+
+  .index__chev {
+    font-size: 20px;
+    line-height: 1;
+    color: var(--ink-faint);
+    opacity: 0;
+    translate: -6px 0;
+    transition:
+      opacity 320ms var(--ease-glide),
+      translate 380ms var(--ease-glide);
+  }
+
+  .index__row[data-active='yes'] .index__chev {
+    opacity: 1;
+    translate: 0 0;
+    color: var(--blue);
+  }
+
+  /* The inline picture is the narrow layout's business only. */
+  .index__inline {
+    display: none;
+  }
+
+  .index__initials {
+    font-size: clamp(18px, 2vw, 28px);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The frame                                                           */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * Sticky rather than pinned.
+   *
+   * `position: sticky` keeps the picture in view while the list moves past
+   * it and then releases it at the end of the section, which is the browser
+   * doing the work on the compositor. The alternative — listening to scroll
+   * and translating the frame — is the same effect reimplemented worse, and
+   * it is the sort of thing that reads as scroll-jacking the moment it lags.
+   * Nothing here takes the scroll away from the visitor.
+   */
+  .index__preview {
+    position: sticky;
+    top: clamp(90px, 14vh, 132px);
+    margin: 0;
+  }
+
+  .index__stack {
+    position: relative;
+    aspect-ratio: 16 / 11;
+    border-radius: var(--r-2xl);
+    overflow: hidden;
+    background: var(--surface-parchment);
+    /* Its own stacking context, so the five frames inside cannot interleave
+       with anything on the page. */
+    isolation: isolate;
+  }
+
+  .index__frame {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    /*
+     * The stack already clips to this radius, so visually this changes
+     * nothing — but `recordMorphRadius` reads the *named* element's own
+     * corner to interpolate the morph, and a frame reporting 0 would make
+     * the cover square itself off on the way out and round again on arrival.
+     */
+    border-radius: var(--r-2xl);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    /*
+     * The resting state of a frame that is not showing, and the far end of
+     * the movement for one that is leaving. Written here rather than in the
+     * keyframes because the script animates with no `fill` — so this rule is
+     * what the element is between changes, and there is nothing to clean up.
+     */
+    transform: translate3d(0, 0, 0);
+  }
+
+  .index__frame[data-active='yes'] {
+    opacity: 1;
+  }
+
+  .index__frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /*
+   * The caption, one line, holding its own height.
+   *
+   * Grid-stacked rather than absolutely positioned so the tallest caption
+   * reserves the space for all of them — otherwise the frame would move up
+   * and down as the text changed length, which is a layout shift on every
+   * hover.
+   */
+  .index__caption {
+    display: grid;
+    margin-top: clamp(12px, 1.6vh, 18px);
+    padding-inline: 2px;
+  }
+
+  .index__cap {
+    grid-area: 1 / 1;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+    opacity: 0;
+    transition: opacity 260ms var(--ease-glide);
+  }
+
+  .index__cap[data-active='yes'] {
+    opacity: 1;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Pointer and keyboard                                                */
+  /* ------------------------------------------------------------------ */
+
+  :global(:root.has-custom-cursor) .index__row {
+    cursor: none;
+  }
+
+  .index__row:focus-visible {
+    outline: 2px solid var(--dm-core);
+    outline-offset: 3px;
+    border-radius: var(--r-xs, 8px);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Narrow                                                              */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * One column, no frame, and every row carries its own picture.
+   *
+   * A sticky image column has nowhere to be beside a phone-width list, and
+   * there is no pointer to drive it either. Rather than shrink the mechanism
+   * until it is pointless, the narrow layout drops it and gives each project
+   * the same thing the frame was showing — which is also what keeps the
+   * morph working here, since `work-index.ts` moves `data-morph` onto these.
+   */
+  @media (max-width: 900px) {
+    .index {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+    }
+
+    .index__preview {
+      display: none;
+    }
+
+    .index__row {
+      grid-template-areas:
+        'num text chev'
+        'pic pic pic';
+      row-gap: clamp(14px, 2vh, 20px);
+      padding-block: clamp(20px, 3vh, 30px);
+    }
+
+    .index__num {
+      grid-area: num;
+    }
+    .index__text {
+      grid-area: text;
+    }
+    .index__chev {
+      grid-area: chev;
+      /* No hover here to reveal it, so it is simply present. */
+      opacity: 1;
+      translate: 0 0;
+      align-self: center;
+    }
+
+    .index__inline {
+      grid-area: pic;
+      display: block;
+      position: relative;
+      aspect-ratio: 16 / 10;
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      background: var(--surface-parchment);
+    }
+
+    .index__inline img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* The active fill belongs to a pointer that is not here. */
+    .index__item::before {
+      display: none;
+    }
+
+    .index__row[data-active='yes'] .index__title {
+      translate: 0 0;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Reduced motion                                                      */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * The picture still changes — that is information, not decoration. What
+   * goes is the travel: the script reads this same query and crossfades on
+   * opacity alone.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .index__title,
+    .index__chev,
+    .index__num,
+    .index__row::before {
+      transition-duration: 1ms;
+    }
+  }
+</style>

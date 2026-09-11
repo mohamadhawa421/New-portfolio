@@ -41,6 +41,17 @@ const compactMetrics = project.metrics.some((metric) => metric.value.length > 14
  *
  * With nothing to bleed through, there is nothing to see.
  */
+/*
+ * What the page opens on.
+ *
+ * The approach shot where there is one, because that is the real work and
+ * because it is the picture the home page's index was showing a moment ago —
+ * a shared-element transition between two different images is a crossfade
+ * wearing a morph's clothes. The brand cover is the fallback, and it keeps
+ * its own job on the work grid, where a mark at card size is exactly right.
+ */
+const opener = project.approachShot ?? project.cover;
+
 const coverStyle = project.cover
   ? `color:${project.chipInk}`
   : `background:${project.chipBg};color:${project.chipInk}`;
@@ -80,13 +91,27 @@ const coverStyle = project.cover
     <section class="section section--parchment case-brief" data-lift data-tile="parchment">
       <div class="shell--narrow">
         {/*
-          The cover does not open.
+          The page opens on the work, and that is also what makes the morph
+          work.
 
-          It is the establishing shot, not evidence — the same picture the card
-          on the work grid carried, at the size the page already gives it, so
-          there is nothing behind a fullscreen view of it that the visitor is
-          not already looking at. The approach shot and the gallery open,
-          because those are the screens somebody came to read.
+          It used to open on the brand mark — the same flat field of client
+          colour the work grid carries — which was the wrong picture twice
+          over. It told a reader who had just chosen this project nothing they
+          had not already been told by the title, and it was the far end of a
+          shared-element transition whose near end, on the home page, is a
+          screenshot. Measured, those two were rgb(8,24,40) and rgb(248,248,248):
+          the morph was crossfading black into white while it moved, which is
+          the "weird" in entering a project.
+
+          Now both ends are the same file. The home page's index frame shows
+          `approachShot` and so does this, so the transition has nothing to
+          cross-fade and is purely a box changing size and place — which is
+          the only thing a shared element should ever be doing.
+
+          It still does not open to fullscreen. It is the establishing shot,
+          and it is repeated nowhere else on the page now, so there is nothing
+          behind a zoom of it that is not already on screen. The gallery
+          opens, because those are the screens somebody came to read.
         */}
         <div
           class="case-cover"
@@ -95,12 +120,12 @@ const coverStyle = project.cover
           style={coverStyle}
         >
           {
-            project.cover ? (
+            opener ? (
               <img
-                src={project.cover.url}
-                alt={project.cover.alt}
-                width={project.cover.width}
-                height={project.cover.height}
+                src={opener.url}
+                alt={opener.alt}
+                width={opener.width}
+                height={opener.height}
                 fetchpriority="high"
                 decoding="async"
               />
@@ -109,6 +134,10 @@ const coverStyle = project.cover
             )
           }
         </div>
+
+        {project.approachCaption && project.approachShot && (
+          <div class="case-caption case-caption--opener">{project.approachCaption}</div>
+        )}
 
         {
           (project.briefLead || project.briefBody) && (
@@ -155,8 +184,7 @@ const coverStyle = project.cover
     {/* Approach                                                          */}
     {/* ---------------------------------------------------------------- */}
     {
-      (project.approachLead || project.approachBody || project.approachShot ||
-        project.decisions.length > 0) && (
+      (project.approachLead || project.approachBody || project.decisions.length > 0) && (
         <section class="section section--light case-approach" data-lift data-tile="light">
           <div class="shell--narrow">
             <div class="case-row case-row--flush" data-reveal="0">
@@ -167,23 +195,14 @@ const coverStyle = project.cover
               </div>
             </div>
 
-            {project.approachShot && (
-              <>
-                <div class="case-shot" data-reveal="0" data-zoom>
-                  <img
-                    src={project.approachShot.url}
-                    alt={project.approachShot.alt}
-                    width={project.approachShot.width}
-                    height={project.approachShot.height}
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-                {project.approachCaption && (
-                  <div class="case-caption">{project.approachCaption}</div>
-                )}
-              </>
-            )}
+            {/*
+              No picture here any more.
+
+              The approach shot moved to the top of the page, where it is the
+              establishing image and the far end of the morph. Repeating it a
+              screen and a half later was the same photograph twice, and the
+              prose is what this section is actually for.
+            */}
 
             {project.decisions.length > 0 && (
               <div class="decisions" data-reveal="0">
@@ -631,6 +650,15 @@ const coverStyle = project.cover
     margin-top: 14px;
     font-size: 14px;
     color: var(--ink-faint);
+  }
+
+  /*
+   * The opener's caption sits under the establishing shot and needs a little
+   * more air beneath it than a caption in the middle of a section does — what
+   * follows it is the brief, not more of the same block.
+   */
+  .case-caption--opener {
+    margin-bottom: clamp(6px, 1.4vh, 16px);
   }
 
   .decisions {

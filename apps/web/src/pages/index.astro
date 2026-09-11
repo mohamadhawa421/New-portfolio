@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import FeaturedProject from '../components/FeaturedProject.astro';
-import ProjectRow from '../components/ProjectRow.astro';
+import WorkIndex from '../components/WorkIndex.astro';
 import CharacterAside from '../components/CharacterAside.astro';
 import ContactBlock from '../components/ContactBlock.astro';
 import DesignerEgg from '../components/DesignerEgg.astro';
@@ -34,7 +33,16 @@ const [home, settings, services, steps, projects, contact, split] = await Promis
  * rather than the index with a different heading. The work page is the index.
  */
 const HOME_PROJECTS = 5;
-const shown = split.rest.slice(0, Math.max(0, HOME_PROJECTS - (split.lead ? 1 : 0)));
+
+/*
+ * One list, not a lead and a remainder.
+ *
+ * The split used to matter because the first project was presented
+ * differently — a large tile above four rows. It is an index now and every
+ * entry is the same shape, so the lead is simply the first of five. The CMS
+ * still decides the order; this only stops flattening it into two shapes.
+ */
+const featured = [...(split.lead ? [split.lead] : []), ...split.rest].slice(0, HOME_PROJECTS);
 
 const leadWords = home.manifestoLead.split(/\s+/).filter(Boolean);
 const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
@@ -110,14 +118,10 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
 
           The heading still counts every project, because that is the true
           number and the claim the section is making. What follows it is the
-          first few — the featured one and four more — and the way to the rest
-          comes after them, where somebody who has read them is looking.
+          first five, and the way to the rest comes after them, where somebody
+          who has read them is looking.
         */}
-        <div class="work__list">
-          {split.lead && <FeaturedProject project={split.lead} />}
-          {shown.map((project, i) => <ProjectRow project={project} index={i} />)}
-          <div class="work__rule"></div>
-        </div>
+        <WorkIndex projects={featured} />
 
         {/*
           Outside the list, and made to look it.
@@ -131,7 +135,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
         <a
           class="btn btn--secondary work__more"
           href="/work"
-          data-reveal={String(shown.length + 1)}
+          data-reveal={String(featured.length + 1)}
         >
           <span>{home.workLinkLabel}</span>
           <span class="work__more-arrow" aria-hidden="true">›</span>
@@ -555,25 +559,54 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   }
 
   /* ---- Selected work ------------------------------------------------- */
+  /*
+   * The section that never began.
+   *
+   * `.work` carried a bottom padding and nothing else, and its tile is the
+   * same `--surface` the hero sits on — so where every other section on this
+   * page announces itself with a hundred-odd pixels of air and a change of
+   * ground, this one simply continued the hero. Measured: identical
+   * background, `padding-top: 0`. That is most of why it could be scrolled
+   * through without registering as a place.
+   *
+   * The top padding is the same rhythm the other sections use. The rule is
+   * what makes it a chapter rather than just a gap: a hairline the width of
+   * the shell, with the eyebrow and the count sitting on it, which is how a
+   * printed index opens.
+   */
   .work {
+    padding-top: clamp(72px, min(12vh, 16vw), 132px);
     padding-bottom: clamp(54px, min(11vh, 15vw), 124px);
   }
 
+  /*
+   * Masthead, not a heading.
+   *
+   * The eyebrow and the count are pushed to opposite ends of the same line
+   * and sat on a rule, so the section opens the way a contents page does.
+   * It also puts the true number — fifteen — at the far edge where it reads
+   * as a fact about the archive rather than as part of the title.
+   */
   .work__header {
-    padding-bottom: clamp(24px, 3.6vh, 34px);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-bottom: clamp(20px, 2.8vh, 28px);
+    margin-bottom: clamp(28px, 4vh, 48px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .work__heading {
+    /* Smaller than it was: it is a label on an index now, and the work
+       beside it is what should be carrying the scale. */
+    font-size: clamp(24px, 3vw, 40px);
+    margin: 0;
   }
 
   .work__heading {
     margin-top: 12px;
-  }
-
-  .work__list {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .work__rule {
-    border-top: 1px solid var(--line);
   }
 
   /*
@@ -640,11 +673,11 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     overflow: hidden;
     /* The hover fill below sits at z-index -1, which only stays inside the row
        if the row is a stacking context. `isolation` makes one without asking
-       for a compositor layer — see ProjectRow.astro. */
+       for a compositor layer — see ProjectCard.astro. */
     isolation: isolate;
   }
 
-  /* Line, not border — see ProjectRow for why. */
+  /* Line, not border — see ProjectCard for why. */
   .service::before {
     content: '';
     position: absolute;
@@ -656,7 +689,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     z-index: 1;
   }
 
-  /* Compositor-only hover fill — see ProjectRow.astro for why this is a
+  /* Compositor-only hover fill — see ProjectCard.astro for why this is a
      separate opacity layer instead of a `background` transition. */
   .service::after {
     content: '';
@@ -668,7 +701,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     transition: opacity 280ms var(--ease-glide);
   }
 
-  /* Behind a pointer query for the same reason as ProjectRow's: a touch screen
+  /* Behind a pointer query for the same reason as ProjectCard's: a touch screen
      cannot hover, so the layers these rules promote are spent on nothing. */
   @media (hover: hover) and (pointer: fine) {
     .service {

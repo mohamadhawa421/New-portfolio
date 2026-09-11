@@ -108,7 +108,8 @@ const tileStyle = project.cover
     isolation: isolate;
   }
 
-  /* Compositor-only hover fill — see ProjectRow.astro for why this is a
+  /* Compositor-only hover fill — a pseudo-element whose opacity animates
+     rather than a background colour that would repaint. This is a
      separate opacity layer instead of a `background` transition. */
   .card::after {
     content: '';
