@@ -655,12 +655,25 @@ let timers: number[] = [];
 let frame = 0;
 
 /**
- * What the front broke, kept until the page has finished landing.
+ * Everything the front reached, kept until the page has finished landing.
  *
- * The settle at the end glitches the same elements the wave did rather than a
+ * The settle at the end glitches the elements the wave crossed rather than a
  * fresh selection, because it is the same screen recovering from the same
- * event — a second, different set would read as a new effect arriving after
- * the story was over.
+ * event — a different set would read as a new effect arriving after the story
+ * was over.
+ *
+ * This holds every candidate, not the twelve the crossing actually tore. The
+ * two beats want different numbers and for a reason that is in the physics
+ * rather than in the budget: a front arriving is somewhere, so it breaks a
+ * few things at a time and the gaps between them are what make it read as
+ * travelling. A screen giving out is not somewhere — it fails all over at
+ * once, and twelve elements failing while the forty around them sit perfectly
+ * still reads as twelve elements being picked, which is exactly what it was.
+ *
+ * The cost argument that caps the crossing does not apply here either. At
+ * impact there are eight hundred-odd concurrent animations and every filter is
+ * another offscreen pass on the most expensive frames in the sequence; at the
+ * settle the page has landed and nothing else is running at all.
  */
 let broke: Array<{ el: HTMLElement; sx: number; bite: number; type: number }> = [];
 
@@ -1893,39 +1906,6 @@ export function run(options: DesignerModeOptions): Beat {
   after(timed.landed, () => {
     returning.push(...resettle(character, (strength) => onFault?.(strength)));
 
-    /*
-     * And the light that got in comes apart on its way back out.
-     *
-     * On the same frame as the settle glitch, not after it: they are one beat
-     * seen two ways — the signal failing, and what the signal was carrying.
-     * Giving the prism its own moment was tried first and reads as a second
-     * ending, which this sequence cannot afford at seven and a half seconds.
-     *
-     * The class is removed rather than left, because the layer is a blend mode
-     * over the whole viewport and anything that stays composited there is a
-     * cost the page keeps paying for an effect that is over.
-     *
-     * Taken off the animation's own end rather than on a timer, and that is
-     * not tidiness. The first version scheduled the removal through `after`,
-     * which is the storm's scheduler — and `teardown` clears everything still
-     * pending on it. Measured: the shards start at 7447ms and the clear was
-     * due at 8146, and teardown came through at about 7.9s and cancelled it.
-     * So the class was never removed, and a full-viewport blend layer with
-     * fourteen `will-change` children stayed composited for the rest of the
-     * visit, which is the exact cost this removal exists to avoid. The
-     * animation knows when it is finished; nothing else has to.
-     */
-    const prism = document.querySelector<HTMLElement>('[data-egg-prism]');
-    if (prism) {
-      const done = (): void => prism.classList.remove('is-breaking');
-      prism.classList.remove('is-breaking');
-      void prism.offsetWidth;
-      prism.addEventListener('animationend', done, { once: true });
-      // Cancelled rather than finished — a second click restarting it, or a
-      // teardown pulling the page apart underneath it. Same cleanup either way.
-      prism.addEventListener('animationcancel', done, { once: true });
-      prism.classList.add('is-breaking');
-    }
   });
 
   after(timed.landed + SETTLE_MS + 40, () => {
@@ -2868,12 +2848,25 @@ function damage(
   for (const one of picked) if (one && one.force > strongest) strongest = one.force;
 
   const made: Animation[] = [];
-  broke = [];
+
+  /*
+   * Every candidate is remembered; only twelve of them are torn now.
+   *
+   * Grading the whole list against `strongest` is sound even though that was
+   * measured over the picked twelve: the hardest-hit element on the page is
+   * the hardest in whichever slice it falls into, so it is always one of the
+   * twelve, and the maximum over the picks is the maximum over everything.
+   */
+  broke = candidates.map((one) => ({
+    el: one.el,
+    sx: one.sx,
+    bite: strongest ? one.force / strongest : 1,
+    type: one.type,
+  }));
 
   for (const one of picked) {
     if (!one) continue;
     const bite = strongest ? one.force / strongest : 1;
-    broke.push({ el: one.el, sx: one.sx, bite, type: one.type });
     made.push(...tear(one.el, one.at, one.sx, bite, one.type));
     /*
      * The crackle belongs to the frame the screen actually breaks, not to the
@@ -2895,8 +2888,11 @@ function damage(
  *
  * Nearly nothing, and that is the point. The first one travels, because a
  * front travels; this one is the whole frame failing at once, so the elements
- * are only jittered off each other enough that fourteen of them do not look
- * like one switch being thrown.
+ * are only jittered off each other enough that they do not look like one
+ * switch being thrown. With every element in it rather than twelve, the
+ * scatter matters more than it did: a hundred and ten milliseconds across
+ * forty-odd of them is a handful of frames where the breakage is uneven, which
+ * is what a failure looks like, and a single frame where it is not.
  */
 const SETTLE_SPREAD = 110;
 
@@ -2919,11 +2915,14 @@ const SETTLE_MS = SETTLE_SPREAD + 40 + TEAR_MS;
  * page has been put back, and the display it was put back on is still
  * recovering from what crossed it.
  *
- * Three things separate it from the tear that came with the wave. It does not
+ * Four things separate it from the tear that came with the wave. It does not
  * travel — the delays are a scatter, not a sweep. It slips vertically as well
  * as sideways, which is a signal breaking up rather than something being
- * shoved. And every element is thrown the other way from the way the front
- * threw it, so the frame snaps back rather than repeating itself.
+ * shoved. Every element is thrown the other way from the way the front threw
+ * it, so the frame snaps back rather than repeating itself. And it takes the
+ * whole page rather than the twelve the crossing tore: a front is somewhere
+ * and breaks a few things at a time, a screen failing is nowhere in
+ * particular and takes all of it.
  *
  * The portrait goes last and hardest, and it is the reason the beat exists
  * here at all: he is the one still holding the field, so the screen fails on
