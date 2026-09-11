@@ -11,6 +11,7 @@ import Cursor from '../components/Cursor.astro';
 import SuperMode from '../components/SuperMode.astro';
 import ScrollBar from '../components/ScrollBar.astro';
 import Lightbox from '../components/Lightbox.astro';
+import AudioHint from '../components/AudioHint.astro';
 import { ClientRouter } from 'astro:transitions';
 import { getSiteSettings } from '../lib/content';
 import type { Seo } from '../lib/types';
@@ -194,6 +195,7 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
     <SuperMode />
     <ScrollBar />
     <Lightbox />
+    <AudioHint />
     <GridOverlay />
 
     {/* Runs while the parser is still in <body>, so it executes before the
