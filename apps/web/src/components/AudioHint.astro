@@ -15,133 +15,115 @@
  * recommendation delivered after the thing it was recommending for is not a
  * recommendation, it is a receipt.
  *
- * Shaped like a system notification on purpose. A recommendation about
- * *hardware* is not the site talking about itself, and the notification is the
- * one form the whole web already reads as an aside from somewhere else — it
- * carries "this is about your setup, not about this page" without a word being
- * spent on saying so. It is drawn in this site's own material rather than
- * Apple's, though: a pixel-faithful macOS card is only native on a Mac and is
- * borrowed chrome on every other machine, which is a strange note to open on.
+ * It is not a notification and is deliberately not dressed as one. The first
+ * version was: an icon on a coloured tile, a title, a body, a timestamp. All
+ * of that is an operating system's furniture, and none of it belongs to a site
+ * that has its own. There is no sender here, nothing has just happened, and
+ * there is no moment to stamp — it is one sentence of advice, so it is one
+ * line, in the shape this site already uses for the one thing that floats over
+ * the page: the nav.
  */
 ---
 
 <div class="ahint" data-audio-hint role="status" aria-live="polite" hidden>
-  <div class="ahint__icon" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="none" focusable="false">
-      <path
-        d="M4.4 14.2v-2.4a7.6 7.6 0 0 1 15.2 0v2.4"
-        stroke="currentColor"
-        stroke-width="1.7"
-        stroke-linecap="round"></path>
-      <rect x="2.5" y="13.3" width="4.3" height="7.2" rx="2.15" fill="currentColor"></rect>
-      <rect x="17.2" y="13.3" width="4.3" height="7.2" rx="2.15" fill="currentColor"></rect>
-    </svg>
-  </div>
+  <svg class="ahint__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M4.4 13.6v-1.8a7.6 7.6 0 0 1 15.2 0v1.8"></path>
+    <rect x="2.9" y="13.5" width="4.2" height="6.6" rx="2.1"></rect>
+    <rect x="16.9" y="13.5" width="4.2" height="6.6" rx="2.1"></rect>
+  </svg>
 
-  <div class="ahint__body">
-    <p class="ahint__title">
-      Best with sound
-      <span class="ahint__when">now</span>
-    </p>
-    <p class="ahint__text">Parts of this page are scored — headphones recommended.</p>
-  </div>
+  <span class="ahint__text">For a better experience, raising your audio is recommended</span>
 
   <button class="ahint__close" type="button" data-audio-hint-close aria-label="Dismiss">
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        d="M7 7l10 10M17 7L7 17"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"></path>
+      <path d="M7 7l10 10M17 7L7 17"></path>
     </svg>
   </button>
 </div>
 
 <style>
+  /*
+   * The nav's glass, and the same shape.
+   *
+   * Every value here is the bar's own scrolled state, copied rather than
+   * referenced — and that is not laziness. `--nav-bg`, `--nav-blur` and
+   * `--nav-shadow` are live: `chrome.ts` sets them to `transparent` and `none`
+   * whenever the page is at the top, which is exactly where this appears. A
+   * card reading those tokens would arrive completely invisible on the one
+   * screen it exists for. What is wanted is the *dressed* bar, always, so the
+   * dressed values are written out.
+   *
+   * The pill radius, the absence of any border, the double shadow and the
+   * saturate-and-blur are all the nav's. A hairline was tried and is wrong
+   * here for the reason it is wrong there: the bar is a sheet of glass lit
+   * from behind, and an outline turns it into a drawn box.
+   */
   .ahint {
     position: fixed;
-    /* Clear of the nav, and tucked to the corner a notification comes from. */
-    top: calc(var(--nav-h, 64px) + 14px);
-    right: clamp(12px, 2vw, 22px);
+    top: calc(var(--nav-top, 18px) + 54px);
+    right: clamp(12px, 2.4vw, 26px);
     z-index: 9986;
 
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: start;
-    gap: 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    max-width: calc(100vw - 24px);
+    padding: 9px 12px 9px 14px;
 
-    width: min(340px, calc(100vw - 24px));
-    padding: 13px 13px 14px;
-
-    /*
-     * The notification's material, which is the site's own.
-     *
-     * Same construction as the nav: a translucent ground with the page blurred
-     * behind it and a hairline that is lighter than the fill. That is what
-     * makes it read as a pane floating over the document rather than a box
-     * drawn on it, and it is the reason this can be said in the site's voice
-     * without looking like a cookie banner.
-     */
+    border-radius: var(--r-pill);
     background: var(--ahint-bg);
-    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+    -webkit-backdrop-filter: var(--ahint-blur);
     /*
      * Prefixed first, standard last. The minifier drops the earlier of two
      * declarations it considers equivalent, and the nav shipped its tint with
      * no blur once by getting this the other way round — see the note in
      * SiteNav.astro, which cost a production round to find.
      */
-    backdrop-filter: blur(20px) saturate(1.6);
-    border: 1px solid var(--ahint-line);
-    border-radius: 15px;
+    backdrop-filter: var(--ahint-blur);
     box-shadow: var(--ahint-shadow);
     color: var(--ahint-ink);
 
-    /* The resting state is off-stage; `is-in` below brings it on. */
+    /* Off-stage at rest; `is-in` brings it on. */
     opacity: 0;
-    transform: translate3d(16px, -10px, 0) scale(0.96);
+    transform: translate3d(0, -8px, 0);
     pointer-events: none;
   }
 
-  /*
-   * Light is the base, and the values are the page's own rather than a grey.
-   *
-   * A neutral white card on this background reads as a browser dialog. Mixing
-   * a little of the accent into both the fill and the hairline is what keeps
-   * it part of the site while still sitting clearly on top of it.
-   */
+  /* Light: the bar's own light-ground values. */
   .ahint {
-    --ahint-bg: color-mix(in srgb, var(--blue) 4%, rgb(255 255 255 / 0.82));
-    --ahint-line: color-mix(in srgb, var(--blue) 14%, rgb(0 0 0 / 0.08));
-    --ahint-ink: var(--ink);
-    --ahint-muted: var(--ink-muted);
+    --ahint-bg: rgba(255, 255, 255, 0.72);
+    --ahint-ink: #1d1d1f;
+    --ahint-blur: saturate(200%) contrast(1.03) brightness(1) blur(16px);
     --ahint-shadow:
-      0 12px 32px rgb(0 0 0 / 0.14),
-      0 2px 6px rgb(0 0 0 / 0.06);
+      0 1px 2px rgba(0, 0, 0, 0.04),
+      0 8px 28px rgba(0, 0, 0, 0.08);
   }
 
   :global(:root[data-theme='dark']) .ahint,
   :global(:root[data-surface='void']) .ahint {
-    --ahint-bg: color-mix(in srgb, var(--blue) 7%, rgb(28 28 32 / 0.8));
-    --ahint-line: color-mix(in srgb, #fff 12%, transparent);
+    --ahint-bg: rgba(22, 22, 26, 0.68);
+    --ahint-ink: #ffffff;
+    --ahint-blur: saturate(200%) contrast(1.03) brightness(1.05) blur(16px);
     --ahint-shadow:
-      0 14px 38px rgb(0 0 0 / 0.55),
-      0 2px 6px rgb(0 0 0 / 0.35);
+      0 1px 2px rgba(0, 0, 0, 0.14),
+      0 8px 28px rgba(0, 0, 0, 0.28);
   }
 
   @media (prefers-color-scheme: dark) {
     :global(:root:not([data-theme='light'])) .ahint {
-      --ahint-bg: color-mix(in srgb, var(--blue) 7%, rgb(28 28 32 / 0.8));
-      --ahint-line: color-mix(in srgb, #fff 12%, transparent);
+      --ahint-bg: rgba(22, 22, 26, 0.68);
+      --ahint-ink: #ffffff;
+      --ahint-blur: saturate(200%) contrast(1.03) brightness(1.05) blur(16px);
       --ahint-shadow:
-        0 14px 38px rgb(0 0 0 / 0.55),
-        0 2px 6px rgb(0 0 0 / 0.35);
+        0 1px 2px rgba(0, 0, 0, 0.14),
+        0 8px 28px rgba(0, 0, 0, 0.28);
     }
   }
 
-  /* Super mode is already violet; the card joins it rather than fighting it. */
+  /* Super mode has its own ground in the bar, and this takes the same one. */
   :global(:root[data-super]) .ahint {
-    --ahint-bg: color-mix(in srgb, var(--dm-deep) 34%, rgb(16 0 42 / 0.82));
-    --ahint-line: color-mix(in srgb, var(--dm-arc) 34%, transparent);
+    --ahint-bg: rgba(20, 7, 40, 0.7);
+    --ahint-ink: #ffffff;
   }
 
   .ahint[data-shown] {
@@ -150,107 +132,64 @@
 
   .ahint.is-in {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-    /*
-     * In on a curve that overshoots slightly and settles, which is what a
-     * panel pushed onto the screen does. Out is quicker and straight back the
-     * way it came — leaving is not an event and should not be given one.
-     */
+    transform: translate3d(0, 0, 0);
     transition:
-      opacity 260ms cubic-bezier(0.2, 0.8, 0.25, 1),
-      transform 420ms cubic-bezier(0.16, 1.1, 0.3, 1);
+      opacity 320ms ease,
+      transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .ahint.is-out {
     opacity: 0;
-    transform: translate3d(14px, -6px, 0) scale(0.97);
+    transform: translate3d(0, -6px, 0);
     transition:
-      opacity 200ms ease,
+      opacity 240ms ease,
       transform 240ms ease;
   }
 
   /*
-   * The icon tile.
+   * Line art, and nothing behind it.
    *
-   * A notification's icon is the sender, and the squircle is what says so —
-   * the shape is doing the "this is an application speaking" work that the
-   * rest of the card deliberately does not.
+   * The icon had a filled squircle under it, which is the one detail that
+   * gives away a borrowed operating system: a tile means an application, and
+   * an application means a sender. There is no sender. Stroked at the same
+   * weight as the type it sits beside and inheriting the same colour, it is a
+   * mark in the sentence rather than a badge in front of it.
    */
   .ahint__icon {
-    display: grid;
-    place-items: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    background: linear-gradient(
-      150deg,
-      color-mix(in srgb, var(--blue) 88%, #fff),
-      color-mix(in srgb, var(--blue) 70%, #000)
-    );
-    color: #fff;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.22);
-  }
-
-  .ahint__icon svg {
-    width: 20px;
-    height: 20px;
-    display: block;
-  }
-
-  .ahint__body {
-    min-width: 0;
-  }
-
-  .ahint__title {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
-    margin: 1px 0 2px;
-    font-size: 0.8125rem;
-    font-weight: 650;
-    letter-spacing: -0.005em;
-    line-height: 1.25;
-  }
-
-  /* The timestamp every notification carries, and the only part that is set
-     dressing. It is what makes the shape legible as a notification at a
-     glance, before a word of it has been read. */
-  .ahint__when {
     flex: none;
-    font-size: 0.6875rem;
-    font-weight: 500;
-    color: var(--ahint-muted);
+    width: 17px;
+    height: 17px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    /* Optically centred against the cap height rather than the line box. */
+    margin-top: -1px;
   }
 
   .ahint__text {
-    margin: 0;
-    font-size: 0.78125rem;
-    line-height: 1.4;
-    color: var(--ahint-muted);
-    text-wrap: pretty;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: -0.003em;
+    line-height: 1.2;
+    white-space: nowrap;
   }
 
-  /*
-   * Present, not hidden until hover.
-   *
-   * macOS reveals the close control on hover, which is fine on a pointer and
-   * is nothing at all on a touch screen — where this is most likely to be in
-   * the way. It is quiet instead: low contrast until it is wanted.
-   */
   .ahint__close {
     flex: none;
     display: grid;
     place-items: center;
-    width: 22px;
-    height: 22px;
-    margin: -2px -2px 0 0;
+    width: 18px;
+    height: 18px;
+    margin-left: 1px;
     padding: 0;
     border: 0;
     border-radius: 50%;
     background: transparent;
-    color: var(--ahint-muted);
-    opacity: 0.55;
+    color: inherit;
+    opacity: 0.4;
     cursor: pointer;
     transition:
       opacity 160ms ease,
@@ -258,44 +197,58 @@
   }
 
   .ahint__close svg {
-    width: 13px;
-    height: 13px;
+    width: 11px;
+    height: 11px;
     display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
   }
 
   .ahint__close:hover,
   .ahint__close:focus-visible {
     opacity: 1;
-    background: color-mix(in srgb, currentColor 12%, transparent);
+    background: color-mix(in srgb, currentColor 14%, transparent);
   }
 
-  @media (max-width: 560px) {
+  /*
+   * Narrow screens let the sentence wrap rather than shrink it.
+   *
+   * A pill that runs off the side of a phone is worse than a pill on two
+   * lines, and the radius carries either.
+   */
+  @media (max-width: 430px) {
     .ahint {
-      left: clamp(12px, 3vw, 22px);
-      right: clamp(12px, 3vw, 22px);
-      width: auto;
+      left: clamp(12px, 3vw, 26px);
+      right: clamp(12px, 3vw, 26px);
+      justify-content: center;
+    }
+
+    .ahint__text {
+      white-space: normal;
     }
   }
 
   /*
    * Asked for less movement, not less information.
    *
-   * The card still arrives and still leaves — it is the only way the visitor
-   * learns there is sound at all. It simply stops travelling to do it.
+   * It still arrives and still leaves — it is the only way the visitor learns
+   * there is sound at all. It simply stops travelling to do it.
    */
   @media (prefers-reduced-motion: reduce) {
-    .ahint {
+    .ahint,
+    .ahint.is-in,
+    .ahint.is-out {
       transform: none;
     }
 
     .ahint.is-in {
-      transform: none;
-      transition: opacity 200ms linear;
+      transition: opacity 240ms linear;
     }
 
     .ahint.is-out {
-      transform: none;
-      transition: opacity 160ms linear;
+      transition: opacity 180ms linear;
     }
   }
 </style>
@@ -370,6 +323,7 @@
     const wait = curtain ? AFTER_CURTAIN : WITHOUT_CURTAIN;
 
     let gone = false;
+    let shown = false;
 
     function dismiss(): void {
       if (gone) return;
@@ -381,28 +335,64 @@
       timers.push(window.setTimeout(() => card!.remove(), 320));
     }
 
-    timers.push(
-      window.setTimeout(() => {
-        try {
-          sessionStorage.setItem(KEY, '1');
-        } catch {
-          /* not fatal */
-        }
+    /*
+     * And it waits for somebody to be there.
+     *
+     * Timers keep running in a background tab, throttled but running, so
+     * without this the pill would show itself and time out while the tab was
+     * in the background — spending the one chance this gets on an empty room.
+     * If the page is hidden when its moment comes, it simply waits for the
+     * visitor to come back and starts then.
+     */
+    function reveal(): void {
+      if (shown || gone) return;
 
-        card.hidden = false;
-        card.setAttribute('data-shown', '');
-        // A frame between being laid out and being told to move, or the
-        // transition has no start value to leave from and it simply appears.
-        requestAnimationFrame(() => card.classList.add('is-in'));
+      if (document.hidden) {
+        document.addEventListener('visibilitychange', reveal, { once: true });
+        return;
+      }
 
-        timers.push(window.setTimeout(dismiss, LINGER));
-      }, wait)
-    );
+      shown = true;
+
+      /*
+       * Spent here, at the moment it is actually shown to somebody.
+       *
+       * Not when the timer was set and not on arrival: this is the one chance
+       * per session, and marking it used before it has been seen is how the
+       * visitor ends up never getting it at all.
+       */
+      try {
+        sessionStorage.setItem(KEY, '1');
+      } catch {
+        /* not fatal */
+      }
+
+      card!.hidden = false;
+      card!.setAttribute('data-shown', '');
+
+      /*
+       * A forced reflow to start the transition, not a frame.
+       *
+       * The transition needs the element to have been laid out at its starting
+       * value before the end value is set, or there is nothing to interpolate
+       * from and it simply appears. `requestAnimationFrame` is the usual way to
+       * buy that and it is the wrong one here: rAF does not fire at all in a
+       * tab that is not being presented, so opening the home page in a
+       * background tab left `is-in` unset and the pill stuck at zero opacity.
+       * Reading `offsetWidth` settles the layout synchronously and owes nothing
+       * to the frame clock.
+       */
+      void card!.offsetWidth;
+      card!.classList.add('is-in');
+
+      timers.push(window.setTimeout(dismiss, LINGER));
+    }
+
+    timers.push(window.setTimeout(reveal, wait));
 
     /*
-     * Hovering holds it open, which is the one borrowed behaviour worth
-     * keeping: the reason a notification pauses under the pointer is that
-     * somebody reaching for it is plainly still reading it.
+     * Hovering holds it open. Not borrowed furniture this time — somebody
+     * reaching for a line of text is plainly still reading it.
      */
     card.addEventListener('pointerenter', clearTimers);
     card.addEventListener('pointerleave', () => {
