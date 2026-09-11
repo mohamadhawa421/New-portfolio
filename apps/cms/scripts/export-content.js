@@ -136,11 +136,51 @@ function clean(value) {
 
 /**
  * Screens exported from a design tool are large PNGs — several megabytes each.
- * WebP at quality 82 is visually indistinguishable for this kind of flat UI
- * artwork and a fraction of the weight, so images are converted on the way out
- * and the snapshot's URLs are rewritten to match. SVGs are copied untouched;
- * they are already small and vector.
+ * WebP is a fraction of the weight, so images are converted on the way out and
+ * the snapshot's URLs are rewritten to match. SVGs are copied untouched; they
+ * are already small and vector.
+ *
+ * The quality is chosen from the picture rather than fixed, because the two
+ * kinds of image here want opposite things. See `qualityFor`.
  */
+/*
+ * Flat UI screens and photographs want opposite settings, and this set has
+ * both.
+ *
+ * Quality 82 was chosen for the screens, and it is right for them: what fails
+ * first in flat artwork is a gradient banding or a letterform going soft, and
+ * both are cheap to encode, so a high quality costs almost nothing. Fifty-three
+ * of the fifty-four converted files are that kind of picture and the median
+ * comes out at 0.03 bytes per pixel.
+ *
+ * The fifty-fourth is a photograph — a courtyard, foliage, dappled light,
+ * cobblestones — and at the same setting it lands at 0.32 bytes per pixel: ten
+ * times the median, three and a half times the next worst, and on its own 59%
+ * of every image byte the home page asks for. Nothing is wrong with the
+ * encoder. The bytes are going into leaf and stone detail that no viewer is
+ * inspecting, which is exactly the content a lower quality is for.
+ *
+ * Entropy separates the two cleanly and by a wide margin: the photograph reads
+ * 6.56, the next highest file 5.25, and the quietest 0.06. So the threshold
+ * sits in open space rather than being tuned to a filename — a photograph added
+ * later lands above it and a screen below it, without anyone editing this.
+ *
+ * 70 rather than lower because it was checked rather than felt: 82, 70 and 62
+ * were encoded and compared at 1:1 on the hardest region of that image, the
+ * body copy over foliage. The three are indistinguishable. 70 takes 453KB to
+ * 341KB and keeps a margin above the point where the dark leaves start to go
+ * mushy.
+ */
+async function qualityFor(sharp, file) {
+  try {
+    const { entropy } = await sharp(file).stats();
+    return entropy > 5.5 ? 70 : 82;
+  } catch {
+    /* An image `stats()` cannot read still deserves the safe setting. */
+    return 82;
+  }
+}
+
 async function copyMedia() {
   fs.rmSync(OUT_MEDIA, { recursive: true, force: true });
   fs.mkdirSync(OUT_MEDIA, { recursive: true });
@@ -177,7 +217,9 @@ async function copyMedia() {
     if (convertible) {
       const target = `${filename.slice(0, -ext.length)}.webp`;
       const to = path.join(OUT_MEDIA, target);
-      await sharp(from).webp({ quality: 82, effort: 5 }).toFile(to);
+      await sharp(from)
+        .webp({ quality: await qualityFor(sharp, from), effort: 5 })
+        .toFile(to);
       after += fs.statSync(to).size;
       renamed.set(filename, target);
     } else {

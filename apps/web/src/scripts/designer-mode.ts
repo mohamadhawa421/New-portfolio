@@ -541,8 +541,28 @@ const SHELLS = '.btn, .chip, .text-link, .enquiry__send, .footer__links a';
  * apart. Measured at 1440x900: zero of its rows, titles or pictures were
  * inside the test.
  *
- * Three quarters of a viewport past each edge is enough to take in the
- * section that follows the hero without walking the whole document. The
+ * Half a viewport past each edge, and that number is measured rather than
+ * chosen. At 1440x900 the reach decides how much is offered to the budgets:
+ *
+ *     reach   pieces   text elements   letters offered   work rows
+ *     0.00      15          12              323              0
+ *     0.50      21          24              432              5
+ *     0.75      22          33             1352              5
+ *
+ * Every row of the index is already in at a half, so the extra quarter buys
+ * nothing this was widened for. What it does buy is four more text elements
+ * and nine hundred more letters offered to a budget of 460 — measured,
+ * sorted by length, and then mostly discarded.
+ *
+ * That waste is real but it is small: timed in isolation, best of forty runs,
+ * gathering at a half costs 0.9ms against 1.1ms at three quarters. Two tenths
+ * of a millisecond. It is recorded here because the opposite was briefly
+ * believed — a cold click handler was measured at 11ms before this reach
+ * existed and 30ms after, and the difference was attributed to it. Repeated
+ * sampling gave 11, 13, 30, 36, 68 and 82ms for the same code, so those
+ * numbers were the preview pane's noise and not this constant. If the storm
+ * ever needs to be made cheaper, it is not here; see "What the storm actually
+ * costs" in CLAUDE.md. The
  * physics do not change — force is still distance from the origin and the
  * falloff still decides what a piece gets — this only widens the set of
  * things asked. The ceilings below are what stop that costing anything: the
@@ -550,7 +570,7 @@ const SHELLS = '.btn, .chip, .text-link, .enquiry__send, .footer__links a';
  * further down is served after the labels around the impact, not instead of
  * them.
  */
-const REACH_PAST_FOLD = 0.75;
+const REACH_PAST_FOLD = 0.5;
 
 /** Ceilings, so a long page cannot ask a weak GPU for hundreds of layers. */
 const MAX_PIECES_WIDE = 84;

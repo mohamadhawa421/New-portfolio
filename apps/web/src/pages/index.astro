@@ -293,28 +293,41 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     <section class="section section--parchment about" data-lift data-tile="parchment">
       <div class="shell about__inner">
         <div class="about__portrait" data-reveal="0">
+          {/*
+            The same person, drawn the same way as in the hero.
+
+            This still carried the original asset: the flat purple square,
+            cropped to 4:5 and clipped to a rounded corner. Which is the exact
+            treatment the hero was rebuilt to get rid of — so the page showed
+            him twice, once standing in a field of light and once inside an
+            avatar tile, and the second one read as the older design that had
+            been missed.
+
+            Same cut-out, same field, and the section's own 4:5 proportion and
+            layout are untouched. It also stops the two original avatars
+            being fetched at all, which is 52KB the home page no longer asks
+            for.
+          */}
           <div class="about__portrait-frame">
-            {
-              settings.portrait && (
-                <img
-                  src={settings.portrait.url}
-                  alt={settings.portrait.alt}
-                  loading="lazy"
-                  decoding="async"
-                  style={`object-position:${settings.portraitTallFocus}`}
-                />
-              )
-            }
+            <div class="about__aura" aria-hidden="true"></div>
+            <img
+              src="/portrait-cutout.webp"
+              alt={settings.portrait?.alt ?? ''}
+              width="883"
+              height="892"
+              loading="lazy"
+              decoding="async"
+            />
             {/* The same purple-eyed drawing the hero has, on the same terms: a
                 second <img> rather than a swapped src, so the portrait is
                 never blank while a file decodes. Lazy, and invisible until
                 super designer mode is on. */}
             <img
               class="about__portrait-alt"
-              src="/avatar-designer.webp"
+              src="/portrait-cutout-designer.webp"
               alt=""
-              width="1024"
-              height="1024"
+              width="883"
+              height="892"
               loading="lazy"
               decoding="async"
               aria-hidden="true"
@@ -1291,23 +1304,25 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     }
   }
 
+  /*
+   * No tile here either. See the hero: a filled square clipped to a corner is
+   * the shape that makes a page look generated, and the cut-out means there
+   * is nothing to clip. The 4:5 proportion stays, because that is the
+   * section's column and not a decision about the picture.
+   */
   .about__portrait-frame {
     /* Anchors the purple-eyed copy stacked over it. */
     position: relative;
     width: 100%;
     aspect-ratio: 4 / 5;
-    border-radius: var(--r-portrait);
-    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
     background: var(--surface-placeholder);
   }
 
   /* Stacked exactly over the portrait, and invisible unless the mode is on. */
   .about__portrait-alt {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
     opacity: 0;
     transition: opacity 900ms var(--ease-glide);
   }
@@ -1316,11 +1331,55 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     opacity: 1;
   }
 
+  /*
+   * Both layers, one rule — the same lesson the hero taught.
+   *
+   * They were declared separately there and drifted to two different heights
+   * over the same box, which made the purple-eyed cross-fade read as two
+   * pictures sliding rather than a pair of eyes changing colour. Declaring
+   * them together is what guarantees the only difference between the layers
+   * is the irises.
+   *
+   * `contain` rather than `cover`: there is no background to crop against
+   * now, so cropping only removes his shoulder. The mask hides the straight
+   * cut across the bottom of the drawing, the same way it does in the hero.
+   */
   .about__portrait-frame img {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    translate: -50% 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    max-width: none;
+    object-fit: contain;
+    object-position: 50% 100%;
     display: block;
+    -webkit-mask-image: linear-gradient(to bottom, #000 74%, rgb(0 0 0 / 0.55) 89%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 74%, rgb(0 0 0 / 0.55) 89%, transparent 100%);
+  }
+
+  /*
+   * The field, smaller than the hero's because this is a smaller portrait in
+   * a narrower column. Same colours, same rule: blue until the egg runs.
+   */
+  .about__aura {
+    position: absolute;
+    left: 50%;
+    top: 52%;
+    width: 118%;
+    height: 100%;
+    translate: -50% -50%;
+    pointer-events: none;
+    --aura: var(--blue);
+    background:
+      radial-gradient(closest-side, color-mix(in srgb, var(--aura) 34%, transparent), transparent 70%),
+      radial-gradient(closest-side, color-mix(in srgb, var(--aura) 20%, transparent), transparent 100%);
+  }
+
+  :global(:root[data-designer]) .about__aura,
+  :global(:root[data-super]) .about__aura {
+    --aura: var(--dm-core);
   }
 
   .about__copy {
