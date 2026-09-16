@@ -701,7 +701,16 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     background:
       radial-gradient(closest-side, color-mix(in srgb, var(--aura) 42%, transparent), transparent 70%),
       radial-gradient(closest-side, color-mix(in srgb, var(--aura) 26%, transparent), transparent 100%);
-    transition: --aura 900ms var(--ease-out);
+    /*
+     * The transition for this lives in the second `.hero__aura` rule below,
+     * not here. There were two, and this one declared `--aura 900ms` while
+     * that one declared the `transition` shorthand — which resets
+     * `transition-property` outright. Same specificity, later in the source,
+     * so the shorthand won and `--aura` was silently dropped from the list:
+     * the field's opacity and scale faded over 1.7s while its *colour*
+     * changed in a single frame, which is the glow snapping from purple back
+     * to blue behind his head. One declaration now, in one place.
+     */
     /*
      * Latent energy, and it is deliberately almost nothing.
      *
@@ -763,6 +772,16 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   :global(:root[data-designer]) .hero__aura,
   :global(:root[data-super]) .hero__aura {
     --aura: var(--dm-core);
+    /*
+     * On fast, off slow, which is the shape his eyes already have: the purple
+     * arrives with the shock and takes its time leaving. A transition is read
+     * from the style being transitioned *to*, so this duration governs the
+     * arrival and the rule above governs the departure.
+     */
+    transition:
+      opacity 1700ms var(--ease-out),
+      scale 1700ms var(--ease-out),
+      --aura 420ms var(--ease-out);
   }
 
   :global(:root[data-storm]) .hero__aura {
@@ -949,7 +968,12 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   .hero__aura {
     transition:
       opacity 1700ms var(--ease-out),
-      scale 1700ms var(--ease-out);
+      scale 1700ms var(--ease-out),
+      /* The colour drains with the light rather than ahead of it. `--aura` is
+         registered as a `<color>` in global.css, which is the only reason it
+         can be interpolated at all — an unregistered custom property is a
+         token, and tokens do not fade. */
+      --aura 1700ms var(--ease-out);
   }
 
   /*
@@ -987,7 +1011,9 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
       animation: none;
     }
 
-    .hero__portrait-alt {
+    .hero__portrait-alt,
+    .hero__aura,
+    .about__aura {
       transition: none;
     }
   }
@@ -1429,9 +1455,16 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
       radial-gradient(closest-side, color-mix(in srgb, var(--aura) 20%, transparent), transparent 100%);
   }
 
+  /* The same fade as the hero's field, which had none here at all — this one
+     changed colour in a single frame in every mode. */
+  .about__aura {
+    transition: --aura 1700ms var(--ease-out);
+  }
+
   :global(:root[data-designer]) .about__aura,
   :global(:root[data-super]) .about__aura {
     --aura: var(--dm-core);
+    transition: --aura 420ms var(--ease-out);
   }
 
   .about__copy {

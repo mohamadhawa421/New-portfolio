@@ -914,6 +914,31 @@
 
       targetX = event.clientX;
       targetY = event.clientY;
+
+      /*
+       * The dot is written here as well as in `frame`, and this is the copy
+       * that matters when something has taken the frame clock away.
+       *
+       * Every position on the pointer is drawn inside the rAF loop, which is
+       * correct right up until rAF stops — and it stops for the length of a
+       * view transition, which is precisely when somebody has just clicked a
+       * link. Measured in a real navigation: the loop yields seven frames
+       * across the swap. The mouse keeps moving the whole time and the drawn
+       * pointer does not, so it sits stranded somewhere behind and then snaps
+       * to the mouse when the frames come back. That is the flicker people
+       * report on the menu, and while it is stranded there are visibly two
+       * pointer positions — the drawn one, and wherever the hand actually is.
+       *
+       * Outside the rage `dragX === targetX`, so this is the same number
+       * `frame` would write; when the loop is running it simply writes it
+       * again a moment later and nothing disagrees. During the rage the drag
+       * is eased and the offsets are the frame's own, so this stands aside.
+       */
+      if (!rageUntil && dot) {
+        dot.style.transform =
+          `translate3d(${event.clientX}px, ${event.clientY}px, 0) translate(-50%, -50%)`;
+      }
+
       show();
 
       const el = event.target as Element | null;

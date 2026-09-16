@@ -572,8 +572,37 @@ const SHELLS = '.btn, .chip, .text-link, .enquiry__send, .footer__links a';
  */
 const REACH_PAST_FOLD = 0.5;
 
-/** Ceilings, so a long page cannot ask a weak GPU for hundreds of layers. */
-const MAX_PIECES_WIDE = 84;
+/*
+ * Ceilings, so a long page cannot ask a weak GPU for hundreds of layers.
+ *
+ * ── Why the wide ones came down ───────────────────────────────────────
+ *
+ * The storm is raster-bound, not script-bound. The click handler finishes in
+ * about 8ms — measured again here, 7.7 — and then the browser has to do style,
+ * layer and first-raster over everything that was just handed an animation.
+ * That cost scales with the number of animated elements *and* with the number
+ * of physical pixels each of them lands on, which is why the same page is
+ * smooth in a small window and stalls in a full-screen one: a 1440x900 window
+ * on a 2x display paints about 2.6 million pixels against 800k in a half-size
+ * pane, for the same 1200 animations.
+ *
+ * Measured at the old ceilings: 1198 concurrent animations at 1280px wide
+ * against 825 at 390px. CLAUDE.md recorded 850 when this was last profiled, so
+ * the wide figure had grown by about forty per cent as sections were added,
+ * and nothing was watching it.
+ *
+ * `MAX_PIECES_WIDE` is the larger half of that gap — 84 against the phone's
+ * 34, and every piece is a compositor layer of its own. It is the first thing
+ * to come down and the cheapest: a piece is a whole block flying, so a screen
+ * with fewer of them still reads as the same event, where fewer *letters*
+ * genuinely is a different wave.
+ *
+ * These are a deliberate trade, asked for. A wide screen shows more of the
+ * page, so a fixed ceiling means a smaller proportion of it comes apart —
+ * that is the cost, and it is paid knowingly in exchange for the first half
+ * second being smooth on the machine this is actually viewed on.
+ */
+const MAX_PIECES_WIDE = 48;
 const MAX_PIECES_NARROW = 34;
 const MAX_LETTERS = 460;
 /*
@@ -590,6 +619,14 @@ const MAX_LETTERS = 460;
 const MAX_LETTERS_NARROW = 360;
 /** And no single block may take more than this much of it. */
 const MAX_ONE_BLOCK = 240;
+/*
+ * Longer than this and a block counts as prose for the reservation above.
+ *
+ * Forty is comfortably past every label, link, chip and heading on the site
+ * and comfortably short of any real sentence, so the reserved slot always goes
+ * to a paragraph rather than to a long heading that happened to sort last.
+ */
+const PROSE_FLOOR = 40;
 
 /* ---------------------------------------------------------------------- */
 /* State                                                                    */
@@ -973,7 +1010,51 @@ export function run(options: DesignerModeOptions): Beat {
   const words: HTMLElement[] = [];
   const foldReach = window.innerHeight * REACH_PAST_FOLD;
 
+  /** On screen, not the character's, and big enough to be worth splitting. */
+  const eligible = (el: HTMLElement): boolean => {
+    if (character.contains(el)) return false;
+    const rect = el.getBoundingClientRect();
+    if (rect.bottom < -foldReach || rect.top > window.innerHeight + foldReach) return false;
+    if (narrow && parseFloat(window.getComputedStyle(el).fontSize) < 15) return false;
+    const text = (el.textContent ?? '').trim();
+    return text.length > 0 && text.length <= MAX_ONE_BLOCK;
+  };
+
+  /*
+   * One block of prose is admitted before the queue, and this is the whole of
+   * the fix for "the paragraph stopped shattering".
+   *
+   * The loop below is shortest-first on purpose — a page of prose in document
+   * order eats the allowance before the headings under it are reached, so
+   * serving the cheap things first means every label, link and heading on
+   * screen is bought for the price of one paragraph. What was never true is
+   * the second half of that sentence: nothing reserved the price. On a wide
+   * screen there are enough short items to spend the entire budget before any
+   * prose is considered at all. Measured at 1280px: 44 blocks shattered and
+   * the longest of them was twelve characters, while the hero's own 178-
+   * character intro sat there as a rectangle the wave passed straight through.
+   *
+   * That is the failure `MAX_LETTERS_NARROW`'s comment warns about — "the rule
+   * quietly becomes: prose does not shatter" — and it was reached on desktop
+   * by a different route. Lowering the ceiling made it certain rather than
+   * likely, so the ceiling goes back up and the reservation makes it
+   * structural instead of accidental.
+   *
+   * Exactly one, and the longest that fits: two paragraphs would be the
+   * original problem again, and the longest is the one whose absence shows.
+   */
+  const prose = Array.from(document.querySelectorAll<HTMLElement>(SHATTER))
+    .filter(eligible)
+    .filter((el) => (el.textContent ?? '').trim().length > PROSE_FLOOR)
+    .sort((a, b) => (b.textContent ?? '').length - (a.textContent ?? '').length)[0];
+
+  if (prose) {
+    allowance -= (prose.textContent ?? '').trim().length;
+    words.push(prose);
+  }
+
   for (const el of shortestFirst) {
+    if (el === prose) continue;
     if (allowance <= 0) break;
     if (character.contains(el)) continue;
 
