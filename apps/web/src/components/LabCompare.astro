@@ -1,0 +1,460 @@
+---
+/**
+ * Before and after, dragged apart.
+ *
+ * ── Why this is a range input ──────────────────────────────────────────
+ *
+ * The obvious build is a div with pointerdown/pointermove/pointerup, a
+ * setPointerCapture, some arithmetic against getBoundingClientRect, a
+ * touch-action rule so the page does not scroll out from under the drag, and
+ * then — because none of that is reachable without a mouse — a parallel
+ * keyboard path and an ARIA slider role with its own value bookkeeping.
+ *
+ * All of that already exists, correct, in `<input type="range">`. It drags
+ * with a mouse, drags with a finger without scrolling the page, takes arrow
+ * keys and Home/End, announces itself as a slider with a value, and has a hit
+ * area the platform decides rather than one this file guesses at. What is left
+ * to write is one line: copy the value into a custom property. That is the
+ * whole script, and it is the lightest thing that produces the interaction.
+ *
+ * So the divider *is* the control. The line down the middle is the range's
+ * track drawn as a hairline, the handle is its thumb, and the two pictures are
+ * underneath.
+ *
+ * ── Why nothing shifts ────────────────────────────────────────────────
+ *
+ * Both halves are positioned inside a box whose height comes from the
+ * `after` image's own pixel ratio, declared in the data. The box therefore has
+ * its final shape before either file arrives, which is what stops the page
+ * jumping as they load — and the two stay registered because they are laid
+ * over each other at identical size rather than sized independently.
+ *
+ * The reveal is a `clip-path: inset()` on the top layer. Clipping rather than
+ * resizing means the image underneath never moves a pixel as the divider
+ * travels: no reflow, no resampling, and nothing for the browser to do per
+ * frame but move one clip edge.
+ */
+import type { LabImage } from '../lib/lab';
+
+interface Props {
+  before: LabImage;
+  after: LabImage;
+  beforeLabel?: string;
+  afterLabel?: string;
+  /** Identifies the control to its label. Unique per page. */
+  id?: string;
+}
+
+const {
+  before,
+  after,
+  beforeLabel = 'Original',
+  afterLabel = 'Exploration',
+  id = 'lab-compare',
+} = Astro.props;
+
+/*
+ * The box's shape, from the artwork rather than from a guess.
+ *
+ * `after` is the reference because it is the one that has to be inspectable —
+ * if the two ratios disagree, the exploration is the half that must not be
+ * cropped. `object-fit: cover` on both then absorbs any difference, and the
+ * halves stay registered because they share this one box.
+ */
+const ratio = `${after.width} / ${after.height}`;
+---
+
+<figure class="cmp" data-lab-compare>
+  <div class="cmp__stage" style={`--cmp-ratio:${ratio}`}>
+    {/* The exploration sits underneath, whole. What the divider actually does
+        is take the original away from on top of it, which is the right way
+        round: the thing being revealed is the new one. */}
+    <img
+      class="cmp__shot"
+      src={after.src}
+      alt={after.alt}
+      width={after.width}
+      height={after.height}
+      loading="lazy"
+      decoding="async"
+    />
+
+    <img
+      class="cmp__shot cmp__shot--before"
+      src={before.src}
+      alt={before.alt}
+      width={before.width}
+      height={before.height}
+      loading="lazy"
+      decoding="async"
+    />
+
+    {/* Drawn, not interactive — the range below is what the pointer meets. */}
+    <span class="cmp__seam" aria-hidden="true">
+      <span class="cmp__grip">
+        <svg viewBox="0 0 18 12" width="18" height="12" aria-hidden="true" focusable="false">
+          <path
+            d="M6.6 1.6 2.4 6l4.2 4.4M11.4 1.6 15.6 6l-4.2 4.4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
+        </svg>
+      </span>
+    </span>
+
+    <span class="cmp__tag cmp__tag--a" aria-hidden="true">{beforeLabel}</span>
+    <span class="cmp__tag cmp__tag--b" aria-hidden="true">{afterLabel}</span>
+
+    {/*
+      The control. Visually it is only the seam and the grip above; everything
+      else about it is turned off in CSS. It keeps its own label, its own value
+      and its own keyboard handling, none of which is re-implemented here.
+    */}
+    <label class="cmp__label" for={id}>
+      Reveal {afterLabel.toLowerCase()} — drag, or use the arrow keys
+    </label>
+    <input
+      class="cmp__range"
+      id={id}
+      type="range"
+      min="0"
+      max="100"
+      step="0.1"
+      value="50"
+      data-lab-range
+      aria-describedby={`${id}-hint`}
+    />
+    <span class="cmp__hint" id={`${id}-hint`}>
+      0% shows {beforeLabel.toLowerCase()} only, 100% shows {afterLabel.toLowerCase()} only.
+    </span>
+  </div>
+
+  <figcaption class="cmp__caption">
+    <span>{beforeLabel}</span>
+    <span class="cmp__caption-sep" aria-hidden="true">←→</span>
+    <span>{afterLabel}</span>
+  </figcaption>
+</figure>
+
+<script>
+  /**
+   * One line of work, bound once per tab.
+   *
+   * On `document` rather than on the input, for the reason in CLAUDE.md: the
+   * client router replaces the page on every navigation, so a listener on the
+   * element is a listener on a node that is about to be detached — and a
+   * binding guarded to run once per tab never comes back. `input` bubbles, so
+   * one delegated listener serves every comparison on every page for the life
+   * of the tab.
+   */
+  function bindCompare(): void {
+    const w = window as unknown as { __mhCompare?: boolean };
+    if (w.__mhCompare) return;
+    w.__mhCompare = true;
+
+    document.addEventListener('input', (event) => {
+      const el = event.target;
+      /*
+       * `hasAttribute`, not `dataset.labRange`.
+       *
+       * The attribute is written bare — `data-lab-range` with no value — so
+       * `dataset` reports it as the empty string, which is falsy. Testing the
+       * value therefore rejected every event from the control it was meant to
+       * match, and the divider sat at fifty per cent whatever the range said.
+       */
+      if (!(el instanceof HTMLInputElement) || !el.hasAttribute('data-lab-range')) return;
+      const stage = el.closest<HTMLElement>('.cmp__stage');
+      if (!stage) return;
+
+      // The value is a percentage already, so it goes straight through. No
+      // rectangles are measured and nothing is read back from layout.
+      stage.style.setProperty('--cmp-at', `${el.value}%`);
+
+      /*
+       * And the same number again, unitless.
+       *
+       * The tags fade out as their half of the picture runs out, which is a
+       * comparison against the divider's position — and a percentage cannot be
+       * divided by a percentage in `calc()`. Written as a bare number it can,
+       * so the two forms exist for two different jobs: `--cmp-at` is a length
+       * along the stage, `--cmp-n` is a fraction to do arithmetic with.
+       */
+      stage.style.setProperty('--cmp-n', el.value === '' ? '0.5' : String(Number(el.value) / 100));
+    });
+  }
+
+  bindCompare();
+
+  /*
+   * A page arriving from the router brings its own inputs at their markup
+   * value, and the property they write to starts at the same 50% — so there is
+   * nothing to restore on navigation, and no `astro:page-load` handler here.
+   * If that default and the markup's `value` ever disagree, this is the pair
+   * that has to be changed together.
+   */
+</script>
+
+<style>
+  .cmp {
+    margin: 0;
+  }
+
+  /*
+   * The stage.
+   *
+   * `aspect-ratio` from the artwork, so the box is its final shape before
+   * either file arrives. `isolation` keeps the seam's blend to this element.
+   */
+  .cmp__stage {
+    position: relative;
+    aspect-ratio: var(--cmp-ratio, 16 / 10);
+    /* Where the divider is, twice: as a length and as a fraction. Both are
+       written by the script, and both start where the input's own value does. */
+    --cmp-at: 50%;
+    --cmp-n: 0.5;
+    border-radius: var(--r-2xl);
+    overflow: hidden;
+    background: var(--surface-placeholder);
+    isolation: isolate;
+  }
+
+  .cmp__shot {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Both halves share this box, so they cannot drift out of register. */
+    display: block;
+  }
+
+  /*
+   * The original, clipped away from the left as the divider travels.
+   *
+   * Clipping rather than resizing: the image under it never moves, so there is
+   * no reflow and no resampling per frame — only one clip edge to shift, which
+   * the compositor can do on its own.
+   */
+  .cmp__shot--before {
+    clip-path: inset(0 calc(100% - var(--cmp-at)) 0 0);
+  }
+
+  .cmp__seam {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--cmp-at);
+    width: 1px;
+    margin-left: -0.5px;
+    background: rgba(255, 255, 255, 0.85);
+    /*
+     * A hairline over a photograph disappears against anything pale, and a
+     * second darker line beside it reads as a bevel. One line plus the shadow
+     * it casts is the restrained version.
+     */
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.28), 0 0 14px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .cmp__grip {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 -22px;
+    border-radius: var(--r-pill);
+    color: #fff;
+    background: rgba(20, 20, 24, 0.55);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
+    backdrop-filter: blur(10px) saturate(150%);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.28),
+      0 6px 20px rgba(0, 0, 0, 0.3);
+    transition: transform 320ms var(--ease-glide);
+  }
+
+  .cmp__tag {
+    position: absolute;
+    top: 14px;
+    z-index: 2;
+    padding: 6px 12px;
+    border-radius: var(--r-pill);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #fff;
+    background: rgba(20, 20, 24, 0.5);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+    transition: opacity 260ms var(--ease-glide);
+  }
+
+  .cmp__tag--a {
+    left: 14px;
+    /* Gone once its half is. Nothing labels an empty strip. */
+    opacity: clamp(0, calc((var(--cmp-n) - 0.12) / 0.08), 1);
+  }
+
+  .cmp__tag--b {
+    right: 14px;
+    opacity: clamp(0, calc((0.88 - var(--cmp-n)) / 0.08), 1);
+  }
+
+  /* The label and the hint are for anything that reads the control rather than
+     looks at it. The picture says both. */
+  .cmp__label,
+  .cmp__hint {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /*
+   * The range, stripped to nothing but its behaviour.
+   *
+   * It covers the whole stage so the drag can be started anywhere on the
+   * picture — which is what "no tiny control requirement" means on a phone —
+   * and its thumb is the only part with any size, sitting exactly under the
+   * drawn grip.
+   */
+  .cmp__range {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: ew-resize;
+    /*
+     * Horizontal drags belong to this control; vertical ones still scroll the
+     * page. A range input already behaves this way, and stating it stops a
+     * diagonal drag being claimed as a scroll on the way to being a drag.
+     */
+    touch-action: pan-y;
+  }
+
+  .cmp__range::-webkit-slider-runnable-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  .cmp__range::-moz-range-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  /*
+   * The thumb is invisible and large: the grip above is the picture of it, and
+   * this is the part the finger actually meets. 48px is the comfortable target
+   * the rest of the site uses for its controls.
+   */
+  .cmp__range::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 48px;
+    height: 48px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    cursor: ew-resize;
+  }
+
+  .cmp__range::-moz-range-thumb {
+    width: 48px;
+    height: 48px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    cursor: ew-resize;
+  }
+
+  /* The focus ring goes on the grip, which is where the eye is, rather than
+     around a control the size of the whole picture. */
+  .cmp__range:focus {
+    outline: none;
+  }
+
+  /*
+   * The ring goes on the grip, not around the control.
+   *
+   * The range covers the whole picture so it can be dragged from anywhere, and
+   * the site's global `:focus-visible` outline around a box that size is a blue
+   * rectangle around the artwork rather than a mark on the thing being moved.
+   * So the outline is suppressed above and drawn here instead.
+   *
+   * `:has()` on the stage rather than a sibling combinator from the range. The
+   * seam is painted *before* the input in the source — it has to be, so the
+   * input sits on top and takes the pointer — which means `~` reaches forwards
+   * past it and never matches. That version shipped nothing at all: no ring,
+   * silently, for anybody arriving on this control with a keyboard.
+   */
+  .cmp__stage:has(.cmp__range:focus-visible) .cmp__grip,
+  .cmp__stage:hover .cmp__grip {
+    transform: scale(1.08);
+  }
+
+  .cmp__stage:has(.cmp__range:focus-visible) .cmp__grip {
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+      0 0 0 3px var(--blue),
+      0 6px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .cmp__caption {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .cmp__caption-sep {
+    letter-spacing: 0;
+  }
+
+  @media (max-width: 767px) {
+    /*
+     * The grip grows rather than shrinks.
+     *
+     * This is the one control on the page that is dragged rather than tapped,
+     * and a phone is where that is hardest — so it gets more of the screen
+     * here, not less. The tags go, because at this width they sit on top of
+     * the work they are labelling.
+     */
+    .cmp__grip {
+      width: 52px;
+      height: 52px;
+      margin: -26px 0 0 -26px;
+    }
+
+    .cmp__tag {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cmp__grip {
+      transition: none;
+    }
+  }
+</style>

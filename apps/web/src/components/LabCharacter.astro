@@ -1,0 +1,170 @@
+---
+/**
+ * The narrator, standing next to something he has an opinion about.
+ *
+ * Not `CharacterAside`. That one is a small interactive scene — a bubble with
+ * pages, a pager, a spark, a bolt that crosses as the line changes — and it is
+ * the reward at the end of a page. Putting it beside four headings on one
+ * project page would turn the argument into a comic strip, which is the
+ * failure mode this section has to avoid more than any other.
+ *
+ * So this is the quiet form: artwork, a heading, and what he has to say about
+ * it. No script, no state, nothing to press. The work stays the protagonist
+ * and he is the margin note.
+ *
+ * `side` decides which edge he stands at. It alternates down a page so he
+ * reads as moving around the work rather than lining up beside it.
+ */
+import { POSES, type LabPose } from '../lib/lab';
+
+interface Props {
+  pose: LabPose;
+  /** What this moment is. Rendered as the heading of the block it introduces. */
+  heading?: string;
+  /** The line he is here for. Short — he is a margin note. */
+  line: string;
+  side?: 'start' | 'end';
+  /** Heading level, so the page keeps one outline. */
+  as?: 'h2' | 'h3' | 'p';
+}
+
+/*
+ * Annotated rather than inferred.
+ *
+ * `Heading` below is a component built from a prop, and that is enough to stop
+ * the implicit Props inference resolving — which quietly makes every prop
+ * `any`, including the one used to index POSES. Stating the type restores the
+ * error on a pose that does not exist, which is the only reason the union is
+ * there.
+ */
+const { pose, heading, line, side = 'start', as = 'h3' } = Astro.props as Props;
+const art = POSES[pose];
+const Heading = as;
+---
+
+<aside class="fig" class:list={[`fig--${side}`]} data-reveal="0">
+  <div class="fig__art">
+    {/*
+      Sized from the artwork's own pixels so the row is its final shape before
+      the file arrives — he sits mid-page, which is exactly where an unsized
+      image shifts the paragraph somebody is reading.
+    */}
+    <img
+      src={art.src}
+      alt={art.alt}
+      width={art.width}
+      height={art.height}
+      loading="lazy"
+      decoding="async"
+    />
+  </div>
+
+  <div class="fig__say">
+    {heading && <Heading class="fig__heading">{heading}</Heading>}
+    <p class="fig__line">{line}</p>
+  </div>
+</aside>
+
+<style>
+  .fig {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: clamp(16px, 2.4vw, 28px);
+    margin-block: clamp(28px, 4vh, 48px);
+  }
+
+  .fig--end {
+    grid-template-columns: 1fr auto;
+  }
+
+  .fig--end .fig__art {
+    order: 2;
+  }
+
+  /*
+   * Deliberately small.
+   *
+   * He is a signature, not an illustration — about the size of a large avatar,
+   * which is the same relationship `CharacterAside` has to the page it ends.
+   * Anything bigger and the eye goes to him instead of to the screens, which
+   * is the one thing this section cannot afford.
+   */
+  .fig__art {
+    width: clamp(92px, 11vw, 132px);
+  }
+
+  .fig__art img {
+    display: block;
+    width: 100%;
+    height: auto;
+    /*
+     * The artwork is a transparent cutout with a heavy black outline, and on
+     * the near-black and the violet that outline has nothing to sit against.
+     * A soft drop shadow in the page's own ink gives it an edge on a dark
+     * ground and is invisible on a light one, which is why it is a shadow
+     * rather than a stroke.
+     */
+    filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.28));
+  }
+
+  .fig__heading {
+    margin: 0 0 6px;
+    font-size: clamp(19px, 1.6vw, 22px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+
+  .fig__line {
+    font-size: 17px;
+    line-height: 1.5;
+    letter-spacing: -0.022em;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+    max-width: 52ch;
+  }
+
+  .fig--end .fig__say {
+    text-align: right;
+  }
+
+  .fig--end .fig__line {
+    margin-left: auto;
+  }
+
+  @media (max-width: 767px) {
+    /*
+     * He steps aside on a phone rather than shrinking further.
+     *
+     * Beside text at this width he would be about sixty pixels — small enough
+     * to be a smudge rather than a character, and it would take a third of the
+     * line length with him. Above the words he keeps his size and the sentence
+     * keeps its measure.
+     *
+     * The breakpoint is 767px, not 640: the site's phone layouts all turn at
+     * 767, and between the two numbers this was the last thing on the page
+     * still holding a picture beside a paragraph. Nothing on a phone should —
+     * a column that has to share its width with an image is not a column.
+     */
+    .fig,
+    .fig--end {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .fig--end .fig__art {
+      order: 0;
+    }
+
+    .fig--end .fig__say,
+    .fig--end .fig__line {
+      text-align: left;
+      margin-left: 0;
+    }
+
+    .fig__art {
+      width: 96px;
+    }
+  }
+</style>

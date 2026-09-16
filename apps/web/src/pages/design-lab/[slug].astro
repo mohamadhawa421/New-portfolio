@@ -1,0 +1,666 @@
+---
+/**
+ * One experiment.
+ *
+ * Not the case study template with different words. A case study answers "what
+ * was delivered, and what did it do"; this answers "what did I notice, what
+ * did I try, and what would I have to find out". The arc is
+ *
+ *     idea → problem → intervention → the experience that results → reflection
+ *
+ * and every part of it is optional, because the experiments are not the same
+ * shape as each other. A redesign has two states and a comparison between
+ * them. A feature concept has a flow and nothing to compare against. A single
+ * interaction may be one paragraph and no pictures at all. The template
+ * renders what the object has and leaves out what it does not — no empty
+ * headings, no "N/A", and no section that exists to make the page look longer.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LabCompare from '../../components/LabCompare.astro';
+import LabCharacter from '../../components/LabCharacter.astro';
+import {
+  getExperiments,
+  labNum,
+  nextExperiment,
+  type LabExperiment,
+} from '../../lib/lab';
+
+export function getStaticPaths() {
+  return getExperiments().map((experiment) => ({
+    params: { slug: experiment.slug },
+    props: { experiment },
+  }));
+}
+
+interface Props {
+  experiment: LabExperiment;
+}
+
+const { experiment } = Astro.props;
+const all = getExperiments();
+const position = all.findIndex((x) => x.slug === experiment.slug);
+const next = nextExperiment(experiment.slug);
+
+const hasCompare = Boolean(experiment.before && experiment.after);
+const hasContext = Boolean(experiment.context || experiment.motive);
+
+/*
+ * Where the narrator is allowed to stand, and how often.
+ *
+ * At most two on a page. He is a signature, and a signature repeated at every
+ * heading is letterhead — the brief for this section is explicit that the work
+ * stays the protagonist, and four poses down one page is the exact failure it
+ * names. So: one beside the reasoning, one beside the reflection, and the
+ * reasoning slot falls back to the flow when a feature concept has no "why"
+ * note of its own.
+ *
+ * Matching on the heading rather than on an index means an experiment can
+ * order its notes however it likes and he still ends up next to the right one.
+ */
+const whyIndex = experiment.notes.findIndex((note) => /^why\b|^why /i.test(note.heading));
+const reasonAt = whyIndex >= 0 ? whyIndex : -1;
+const showFlowCharacter = reasonAt < 0 && Boolean(experiment.flow?.length);
+
+const seo = {
+  metaTitle: `${experiment.title} — Design Lab — Mohamad Hawa`,
+  metaDescription: experiment.statement,
+};
+---
+
+<BaseLayout seo={seo}>
+  <main id="main" data-shell="1">
+    {/* ---------------------------------------------------------------- */}
+    {/* The idea, in the first screen                                     */}
+    {/* ---------------------------------------------------------------- */}
+    <section class="section section--light lx-hero" data-lift data-tile="light">
+      <div class="shell--narrow">
+        <a class="text-link" href="/design-lab" data-back>‹&nbsp;Design Lab</a>
+
+        <div class="eyebrow lx-hero__meta" data-reveal="0">
+          {labNum(position)} — {experiment.kinds.join(' · ')}
+        </div>
+
+        <h1 class="lx-hero__title"><span data-rise="0">{experiment.title}</span></h1>
+
+        {/*
+          The statement, and it is the largest thing under the name on purpose.
+          The visitor should be able to leave after this line and still know
+          what the experiment was.
+        */}
+        <p class="lx-hero__statement"><span data-rise="1">{experiment.statement}</span></p>
+
+        <p class="body lx-hero__summary" data-reveal="3">{experiment.summary}</p>
+
+        {
+          experiment.placeholder && (
+            <p class="lx-flag" data-reveal="3">
+              Placeholder entry — layout only, not a real experiment yet.
+            </p>
+          )
+        }
+      </div>
+    </section>
+
+    {/* ---------------------------------------------------------------- */}
+    {/* The comparison, when there are two states to compare              */}
+    {/* ---------------------------------------------------------------- */}
+    {
+      hasCompare && (
+        <section class="section section--parchment lx-compare" data-lift data-tile="parchment">
+          <div class="shell">
+            <div class="lx-compare__head" data-reveal="0">
+              <div class="eyebrow eyebrow--small">The intervention</div>
+              <p class="lx-compare__hint">
+                Drag the divider — or focus it and use the arrow keys.
+              </p>
+            </div>
+
+            <div class="lx-compare__stage" data-reveal="1">
+              <LabCompare
+                before={experiment.before!}
+                after={experiment.after!}
+                beforeLabel={experiment.beforeLabel}
+                afterLabel={experiment.afterLabel}
+                id={`cmp-${experiment.slug}`}
+              />
+            </div>
+          </div>
+        </section>
+      )
+    }
+
+    {/* ---------------------------------------------------------------- */}
+    {/* Context: what the product is, and why this one                    */}
+    {/* ---------------------------------------------------------------- */}
+    {
+      hasContext && (
+        <section class="section section--light lx-context" data-lift data-tile="light">
+          <div class="shell--narrow lx-context__inner">
+            {experiment.context && (
+              <div class="lx-block" data-reveal="0">
+                <h2 class="lx-block__heading">Context</h2>
+                <p class="body lx-block__body">{experiment.context}</p>
+              </div>
+            )}
+
+            {experiment.motive && (
+              <div class="lx-block" data-reveal="1">
+                <h2 class="lx-block__heading">Why I looked at it</h2>
+                <p class="body lx-block__body">{experiment.motive}</p>
+              </div>
+            )}
+          </div>
+        </section>
+      )
+    }
+
+    {/* ---------------------------------------------------------------- */}
+    {/* The argument                                                      */}
+    {/* ---------------------------------------------------------------- */}
+    {
+      experiment.notes.length > 0 && (
+        <section class="section section--light lx-notes" data-lift data-tile="light">
+          <div class="shell--narrow">
+            {experiment.notes.map((note, i) => (
+              <div class="lx-note">
+                {i === reasonAt ? (
+                  /*
+                   * The reasoning gets the thinking pose, and the note's own
+                   * heading — so he introduces the section rather than sitting
+                   * beside a second copy of it.
+                   */
+                  <LabCharacter
+                    pose="thinking"
+                    as="h2"
+                    heading={note.heading}
+                    line={note.body}
+                  />
+                ) : (
+                  <div class="lx-block" data-reveal={String(Math.min(i, 3))}>
+                    <h2 class="lx-block__heading">{note.heading}</h2>
+                    <p class="body lx-block__body">{note.body}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )
+    }
+
+    {/* ---------------------------------------------------------------- */}
+    {/* How it works                                                      */}
+    {/* ---------------------------------------------------------------- */}
+    {
+      experiment.flow && experiment.flow.length > 0 && (
+        <section class="section section--parchment lx-flow" data-lift data-tile="parchment">
+          <div class="shell--narrow">
+            {showFlowCharacter ? (
+              <LabCharacter
+                pose="explaining"
+                as="h2"
+                heading="How it works"
+                line="The path through it, one step at a time."
+              />
+            ) : (
+              <h2 class="lx-block__heading" data-reveal="0">
+                How it works
+              </h2>
+            )}
+
+            <ol class="lx-steps">
+              {experiment.flow.map((step, i) => (
+                <li class="lx-step" data-reveal={String(Math.min(i + 1, 3))}>
+                  <span class="lx-step__num" aria-hidden="true">
+                    {labNum(i)}
+                  </span>
+                  <div class="lx-step__say">
+                    <h3 class="lx-step__title">{step.title}</h3>
+                    <p class="body lx-step__body">{step.body}</p>
+
+                    {/*
+                      `data-zoom` and nothing else.
+
+                      The lightbox works from that mark alone — it stamps the
+                      frame into a button, gives it the badge, and takes its
+                      alt text for the label — so these screens get the same
+                      opening travel, the same zoom and the same controls as a
+                      case study's gallery, with no second implementation and
+                      no list anywhere to keep in step.
+                    */}
+                    {step.shot && (
+                      <div class="lx-step__frame" data-zoom>
+                        <img
+                          class="lx-step__shot"
+                          src={step.shot.src}
+                          alt={step.shot.alt}
+                          width={step.shot.width}
+                          height={step.shot.height}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+      )
+    }
+
+    {/* ---------------------------------------------------------------- */}
+    {/* What I'd test                                                     */}
+    {/* ---------------------------------------------------------------- */}
+    {
+      experiment.testing && experiment.testing.length > 0 && (
+        <section class="section section--light lx-test" data-lift data-tile="light">
+          <div class="shell--narrow">
+            <h2 class="lx-block__heading" data-reveal="0">What I'd test</h2>
+
+            {/*
+              The section that keeps the rest of the page honest.
+
+              Nothing here was built, shipped or measured, so there is no
+              number that could go on this page without being invented. What
+              can be stated truthfully is what would have to be found out — and
+              the questions are more useful than a fabricated percentage would
+              have been, because they are the actual next move.
+            */}
+            <p class="body lx-test__note" data-reveal="1">
+              This was never built, so there is nothing to measure. What follows is what
+              I would want to know before believing it.
+            </p>
+
+            <ul class="lx-test__list" data-reveal="2">
+              {experiment.testing.map((question) => (
+                <li class="lx-test__item">{question}</li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )
+    }
+
+    {/* ---------------------------------------------------------------- */}
+    {/* My take                                                           */}
+    {/* ---------------------------------------------------------------- */}
+    {
+      experiment.reflection && (
+        <section class="section section--parchment lx-take" data-lift data-tile="parchment">
+          <div class="shell--narrow">
+            <LabCharacter
+              pose="skeptical"
+              as="h2"
+              heading="My take"
+              line="An exploration is allowed to be half right, and saying which half is the point of writing it up."
+            />
+
+            <dl class="lx-take__list">
+              <div class="lx-take__row" data-reveal="1">
+                <dt>What I like</dt>
+                <dd>{experiment.reflection.likes}</dd>
+              </div>
+              <div class="lx-take__row" data-reveal="2">
+                <dt>What I'm not convinced by</dt>
+                <dd>{experiment.reflection.doubts}</dd>
+              </div>
+              <div class="lx-take__row" data-reveal="3">
+                <dt>Before I'd back it</dt>
+                <dd>{experiment.reflection.next}</dd>
+              </div>
+            </dl>
+          </div>
+        </section>
+      )
+    }
+
+    {/* ---------------------------------------------------------------- */}
+    {/* Out                                                               */}
+    {/* ---------------------------------------------------------------- */}
+    <section class="section section--light lx-out" data-lift data-tile="light">
+      <div class="shell--narrow lx-out__inner" data-reveal="0">
+        {
+          next && next.slug !== experiment.slug ? (
+            <a class="lx-out__next" href={`/design-lab/${next.slug}`}>
+              <span class="eyebrow eyebrow--small">Next experiment</span>
+              <span class="lx-out__title">
+                {next.title}
+                <span class="lx-out__arrow" aria-hidden="true">
+                  &nbsp;→
+                </span>
+              </span>
+            </a>
+          ) : (
+            <span />
+          )
+        }
+
+        <a class="text-link" href="/design-lab">Back to Design Lab</a>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  /* ---- Hero ---------------------------------------------------------- */
+
+  .lx-hero {
+    padding-top: clamp(100px, min(17vh, 26vw), 196px);
+    padding-bottom: clamp(42px, min(8vh, 11vw), 104px);
+  }
+
+  .lx-hero__meta {
+    margin-top: clamp(22px, 3vh, 38px);
+  }
+
+  .lx-hero__title {
+    margin-top: 10px;
+    font-size: clamp(40px, 5.6vw, 76px);
+    line-height: 1.04;
+    letter-spacing: -0.028em;
+    font-weight: 600;
+    overflow: hidden;
+  }
+
+  /*
+   * The statement, at lead size and in full ink rather than muted.
+   *
+   * It is the sentence the page exists to make, so it is not `.lead` — that
+   * token is for supporting copy and sits at --ink-muted. This one carries the
+   * argument and is read before anything else on the page.
+   */
+  .lx-hero__statement {
+    margin-top: clamp(16px, 2.2vh, 26px);
+    max-width: 30ch;
+    font-size: clamp(24px, 2.8vw, 36px);
+    font-weight: 300;
+    line-height: 1.22;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    overflow: hidden;
+  }
+
+  .lx-hero__summary {
+    margin-top: clamp(16px, 2.2vh, 24px);
+    max-width: 56ch;
+  }
+
+  .lx-flag {
+    display: inline-block;
+    margin-top: 22px;
+    padding: 7px 14px;
+    border-radius: var(--r-pill);
+    background: var(--surface-chip);
+    color: var(--ink-soft);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+  }
+
+  /* ---- Comparison ---------------------------------------------------- */
+
+  .lx-compare {
+    padding-block: clamp(44px, min(9vh, 12vw), 104px);
+  }
+
+  .lx-compare__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px 24px;
+    margin-bottom: clamp(22px, 3vh, 34px);
+  }
+
+  .lx-compare__hint {
+    font-size: 14px;
+    color: var(--ink-faint);
+  }
+
+  /* ---- Blocks -------------------------------------------------------- */
+
+  .lx-context,
+  .lx-notes,
+  .lx-flow,
+  .lx-test,
+  .lx-take {
+    padding-block: clamp(50px, min(10vh, 14vw), 120px);
+  }
+
+  /* Context and motive read as a pair, so they sit as one. */
+  .lx-context__inner {
+    display: grid;
+    gap: clamp(28px, 4vh, 48px);
+  }
+
+  @media (min-width: 820px) {
+    .lx-context__inner {
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(32px, 4vw, 64px);
+    }
+  }
+
+  .lx-block__heading {
+    font-size: clamp(24px, 2.6vw, 34px);
+    font-weight: 600;
+    line-height: 1.12;
+    letter-spacing: -0.022em;
+  }
+
+  .lx-block__body {
+    margin-top: 12px;
+    max-width: 62ch;
+  }
+
+  .lx-note + .lx-note {
+    margin-top: clamp(34px, 5vh, 62px);
+  }
+
+  /* ---- Flow ---------------------------------------------------------- */
+
+  .lx-steps {
+    list-style: none;
+    margin: clamp(24px, 3.4vh, 40px) 0 0;
+    padding: 0;
+  }
+
+  .lx-step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: clamp(14px, 2vw, 26px);
+    padding-block: clamp(20px, 2.8vh, 30px);
+    border-top: 1px solid var(--line-parchment);
+  }
+
+  .lx-step:last-child {
+    border-bottom: 1px solid var(--line-parchment);
+  }
+
+  .lx-step__num {
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+    padding-top: 4px;
+  }
+
+  .lx-step__title {
+    font-size: clamp(19px, 1.8vw, 22px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .lx-step__body {
+    margin-top: 6px;
+    max-width: 58ch;
+  }
+
+  /*
+   * The screen the step is talking about, under the words rather than beside
+   * them.
+   *
+   * These are 1440-wide application screenshots. Set next to a paragraph each
+   * one would be about three hundred pixels across, which is too small to read
+   * a control in — and reading the controls is the entire reason the picture
+   * is here. Full width under the text, they are inspectable; and because the
+   * shell is the narrow one, they still sit inside the column the prose does.
+   *
+   * `aspect-ratio` from the attributes below, so the box is its final shape
+   * before the file arrives and a lazily-loaded screen four steps down cannot
+   * shift the paragraph somebody is reading.
+   */
+  /*
+   * The frame, and the air around it.
+   *
+   * It was sitting clamp(16px…24px) under the paragraph, which at this text
+   * size is roughly one line — close enough that the picture read as part of
+   * the sentence rather than as the thing the sentence is about. A screenshot
+   * needs to be separated from its caption by more than the caption's own
+   * leading or the two run together.
+   */
+  .lx-step__frame {
+    position: relative;
+    display: block;
+    margin-top: clamp(26px, 3.6vh, 42px);
+    margin-bottom: clamp(8px, 1.4vh, 18px);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    background: var(--surface-placeholder);
+    cursor: pointer;
+  }
+
+  .lx-step__shot {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* ---- Testing ------------------------------------------------------- */
+
+  .lx-test__note {
+    margin-top: 12px;
+    max-width: 58ch;
+  }
+
+  .lx-test__list {
+    list-style: none;
+    margin: clamp(22px, 3vh, 34px) 0 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+  }
+
+  .lx-test__item {
+    position: relative;
+    padding: clamp(16px, 2vh, 22px) clamp(18px, 2.2vw, 26px) clamp(16px, 2vh, 22px)
+      clamp(42px, 4.4vw, 56px);
+    border-radius: var(--r-lg);
+    background: var(--surface-card);
+    font-size: 17px;
+    line-height: 1.45;
+    letter-spacing: -0.022em;
+    color: var(--ink);
+    text-wrap: pretty;
+  }
+
+  /* A question mark rather than a bullet: every line in here is a question,
+     and marking them as such is the difference between a checklist and an
+     agenda. */
+  .lx-test__item::before {
+    content: '?';
+    position: absolute;
+    left: clamp(18px, 2.2vw, 26px);
+    top: clamp(16px, 2vh, 22px);
+    color: var(--blue);
+    font-size: 17px;
+    line-height: 1.45;
+  }
+
+  /* ---- Take ---------------------------------------------------------- */
+
+  .lx-take__list {
+    margin: clamp(20px, 3vh, 32px) 0 0;
+  }
+
+  .lx-take__row {
+    padding-block: clamp(18px, 2.4vh, 26px);
+    border-top: 1px solid var(--line-parchment);
+  }
+
+  .lx-take__row:last-child {
+    border-bottom: 1px solid var(--line-parchment);
+  }
+
+  .lx-take__row dt {
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .lx-take__row dd {
+    margin: 8px 0 0;
+    max-width: 62ch;
+    font-size: 17px;
+    line-height: 1.5;
+    letter-spacing: -0.022em;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+  }
+
+  @media (min-width: 820px) {
+    .lx-take__row {
+      display: grid;
+      grid-template-columns: minmax(0, 0.42fr) minmax(0, 1fr);
+      gap: clamp(20px, 3vw, 48px);
+      align-items: baseline;
+    }
+
+    .lx-take__row dd {
+      margin-top: 0;
+    }
+  }
+
+  /* ---- Out ----------------------------------------------------------- */
+
+  .lx-out {
+    padding-block: clamp(46px, min(9vh, 12vw), 100px);
+  }
+
+  .lx-out__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px 24px;
+  }
+
+  .lx-out__next {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .lx-out__title {
+    display: block;
+    margin-top: 6px;
+    font-size: clamp(24px, 3vw, 34px);
+    font-weight: 600;
+    letter-spacing: -0.022em;
+  }
+
+  .lx-out__arrow {
+    display: inline-block;
+    transition: transform 320ms var(--ease-glide);
+  }
+
+  .lx-out__next:hover .lx-out__arrow {
+    transform: translate3d(4px, 0, 0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lx-out__arrow {
+      transition: none;
+    }
+  }
+</style>

@@ -1,0 +1,607 @@
+---
+/**
+ * The Lab index. A ledger, not a grid, and not the Selected Work list either.
+ *
+ * ── How it differs from Selected Work, and why it has to ──────────────
+ *
+ * `WorkIndex` is rows beside a sticky frame, and the frame holds one picture:
+ * the best screen from a finished project. That is the right shape for work
+ * that was delivered — there is one answer and here it is.
+ *
+ * An experiment does not have one answer, it has two states and an argument
+ * between them. So the frame here holds a **diptych**: the original on the
+ * left, the exploration on the right, one hairline between. The section's
+ * thesis is legible from the index before a single project is opened, and it
+ * is the same thesis the comparison slider makes interactively on the project
+ * page. Same furniture as Selected Work, different claim.
+ *
+ * Entries with nothing to compare — a feature that does not exist yet — show
+ * their cover whole rather than being padded into a false pair, and entries
+ * with no artwork at all get a typographic plate. All three read as the same
+ * family because they share the frame, the radius and the ratio.
+ *
+ * ── What is script and what is not ────────────────────────────────────
+ *
+ * Quietening the rows around the one being pointed at is `:has()`, in CSS,
+ * with no listener: it is a hover state, and hover states belong in the
+ * stylesheet. The script owns only the two things CSS cannot do — which frame
+ * is showing, and the filter — and `lab-index.ts` is the whole of it.
+ */
+import { labNum, type LabExperiment, type LabKind } from '../lib/lab';
+
+interface Props {
+  experiments: LabExperiment[];
+  filters: LabKind[];
+  /** The one shown large above the list, if there is one. Skipped here. */
+  featuredSlug?: string;
+}
+
+const { experiments, filters, featuredSlug } = Astro.props;
+
+/*
+ * The lead is not repeated in the ledger.
+ *
+ * It is directly above, at four times the size. A second entry for it reads as
+ * a duplicate rather than as a table of contents — but the numbering still
+ * counts it, because it is the first experiment and calling the second one 01
+ * would be a lie about the order.
+ */
+const rows = experiments
+  .map((experiment, index) => ({ experiment, index }))
+  .filter(({ experiment }) => experiment.slug !== featuredSlug);
+---
+
+<div class="lab-index" data-lab-index data-count={rows.length}>
+  {
+    filters.length > 0 && (
+      <div class="lab-index__filters" role="group" aria-label="Filter experiments">
+        <button class="chip chip--on" type="button" data-lab-filter="All" aria-pressed="true">
+          All
+        </button>
+        {filters.map((kind) => (
+          <button class="chip" type="button" data-lab-filter={kind} aria-pressed="false">
+            {kind}
+          </button>
+        ))}
+
+        {/*
+          Filtering changes what is on the page without moving focus, so a
+          screen reader is given the count in words. Polite: it waits for the
+          current utterance rather than interrupting the press it followed.
+        */}
+        <p class="lab-index__tally" data-lab-tally aria-live="polite">
+          {rows.length} experiments
+        </p>
+      </div>
+    )
+  }
+
+  <div class="lab-index__body">
+    <ol class="lab-index__list">
+      {
+        rows.map(({ experiment, index }) => (
+          <li
+            class="lab-row"
+            data-lab-row
+            data-kinds={experiment.kinds.join('|')}
+            data-i={index}
+          >
+            <a class="lab-row__hit" href={`/design-lab/${experiment.slug}`}>
+              <span class="lab-row__num" aria-hidden="true">
+                {labNum(index)}
+              </span>
+
+              <span class="lab-row__body">
+                <span class="lab-row__head">
+                  <h3 class="lab-row__title">{experiment.title}</h3>
+                  <span class="lab-row__kinds">
+                    {experiment.kinds.map((kind) => (
+                      <span class="lab-row__kind">{kind}</span>
+                    ))}
+                  </span>
+                </span>
+
+                <span class="lab-row__statement">{experiment.statement}</span>
+
+                {/*
+                  The picture, on a narrow screen only. There is no sticky
+                  frame to put it in below 901px and no pointer to drive one,
+                  so each row carries its own — the same information with none
+                  of the mechanism, which is how WorkIndex solves the same
+                  problem.
+                */}
+                <span class="lab-row__inline" aria-hidden="true">
+                  {experiment.before && experiment.after ? (
+                    <span class="plate plate--pair" style={`--plate-ratio:${experiment.after!.width / experiment.after!.height}`}>
+                      <img
+                        src={experiment.before.src}
+                        alt=""
+                        width={experiment.before.width}
+                        height={experiment.before.height}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <img
+                        src={experiment.after.src}
+                        alt=""
+                        width={experiment.after.width}
+                        height={experiment.after.height}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </span>
+                  ) : experiment.cover ? (
+                    <span class="plate" style={`--plate-ratio:${experiment.cover!.width / experiment.cover!.height}`}>
+                      <img
+                        src={experiment.cover.src}
+                        alt=""
+                        width={experiment.cover.width}
+                        height={experiment.cover.height}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </span>
+                  ) : (
+                    <span class="plate plate--bare">{labNum(index)}</span>
+                  )}
+                </span>
+
+                <span class="lab-row__go">
+                  Explore
+                  <span class="lab-row__arrow" aria-hidden="true">
+                    →
+                  </span>
+                </span>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+
+    {/*
+      The frame. Wide screens only — it is `display: none` below 901px, so the
+      images inside it are never fetched on a phone.
+    */}
+    <div class="lab-index__frames" aria-hidden="true">
+      {
+        rows.map(({ experiment, index }, position) => (
+          <figure
+            class="lab-frame"
+            class:list={[{ 'lab-frame--on': position === 0 }]}
+            data-lab-frame
+            data-i={index}
+          >
+            {experiment.before && experiment.after ? (
+              <span class="plate plate--pair" style={`--plate-ratio:${experiment.after!.width / experiment.after!.height}`}>
+                <img
+                  src={experiment.before.src}
+                  alt=""
+                  width={experiment.before.width}
+                  height={experiment.before.height}
+                  loading="lazy"
+                  decoding="async"
+                />
+                <img
+                  src={experiment.after.src}
+                  alt=""
+                  width={experiment.after.width}
+                  height={experiment.after.height}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </span>
+            ) : experiment.cover ? (
+              <span class="plate" style={`--plate-ratio:${experiment.cover!.width / experiment.cover!.height}`}>
+                <img
+                  src={experiment.cover.src}
+                  alt=""
+                  width={experiment.cover.width}
+                  height={experiment.cover.height}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </span>
+            ) : (
+              <span class="plate plate--bare">{labNum(index)}</span>
+            )}
+
+            <figcaption class="lab-frame__cap">
+              <span>{experiment.kind}</span>
+              <span class="lab-frame__dot" aria-hidden="true">·</span>
+              <span>
+                {experiment.before && experiment.after
+                  ? 'Original and exploration'
+                  : 'Exploration'}
+              </span>
+            </figcaption>
+          </figure>
+        ))
+      }
+    </div>
+  </div>
+
+  {/* Only reachable when a filter empties the list. */}
+  <p class="lab-index__empty" data-lab-empty hidden>Nothing filed under that yet.</p>
+</div>
+
+<style>
+  .lab-index {
+    margin-top: clamp(40px, 6vh, 72px);
+  }
+
+  /* ---- Filters ------------------------------------------------------ */
+
+  .lab-index__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: clamp(24px, 3.4vh, 40px);
+  }
+
+  .chip {
+    cursor: pointer;
+    min-height: 40px;
+    padding: 0 16px;
+    border: none;
+    border-radius: var(--r-pill);
+    background: var(--surface-chip);
+    color: var(--ink-muted);
+    font: inherit;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+    transition:
+      background 240ms var(--ease-glide),
+      color 240ms var(--ease-glide),
+      transform 300ms var(--spring);
+  }
+
+  .chip:hover {
+    background: var(--surface-chip-hover);
+    color: var(--ink);
+  }
+
+  .chip:active {
+    transform: scale(0.96);
+  }
+
+  .chip--on {
+    background: var(--ink);
+    color: var(--surface);
+  }
+
+  .chip--on:hover {
+    background: var(--ink);
+    color: var(--surface);
+  }
+
+  .lab-index__tally {
+    margin: 0 0 0 auto;
+    font-size: 14px;
+    color: var(--ink-faint);
+  }
+
+  /* ---- The two columns ---------------------------------------------- */
+
+  .lab-index__body {
+    display: grid;
+    gap: clamp(28px, 4vw, 64px);
+  }
+
+  .lab-index__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .lab-row {
+    border-top: 1px solid var(--line);
+    /*
+     * The quieting is a transition on the row, so it works for the hover
+     * below and for the filter's FLIP without either knowing about the other.
+     */
+    transition: opacity 320ms var(--ease-glide);
+  }
+
+  .lab-row:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .lab-row__hit {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: clamp(14px, 2vw, 28px);
+    padding-block: clamp(22px, 3vh, 34px);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .lab-row__num {
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+    padding-top: 6px;
+  }
+
+  .lab-row__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 14px;
+  }
+
+  .lab-row__title {
+    margin: 0;
+    font-size: clamp(22px, 2.5vw, 30px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.16;
+    /* The one thing that moves on hover, and only a little. */
+    transition: transform 320ms var(--ease-glide);
+  }
+
+  .lab-row__kinds {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .lab-row__kind {
+    padding: 4px 10px;
+    border-radius: var(--r-pill);
+    background: var(--surface-chip);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .lab-row__statement {
+    display: block;
+    margin-top: 10px;
+    font-size: 17px;
+    line-height: 1.5;
+    letter-spacing: -0.022em;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+    max-width: 46ch;
+  }
+
+  .lab-row__go {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    font-size: 15px;
+    color: var(--blue);
+  }
+
+  .lab-row__arrow {
+    transition: transform 320ms var(--ease-glide);
+  }
+
+  .lab-row__inline {
+    display: none;
+  }
+
+  /* ---- The plate: one shape, three contents ------------------------- */
+
+  /*
+   * The plate takes its shape from the artwork, not from a number.
+   *
+   * It was a flat `16 / 10`, which is fine for one picture and wrong for two:
+   * a pair splits that box down the middle, so each half became 0.8:1 —
+   * portrait — and `object-fit: cover` then threw away forty-four per cent of
+   * the width of every screenshot to fit. Two application screens cropped to
+   * portrait slivers is what made the index look stretched.
+   *
+   * So the ratio comes in from the image's own pixels, and a pair is twice as
+   * wide as one of them. Each half then holds its true proportions and nothing
+   * is cropped at all.
+   */
+  .plate {
+    display: block;
+    position: relative;
+    aspect-ratio: var(--plate-ratio, 1.6);
+    border-radius: var(--r-xl);
+    overflow: hidden;
+    background: var(--surface-placeholder);
+  }
+
+  .plate--pair {
+    aspect-ratio: calc(var(--plate-ratio, 1.6) * 2);
+  }
+
+  /*
+   * On a phone the pair stacks, because side by side it is not a comparison.
+   *
+   * Two 1440x684 screens in one row make a 4.2:1 band. At 1240px that is a
+   * 620x295 half — readable. At 347px it is 173x82, which is not a screenshot,
+   * it is a smear: the same failure as any other picture forced to share a
+   * phone's width with something else.
+   *
+   * Stacked, each half gets the full column — 347x165 — and the plate's ratio
+   * is the artwork's halved rather than doubled. Before above after, which is
+   * the order they are read in.
+   */
+  @media (max-width: 767px) {
+    .plate--pair {
+      grid-template-columns: minmax(0, 1fr);
+      grid-auto-rows: 1fr;
+      aspect-ratio: calc(var(--plate-ratio, 1.6) / 2);
+    }
+  }
+
+  .plate img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /*
+   * The diptych. Two halves of one frame, divided by a hairline — the same
+   * line the comparison slider draws, standing still.
+   */
+  .plate--pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--line);
+  }
+
+  /*
+   * `contain`, because the halves are now exactly the right shape and there is
+   * nothing left to crop. `cover` would still trim a sub-pixel row wherever
+   * the division by two lands off a whole number.
+   */
+  .plate--pair img {
+    object-fit: contain;
+  }
+
+  .plate--bare {
+    aspect-ratio: 16 / 10;
+    display: grid;
+    place-items: center;
+    background: var(--surface-chip);
+    color: var(--ink-faint);
+    font-size: clamp(40px, 6vw, 72px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  /* ---- The frame ----------------------------------------------------- */
+
+  .lab-index__frames {
+    display: none;
+  }
+
+  .lab-frame {
+    margin: 0;
+  }
+
+  .lab-frame__cap {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .lab-index__empty {
+    padding: clamp(40px, 7vh, 80px) 0;
+    text-align: center;
+    color: var(--ink-muted);
+    font-size: 17px;
+  }
+
+  /* ---- Wide: the ledger beside a sticky frame ------------------------ */
+
+  @media (min-width: 901px) {
+    .lab-index__body {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 0.82fr);
+      align-items: start;
+    }
+
+    .lab-index__frames {
+      display: grid;
+      position: sticky;
+      /* Clear of the nav, which is fixed at --nav-top. */
+      top: clamp(96px, 14vh, 140px);
+    }
+
+    /*
+     * All frames in one cell, so the box never resizes as they swap and the
+     * list beside it never reflows.
+     */
+    .lab-frame {
+      grid-area: 1 / 1;
+      opacity: 0;
+      transition:
+        opacity 420ms var(--ease-glide),
+        transform 420ms var(--ease-glide);
+      transform: scale(0.985);
+      pointer-events: none;
+    }
+
+    .lab-frame--on {
+      opacity: 1;
+      transform: none;
+    }
+
+    /*
+     * Everything else steps back while one row is being read.
+     *
+     * `:has()` and nothing else — no listener, no class, no script. The rule
+     * is only armed while the list is actually being pointed at or tabbed
+     * through, so the resting state is untouched.
+     */
+    .lab-index__list:has(.lab-row__hit:hover) .lab-row:not(:has(.lab-row__hit:hover)),
+    .lab-index__list:has(.lab-row__hit:focus-visible)
+      .lab-row:not(:has(.lab-row__hit:focus-visible)) {
+      opacity: 0.42;
+    }
+
+    .lab-row__hit:hover .lab-row__title,
+    .lab-row__hit:focus-visible .lab-row__title {
+      transform: translate3d(6px, 0, 0);
+    }
+
+    .lab-row__hit:hover .lab-row__arrow {
+      transform: translate3d(4px, 0, 0);
+    }
+  }
+
+  /* ---- Narrow: each row carries its own picture ---------------------- */
+
+  @media (max-width: 900px) {
+    .lab-row__hit {
+      grid-template-columns: auto 1fr;
+    }
+
+    .lab-row__inline {
+      display: block;
+      margin-top: 16px;
+    }
+  }
+
+  @media (max-width: 560px) {
+    /*
+     * The number moves above the title rather than beside it.
+     *
+     * At this width a left rail costs about a tenth of the line and the title
+     * wraps a word earlier for it. Above, it reads as a label on the entry and
+     * the title gets the full measure.
+     */
+    .lab-row__hit {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .lab-row__num {
+      padding-top: 0;
+    }
+
+    .lab-row__statement {
+      max-width: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lab-row,
+    .lab-frame,
+    .lab-row__title,
+    .lab-row__arrow,
+    .chip {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  import '../scripts/lab-index';
+</script>

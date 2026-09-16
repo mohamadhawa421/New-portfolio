@@ -9,9 +9,24 @@ interface Props {
 
 const { pathname, settings } = Astro.props;
 
+/*
+ * `Lab` rather than `Design Lab`, and it sits after Work.
+ *
+ * The pill is centred and sized by its contents, so every label in here is
+ * paid for twice — once in its own width and once in the gap beside it. At the
+ * narrow end of the desktop range "Design Lab" is wider than the two links it
+ * would sit between put together, which pushes the pill into the fixed logo
+ * mark. One word keeps the five items balanced, and the page it opens says the
+ * full name at the top of itself.
+ *
+ * After Work because that is the reading: client work first, then what happens
+ * outside it. Before About for the same reason — both are the person rather
+ * than the practice, and the practice comes first.
+ */
 const links = [
   { label: 'Home', href: '/', match: (p: string) => p === '/' },
   { label: 'Work', href: '/work', match: (p: string) => p.startsWith('/work') },
+  { label: 'Lab', href: '/design-lab', match: (p: string) => p.startsWith('/design-lab') },
   { label: 'About', href: '/about', match: (p: string) => p.startsWith('/about') },
   { label: 'Contact', href: '/contact', match: (p: string) => p.startsWith('/contact') },
 ];
