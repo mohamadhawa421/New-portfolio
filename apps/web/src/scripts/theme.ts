@@ -31,6 +31,14 @@ const WAVE_MS = 700;
  */
 const FAST_WAVE_MS = 380;
 
+/**
+ * How far behind the ground its contents answer.
+ *
+ * Short enough to be one event, long enough that the order is legible: the
+ * floor moves, then what is standing on it.
+ */
+const WITHIN_LAG = 70;
+
 /** How long the lift-and-land keyframes run. Must match `.is-lifting`. */
 const LIFT_MS = 620;
 
@@ -175,6 +183,100 @@ function apply(theme: Theme): void {
  */
 const LIFT_LEAN = 12;
 
+/**
+ * A ceiling on how many blocks one section contributes.
+ *
+ * The walk below stops at text, and a long page of them is still only a few
+ * dozen — but a section that is a grid of many small things could hand back
+ * far more, and every one of them is an animation started in the same frame.
+ */
+const MAX_BLOCKS = 32;
+
+/**
+ * Tags that are text or are atomic. An element holding one of these is as far
+ * down as the walk goes. See the note at the use site.
+ */
+const TEXT_LEVEL = new Set([
+  'SPAN', 'A', 'EM', 'STRONG', 'B', 'I', 'U', 'S', 'SMALL', 'CODE', 'ABBR',
+  'TIME', 'LABEL', 'BR', 'SUP', 'SUB', 'MARK', 'Q', 'CITE',
+  'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA',
+  'IMG', 'PICTURE', 'VIDEO', 'CANVAS', 'SVG',
+]);
+
+/**
+ * The pieces of a section that should answer the wave separately.
+ *
+ * Descends only while a wrapper is unambiguously a wrapper: every one of its
+ * element children laid out as a block. The moment an element's children are
+ * inline — a heading holding a span, a line of metadata holding three — that
+ * element is the block, because splitting a line of text across two lifts
+ * would tear the line. Anything not being rendered is left out rather than
+ * given a delay it will never use.
+ */
+function contentBlocks(root: HTMLElement, depth = 0): HTMLElement[] {
+  /*
+   * `display: contents` is expanded rather than skipped.
+   *
+   * The hero's copy column is one: a grid wrapper that exists to be placed and
+   * draws nothing itself, so it has no box to lift and its children are laid
+   * out as if it were not there. Treating it as an unrenderable element — the
+   * same as `none` — dropped every line of hero text out of the walk, which is
+   * how a first attempt at this lifted the portrait and nothing else.
+   */
+  const kids: HTMLElement[] = [];
+  for (const child of Array.from(root.children)) {
+    if (!(child instanceof HTMLElement)) continue;
+    const display = window.getComputedStyle(child).display;
+    if (display === 'none') continue;
+    if (display === 'contents') kids.push(...contentBlocks(child, depth));
+    else kids.push(child);
+  }
+
+  if (!kids.length || depth >= 4) return [root];
+
+  /*
+   * Stop at anything stacked.
+   *
+   * A child taken out of flow is not beside its siblings, it is on top of
+   * them: the portrait's glow, its fallback, the image itself. Those are one
+   * object drawn in layers, and giving each layer its own arrival slides them
+   * apart. If any child is positioned, this element is the block.
+   */
+  const stacked = kids.some((child) => {
+    const position = window.getComputedStyle(child).position;
+    return position === 'absolute' || position === 'fixed';
+  });
+  if (stacked) return [root];
+
+  /*
+   * Stop at anything text-level, by tag rather than by computed display.
+   *
+   * A flex or grid container blockifies its children, so the three spans of
+   * "Product Owner · Beirut" all report `display: block` and a test on the
+   * computed value waved them through — the line was then torn into three
+   * pieces arriving a few milliseconds apart, which is the one thing the rest
+   * of this site is careful never to do to a line of text. The tag is what
+   * actually says whether something is text: a span is text wherever it is
+   * put, and blockification is a layout consequence, not a change of kind.
+   *
+   * Images, media and controls are in the list for the neighbouring reason.
+   * They are atomic — there is nothing inside them that should arrive
+   * separately — so their parent is the block.
+   */
+  // `tagName` is uppercase for HTML but case-preserving for SVG, where it is
+  // the lowercase `svg`. Normalised, or the one atomic tag that is not HTML
+  // would slip through the list.
+  const textLevel = kids.some((child) => TEXT_LEVEL.has(child.tagName.toUpperCase()));
+  if (textLevel) return [root];
+
+  const everyChildIsABlock = kids.every(
+    (child) => !window.getComputedStyle(child).display.startsWith('inline')
+  );
+  if (!everyChildIsABlock) return [root];
+
+  return kids.flatMap((child) => contentBlocks(child, depth + 1));
+}
+
 function scheduleLift(
   originX: number,
   originY: number,
@@ -184,7 +286,19 @@ function scheduleLift(
   const reach = radius * WAVE_OVERSHOOT;
   const targets = Array.from(document.querySelectorAll<HTMLElement>('[data-lift]'));
 
+  /*
+   * The page's own colour, read once.
+   *
+   * A section whose background matches this has no seam to show a hop with —
+   * see `.is-lifting-within` in global.css. Compared as computed strings,
+   * which is exactly the comparison that matters: two different declarations
+   * that resolve to the same paint are the same paint.
+   */
+  const pagePaint = window.getComputedStyle(document.body).backgroundColor;
+
   let lastDelay = 0;
+  /** The content wrappers lifted in place of their section, for `done`. */
+  const within: HTMLElement[] = [];
 
   for (const el of targets) {
     const rect = el.getBoundingClientRect();
@@ -222,6 +336,43 @@ function scheduleLift(
     el.style.setProperty('--lift-delay', `${delay}ms`);
     el.style.setProperty('--lift-lean', `${lean.toFixed(1)}px`);
     el.classList.add('is-lifting');
+
+    /*
+     * And its contents, one block at a time, if the section has no colour of
+     * its own to show the hop with.
+     *
+     * This used to lift the single wrapper — `.hero__inner`, `.shell` — which
+     * moved everything inside it together and read as the block it is. The
+     * wave does not arrive at a column of text all at once, and the wrapper is
+     * also the one shape in here that *is* full-bleed, so its horizontal
+     * distance to the switch is zero and it could never lean either. Measuring
+     * each block on its own gives both back: the eyebrow answers before the
+     * title, the title before the paragraph, and each leans away from the side
+     * the front came from by however far off its own centre the switch was.
+     */
+    if (window.getComputedStyle(el).backgroundColor !== pagePaint) continue;
+
+    const inner = el.firstElementChild;
+    if (!(inner instanceof HTMLElement)) continue;
+
+    for (const block of contentBlocks(inner).slice(0, MAX_BLOCKS)) {
+      const box = block.getBoundingClientRect();
+      if (!box.width || !box.height) continue;
+
+      const bx = Math.max(box.left - originX, 0, originX - box.right);
+      const by = Math.max(box.top - originY, 0, originY - box.bottom);
+      const blockDelay =
+        Math.round(timeAtProgress(Math.hypot(bx, by) / reach) * duration) + WITHIN_LAG;
+      lastDelay = Math.max(lastDelay, blockDelay);
+
+      const blockOff = (box.left + box.width / 2 - originX) / (box.width / 2 || 1);
+      const blockLean = Math.max(-1, Math.min(1, blockOff)) * LIFT_LEAN;
+
+      block.style.setProperty('--lift-delay', `${blockDelay}ms`);
+      block.style.setProperty('--lift-lean', `${blockLean.toFixed(1)}px`);
+      block.classList.add('is-lifting-within');
+      within.push(block);
+    }
   }
 
   return {
@@ -231,8 +382,13 @@ function scheduleLift(
         el.style.removeProperty('--lift-delay');
         el.style.removeProperty('--lift-lean');
       }
+      for (const el of within) {
+        el.classList.remove('is-lifting-within');
+        el.style.removeProperty('--lift-delay');
+        el.style.removeProperty('--lift-lean');
+      }
     },
-    settlesIn: lastDelay + LIFT_MS,
+    settlesIn: lastDelay + WITHIN_LAG + LIFT_MS,
   };
 }
 

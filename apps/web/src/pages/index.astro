@@ -529,7 +529,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
    * it be quiet without the composition going soft.
    */
   .hero__title {
-    font-size: clamp(42px, 7.4vw, 104px);
+    font-size: clamp(46px, 7.4vw, 104px);
     line-height: 0.98;
     letter-spacing: -0.032em;
     font-weight: 600;
@@ -547,7 +547,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   .hero__subtitle {
     margin-top: clamp(10px, 1.6vh, 16px);
     max-width: 18ch;
-    font-size: clamp(22px, 3.1vw, 40px);
+    font-size: clamp(24px, 3.1vw, 40px);
     font-weight: 300;
     line-height: 1.14;
     letter-spacing: -0.004em;
@@ -866,8 +866,29 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
      * takes nearly two seconds to give way again — so the character powering
      * down happens across the same stretch as the rest of the page settling,
      * rather than being a swap at the end of it.
+     *
+     * ── And why this is not --ease-glide ──────────────────────────────
+     *
+     * It was, and the fade read as a snap. The glide is the site's hover
+     * curve: it is shaped to get most of the way there immediately, which is
+     * right for a 320ms hover and wrong for a two-second drain. Plotted over
+     * 1900ms it puts opacity at 0.79 by 380ms and 0.33 by 760ms — the whole
+     * visible collapse inside a 475ms window near the start, with the
+     * remaining 1.1 seconds spent travelling from 0.2 to 0.
+     *
+     * And that window is the worst 475ms available. The purple is released at
+     * `landed + SETTLE_MS + 40`, and teardown runs at `landed + 700` — 270ms
+     * later, which is exactly where the collapse is steepest. Teardown is the
+     * heaviest frame in the whole sequence, so the part of the fade that
+     * actually reads is the part that gets dropped, and what reaches the
+     * screen is the eyes changing between two frames.
+     *
+     * This curve holds instead: it has barely moved by the time teardown is
+     * over — 0.9 at 270ms — and does its visible work afterwards, through the
+     * middle, on a page that is finally quiet. Same duration, same start, and
+     * the fade is now where it can be seen.
      */
-    transition: opacity 1900ms var(--ease-glide);
+    transition: opacity 1900ms cubic-bezier(0.4, 0, 0.6, 1);
   }
 
   /*
@@ -1014,7 +1035,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   .work__heading {
     /* Smaller than it was: it is a label on an index now, and the work
        beside it is what should be carrying the scale. */
-    font-size: clamp(24px, 3vw, 40px);
+    font-size: clamp(30px, 3vw, 40px);
     margin: 0;
   }
 
@@ -1114,6 +1135,24 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     transition: opacity 280ms var(--ease-glide);
   }
 
+  /*
+   * A service card is a row on a desktop and a full-width block on a phone, so
+   * it is one of the few surfaces that gets *larger* as the screen gets
+   * smaller: about 107px on its short side at 1440 and about 187px at 390.
+   * `--r-sm` is a flat 14px, which means the same corner on a surface almost
+   * twice the size — 13.1% of it on the desktop and 7.5% on the phone, the
+   * flattest thing on the mobile site.
+   *
+   * 20px is 10.7%, which closes most of that without taking a card with text
+   * in it all the way to the desktop's ratio. Past about that the corner
+   * starts eating the first line of the label.
+   */
+  @media (max-width: 767px) {
+    .service {
+      border-radius: 20px;
+    }
+  }
+
   /* Behind a pointer query for the same reason as ProjectCard's: a touch screen
      cannot hover, so the layers these rules promote are spent on nothing. */
   @media (hover: hover) and (pointer: fine) {
@@ -1192,7 +1231,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   }
 
   .manifesto__heading {
-    font-size: clamp(29px, 5.2vw, 72px);
+    font-size: clamp(32px, 5.2vw, 72px);
     line-height: 1.07;
     letter-spacing: -0.017em;
     font-weight: 600;
@@ -1210,7 +1249,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   .manifesto__body {
     margin-top: clamp(28px, 5vh, 48px);
     max-width: 52ch;
-    font-size: clamp(19px, 2vw, 24px);
+    font-size: clamp(20px, 2vw, 24px);
     font-weight: 300;
     line-height: 1.5;
     color: var(--ink-on-dark-muted);
@@ -1318,13 +1357,26 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    background: var(--surface-placeholder);
+    /*
+     * No ground under him, the same as in the hero.
+     *
+     * This painted `--surface-placeholder` behind the drawing, which turned
+     * the one thing on the page that is supposed to be atmosphere into a card
+     * with a picture in it: a grey rectangle with a cut-out figure standing on
+     * it. The hero solved this already — the portrait is keyed out of its own
+     * background and the field behind it is built in CSS by `__aura`, so there
+     * is nothing to frame. Both use the same drawing and the same aura; this
+     * one line was the whole of what made them look like different things.
+     */
   }
 
   /* Stacked exactly over the portrait, and invisible unless the mode is on. */
+  /* Same curve as the hero's, for the same reason — see the long note there.
+     Shorter, because leaving super designer mode is not a teardown and there
+     is nothing heavy for the fade to compete with. */
   .about__portrait-alt {
     opacity: 0;
-    transition: opacity 900ms var(--ease-glide);
+    transition: opacity 900ms cubic-bezier(0.4, 0, 0.6, 1);
   }
 
   :global(:root[data-super]) .about__portrait-alt {
@@ -1392,7 +1444,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   }
 
   .about__heading {
-    font-size: clamp(26px, 3.4vw, 42px);
+    font-size: clamp(30px, 3.4vw, 42px);
     line-height: 1.1;
     letter-spacing: -0.016em;
     font-weight: 600;
@@ -1417,7 +1469,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   }
 
   .about__stat-value {
-    font-size: clamp(26px, 3vw, 34px);
+    font-size: clamp(30px, 3vw, 34px);
     font-weight: 600;
     letter-spacing: -0.024em;
     font-variant-numeric: tabular-nums;
@@ -1470,6 +1522,68 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
        */
       margin-top: clamp(44px, 7.5vh, 84px);
       margin-bottom: 0;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* The hero's vertical rhythm on a phone                               */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * Grouping, which the spacing was arguing against.
+   *
+   * Measured at 375px before this: 16px between the eyebrow and the name, then
+   * 33 between the name and the subtitle, 25 between the subtitle and the
+   * paragraph, 32 before the buttons. The largest gap in the whole block sat
+   * between the title and the line that finishes the title's sentence — so the
+   * three things that are one idea were spaced further apart than the two that
+   * are not, and the hero read as four separate announcements instead of one
+   * with a hierarchy.
+   *
+   * The steps below go 10 / 12 / 22 / 30 / 52: the label sits on its name, the
+   * subtitle sits with it, the paragraph steps out, the buttons step out
+   * further, and the portrait is a section of its own. Each gap is larger than
+   * the one above it, which is the whole of what makes a stack read as nested
+   * rather than as a list.
+   *
+   * Desktop is untouched — it has the width to let these breathe and was never
+   * the thing being complained about.
+   */
+  @media (max-width: 767px) {
+    .hero__meta {
+      margin-bottom: 10px;
+    }
+
+    /*
+     * The padding on the wrapper is what was actually holding them apart.
+     *
+     * `.hero__body` carries `padding-top: clamp(18px, 3vh, 34px)` to clear the
+     * name above it — sensible on a wide screen where the name and the body
+     * sit side by side with the picture, and on a phone it stacks on top of
+     * the subtitle's own margin. Twelve plus twenty is the thirty-two that
+     * would not go away.
+     */
+    .hero__body {
+      padding-top: 0;
+    }
+
+    .hero__subtitle {
+      /* 19 rather than 14: the title's own negative bottom margin — the one
+         that cancels the descender padding inside its clip — eats five of it,
+         so the gap that lands is fourteen. */
+      margin-top: 19px;
+    }
+
+    .hero__intro {
+      margin-top: 22px;
+    }
+
+    .hero__actions {
+      margin-top: 30px;
+    }
+
+    .hero__portrait {
+      margin-top: 52px;
     }
   }
 </style>

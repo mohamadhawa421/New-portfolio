@@ -12,6 +12,23 @@
 html {
   scroll-behavior: smooth;
   /*
+   * The closed menu must not widen the page.
+   *
+   * `.panel` is `position: fixed`, pinned to the right edge and pushed off by
+   * `translateX(100%)` while it is shut — and a fixed element escapes the
+   * `overflow-x: hidden` on <body>, because body is not its containing block.
+   * So the drawer sat 312px past the right edge of every phone, and the
+   * document reported ten pixels of horizontal scroll it should never have
+   * had: a page that rubber-bands sideways under the thumb on iOS, on every
+   * page of the site.
+   *
+   * `clip` rather than `hidden`, deliberately. Only the root can clip a fixed
+   * descendant, and `hidden` on the root turns the viewport into a scroll
+   * container — which would break `position: sticky` on the work index's
+   * preview frame. `clip` cuts the overflow without creating one.
+   */
+  overflow-x: clip;
+  /*
    * Stated here as well as on <body>.
    *
    * iOS Safari paints the strip behind its own toolbars from the canvas, and
@@ -173,7 +190,7 @@ figure {
 }
 
 .h2 {
-  font-size: clamp(27px, 4.2vw, 54px);
+  font-size: clamp(30px, 4.2vw, 54px);
   line-height: 1.06;
   letter-spacing: -0.016em;
   font-weight: 600;
@@ -188,7 +205,7 @@ figure {
 }
 
 .lead {
-  font-size: clamp(19px, 2vw, 24px);
+  font-size: clamp(20px, 2vw, 24px);
   font-weight: 300;
   line-height: 1.4;
   color: var(--ink-muted);
@@ -1300,18 +1317,70 @@ figure {
     /* The sideways part is the wave's direction — see scheduleLift in
        theme.ts. Zero unless something set it, so nothing else that borrows
        this animation changes. */
-    transform: translate3d(var(--lift-lean, 0px), -14px, 0) scale(1.012);
+    transform: translate3d(var(--lift-lean, 0px), var(--lift-rise, -18px), 0)
+      scale(var(--lift-swell, 1.014));
   }
   100% {
     transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
+
+/*
+ * And the contents hop too, where the section itself cannot show that it did.
+ *
+ * A lifting section is only visible at its seam. Measured on the home page:
+ * services, manifesto, about and contact each paint a background of their own
+ * — rgb(19,19,22) and rgb(28,28,32) against a page of rgb(11,11,13) — so when
+ * one hops you watch the colour boundary move and the lift reads. The hero,
+ * the work list and the process section paint *exactly* the page background,
+ * so there is no boundary anywhere: the section, its paint and everything on
+ * it all travel together and the result is a perfectly correct animation that
+ * is invisible by construction. That is the whole of "it works everywhere
+ * except the hero".
+ *
+ * Where there is no seam, the contents move instead — they have the page to
+ * move against. `theme.ts` decides which sections those are by comparing
+ * their computed background with the body's, so a section that is later given
+ * a colour of its own stops getting this automatically and needs no upkeep.
+ *
+ * No `will-change` and no scale, both deliberate. Promoting a block of text to
+ * its own layer swaps subpixel antialiasing for grayscale the moment the class
+ * lands, which is a visible pop before anything has moved; and scaling text
+ * resamples it. Translation alone is free of both.
+ */
+.is-lifting-within {
+  /*
+   * No `--lift-lean` reset here on purpose. theme.ts measures each block
+   * against the switch and writes its own lean inline; zeroing it in the
+   * cascade would throw that away and put every block back to a straight hop.
+   */
+  --lift-rise: -24px;
+  --lift-swell: 1;
+  animation: mh-lift-land 620ms var(--ease-glide) both;
+  animation-delay: var(--lift-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-lifting-within {
+    animation: none;
+  }
+}
+
+/*
+ * A bigger hop than it had.
+ *
+ * Eighteen pixels and a fourteen-thousandth of scale, against fourteen and
+ * twelve. The wave is the one moment the page admits it is a surface, and at
+ * the old amplitude that admission was easy to miss on a tall section whose
+ * own background travels with it.
+ */
 .is-lifting {
   animation: mh-lift-land 620ms var(--ease-glide) both;
   animation-delay: var(--lift-delay, 0ms);
   will-change: transform;
 }
+
 
 @media (prefers-reduced-motion: reduce) {
   .is-lifting {
@@ -1326,11 +1395,52 @@ figure {
 /* and the trough is the only half with anywhere to go. On a near-black    */
 /* ground the two swap jobs: there is nothing left to darken, so the crest */
 /* carries the ridge and the trough becomes a faint deepening behind it.   */
+
+/* --------------------------------------------------------------------- */
+/* Headings, on a narrow screen                                           */
+/* --------------------------------------------------------------------- */
+
+/*
+ * Leading, which a display line-height gets wrong the moment a heading wraps.
+ *
+ * The headings on this site are set between 0.98 and 1.07 — right for one or
+ * two lines at 54px on a desktop, and wrong for the same words at 26px on a
+ * phone, where they wrap to three and four. At 1.06 a 26px heading has 27px of
+ * leading: the descenders of one line and the ascenders of the next are in the
+ * same place, and the block reads as a solid shape rather than as lines.
+ *
+ * Only the wrapping sizes are loosened. The hero's own display line stays
+ * tight, because at 40px it is still the one heading that does not wrap.
+ */
+@media (max-width: 767px) {
+  h2,
+  .h2,
+  h3,
+  .h3 {
+    line-height: 1.16;
+  }
+}
+
 /* --------------------------------------------------------------------- */
 :root[data-theme='dark'],
 :root[data-surface='void'] {
-  --dm-bend-crest: color-mix(in srgb, var(--dm-core) 72%, transparent);
-  --dm-bend-trough: color-mix(in srgb, #000 52%, transparent);
+  --dm-bend-crest: color-mix(in srgb, var(--dm-core) 78%, transparent);
+  /*
+   * A deep violet, not black.
+   *
+   * The theory was sound and the colour was not: on a near-black ground there
+   * is nothing left to darken, so the crest carries the ridge and the trough
+   * only has to deepen behind it. But #000 at 52% deepens a dark page by
+   * nothing anyone can see, and the trough is the *wide* half of this gradient
+   * — 56% to 86% of the radius, against the crest's last fourteen percent. So
+   * a front crossing a dark page was a broad band of invisible followed by a
+   * thin purple line, and the wave read as having lost its colour. It had:
+   * three quarters of its width was black on black.
+   *
+   * `--dm-deep` at a similar weight is still darker than the page it crosses,
+   * so it is still a trough — and it is unmistakably violet while being one.
+   */
+  --dm-bend-trough: color-mix(in srgb, var(--dm-deep) 72%, transparent);
   --dm-bend-line: color-mix(in srgb, var(--dm-arc) 40%, transparent);
   --dm-scar-dark: color-mix(in srgb, #000 24%, transparent);
   --dm-scar-light: color-mix(in srgb, var(--dm-core) 26%, transparent);
@@ -1339,8 +1449,8 @@ figure {
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --dm-bend-crest: color-mix(in srgb, var(--dm-core) 72%, transparent);
-    --dm-bend-trough: color-mix(in srgb, #000 52%, transparent);
+    --dm-bend-crest: color-mix(in srgb, var(--dm-core) 78%, transparent);
+    --dm-bend-trough: color-mix(in srgb, var(--dm-deep) 72%, transparent);
     --dm-bend-line: color-mix(in srgb, var(--dm-arc) 40%, transparent);
   --dm-scar-dark: color-mix(in srgb, #000 24%, transparent);
   --dm-scar-light: color-mix(in srgb, var(--dm-core) 26%, transparent);

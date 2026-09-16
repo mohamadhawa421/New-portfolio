@@ -26,7 +26,29 @@
   driving the detached one. The pointer then had no visible element to move and
   the native cursor was still hidden — no pointer at all until a full reload.
 -->
-<div class="cursor" data-cursor aria-hidden="true" transition:persist="site-cursor">
+{/*
+  `popover` is what keeps the pointer out of a view transition's snapshot.
+
+  A transition captures the document and paints the result in the top layer;
+  for its whole length nothing live is on screen. The pointer was captured with
+  everything else, so for the 700ms of a theme wipe the visitor moved the mouse
+  and the drawn pointer stayed exactly where the snapshot had frozen it, then
+  jumped to the real position when the snapshot came down. A still pointer that
+  is not under the mouse is read as the wrong pointer, which is the arrow that
+  kept being reported on the toggle.
+
+  Top-layer content is not captured, and it keeps painting. A manual popover is
+  the plainest way to get there: no dialog semantics, no focus handling, and it
+  never closes on its own. Where `showPopover` does not exist the attribute is
+  inert and nothing changes.
+*/}
+<div
+  class="cursor"
+  data-cursor
+  aria-hidden="true"
+  popover="manual"
+  transition:persist="site-cursor"
+>
   {/*
     The bolt that comes down on the pointer when he loses his temper. Empty
     until then, and redrawn several times a second while it holds — a bolt that
@@ -73,6 +95,81 @@
    */
   function claimCursor() {
     if (running) document.documentElement.classList.add('has-custom-cursor');
+    raiseCursor();
+  }
+
+  /**
+   * Puts the pointer into the top layer, and puts it back after every swap.
+   *
+   * Showing a popover is not a one-off: the router moves the persisted element
+   * into the incoming document, and an element removed from the DOM is removed
+   * from the top layer with it. So this runs again on each navigation, and is
+   * a no-op when the pointer is already up.
+   */
+  function raiseCursor(): void {
+    const el = document.querySelector<HTMLElement>('[data-cursor]');
+    if (!el || typeof el.showPopover !== 'function') return;
+    try {
+      if (!el.matches(':popover-open')) el.showPopover();
+    } catch {
+      // Not connected yet, or already open. Either way there is nothing to do.
+    }
+  }
+
+  /**
+   * And puts it back the instant anything takes it away.
+   *
+   * `has-custom-cursor` is never removed by this file — it is removed by the
+   * router, which replaces every attribute on `<html>` with the incoming
+   * document's during a swap, `class` among them. `astro:after-swap` puts it
+   * back, and that was believed to be soon enough. Measured with a
+   * MutationObserver across a real navigation: the class is gone at 82ms and
+   * back at 92ms. Ten milliseconds is under a frame at 60Hz and a frame and a
+   * half at 144, and it lands in the middle of the swap — which is exactly the
+   * moment a view transition is painting its snapshot in the top layer and the
+   * browser is deciding what the pointer looks like. That is the native arrow
+   * appearing over the drawn one on links that navigate.
+   *
+   * An observer on one attribute of one element closes the window to a
+   * microtask: the class comes back before the frame that lost it is ever
+   * rendered. It costs nothing to run — attribute observers are not polled —
+   * and it cannot loop, because it only ever acts when the class is missing.
+   */
+  /**
+   * Stops the browser starting a drag, which is the one state `cursor: none`
+   * cannot survive.
+   *
+   * Press a link, move two pixels before letting go, and the browser begins a
+   * native drag of that link. For as long as that drag runs the cursor is
+   * drawn by the browser — an arrow, or an arrow with a badge — and no CSS on
+   * the page is consulted at all. `cursor: none` is simply not in the
+   * conversation. The result is the system pointer sitting on top of the drawn
+   * one, intermittently, on exactly the elements that are most often clicked:
+   * the nav links, the logo, the project covers.
+   *
+   * That is why three rounds of work on the `cursor` property never fixed
+   * this. It was never a cursor rule that was missing; it was a drag nobody
+   * had stopped.
+   *
+   * Cancelling `dragstart` ends it before the browser takes over the pointer.
+   * It is guarded on `running`, so a touch device, a visitor who asked for
+   * reduced motion, and anyone whose script did not load all keep native
+   * dragging — they still have a system cursor to see it with. What is given
+   * up is dragging an image out of the page, which on a page that hides the
+   * pointer and opens pictures in a lightbox is not much of a loss.
+   */
+  function guardDrag(): void {
+    document.addEventListener('dragstart', (event) => {
+      if (running) event.preventDefault();
+    });
+  }
+
+  function guardCursor(): void {
+    new MutationObserver(() => {
+      if (running && !document.documentElement.classList.contains('has-custom-cursor')) {
+        document.documentElement.classList.add('has-custom-cursor');
+      }
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   }
 
   function setupCursor() {
@@ -1001,6 +1098,8 @@
       return;
     }
     w.__mhCursor = true;
+    guardCursor();
+    guardDrag();
     setupCursor();
   });
 </script>
@@ -1030,8 +1129,47 @@
   html.has-custom-cursor::view-transition-group(*),
   html.has-custom-cursor::view-transition-image-pair(*),
   html.has-custom-cursor::view-transition-old(*),
-  html.has-custom-cursor::view-transition-new(*) {
+  html.has-custom-cursor::view-transition-new(*),
+  /*
+   * And the backdrop, which is the last box in the document that `*` above
+   * cannot reach. The pointer is a `popover`, so it has one — it is empty and
+   * it is not normally hit-tested, but it sits in the top layer across the
+   * whole viewport, and a box in the top layer is precisely the kind of thing
+   * that has caught this rule out twice already.
+   */
+  html.has-custom-cursor::backdrop,
+  html.has-custom-cursor *::backdrop {
     cursor: none !important;
+  }
+
+  /*
+   * And the drag itself is refused, rather than cancelled after the fact.
+   *
+   * `guardDrag` above catches `dragstart`, which works but runs a frame's
+   * worth of the browser's own drag machinery first. This stops the drag being
+   * offered at all, and the two together are what keep the system pointer off
+   * the page. Scoped to links and images: everything else here is text, and
+   * text has to stay selectable.
+   */
+  html.has-custom-cursor a,
+  html.has-custom-cursor img {
+    -webkit-user-drag: none;
+  }
+
+  /*
+   * The nav's own labels are not content.
+   *
+   * Pressing "Work" and sliding a few pixels selects the word instead of
+   * following the link, which puts the page into a text selection — another
+   * state where the browser has opinions about the pointer. Body copy is
+   * untouched; this is the five words in the pill and the five in the drawer.
+   */
+  html.has-custom-cursor .nav__link,
+  html.has-custom-cursor .panel__link,
+  html.has-custom-cursor .burger,
+  html.has-custom-cursor .site-logo {
+    -webkit-user-select: none;
+    user-select: none;
   }
 </style>
 
@@ -1051,6 +1189,25 @@
     pointer-events: none;
     opacity: 0;
     transition: opacity 220ms var(--ease-glide);
+
+    /*
+     * Undoing the popover UA styles, which are written for a panel: a border,
+     * padding, an opaque background, `width`/`height: fit-content` and
+     * `margin: auto` to centre it. Left alone they would shrink this layer to
+     * its contents and paint a box behind the pointer. The `color` is reset
+     * too — the popover still inherits from its place in the DOM, but stating
+     * it keeps the ink coming from the theme rather than from Canvas.
+     */
+    margin: 0;
+    border: 0;
+    padding: 0;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+    background: transparent;
+    color: inherit;
 
     /*
      * The ring resizes as it opens over a control. Containment keeps that

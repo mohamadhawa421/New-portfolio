@@ -1433,6 +1433,37 @@ import EggSound from './EggSound.astro';
     }
   }
 
+  /*
+   * Why these six are promoted, and only while the storm is up.
+   *
+   * Every one of them is a radial gradient the width of the viewport's
+   * diagonal, animated by `transform: scale()`. An unpromoted layer is
+   * re-rasterised as that scale changes, and the cost of doing so is the area
+   * of the layer: a 375x812 phone reaches about 660px from a hero click, so
+   * the texture is roughly 1320px square, while a 1920x1080 desktop reaches
+   * about 1650px and the same texture is 3300px square — six times the pixels,
+   * repainted while the wave crosses. That is the whole of "it looks smoother
+   * on the phone". The wave was never doing less work on a phone; it was doing
+   * a sixth of it.
+   *
+   * `.ring` is the worst of them on its own account: three box-shadows, one of
+   * them a 54px blur, re-blurred at every raster.
+   *
+   * Scoped to `[data-storm]` rather than written on the elements, so nothing
+   * here holds a compositor layer at rest — the six exist on every page. It is
+   * `data-storm` and not `data-designer` for the reason in CLAUDE.md: the
+   * purple is let go while the last pieces are still travelling, and these
+   * layers have to stay promoted for as long as the event actually lasts.
+   */
+  :root[data-storm] .ring,
+  :root[data-storm] .shock,
+  :root[data-storm] .wash,
+  :root[data-storm] .bend,
+  :root[data-storm] .scar,
+  :root[data-storm] .rift {
+    will-change: transform, opacity;
+  }
+
   .ring,
   .shock,
   .wash,
@@ -1572,6 +1603,68 @@ import EggSound from './EggSound.astro';
     100% {
       opacity: 0;
       transform: scale(1.5);
+    }
+  }
+
+
+  /* ------------------------------------------------------------------ */
+  /* The front's leading edge, on a wide screen                          */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * The bright edge, held to the same share of the screen it has on a phone.
+   *
+   * Measured at the same instant of the same animation, sampling the viewport
+   * against the layer's geometry: the *band* already matches. With the stops
+   * as written, 27% of a 375px phone screen sits inside the coloured annulus
+   * and 27% of a 1440px desktop does. Widening the whole band was tried and
+   * was badly wrong — dropping the inner stop to 20% put 68% of a desktop
+   * screen inside it against the phone's 27%, which is not parity, it is the
+   * same imbalance pointing the other way.
+   *
+   * What genuinely does not match is the hot edge — the cyan/white/red
+   * sequence that reads as the ripple itself. It spans a fixed share of the
+   * radius, and the radius is proportional to the diagonal, so on a phone it
+   * lands as 79px across a 375px screen (21% of the width) and on a desktop as
+   * 147px across 1440 (10%). Same ring, half the presence, which is what "the
+   * ripple is visible on mobile and not on desktop" actually describes.
+   *
+   * So only those stops move, and only above 900px: the hot sequence spans
+   * eleven per cent of the radius here against the phone's eight, which puts
+   * the bright line at the same fourteen per cent of the screen's width on
+   * both. The inner stops, the layer's size, its travel and the whole of the
+   * timing are exactly what they are on a phone — this widens the bright line
+   * and nothing else.
+   */
+  @media (min-width: 900px) {
+    .shock {
+      background: radial-gradient(
+        circle,
+        transparent 44%,
+        color-mix(in srgb, var(--dm-deep) 26%, transparent) 58%,
+        color-mix(in srgb, var(--dm-wave) 58%, transparent) 70%,
+        color-mix(in srgb, var(--dm-core) 78%, transparent) 78%,
+        color-mix(in srgb, var(--dm-core) 78%, transparent) 84%,
+        rgba(0, 228, 255, 0.5) 86%,
+        color-mix(in srgb, var(--dm-arc) 92%, #fff) 89.5%,
+        rgba(255, 42, 92, 0.58) 93%,
+        color-mix(in srgb, var(--dm-arc) 40%, transparent) 97%,
+        transparent 100%
+      );
+    }
+
+    /* The bend's crest is the same line drawn in the ground, so it widens by
+       the same amount and stays in step with the edge above it. */
+    .bend {
+      background: radial-gradient(
+        circle,
+        transparent 40%,
+        color-mix(in srgb, var(--dm-bend-trough) 55%, transparent) 56%,
+        var(--dm-bend-trough) 68%,
+        var(--dm-bend-crest) 84%,
+        color-mix(in srgb, var(--dm-bend-crest) 34%, transparent) 93%,
+        transparent 100%
+      );
     }
   }
 

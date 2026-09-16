@@ -182,6 +182,24 @@
    * values moved. The portrait keeps its own, since it is the one place the
    * full ratio was always right.
    */
+  /*
+   * ── And why the floors are high ───────────────────────────────────────
+   *
+   * Every value above is a ratio: roughly a tenth of the surface's short side.
+   * A `clamp()` minimum is not a ratio, though — it is the number a phone
+   * actually gets, and a phone's surfaces are two thirds the size of a
+   * desktop's while the floors were under half the ceilings. So the ratio
+   * quietly collapsed at the small end and the whole site read flatter on a
+   * phone than on a laptop. Measured at 390px against 1440px before this: the
+   * enquiry panel 3.5% of its short side where the desktop has 5.3%.
+   *
+   * The floors are now about two thirds of their ceilings, which is the same
+   * proportion the surfaces themselves shrink by, so the corner keeps its
+   * share of the shape at every width. They are not raised further than that:
+   * a corner much past its ratio stops reading as a rounded rectangle and
+   * starts reading as a sticker, which is the failure the halving above was
+   * about.
+   */
   --r-portrait: clamp(34px, 3.6vw, 48px);
   /*
    * Full-bleed imagery at its largest: the case study cover, the featured
@@ -189,17 +207,31 @@
    * a desktop width, so 72px is the ratio above rather than a taste for round
    * corners — the cover measured 8.3% before this and now measures 10.7%.
    */
+  /*
+   * The floor is *not* raised here, and that is measured rather than an
+   * oversight. `--r-2xl` dresses full-bleed imagery, which is the one kind of
+   * surface that does not keep its proportions on a phone: the case cover
+   * drops from about 680px on its short side at 1440 to about 216px at 390,
+   * while a panel keeps most of its width and only loses a third. Taking this
+   * floor to 24 along with the others put the cover at 11.1% of its short side
+   * against the desktop's 5.3% — the same mismatch as before, pointing the
+   * other way. At 14px it measures 6.5%, which is the match.
+   *
+   * So the mobile floors are not in the same order as the ceilings, and should
+   * not be forced into one. Each is set from what its own surfaces actually
+   * measure at 390px.
+   */
   --r-2xl: clamp(14px, 2.5vw, 36px);
   /* Cards, the enquiry form, and the gallery. */
-  --r-xl: clamp(12px, 2vw, 29px);
+  --r-xl: clamp(20px, 2vw, 29px);
   /* Inset imagery inside a case study. */
-  --r-lg: clamp(10px, 1.45vw, 21px);
+  --r-lg: clamp(15px, 1.45vw, 21px);
   --r-md: 18px;
   --r-sm: 14px;
   --r-xs: 12px;
   /* The home page's project thumbnails. Rounder than the ratio alone asks
      for: at 120x75 the squircle only starts to read as one past about 15%. */
-  --r-2xs: clamp(12px, 1.1vw, 16px);
+  --r-2xs: clamp(13px, 1.1vw, 16px);
   --r-pill: 9999px;
 
   /* ---- Layout -------------------------------------------------------- */

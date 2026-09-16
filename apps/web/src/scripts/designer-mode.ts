@@ -979,8 +979,18 @@ export function run(options: DesignerModeOptions): Beat {
 
     const rect = el.getBoundingClientRect();
     if (rect.bottom < -foldReach || rect.top > window.innerHeight + foldReach) continue;
-    // Small print stays whole. Letters flying off a 13px label is noise.
-    if (narrow && parseFloat(window.getComputedStyle(el).fontSize) < 17) continue;
+    /*
+     * Small print stays whole. Letters flying off a 13px label is noise.
+     *
+     * Fifteen, not seventeen. The number is meant to separate labels from
+     * prose, and at seventeen it was separating prose from prose: the hero's
+     * own intro paragraph sets 16px on a phone, so the one block of body copy
+     * on the first screen was the only thing the wave passed straight through.
+     * It sat there as a rectangle while the title and the subtitle above it
+     * came apart, which reads as the paragraph being immune rather than as
+     * restraint. Eyebrows and chips are 11-13px and still excluded.
+     */
+    if (narrow && parseFloat(window.getComputedStyle(el).fontSize) < 15) continue;
 
     const text = (el.textContent ?? '').trim();
     if (!text || text.length > MAX_ONE_BLOCK || text.length > allowance) continue;

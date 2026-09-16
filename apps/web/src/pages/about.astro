@@ -96,7 +96,7 @@ const [about, settings] = await Promise.all([getAboutPage(), getSiteSettings()])
     padding-bottom: 0.16em;
     margin-bottom: -0.1em;
     max-width: 18ch;
-    font-size: clamp(33px, 5.6vw, 80px);
+    font-size: clamp(40px, 5.6vw, 80px);
     line-height: 1.04;
     letter-spacing: -0.019em;
     font-weight: 600;
@@ -133,6 +133,53 @@ const [about, settings] = await Promise.all([getAboutPage(), getSiteSettings()])
     display: block;
   }
 
+  /*
+   * On a phone the portrait leaves the column and takes the screen.
+   *
+   * It was 89% of the viewport — the shell's content width — which on a narrow
+   * screen is a picture with a margin around it rather than a picture. The
+   * page has one photograph and this is it, so it gets the full width: pulled
+   * out of the shell's padding by exactly the padding, which is the only way
+   * to break out without hardcoding a number that stops being true at the next
+   * breakpoint.
+   *
+   * The corner survives the move. Edge to edge means the left and right of the
+   * radius fall off the screen, and what is left is a curve at the top and the
+   * bottom — which still reads as the same family as every other surface here
+   * rather than as a band that happens to be an image.
+   */
+  @media (max-width: 767px) {
+    .about-body__portrait {
+      /*
+       * The column's width, with the column's gutters.
+       *
+       * A full-bleed version of this was tried and taken out again. Edge to
+       * edge, the picture has nothing holding it — it reads as a banner the
+       * page happens to start with rather than as the portrait belonging to
+       * the writing under it, and the gutter that every other block on the
+       * page keeps is exactly what says those two things are related.
+       *
+       * What it keeps from that attempt is the shorter ratio. 4/5 in a 347px
+       * column is 434px of photograph, most of a phone screen for one image;
+       * the band below leaves the first line of prose on screen with it, which
+       * is the point of putting them together.
+       */
+      aspect-ratio: 4 / 3.4;
+    }
+
+    /*
+     * And the heading gets room to breathe between its lines.
+     *
+     * 1.04 is a display line-height, written for a heading that holds one or
+     * two lines on a wide screen. The same words wrap to four on a phone, and
+     * four lines at 1.04 is a solid block with the ascenders of one line
+     * touching the descenders of the last.
+     */
+    .about-hero__heading {
+      line-height: 1.12;
+    }
+  }
+
   .about-body__stats {
     display: flex;
     gap: 36px;
@@ -140,7 +187,7 @@ const [about, settings] = await Promise.all([getAboutPage(), getSiteSettings()])
   }
 
   .stat__value {
-    font-size: clamp(26px, 3vw, 34px);
+    font-size: clamp(30px, 3vw, 34px);
     font-weight: 600;
     letter-spacing: -0.024em;
     font-variant-numeric: tabular-nums;

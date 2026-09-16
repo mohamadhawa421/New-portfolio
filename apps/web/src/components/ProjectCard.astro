@@ -261,4 +261,29 @@ const tileStyle = project.cover
       will-change: opacity;
     }
   }
+
+  /*
+   * Rounder on a phone, because the card is smaller and the corner is not.
+   *
+   * A card is most of the viewport here, so it takes a corner of its own
+   * rather than the token's. `--r-xl` now floors at 20px, and doubling that
+   * would put the tile past 16% of its short side — well beyond the 11.6% the
+   * desktop card measures, which is the point where a surface stops looking
+   * rounded and starts looking like a sticker. 24px is the measured match:
+   * 11.1% on the tile against the desktop's 11.6%, and 6.9% on the card
+   * against 7.3%.
+   *
+   * Stated as a number on purpose. Written as a multiple of the token it moved
+   * the moment the token's floor was raised for every other surface, which is
+   * how it overshot in the first place.
+   */
+  @media (max-width: 767px) {
+    .card {
+      border-radius: 24px;
+    }
+
+    .card__tile {
+      border-radius: 24px 24px 0 0;
+    }
+  }
 </style>
