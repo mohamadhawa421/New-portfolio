@@ -1405,7 +1405,7 @@ import EggSound from './EggSound.astro';
   @keyframes egg-shock {
     0% {
       opacity: 0;
-      transform: scale(0.07);
+      transform: scale(0.14);
     }
     4% {
       opacity: 1;
@@ -1429,7 +1429,7 @@ import EggSound from './EggSound.astro';
     }
     100% {
       opacity: 0;
-      transform: scale(1.55);
+      transform: scale(3.1);
     }
   }
 
@@ -1483,6 +1483,39 @@ import EggSound from './EggSound.astro';
     height: calc(var(--egg-reach, 600px) * 2);
     margin-top: calc(var(--egg-reach, 600px) * -1);
     margin-left: calc(var(--egg-reach, 600px) * -1);
+  }
+
+  /*
+   * The two soft layers are drawn at half size and scaled back up, and the
+   * result on screen is identical.
+   *
+   * A compositor layer's texture is its own box, so a full-diagonal square
+   * costs its area in memory and in raster every time it has to be drawn. At
+   * 1440x900 on a 2x display the shared box above is about 3300px square per
+   * layer, and the storm is raster-bound: the same animations that hold 60fps
+   * in a small window stall in a full-screen one purely on pixels. Halving the
+   * box quarters the texture, and doubling the scale in `egg-shock` and
+   * `egg-wash` puts every frame back exactly where it was.
+   *
+   * Only these two, and the reason is arithmetic rather than caution. Anything
+   * drawn inside a halved box is drawn at half size and then magnified with
+   * it, so a border, a shadow blur or a gradient stop given in pixels would
+   * come back twice as thick. `.shock` and `.wash` are pure percentage
+   * gradients — no border, no shadow, no mask, not one px length between them
+   * — so there is nothing inside either of them that the scale can distort.
+   * `.ring` (a border and three blurs), `.bend` and `.rift` (px gradient
+   * stops and masks) and `.scar` (a px offset) all keep the full-size box.
+   *
+   * They are also the right two to pick: the widest, softest, least detailed
+   * layers in the sequence, where a texture magnified 2x has nothing sharp to
+   * lose.
+   */
+  .shock,
+  .wash {
+    width: var(--egg-reach, 600px);
+    height: var(--egg-reach, 600px);
+    margin-top: calc(var(--egg-reach, 600px) * -0.5);
+    margin-left: calc(var(--egg-reach, 600px) * -0.5);
   }
 
   /*
@@ -1592,7 +1625,7 @@ import EggSound from './EggSound.astro';
   @keyframes egg-wash {
     0% {
       opacity: 0;
-      transform: scale(0.02);
+      transform: scale(0.04);
     }
     22% {
       opacity: 1;
@@ -1602,7 +1635,7 @@ import EggSound from './EggSound.astro';
     }
     100% {
       opacity: 0;
-      transform: scale(1.5);
+      transform: scale(3);
     }
   }
 
