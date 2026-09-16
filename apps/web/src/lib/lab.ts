@@ -53,31 +53,31 @@ export const POSES: Record<LabPose, PoseArt> = {
     src: '/character-lab.webp',
     width: 560,
     height: 526,
-    alt: 'Mohamad, illustrated, holding a flask in one hand and Figma in the other',
+    alt: 'Mohamad Hawa, illustrated, holding a flask in one hand and Figma in the other',
   },
   explaining: {
     src: '/character-explaining.webp',
     width: 560,
     height: 587,
-    alt: 'Mohamad, illustrated, presenting something to one side',
+    alt: 'Mohamad Hawa, illustrated, presenting something to one side',
   },
   thinking: {
     src: '/character-thinking.webp',
     width: 560,
     height: 662,
-    alt: 'Mohamad, illustrated, thinking it over',
+    alt: 'Mohamad Hawa, illustrated, thinking it over',
   },
   idea: {
     src: '/character-presenting.webp',
     width: 560,
     height: 510,
-    alt: 'Mohamad, illustrated, landing on an idea',
+    alt: 'Mohamad Hawa, illustrated, landing on an idea',
   },
   skeptical: {
     src: '/character-lost.webp',
     width: 560,
     height: 523,
-    alt: 'Mohamad, illustrated, unconvinced',
+    alt: 'Mohamad Hawa, illustrated, unconvinced',
   },
 };
 
@@ -145,7 +145,17 @@ export interface LabExperiment {
   /** Two or three sentences. What this is and why it exists. */
   summary: string;
 
-  /** The index preview. Optional — the index falls back to the pair below. */
+  /**
+   * The index preview, and it wins wherever it is set.
+   *
+   * With nothing here the index builds its own thumbnail out of `before` and
+   * `after` side by side, which says what an experiment is at a glance and is
+   * the right default. It is only a default though: two full screenshots
+   * shrunk into one small frame can come out as noise rather than a picture,
+   * and an entry whose subject has a cleaner single image deserves to use it.
+   * Setting this is that override — the diptych still appears on the project
+   * page, where it has the room to be read.
+   */
   cover?: LabImage;
 
   /**
@@ -204,6 +214,36 @@ export const EXPERIMENTS: LabExperiment[] = [
     statement: 'What if discovery started with the moment you are in, rather than the catalogue?',
     summary:
       "Spotify is built around content you already have a name for — a playlist, an album, an artist, something you played last week. This explores a second way in: describe the moment instead, and have a session built around it. An independent exploration, not an official redesign, and nothing here shipped.",
+    /*
+     * The index shows this rather than the pair.
+     *
+     * Two full application screenshots shrunk into one small frame came out as
+     * noise — a wall of album art and sidebar at thumbnail size, unreadable
+     * and indistinguishable from any other music app. The wordmark says what
+     * the experiment is about in one glance, which is all a cover has to do.
+     * The comparison is still the first thing on the project page, where it
+     * has the room to be read.
+     *
+     * Cropped to 16:9, and written at twice that. The source is 1.41:1, which
+     * rendered as a 1139x810 slab of black with a small mark adrift in the
+     * middle — taller than anything else on the page. A 2.81:1 band was tried
+     * first, matching the diptych it replaces exactly, and overshot the other
+     * way into a letterbox strip. The wordmark is centred, so a vertical crop
+     * only ever takes empty ground.
+     *
+     * 2x because the plate is 1139 CSS pixels wide, which is 2278 device
+     * pixels on a 2x display; a 1440-wide file was being stretched over it and
+     * the mark came out soft. Flat green on flat black is the one kind of
+     * artwork that survives being upscaled — lanczos has two colours and a
+     * hard edge to work with rather than a photograph's detail.
+     */
+    cover: {
+      src: '/lab/spotify/cover.webp',
+      alt: 'Spotify — the subject of this exploration',
+      width: 2880,
+      height: 1620,
+    },
+
     /*
      * One box, and both captures already fill it.
      *

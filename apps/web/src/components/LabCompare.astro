@@ -343,11 +343,41 @@ const ratio = `${after.width} / ${after.height}`;
     -webkit-appearance: none;
     cursor: ew-resize;
     /*
-     * Horizontal drags belong to this control; vertical ones still scroll the
-     * page. A range input already behaves this way, and stating it stops a
-     * diagonal drag being claimed as a scroll on the way to being a drag.
+     * `pan-y` on a pointer device, where the mouse is precise and the page
+     * should still scroll under the wheel. What a finger gets is below.
      */
     touch-action: pan-y;
+  }
+
+  /*
+   * On a touch screen the control is a band across the middle, and it owns
+   * every gesture inside it.
+   *
+   * Two things were wrong with covering the whole picture in `pan-y`.
+   *
+   * `pan-y` is permission for the browser to claim a vertical pan, and it
+   * decides which way a drag is going from the first few pixels. A finger does
+   * not travel in a straight line — the arc of a thumb is mostly sideways but
+   * never only sideways — so a drag that begins a few degrees off horizontal
+   * is taken for a scroll and the divider never moves at all. A synthetic drag
+   * is perfectly axis-aligned, which is why this passes in an emulator and
+   * fails in a hand. `none` settles it: inside this band nothing is a scroll.
+   *
+   * And a band rather than the whole stage, because `none` over the full
+   * picture would trap the page. This is a 159px-tall figure in the middle of
+   * a long article, and somebody scrolling past with a thumb would land on it
+   * and find the page stuck. The band is 120px at most and centred on the
+   * handle — which is where the finger goes anyway — so the top and bottom
+   * edges of the picture stay ordinary scrollable page.
+   */
+  @media (pointer: coarse) {
+    .cmp__range {
+      top: 50%;
+      bottom: auto;
+      height: min(62%, 120px);
+      translate: 0 -50%;
+      touch-action: none;
+    }
   }
 
   .cmp__range::-webkit-slider-runnable-track {

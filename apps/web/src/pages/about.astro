@@ -3,6 +3,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { getAboutPage, getSiteSettings } from '../lib/content';
 
 const [about, settings] = await Promise.all([getAboutPage(), getSiteSettings()]);
+/*
+ * The portrait's alt, composed rather than written.
+ *
+ * The CMS supplies "Mohamad Hawa" — the name and nothing else, which is
+ * correct as a label and thin as a description. An image search has only the
+ * alt text, the filename and the page around it to go on, and a cut-out on a
+ * transparent background gives it nothing else to read. Joining the name to
+ * the role the CMS already holds says who is in the picture and what he does,
+ * in his own words, without a line of copy being hardcoded here.
+ *
+ * The purple-eyed duplicate stacked on top keeps `alt=""` on purpose. It is
+ * the same photograph of the same person; describing it twice would have a
+ * screen reader announce him twice and offer a search engine a duplicate.
+ */
+const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleTitle]
+  .filter(Boolean)
+  .join(' — ');
 ---
 
 <BaseLayout seo={about.seo}>
@@ -22,7 +39,7 @@ const [about, settings] = await Promise.all([getAboutPage(), getSiteSettings()])
               settings.portrait && (
                 <img
                   src={settings.portrait.url}
-                  alt={settings.portrait.alt}
+                  alt={portraitAlt}
                   loading="eager"
                   decoding="async"
                   style={`object-position:${settings.portraitTallFocus}`}

@@ -111,7 +111,18 @@ const rows = experiments
                   problem.
                 */}
                 <span class="lab-row__inline" aria-hidden="true">
-                  {experiment.before && experiment.after ? (
+                  {experiment.cover ? (
+                    <span class="plate" style={`--plate-ratio:${experiment.cover.width / experiment.cover.height}`}>
+                      <img
+                        src={experiment.cover.src}
+                        alt=""
+                        width={experiment.cover.width}
+                        height={experiment.cover.height}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </span>
+                  ) : experiment.before && experiment.after ? (
                     <span class="plate plate--pair" style={`--plate-ratio:${experiment.after!.width / experiment.after!.height}`}>
                       <img
                         src={experiment.before.src}
@@ -126,17 +137,6 @@ const rows = experiments
                         alt=""
                         width={experiment.after.width}
                         height={experiment.after.height}
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    </span>
-                  ) : experiment.cover ? (
-                    <span class="plate" style={`--plate-ratio:${experiment.cover!.width / experiment.cover!.height}`}>
-                      <img
-                        src={experiment.cover.src}
-                        alt=""
-                        width={experiment.cover.width}
-                        height={experiment.cover.height}
                         loading="lazy"
                         decoding="async"
                       />
@@ -172,7 +172,18 @@ const rows = experiments
             data-lab-frame
             data-i={index}
           >
-            {experiment.before && experiment.after ? (
+            {experiment.cover ? (
+              <span class="plate" style={`--plate-ratio:${experiment.cover.width / experiment.cover.height}`}>
+                <img
+                  src={experiment.cover.src}
+                  alt=""
+                  width={experiment.cover.width}
+                  height={experiment.cover.height}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </span>
+            ) : experiment.before && experiment.after ? (
               <span class="plate plate--pair" style={`--plate-ratio:${experiment.after!.width / experiment.after!.height}`}>
                 <img
                   src={experiment.before.src}
@@ -187,17 +198,6 @@ const rows = experiments
                   alt=""
                   width={experiment.after.width}
                   height={experiment.after.height}
-                  loading="lazy"
-                  decoding="async"
-                />
-              </span>
-            ) : experiment.cover ? (
-              <span class="plate" style={`--plate-ratio:${experiment.cover!.width / experiment.cover!.height}`}>
-                <img
-                  src={experiment.cover.src}
-                  alt=""
-                  width={experiment.cover.width}
-                  height={experiment.cover.height}
                   loading="lazy"
                   decoding="async"
                 />

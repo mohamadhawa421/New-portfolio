@@ -86,11 +86,15 @@ const name = title || design.projectName;
                 reserve the right box before it decodes, and a wrong pair
                 there is a layout shift on every case study. */}
             <div class="figma__invite">
-              <span class="figma__invite-halo" aria-hidden="true">
+              {/* Not `aria-hidden` any more. It is a picture of a person, and
+                  the one on this page that a search engine would otherwise
+                  have nothing to say about — the halo around it is the
+                  decoration, not the face. */}
+              <span class="figma__invite-halo">
                 <img
                   class="figma__invite-face"
                   src="/character-presenting.webp"
-                  alt=""
+                  alt="Mohamad Hawa, illustrated, inviting you into the Figma file"
                   width="560"
                   height="510"
                   loading="lazy"

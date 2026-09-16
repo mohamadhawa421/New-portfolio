@@ -164,7 +164,22 @@ const seo = {
                 </span>
               </div>
 
-              {featured.before && featured.after ? (
+              {featured.cover ? (
+                <span
+                  class="lab-lead__plate"
+                  style={`--plate-ratio:${featured.cover.width / featured.cover.height}`}
+                  data-reveal="2"
+                >
+                  <img
+                    src={featured.cover.src}
+                    alt={featured.cover.alt}
+                    width={featured.cover.width}
+                    height={featured.cover.height}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </span>
+              ) : featured.before && featured.after ? (
                 <span
                   class="lab-lead__plate lab-lead__plate--pair"
                   style={`--plate-ratio:${featured.after.width / featured.after.height}`}
@@ -187,24 +202,7 @@ const seo = {
                     decoding="async"
                   />
                 </span>
-              ) : (
-                featured.cover && (
-                  <span
-                      class="lab-lead__plate"
-                      style={`--plate-ratio:${featured.cover.width / featured.cover.height}`}
-                      data-reveal="2"
-                    >
-                    <img
-                      src={featured.cover.src}
-                      alt={featured.cover.alt}
-                      width={featured.cover.width}
-                      height={featured.cover.height}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </span>
-                )
-              )}
+              ) : null}
             </a>
           </div>
         </section>

@@ -32,6 +32,24 @@ const [home, settings, services, steps, projects, contact, split] = await Promis
  * how it is presented, and short enough that the section is still a section
  * rather than the index with a different heading. The work page is the index.
  */
+/*
+ * The portrait's alt, composed rather than written.
+ *
+ * The CMS supplies "Mohamad Hawa" — the name and nothing else, which is
+ * correct as a label and thin as a description. An image search has only the
+ * alt text, the filename and the page around it to go on, and a cut-out on a
+ * transparent background gives it nothing else to read. Joining the name to
+ * the role the CMS already holds says who is in the picture and what he does,
+ * in his own words, without a line of copy being hardcoded here.
+ *
+ * The purple-eyed duplicate stacked on top keeps `alt=""` on purpose. It is
+ * the same photograph of the same person; describing it twice would have a
+ * screen reader announce him twice and offer a search engine a duplicate.
+ */
+const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleTitle]
+  .filter(Boolean)
+  .join(' — ');
+
 const HOME_PROJECTS = 5;
 
 /*
@@ -125,7 +143,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
             */}
             <img
               src="/portrait-cutout.webp"
-              alt={settings.portrait?.alt ?? ''}
+              alt={portraitAlt}
               width="883"
               height="892"
               loading="eager"
@@ -312,7 +330,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
             <div class="about__aura" aria-hidden="true"></div>
             <img
               src="/portrait-cutout.webp"
-              alt={settings.portrait?.alt ?? ''}
+              alt={portraitAlt}
               width="883"
               height="892"
               loading="lazy"
@@ -321,7 +339,19 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
             {/* The same purple-eyed drawing the hero has, on the same terms: a
                 second <img> rather than a swapped src, so the portrait is
                 never blank while a file decodes. Lazy, and invisible until
-                super designer mode is on. */}
+                super designer mode is on.
+
+                No `object-position` of its own, and that omission is the whole
+                point. The rule below sets `50% 100%` for both layers so the
+                only difference between them is the irises — and an inline
+                style outranks a stylesheet, so the `portraitTallFocus` that
+                used to be written here (`50% 38%`) pinned this drawing 62% of
+                the box higher than the one underneath it. Both were painted
+                at once whenever the purple was on, which is the doubled
+                outline: two heads, two sets of ears, two collars. The focus
+                point is for cropping a photograph to a frame; this is a
+                transparent cut-out stacked on a copy of itself, and it has to
+                sit exactly where its twin sits. */}
             <img
               class="about__portrait-alt"
               src="/portrait-cutout-designer.webp"
@@ -331,7 +361,6 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
               loading="lazy"
               decoding="async"
               aria-hidden="true"
-              style={`object-position:${settings.portraitTallFocus}`}
             />
           </div>
         </div>
@@ -380,7 +409,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
       */}
       <CharacterAside
         src="/character-thinking.webp"
-        alt="Mohamad, thinking"
+        alt="Mohamad Hawa, illustrated, thinking something over"
         width={560}
         height={662}
         lines={[
