@@ -246,20 +246,29 @@
   --ease-glide: cubic-bezier(0.33, 0.02, 0.18, 1);
   --ease-smooth: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
-  --spring: linear(
-    0,
-    0.09,
-    0.28,
-    0.52,
-    0.74,
-    0.89,
-    0.98,
-    1.02,
-    1.03,
-    1.02,
-    1.01,
-    1
-  );
+  /*
+   * The spring, and the curve that stands in when `linear()` is not understood.
+   *
+   * An invalid timing function does not fall back to a default — it makes the
+   * whole declaration invalid, and the browser throws away the entire
+   * `animation` or `transition` shorthand it was part of. `linear()` arrived
+   * in Safari 17.2 and this project's `cssTarget` is `safari16.4`, so on every
+   * Safari between those two versions the five things built on this token
+   * animated not-at-all rather than approximately: the press on each button,
+   * the press on each text link, the enquiry form's send, the Lab's filter
+   * chips, and `portrait-hit` — the recoil the portrait gives when the storm
+   * is fired. That last one is a missing piece of Ultimate Control, and it is
+   * missing completely rather than subtly.
+   *
+   * So the cubic is the declared value and the spring is layered over it in
+   * an `@supports` below. A browser that understands `linear()` gets exactly
+   * the curve it always had; one that does not gets a fitted approximation
+   * instead of nothing. The numbers come from a least-squares fit against the
+   * spring, constrained to keep the overshoot — which is the whole character
+   * of it. Peak 1.020 against the spring's 1.030, and the two track within a
+   * hundredth from 40% of the way through.
+   */
+  --spring: cubic-bezier(0.38, 1.25, 0.73, 1);
 
   /* ---- Chrome (driven by src/scripts/chrome.ts) ---------------------- */
   --nav-top: 18px;
@@ -608,4 +617,33 @@
 
   /* Right before chrome.ts runs, so the mark is never black on black. */
   --nav-ink: #f4f0fb;
+}
+
+/*
+ * The real spring, wherever it can be parsed. See the note on `--spring`.
+ *
+ * Declared here rather than as a second declaration beside the cubic, because
+ * the minifier removes whichever of two declarations for the same thing it
+ * judges redundant — the lesson `backdrop-filter` taught this project — and
+ * with a target of safari16.4 it could reasonably decide either way. An
+ * `@supports` block is not a duplicate declaration and cannot be collapsed
+ * into one.
+ */
+@supports (animation-timing-function: linear(0, 1)) {
+  :root {
+    --spring: linear(
+      0,
+      0.09,
+      0.28,
+      0.52,
+      0.74,
+      0.89,
+      0.98,
+      1.02,
+      1.03,
+      1.02,
+      1.01,
+      1
+    );
+  }
 }
