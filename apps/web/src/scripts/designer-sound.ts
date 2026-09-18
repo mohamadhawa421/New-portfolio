@@ -272,6 +272,43 @@ function watchDevice(audio: Ctx): void {
   }
 }
 
+/**
+ * Plays now, or the moment a device that went to sleep is awake again.
+ *
+ * `watchDevice` above brings a suspended context back on visibility, focus and
+ * the next gesture, and that covers a tab returning to the front. What it does
+ * not cover is the sound asked for *in the same breath* as the waking gesture.
+ * `resume()` is a promise: the pointerdown that revives the device and the
+ * click that wants a noise are the same interaction a few milliseconds apart,
+ * and the context is still `suspended` when the second one runs. So the three
+ * callers below checked the state, found it asleep and returned — silently,
+ * because a sound that does not play raises nothing. The visitor comes back to
+ * the tab, presses the theme switch, hears nothing, and concludes the sound is
+ * broken for the rest of the visit.
+ *
+ * This keeps the part of that guard that was right. A context that has never
+ * been opened is still left alone — `spark()` has no business opening a device
+ * nobody has asked for, which is what `!ctx` means. What changes is the case
+ * where a device *was* opened and has since gone to sleep: it is woken, and
+ * the sound it was asked for follows it.
+ *
+ * One attempt, and no loop. If `resume()` settles and the context is still not
+ * running, the browser is holding out for a gesture — and the gesture
+ * listeners in `watchDevice` are already waiting for one.
+ */
+function whenAwake(retry: () => void): void {
+  const audio = ctx;
+  if (!audio || audio.state === 'closed') return;
+  void audio
+    .resume()
+    .then(() => {
+      if (ctx === audio && audio.state === 'running') retry();
+    })
+    .catch(() => {
+      /* Not allowed yet. The next gesture will be. */
+    });
+}
+
 /** Whether the storm is currently silenced. */
 export function isMuted(): boolean {
   return muted;
@@ -615,7 +652,8 @@ export function end(): void {
  * opened the device long before anyone scrolls this far.
  */
 export function spark(level = 0.3): void {
-  if (!ctx || ctx.state !== 'running' || !strikeBuf) return;
+  if (!ctx || !strikeBuf) return;
+  if (ctx.state !== 'running') return whenAwake(() => spark(level));
 
   const t = ctx.currentTime;
   const src = ctx.createBufferSource();
@@ -652,7 +690,8 @@ export function spark(level = 0.3): void {
  * has not been touched has no right to make a noise.
  */
 export function sweep(level = 0.16): void {
-  if (!ctx || ctx.state !== 'running' || !waveBuf) return;
+  if (!ctx || !waveBuf) return;
+  if (ctx.state !== 'running') return whenAwake(() => sweep(level));
 
   const t = ctx.currentTime;
   const dur = 0.52;
@@ -708,7 +747,8 @@ export function sweep(level = 0.16): void {
  * open one.
  */
 export function thunder(level = 0.55): void {
-  if (!ctx || ctx.state !== 'running' || !strikeBuf || !waveBuf) return;
+  if (!ctx || !strikeBuf || !waveBuf) return;
+  if (ctx.state !== 'running') return whenAwake(() => thunder(level));
 
   const t = ctx.currentTime;
   const out = ctx.createGain();
