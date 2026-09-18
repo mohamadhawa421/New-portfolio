@@ -40,11 +40,39 @@ interface Props {
 }
 
 const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
+
+/*
+ * The small rendering of the drawing, when there is one.
+ *
+ * The artwork is 560px wide and this draws it at a fraction of that, so at
+ * 2x it carries several times the pixels it paints — and this is one of the
+ * few images on the site that fades in, which is when that costs most: an
+ * entrance repaints, and every repaint rescales the bitmap again.
+ *
+ * `scripts/make-art-variants.js` writes `/art/<name>-320.webp` beside each
+ * one at build time. Derived by convention from the filename rather than
+ * recorded anywhere, and `srcset` degrades to nothing if the file is absent,
+ * so a missing variant costs the saving and not the picture.
+ */
+const small = src.startsWith('/') && src.endsWith('.webp')
+  ? `/art${src.slice(0, -'.webp'.length).replace(/^\/art/, '')}-320.webp`
+  : null;
+
 ---
 
+{/*
+  Named, because an unnamed landmark is a landmark you cannot choose.
+
+  This one stays an <aside> — it is the one piece of the page that genuinely
+  is beside the argument rather than part of it, and there is exactly one per
+  page. But "complementary" with no name is what a screen reader announces
+  without it, which tells the listener there is something here and nothing
+  about whether it is worth stopping for.
+*/}
 <aside
   class="aside"
   class:list={[`aside--${tone}`]}
+  aria-label="A word from the designer"
   data-character
   data-lines={JSON.stringify(lines)}
 >
@@ -120,6 +148,8 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
       <img
         class="aside__art"
         src={src}
+        srcset={small ? `${small} 320w, ${src} ${width}w` : undefined}
+        sizes={small ? '(max-width: 767px) 96px, clamp(88px, 11vw, 124px)' : undefined}
         alt={alt}
         width={width}
         height={height}
@@ -533,6 +563,9 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
   /* A button, and it has to say so: this is the only thing on the page that
      asks to be pressed twice. */
   .aside__figure {
+    /* Prefixed first, standard last. WebKit needs the prefixed form to drop
+       the platform button chrome; the standard one only landed in 15.4. */
+    -webkit-appearance: none;
     appearance: none;
     border: 0;
     padding: 0;
@@ -712,7 +745,7 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
     background: var(--aside-surface);
     color: var(--aside-ink);
     box-shadow: var(--aside-shadow);
-    font-size: 15px;
+    font-size: 0.9375rem;
     line-height: 1.45;
     letter-spacing: -0.014em;
     text-wrap: pretty;
@@ -815,7 +848,7 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
   }
 
   .aside__count {
-    font-size: 11px;
+    font-size: 0.6875rem;
     line-height: 1;
     letter-spacing: 0.02em;
     font-variant-numeric: tabular-nums;
@@ -840,6 +873,7 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
   .aside__step {
     display: grid;
     place-items: center;
+    position: relative;
     width: 30px;
     height: 30px;
     padding: 0;
@@ -882,6 +916,31 @@ const { src, alt, lines, width, height, tone = 'page' } = Astro.props;
 
   .aside__step:active {
     opacity: 1;
+  }
+
+  /*
+   * The thumb gets 44px; the drawing keeps its 30.
+   *
+   * Measured at 390px wide: 29x29 on screen, which clears the 24x24 that
+   * WCAG 2.2 asks for and is still smaller than the pad of a finger. The
+   * visible circle is deliberately that size — it is furniture at the foot of
+   * a speech bubble and a 44px disc there reads as a form control — so the
+   * target grows and the drawing does not.
+   *
+   * Vertically only. The two chevrons sit side by side with two pixels
+   * between them, and widening both would make the hit areas overlap, which
+   * trades a small target for an ambiguous one. Above and below there is
+   * nothing but the bubble's own padding, so the height is free. 30 -> 44 is
+   * the whole of it.
+   */
+  .aside__step::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 44px;
+    translate: 0 -50%;
   }
 
   /* A drawn pointer cannot also be a system one. */

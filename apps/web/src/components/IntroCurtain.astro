@@ -43,11 +43,13 @@ const canDraw = Boolean(viewBox) && paths.length > 0;
 
 {
   logo && (
-    <div class="intro" data-intro role="button" tabindex="0" aria-label="Skip intro">
+    <button class="intro" data-intro type="button" aria-label="Skip intro">
       {/* An electrical fault that is not one. See the note in the styles. */}
       <span class="intro__spark" aria-hidden="true"></span>
 
-      <div class="intro__logo">
+      {/* A <span>, not a <div>: a button's content model is phrasing content,
+          and the flex layout above does not care which element carries it. */}
+      <span class="intro__logo">
         {canDraw ? (
           <svg class="intro-logo" viewBox={viewBox} role="img" aria-label={logo.alt}>
             {paths.map((d) => (
@@ -66,8 +68,8 @@ const canDraw = Boolean(viewBox) && paths.length > 0;
         ) : (
           <img src={logo.url} alt={logo.alt} />
         )}
-      </div>
-    </div>
+      </span>
+    </button>
   )
 }
 
@@ -165,8 +167,10 @@ const canDraw = Boolean(viewBox) && paths.length > 0;
     curtain.addEventListener('click', function () {
       finish(460);
     });
+    // Enter and Space arrive as clicks, because it is a button. Escape does
+    // not, and this is the only reason there is still a key handler here.
     curtain.addEventListener('keydown', function (event) {
-      if (event.key === 'Enter' || event.key === ' ' || event.key === 'Escape') {
+      if (event.key === 'Escape') {
         event.preventDefault();
         finish(460);
       }
@@ -199,6 +203,21 @@ const canDraw = Boolean(viewBox) && paths.length > 0;
     cursor: pointer;
     opacity: 1;
     transition: opacity 620ms var(--ease-smooth);
+    /*
+     * A <button>, so the platform carries the role, the focusability and
+     * Enter/Space rather than this file re-declaring all three. The script
+     * still handles Escape, which a button does not come with.
+     *
+     * These six lines are what a button costs: the UA's own border, font and
+     * text colour, and the button chrome WebKit draws unless it is told not
+     * to. Prefixed first, standard last, as everywhere here.
+     */
+    -webkit-appearance: none;
+    appearance: none;
+    border: 0;
+    font: inherit;
+    color: inherit;
+    text-align: inherit;
   }
 
   .intro--out {
@@ -264,6 +283,7 @@ const canDraw = Boolean(viewBox) && paths.length > 0;
   }
 
   .intro__logo {
+    display: block;
     width: min(560px, 72vw);
     opacity: 0;
     transform: translateY(12px);

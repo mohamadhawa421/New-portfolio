@@ -77,7 +77,17 @@ const rows = experiments
   }
 
   <div class="lab-index__body">
-    <ol class="lab-index__list">
+    {/*
+      `role="list"` on a list is normally exactly the redundant ARIA to avoid,
+      and here it is load-bearing. WebKit drops the list role — and with it the
+      item count VoiceOver reads out — from any list whose `list-style` is
+      `none`, on the reasoning that a list without markers was not meant to be
+      announced as one. Every list on this site is styled that way, so without
+      this the items are read as a run of unrelated text in Safari and as a
+      list of N items everywhere else. Restating the role is the documented
+      way back, and it changes nothing in Chrome or Firefox.
+    */}
+    <ol class="lab-index__list" role="list">
       {
         rows.map(({ experiment, index }) => (
           <li
@@ -249,7 +259,7 @@ const rows = experiments
     background: var(--surface-chip);
     color: var(--ink-muted);
     font: inherit;
-    font-size: 14px;
+    font-size: 0.875rem;
     letter-spacing: -0.01em;
     transition:
       background 240ms var(--ease-glide),
@@ -278,7 +288,7 @@ const rows = experiments
 
   .lab-index__tally {
     margin: 0 0 0 auto;
-    font-size: 14px;
+    font-size: 0.875rem;
     color: var(--ink-faint);
   }
 
@@ -318,7 +328,7 @@ const rows = experiments
   }
 
   .lab-row__num {
-    font-size: 13px;
+    font-size: 0.8125rem;
     letter-spacing: 0.14em;
     color: var(--ink-faint);
     font-variant-numeric: tabular-nums;
@@ -334,7 +344,7 @@ const rows = experiments
 
   .lab-row__title {
     margin: 0;
-    font-size: clamp(22px, 2.5vw, 30px);
+    font-size: clamp(1.375rem, 2.5vw, 1.875rem);
     font-weight: 600;
     letter-spacing: -0.02em;
     line-height: 1.16;
@@ -352,7 +362,7 @@ const rows = experiments
     padding: 4px 10px;
     border-radius: var(--r-pill);
     background: var(--surface-chip);
-    font-size: 11px;
+    font-size: 0.6875rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--ink-soft);
@@ -361,7 +371,7 @@ const rows = experiments
   .lab-row__statement {
     display: block;
     margin-top: 10px;
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.5;
     letter-spacing: -0.022em;
     color: var(--ink-muted);
@@ -374,7 +384,7 @@ const rows = experiments
     align-items: center;
     gap: 8px;
     margin-top: 14px;
-    font-size: 15px;
+    font-size: 0.9375rem;
     color: var(--blue);
   }
 
@@ -467,7 +477,7 @@ const rows = experiments
     place-items: center;
     background: var(--surface-chip);
     color: var(--ink-faint);
-    font-size: clamp(40px, 6vw, 72px);
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
     font-weight: 600;
     letter-spacing: -0.02em;
   }
@@ -486,7 +496,7 @@ const rows = experiments
     display: flex;
     gap: 8px;
     margin-top: 12px;
-    font-size: 12px;
+    font-size: 0.75rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--ink-faint);
@@ -496,7 +506,7 @@ const rows = experiments
     padding: clamp(40px, 7vh, 80px) 0;
     text-align: center;
     color: var(--ink-muted);
-    font-size: 17px;
+    font-size: 1.0625rem;
   }
 
   /* ---- Wide: the ledger beside a sticky frame ------------------------ */

@@ -183,6 +183,57 @@ const ratio = `${after.width} / ${after.height}`;
        */
       stage.style.setProperty('--cmp-n', el.value === '' ? '0.5' : String(Number(el.value) / 100));
     });
+
+    /*
+     * Arrow keys move by a step somebody can actually use.
+     *
+     * `step="0.1"` is there for the pointer: the seam is a hairline and the
+     * stage is up to nine hundred pixels wide, so a one-per-cent step is a
+     * nine-pixel jump under the thumb and the drag stops feeling like it is
+     * attached to the finger. The same number is what the platform then gives
+     * the arrow keys, and that is a thousand presses from one end to the
+     * other — operable by keyboard in the letter of 2.1.1 and unusable in
+     * practice, which is the same thing as not being operable.
+     *
+     * So the two get different steps. The pointer keeps its tenth of a per
+     * cent; the arrows take two per cent, PageUp/PageDown ten, and Home/End
+     * stay the platform's own jump to either end. Fifty presses across the
+     * whole picture, which is about what a scrollbar asks for.
+     *
+     * The event has to be cancelled or the browser applies its own step on
+     * top of this one and the two add up. Everything else about the control
+     * is still the platform's — this replaces the size of the step, not the
+     * handling of the key.
+     */
+    document.addEventListener('keydown', (event) => {
+      const el = event.target;
+      if (!(el instanceof HTMLInputElement) || !el.hasAttribute('data-lab-range')) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+      const STEPS: Record<string, number> = {
+        ArrowRight: 2,
+        ArrowUp: 2,
+        ArrowLeft: -2,
+        ArrowDown: -2,
+        PageUp: 10,
+        PageDown: -10,
+      };
+      const by = STEPS[event.key];
+      if (by === undefined) return;
+
+      const min = Number(el.min || 0);
+      const max = Number(el.max || 100);
+      const next = Math.min(max, Math.max(min, Number(el.value) + by));
+      if (next === Number(el.value)) return;
+
+      event.preventDefault();
+      el.value = String(next);
+      // `value` set from script does not fire either event on its own, and
+      // the paint above listens for `input`. `change` follows it so anything
+      // watching for a settled value hears one too.
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    });
   }
 
   bindCompare();
@@ -285,7 +336,7 @@ const ratio = `${after.width} / ${after.height}`;
     z-index: 2;
     padding: 6px 12px;
     border-radius: var(--r-pill);
-    font-size: 12px;
+    font-size: 0.75rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: #fff;
@@ -339,8 +390,8 @@ const ratio = `${after.width} / ${after.height}`;
     padding: 0;
     background: transparent;
     border: 0;
-    appearance: none;
     -webkit-appearance: none;
+    appearance: none;
     cursor: ew-resize;
     /*
      * `pan-y` on a pointer device, where the mouse is precise and the page
@@ -396,8 +447,8 @@ const ratio = `${after.width} / ${after.height}`;
    * the rest of the site uses for its controls.
    */
   .cmp__range::-webkit-slider-thumb {
-    appearance: none;
     -webkit-appearance: none;
+    appearance: none;
     width: 48px;
     height: 48px;
     border: 0;
@@ -452,7 +503,7 @@ const ratio = `${after.width} / ${after.height}`;
     align-items: center;
     gap: 10px;
     margin-top: 14px;
-    font-size: 13px;
+    font-size: 0.8125rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--ink-faint);

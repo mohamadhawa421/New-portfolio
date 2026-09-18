@@ -492,9 +492,20 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         min-height: 44px;
         padding: 0 18px;
         border-radius: var(--r-pill);
-        font-size: 14px;
+        font-size: 0.875rem;
       }
 
+      /*
+       * `:focus`, not `:focus-visible`.
+       *
+       * The only way to reach a skip link is to Tab to it, so the two
+       * selectors describe the same set of moments — except that
+       * `:focus-visible` is a heuristic and this is the one control on the
+       * page where the heuristic guessing wrong means the link takes focus
+       * while still nine thousand pixels off-screen, with nothing to show the
+       * visitor where their focus went. `:focus` cannot guess wrong.
+       */
+      .skip-link:focus,
       .skip-link:focus-visible {
         left: 12px;
       }
@@ -546,7 +557,7 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         display: none;
         align-items: center;
         gap: 7px;
-        font-size: 16px;
+        font-size: 1rem;
         letter-spacing: -0.018em;
         color: currentColor;
       }

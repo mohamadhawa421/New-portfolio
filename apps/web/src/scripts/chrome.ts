@@ -102,33 +102,57 @@ function rollNumber(el: HTMLElement): void {
  */
 function reveal(el: HTMLElement, extra = 0): void {
   const isRise = el.hasAttribute('data-rise');
+  let delay = 0;
+
   if (!el.hasAttribute('data-num')) {
     const index = parseInt(el.getAttribute(isRise ? 'data-rise' : 'data-reveal') || '0', 10);
-    const delay = index * (isRise ? 90 : 70) + extra;
+    delay = index * (isRise ? 90 : 70) + extra;
 
     if (delay) {
       el.style.transitionDelay = `${delay}ms`;
-
-      /*
-       * The delay has to be removed once the reveal is done. `transition-delay`
-       * is not scoped to one property — it applies to every transition on the
-       * element — so a staggered item left holding a 700ms delay then waits
-       * 700ms before its *hover* starts moving.
-       *
-       * That is why the project rows felt progressively worse down the list:
-       * the last row is index 10, so its hover sat idle for 700ms before
-       * anything happened, while the four-item services list never exceeded
-       * 210ms and felt fine.
-       */
-      const clearAfter = delay + REVEAL_MS + 60;
-      window.setTimeout(() => {
-        el.style.removeProperty('transition-delay');
-        // Clearing the property leaves `style=""` on the element — inert, but
-        // it is a mark on the markup that nothing put there on purpose.
-        if (!el.getAttribute('style')) el.removeAttribute('style');
-      }, clearAfter);
     }
   }
+
+  /*
+   * The layer the stylesheet asks for and does not get.
+   *
+   * `[data-hidden]` is written `translate3d(0, 14px, 0)` precisely so the
+   * element is promoted for the length of the fade — and the CSS minifier
+   * rewrites it to `translateY(14px)`, because in two dimensions they compute
+   * the same thing. Read the built file and there is no 3D transform left:
+   * `[data-hidden]{opacity:0;transform:translateY(14px)}`. A 2D transform
+   * promotes nothing, so every reveal repaints its element into the parent's
+   * layer on every frame of the transition — a card and its cover, while the
+   * page underneath is also scrolling.
+   *
+   * Asking in JS instead, because this is the one form the minifier cannot
+   * rewrite into something cheaper. It is deliberately not a CSS rule on
+   * `[data-hidden]`: that would promote every reveal still waiting further
+   * down the page — a dozen or more layers held for as long as the visitor
+   * takes to scroll to them, which is the other, worse failure. Here it goes
+   * on at the moment the transition starts and comes off when it ends, so the
+   * only elements holding a layer are the ones actually moving.
+   *
+   * The same timer takes the stagger off. `transition-delay` is not scoped to
+   * one property — it applies to every transition on the element — so a
+   * staggered item left holding a 700ms delay then waits 700ms before its
+   * *hover* starts moving. That is why the project rows used to feel
+   * progressively worse down the list: the last row is index 10, so its hover
+   * sat idle for 700ms, while the four-item services list never exceeded
+   * 210ms and felt fine.
+   *
+   * One timer for both, and it now runs whether or not there was a delay,
+   * which the old one did not — so a card with no stagger got no cleanup
+   * because it had nothing to clean.
+   */
+  el.setAttribute('data-lifting', '');
+  window.setTimeout(() => {
+    el.removeAttribute('data-lifting');
+    el.style.removeProperty('transition-delay');
+    // Clearing the property leaves `style=""` on the element — inert, but it
+    // is a mark on the markup that nothing put there on purpose.
+    if (!el.getAttribute('style')) el.removeAttribute('style');
+  }, delay + REVEAL_MS + 60);
 
   // Must happen for counting numbers too. This used to sit after an early
   // return for [data-num], which left every stat below the fold hidden for
@@ -645,6 +669,27 @@ function chromePass(): void {
    * page listening to it.
    */
   styles.setProperty('--nav-ink', overDark ? '#ffffff' : '#1d1d1f');
+  /*
+   * And the accent follows the ground the same way the ink does.
+   *
+   * The active link is the one thing in the bar that is not `--nav-ink`: it
+   * is the page's blue, and the page's blue in the light theme is `#0066cc`,
+   * which is tuned for white. Over a dark tile — the contact page's hero, a
+   * dark project cover — that is the dark blue on near-black. Measured on the
+   * contact page in the light theme: 3.02:1, against the 4.5:1 that 15px at
+   * weight 600 needs. The four inactive links beside it had already turned
+   * white and were fine; only the current page was unreadable, which is the
+   * one a visitor is most likely to look for.
+   *
+   * `--blue-on-dark` is the token that already exists for exactly this and is
+   * already what the dark theme uses everywhere, so this is not a new colour —
+   * it is the one the site uses on dark ground, used on dark ground. 5.33:1.
+   *
+   * Written as `var(...)` rather than a literal so it still resolves through
+   * whichever palette is live: in the dark and super themes the two tokens are
+   * the same value, and this changes nothing there.
+   */
+  styles.setProperty('--nav-accent', overDark ? 'var(--blue-on-dark)' : 'var(--blue)');
   styles.setProperty('--logo-op', condensed ? '0' : '1');
   styles.setProperty('--logo-y', condensed ? '-10px' : '0px');
   styles.setProperty('--logo-pe', condensed ? 'none' : 'auto');

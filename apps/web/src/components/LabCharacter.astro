@@ -40,9 +40,36 @@ interface Props {
 const { pose, heading, line, side = 'start', as = 'h3' } = Astro.props as Props;
 const art = POSES[pose];
 const Heading = as;
+
+/*
+ * The small rendering, by the same convention as CharacterAside.
+ *
+ * He is drawn at clamp(92px, 11vw, 132px) here — 132 at most, wanting 264 at
+ * 2x — against a 560px source. `scripts/make-art-variants.js` writes the
+ * 320px version to /art/ at build time; if it is not there the srcset is
+ * omitted and the full drawing is used, which is what shipped before.
+ */
+const small = art.src.endsWith('.webp')
+  ? `/art${art.src.slice(0, -'.webp'.length)}-320.webp`
+  : null;
 ---
 
-<aside class="fig" class:list={[`fig--${side}`]} data-reveal="0">
+{/*
+  A <div>, not an <aside>, and the difference is measurable.
+
+  <aside> is a complementary landmark, and three of these on one experiment
+  page put three unnamed "complementary" entries in the landmark list a
+  screen-reader user navigates by — which is the landmark spam that makes
+  landmarks useless. The element was also the wrong one on its own terms:
+  `heading` here is rendered as the heading *of the block it introduces*, and
+  something that carries a section's heading is part of that section rather
+  than tangential to it.
+
+  The narrator who genuinely is tangential — the interactive one at the foot
+  of a page, in CharacterAside.astro — keeps its <aside>, and there is only
+  ever one of him.
+*/}
+<div class="fig" class:list={[`fig--${side}`]} data-reveal="0">
   <div class="fig__art">
     {/*
       Sized from the artwork's own pixels so the row is its final shape before
@@ -51,6 +78,8 @@ const Heading = as;
     */}
     <img
       src={art.src}
+      srcset={small ? `${small} 320w, ${art.src} ${art.width}w` : undefined}
+      sizes={small ? '(max-width: 767px) 96px, clamp(92px, 11vw, 132px)' : undefined}
       alt={art.alt}
       width={art.width}
       height={art.height}
@@ -63,7 +92,7 @@ const Heading = as;
     {heading && <Heading class="fig__heading">{heading}</Heading>}
     <p class="fig__line">{line}</p>
   </div>
-</aside>
+</div>
 
 <style>
   .fig {
@@ -110,14 +139,14 @@ const Heading = as;
 
   .fig__heading {
     margin: 0 0 6px;
-    font-size: clamp(19px, 1.6vw, 22px);
+    font-size: clamp(1.1875rem, 1.6vw, 1.375rem);
     font-weight: 600;
     letter-spacing: -0.02em;
     color: var(--ink);
   }
 
   .fig__line {
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.5;
     letter-spacing: -0.022em;
     color: var(--ink-muted);

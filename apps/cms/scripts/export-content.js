@@ -171,6 +171,51 @@ function clean(value) {
  * 341KB and keeps a margin above the point where the dark leaves start to go
  * mushy.
  */
+/**
+ * The widths a small rendering of a picture is allowed to ask for.
+ *
+ * Measured on the work grid: a card's cover is laid out at 364 CSS px and the
+ * file behind it is 1440 wide. On a 2x screen the card needs 728, so the
+ * browser holds a bitmap with four times the pixels it will draw and rescales
+ * it on every raster. Fifteen of those on one page is 88MB of decoded image
+ * against the 20MB the page actually shows.
+ *
+ * The three numbers come from measuring the tile, not from guessing. Across
+ * viewports from 390 to 1920 the cover occupies 89% of the width one-up, 44%
+ * two-up, and caps at 397 CSS px three-up once the shell stops growing:
+ *
+ *            1x     2x     3x
+ *   phone    351    702   1053
+ *   desktop  397    794      -
+ *   tablet   563   1126      -
+ *
+ * 420 / 840 / 1200 is the smallest ladder where every one of those lands on
+ * the step above it without overshooting to the next. 840 in particular is
+ * the one that matters: a three-up desktop at 2x wants 794, and an earlier
+ * ladder of 480/768/1152 missed it by 26 pixels and sent the whole grid to
+ * 1152 instead.
+ *
+ * The full-size file stays exactly as it was and is still what a case study's
+ * own hero and the lightbox load — this only gives the small renderings
+ * something small to pick.
+ *
+ * `WIDTHS` is read by the web side too: ProjectCard builds its `srcset` from
+ * the same numbers by convention, so a change here is a change there. The
+ * gate is the same in both places — a variant is only written, and only
+ * referenced, when the original is comfortably wider than it.
+ */
+const VARIANT_WIDTHS = [420, 840, 1200];
+
+/**
+ * No upscaling, and no variant that is barely smaller than the original.
+ *
+ * 1.15 rather than 1.25: the covers are 1440 wide and the top step is 1200,
+ * which at 1.25 would have needed a 1500px original and so would never have
+ * been written at all. 1200 out of 1440 is still 31% fewer pixels, which is
+ * worth a file.
+ */
+const wantsVariant = (width, at) => width >= at * 1.15;
+
 async function qualityFor(sharp, file) {
   try {
     const { entropy } = await sharp(file).stats();
@@ -180,6 +225,36 @@ async function qualityFor(sharp, file) {
     return 82;
   }
 }
+
+/**
+ * Writes the small renderings of one picture, beside the full-size one.
+ *
+ * Named by convention — `foo.webp` gets `foo-480.webp` and `foo-960.webp` —
+ * because that is the contract the web side reads. Nothing records them in
+ * content.json: a name that can be derived does not need to be stored, and
+ * storing it would mean a schema change for something the filename already
+ * says.
+ *
+ * Returns how many it wrote, for the line the export prints at the end.
+ */
+async function writeVariants(sharp, from, targetName, quality) {
+  const meta = await sharp(from).metadata();
+  const full = meta.width || 0;
+  const base = targetName.slice(0, -path.extname(targetName).length);
+  let made = 0;
+
+  for (const at of VARIANT_WIDTHS) {
+    if (!wantsVariant(full, at)) continue;
+    await sharp(from)
+      .resize({ width: at, withoutEnlargement: true })
+      .webp({ quality, effort: 5 })
+      .toFile(path.join(OUT_MEDIA, `${base}-${at}.webp`));
+    made += 1;
+  }
+
+  return made;
+}
+
 
 async function copyMedia() {
   fs.rmSync(OUT_MEDIA, { recursive: true, force: true });
@@ -199,6 +274,7 @@ async function copyMedia() {
 
   const renamed = new Map();
   let copied = 0;
+  let variants = 0;
   let before = 0;
   let after = 0;
   const missing = [];
@@ -217,15 +293,18 @@ async function copyMedia() {
     if (convertible) {
       const target = `${filename.slice(0, -ext.length)}.webp`;
       const to = path.join(OUT_MEDIA, target);
-      await sharp(from)
-        .webp({ quality: await qualityFor(sharp, from), effort: 5 })
-        .toFile(to);
+      const quality = await qualityFor(sharp, from);
+      await sharp(from).webp({ quality, effort: 5 }).toFile(to);
       after += fs.statSync(to).size;
       renamed.set(filename, target);
+      variants += await writeVariants(sharp, from, target, quality);
     } else {
       const to = path.join(OUT_MEDIA, filename);
       fs.copyFileSync(from, to);
       after += fs.statSync(to).size;
+      if (sharp && ext === '.webp') {
+        variants += await writeVariants(sharp, from, filename, await qualityFor(sharp, from));
+      }
     }
 
     copied += 1;
@@ -238,7 +317,7 @@ async function copyMedia() {
     );
   }
 
-  return { copied, before, after, renamed };
+  return { copied, before, after, renamed, variants };
 }
 
 async function main() {
@@ -288,29 +367,53 @@ async function main() {
     json = json.split(`/media/${from}`).join(`/media/${to}`);
   }
 
+  /*
+   * The stamp only moves when the content does.
+   *
+   * `generatedAt` is the first line of a committed file, so writing a fresh
+   * timestamp on every export made content.json show as modified after every
+   * build — which meant `git status` could never answer the one question it
+   * is there to answer, and a real content change looked exactly like a
+   * rebuild. Compared with the stamp blanked on both sides, so the only thing
+   * that can move it is an actual difference.
+   *
+   * The field is kept rather than dropped: knowing when a snapshot was taken
+   * is worth a line, and with this it is finally true — the date is when the
+   * content last changed, not when someone last ran a build.
+   */
+  const blankStamp = (text) => text.replace(/^(\s*"generatedAt":\s*)"[^"]*"/m, '$1""');
+  const next = `${json}\n`;
+  const prior = fs.existsSync(OUT_JSON) ? fs.readFileSync(OUT_JSON, 'utf8') : null;
+  const sameContent = prior !== null && blankStamp(prior) === blankStamp(next);
+
   fs.mkdirSync(path.dirname(OUT_JSON), { recursive: true });
-  fs.writeFileSync(OUT_JSON, `${json}\n`);
+  fs.writeFileSync(OUT_JSON, sameContent ? prior : next);
 
   const copied = media.copied;
 
   // Refresh the committed, credential-free copy of the database.
-  const cleared = writePublicDatabase();
+  const { cleared, unchanged: dbUnchanged } = writePublicDatabase();
   assertPublicDatabaseIsClean();
 
   const rel = (p) => path.relative(path.join(CMS_ROOT, '..', '..'), p);
   console.log(
-    `[export] refreshed data/portfolio.public.db (stripped ${cleared} credential row(s))`
+    dbUnchanged
+      ? '[export] data/portfolio.public.db unchanged'
+      : `[export] refreshed data/portfolio.public.db (stripped ${cleared} credential row(s))`
   );
   console.log(
     `[export] ${snapshot.projects.length} projects, ${snapshot.services.length} services, ` +
       `${snapshot.processSteps.length} process steps, 5 single types`
   );
-  console.log(`[export] wrote ${rel(OUT_JSON)}`);
+  console.log(
+    `[export] ${sameContent ? 'content.json unchanged' : `wrote ${rel(OUT_JSON)}`}`
+  );
   const mb = (n) => `${(n / 1024 / 1024).toFixed(1)} MB`;
   const saved = media.before ? Math.round((1 - media.after / media.before) * 100) : 0;
   console.log(
     `[export] copied ${copied} media file(s) to ${rel(OUT_MEDIA)} — ` +
-      `${mb(media.before)} -> ${mb(media.after)} (${saved}% smaller)`
+      `${mb(media.before)} -> ${mb(media.after)} (${saved}% smaller)` +
+      (media.variants ? `, plus ${media.variants} small rendering(s) for srcset` : '')
   );
 }
 

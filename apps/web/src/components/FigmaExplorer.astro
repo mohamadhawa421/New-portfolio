@@ -91,9 +91,17 @@ const name = title || design.projectName;
                   have nothing to say about — the halo around it is the
                   decoration, not the face. */}
               <span class="figma__invite-halo">
+                {/* The 320px rendering is only reached on a 1x screen —
+                    this is drawn at up to 188 CSS px, which wants 376 at 2x
+                    and takes the full drawing. Written anyway because that
+                    is a third of the pixels for the readers who do get it,
+                    and because leaving one of these without a srcset is how
+                    the convention rots. See scripts/make-art-variants.js. */}
                 <img
                   class="figma__invite-face"
                   src="/character-presenting.webp"
+                  srcset="/art/character-presenting-320.webp 320w, /character-presenting.webp 560w"
+                  sizes="clamp(132px, 15vw, 188px)"
                   alt="Mohamad Hawa, illustrated, inviting you into the Figma file"
                   width="560"
                   height="510"
@@ -233,7 +241,7 @@ const name = title || design.projectName;
   }
 
   .figma__label {
-    font-size: 14px;
+    font-size: 0.875rem;
     letter-spacing: -0.01em;
     color: var(--ink-muted);
   }
@@ -375,12 +383,20 @@ const name = title || design.projectName;
     margin-bottom: 4px;
     /* The drawing is his own artwork on transparency: nothing tints it, and
        nothing rounds it. */
+    /*
+     * Prefixed first, standard last — the invariant in CLAUDE.md. The prefix
+     * is also the only one Safari reads below 17: unprefixed `user-select`
+     * arrived in Safari 17.0 and the declared floor here is 16.4, so on that
+     * Safari this rule did nothing at all and the artwork stayed selectable
+     * and long-pressable.
+     */
+    -webkit-user-select: none;
     user-select: none;
     -webkit-user-drag: none;
   }
 
   .figma__invite-title {
-    font-size: clamp(19px, 2vw, 23px);
+    font-size: clamp(1.1875rem, 2vw, 1.4375rem);
     font-weight: 600;
     letter-spacing: -0.018em;
   }
@@ -388,7 +404,7 @@ const name = title || design.projectName;
   .figma__invite-note {
     margin-top: 6px;
     max-width: 34ch;
-    font-size: 15px;
+    font-size: 0.9375rem;
     line-height: 1.5;
     color: var(--ink-muted);
     text-wrap: pretty;
@@ -413,7 +429,7 @@ const name = title || design.projectName;
     border: 0;
     border-radius: var(--r-pill);
     font: inherit;
-    font-size: 15px;
+    font-size: 0.9375rem;
     font-weight: 500;
     letter-spacing: -0.01em;
     color: var(--surface);
@@ -472,7 +488,7 @@ const name = title || design.projectName;
      spinner-shaped thing in the section: the bars already carry the motion. */
   .figma__skeleton-say {
     margin-top: 6px;
-    font-size: 13px;
+    font-size: 0.8125rem;
     letter-spacing: -0.01em;
     color: var(--ink-faint);
   }
@@ -514,13 +530,13 @@ const name = title || design.projectName;
   }
 
   .figma__placeholder-title {
-    font-size: clamp(17px, 1.8vw, 20px);
+    font-size: clamp(1.0625rem, 1.8vw, 1.25rem);
     font-weight: 600;
     letter-spacing: -0.016em;
   }
 
   .figma__placeholder-note {
-    font-size: 15px;
+    font-size: 0.9375rem;
     color: var(--ink-muted);
   }
 
@@ -535,7 +551,7 @@ const name = title || design.projectName;
   .figma__placeholder-dev {
     margin-top: 6px;
     font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
-    font-size: 11px;
+    font-size: 0.6875rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--ink-faint);
@@ -543,13 +559,13 @@ const name = title || design.projectName;
   }
 
   .figma__fallen-title {
-    font-size: clamp(17px, 1.8vw, 20px);
+    font-size: clamp(1.0625rem, 1.8vw, 1.25rem);
     font-weight: 600;
     letter-spacing: -0.016em;
   }
 
   .figma__fallen-note {
-    font-size: 15px;
+    font-size: 0.9375rem;
     color: var(--ink-muted);
   }
 
@@ -630,7 +646,7 @@ const name = title || design.projectName;
   }
 
   .figma__shield span {
-    font-size: 13px;
+    font-size: 0.8125rem;
     color: #fff;
     background: rgba(20, 20, 22, 0.62);
     -webkit-backdrop-filter: blur(10px);
@@ -683,7 +699,7 @@ const name = title || design.projectName;
 
     .figma__invite-note {
       max-width: 30ch;
-      font-size: 14px;
+      font-size: 0.875rem;
     }
 
     .figma__invite-go {

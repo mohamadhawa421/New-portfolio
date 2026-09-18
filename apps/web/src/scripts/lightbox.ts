@@ -133,6 +133,58 @@ const ZOOM_MAX = 4;
  */
 const PULL_AWAY = 90;
 
+/**
+ * Everything that is not the dialog, switched off while the dialog is up.
+ *
+ * `aria-modal="true"` was already on the shell and it is not enough on its
+ * own: it tells a screen reader to stay inside, and it tells Tab nothing at
+ * all. Measured before this — open the dialog, press Tab twice and focus is
+ * on the nav behind the picture, with the picture still covering it. So a
+ * keyboard visitor was navigating a page they could not see, and the site's
+ * own focus ring was being drawn underneath an opaque veil.
+ *
+ * `inert` rather than a focus trap. A trap is a keydown handler that has to
+ * know where the edges of the dialog are, re-find them whenever its contents
+ * change, and get Shift+Tab, the first Tab and programmatic focus all right.
+ * `inert` is the platform doing the whole of that: the subtree stops taking
+ * focus, stops taking clicks, and leaves the accessibility tree — which also
+ * makes the `aria-hidden` bookkeeping that used to be needed for that job
+ * unnecessary.
+ *
+ * Marked on the body's own children rather than on some wrapper, because the
+ * dialog is a child of <body> itself and inert is inherited: anything that
+ * contained the page would contain the dialog too.
+ *
+ * Feature-detected. Safari has had it since 15.5 and Chrome since 102, both
+ * under the floor this site declares, but the failure mode without it is a
+ * dialog that cannot be reached at all if the property is missing and the
+ * attribute is set anyway — so the check is cheap insurance and the old
+ * behaviour is what an unsupported browser falls back to.
+ */
+const SUPPORTS_INERT = typeof HTMLElement !== 'undefined' && 'inert' in HTMLElement.prototype;
+
+/** The elements this module made inert, so only those are given back. */
+let muted: HTMLElement[] = [];
+
+function muteBehind(shell: HTMLElement): void {
+  if (!SUPPORTS_INERT) return;
+  muted = [];
+  for (const node of Array.from(document.body.children)) {
+    if (!(node instanceof HTMLElement)) continue;
+    if (node === shell || node.contains(shell)) continue;
+    // Left alone if it was already inert — the menu marks itself that way
+    // while it is shut, and giving it back here would open it to Tab.
+    if (node.inert) continue;
+    node.inert = true;
+    muted.push(node);
+  }
+}
+
+function unmuteBehind(): void {
+  for (const node of muted) node.inert = false;
+  muted = [];
+}
+
 /** The dialog, which is one element and is looked up rather than held. */
 function shellOf(): HTMLElement | null {
   return document.querySelector<HTMLElement>('[data-lightbox]');
@@ -340,6 +392,7 @@ function show(frame: HTMLElement): void {
   shell.setAttribute('role', 'dialog');
   shell.setAttribute('aria-modal', 'true');
   shell.classList.add('is-open');
+  muteBehind(shell);
   document.documentElement.style.overflow = 'hidden';
   /*
    * And the burger steps out of the way.
@@ -461,6 +514,7 @@ function hide(): void {
     panel?.remove();
 
     shell.hidden = true;
+    unmuteBehind();
     shell.setAttribute('aria-hidden', 'true');
     shell.removeAttribute('role');
     shell.removeAttribute('aria-modal');
@@ -983,6 +1037,18 @@ export function bindLightbox(): void {
   document.addEventListener('astro:before-preparation', () => {
     if (open) hide();
   });
+
+  /*
+   * And the belt to that pair of braces.
+   *
+   * `hide()` above takes the page back on its own, but it runs an animation
+   * and the swap does not wait for it — and the elements that were made
+   * inert include the ones carrying `transition:persist`, which outlive the
+   * swap. One missed teardown there and the nav is permanently untabbable
+   * with nothing on screen to explain why. Unmuting is idempotent and costs
+   * a loop over an empty array on every navigation that did not open one.
+   */
+  document.addEventListener('astro:after-swap', unmuteBehind);
 
   document.addEventListener('astro:page-load', stampZoomables);
   stampZoomables();

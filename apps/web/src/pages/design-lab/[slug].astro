@@ -208,7 +208,7 @@ const seo = {
               </h2>
             )}
 
-            <ol class="lx-steps">
+            <ol class="lx-steps" role="list">
               {experiment.flow.map((step, i) => (
                 <li class="lx-step" data-reveal={String(Math.min(i + 1, 3))}>
                   <span class="lx-step__num" aria-hidden="true">
@@ -273,7 +273,7 @@ const seo = {
               I would want to know before believing it.
             </p>
 
-            <ul class="lx-test__list" data-reveal="2">
+            <ul class="lx-test__list" role="list" data-reveal="2">
               {experiment.testing.map((question) => (
                 <li class="lx-test__item">{question}</li>
               ))}
@@ -357,7 +357,7 @@ const seo = {
 
   .lx-hero__title {
     margin-top: 10px;
-    font-size: clamp(40px, 5.6vw, 76px);
+    font-size: clamp(2.5rem, 5.6vw, 4.75rem);
     line-height: 1.04;
     letter-spacing: -0.028em;
     font-weight: 600;
@@ -374,7 +374,7 @@ const seo = {
   .lx-hero__statement {
     margin-top: clamp(16px, 2.2vh, 26px);
     max-width: 30ch;
-    font-size: clamp(24px, 2.8vw, 36px);
+    font-size: clamp(1.5rem, 2.8vw, 2.25rem);
     font-weight: 300;
     line-height: 1.22;
     letter-spacing: -0.02em;
@@ -394,7 +394,7 @@ const seo = {
     border-radius: var(--r-pill);
     background: var(--surface-chip);
     color: var(--ink-soft);
-    font-size: 13px;
+    font-size: 0.8125rem;
     letter-spacing: 0.02em;
   }
 
@@ -414,7 +414,7 @@ const seo = {
   }
 
   .lx-compare__hint {
-    font-size: 14px;
+    font-size: 0.875rem;
     color: var(--ink-faint);
   }
 
@@ -442,7 +442,7 @@ const seo = {
   }
 
   .lx-block__heading {
-    font-size: clamp(24px, 2.6vw, 34px);
+    font-size: clamp(1.5rem, 2.6vw, 2.125rem);
     font-weight: 600;
     line-height: 1.12;
     letter-spacing: -0.022em;
@@ -478,7 +478,7 @@ const seo = {
   }
 
   .lx-step__num {
-    font-size: 13px;
+    font-size: 0.8125rem;
     letter-spacing: 0.14em;
     color: var(--ink-faint);
     font-variant-numeric: tabular-nums;
@@ -486,7 +486,7 @@ const seo = {
   }
 
   .lx-step__title {
-    font-size: clamp(19px, 1.8vw, 22px);
+    font-size: clamp(1.1875rem, 1.8vw, 1.375rem);
     font-weight: 600;
     letter-spacing: -0.02em;
   }
@@ -557,7 +557,7 @@ const seo = {
       clamp(42px, 4.4vw, 56px);
     border-radius: var(--r-lg);
     background: var(--surface-card);
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.45;
     letter-spacing: -0.022em;
     color: var(--ink);
@@ -573,7 +573,7 @@ const seo = {
     left: clamp(18px, 2.2vw, 26px);
     top: clamp(16px, 2vh, 22px);
     color: var(--blue);
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.45;
   }
 
@@ -593,7 +593,7 @@ const seo = {
   }
 
   .lx-take__row dt {
-    font-size: 13px;
+    font-size: 0.8125rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--ink-faint);
@@ -602,7 +602,7 @@ const seo = {
   .lx-take__row dd {
     margin: 8px 0 0;
     max-width: 62ch;
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.5;
     letter-spacing: -0.022em;
     color: var(--ink-muted);
@@ -644,7 +644,7 @@ const seo = {
   .lx-out__title {
     display: block;
     margin-top: 6px;
-    font-size: clamp(24px, 3vw, 34px);
+    font-size: clamp(1.5rem, 3vw, 2.125rem);
     font-weight: 600;
     letter-spacing: -0.022em;
   }

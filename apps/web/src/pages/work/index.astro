@@ -502,7 +502,7 @@ const categories = [
     padding-bottom: 0.16em;
     margin-bottom: -0.1em;
     max-width: 16ch;
-    font-size: clamp(40px, 6.2vw, 84px);
+    font-size: clamp(2.5rem, 6.2vw, 5.25rem);
     line-height: 1.03;
     letter-spacing: -0.019em;
     font-weight: 600;
@@ -541,14 +541,31 @@ const categories = [
     display: inline-flex;
     align-items: center;
     min-height: 44px;
-    font-size: 14px;
+    font-size: 0.875rem;
     letter-spacing: -0.016em;
-    padding: 0 18px;
+    padding: 6px 18px;
     border: none;
     border-radius: var(--r-pill);
     background: var(--surface-chip);
     color: var(--ink);
-    white-space: nowrap;
+    /*
+     * A pill wraps rather than leaving the screen.
+     *
+     * `white-space: nowrap` was right for the shape and wrong at the edge:
+     * measured at 320px with the reader's text size set to 24px, "Landing
+     * page / showcase website" is about 330px wide and hung off the side of
+     * the viewport with no way to reach it. That only became reachable at
+     * all once the type scale moved to rem — before, the chip ignored the
+     * setting and stayed 14px.
+     *
+     * `max-width` plus ordinary wrapping costs nothing at any size where the
+     * label already fits, which is every default configuration: the chip is
+     * shrink-to-fit, so there is nothing to wrap until there is. The block
+     * padding is the same story — `min-height` covers one line, and this is
+     * only reached on the second.
+     */
+    max-width: 100%;
+    text-align: center;
     transition:
       background 340ms var(--ease-out),
       color 340ms ease,
@@ -570,7 +587,7 @@ const categories = [
 
   .work-grid__count {
     margin-left: auto;
-    font-size: 14px;
+    font-size: 0.875rem;
     color: var(--ink-soft);
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
@@ -584,7 +601,7 @@ const categories = [
 
   .work-grid__empty {
     margin-top: 40px;
-    font-size: 17px;
+    font-size: 1.0625rem;
     color: var(--ink-muted);
   }
 </style>

@@ -67,23 +67,41 @@ const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleT
           <p class="about-body__primary">{about.bodyPrimary}</p>
           <p class="about-body__secondary">{about.bodySecondary}</p>
 
-          <div class="experience">
+          {/*
+            Two headings nobody sees.
+
+            The page draws these two blocks as blocks — a ruled stack of roles,
+            then a row of pills — and says what they are by how they look. A
+            reader moving through the page by heading gets the <h1> and then
+            nothing at all for the rest of it, and a reader moving through it
+            linearly gets "Poyesis 2022 — now Freelance UI / UX Designer" as
+            one unbroken sentence. These give both of them the boundary the eye
+            already has. The design is untouched: `.sr-only` takes them out of
+            the layout, not out of the accessibility tree.
+
+            And the lists are lists. `role="list"` is on them for the reason it
+            is on every other list here — WebKit drops the role from anything
+            with `list-style: none`, which is all of them.
+          */}
+          <h2 class="sr-only">Experience</h2>
+          <ul class="experience" role="list">
             {
               about.experience.map((entry) => (
-                <div class="experience__row">
+                <li class="experience__row">
                   <div>
                     <div class="experience__role">{entry.role}</div>
                     <div class="experience__org">{entry.organisation}</div>
                   </div>
                   <div class="experience__period">{entry.period}</div>
-                </div>
+                </li>
               ))
             }
-          </div>
+          </ul>
 
-          <div class="skills">
-            {about.skills.map((skill) => <span class="skill">{skill}</span>)}
-          </div>
+          <h2 class="sr-only">Skills</h2>
+          <ul class="skills" role="list">
+            {about.skills.map((skill) => <li class="skill">{skill}</li>)}
+          </ul>
         </div>
       </div>
     </section>
@@ -113,7 +131,7 @@ const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleT
     padding-bottom: 0.16em;
     margin-bottom: -0.1em;
     max-width: 18ch;
-    font-size: clamp(40px, 5.6vw, 80px);
+    font-size: clamp(2.5rem, 5.6vw, 5rem);
     line-height: 1.04;
     letter-spacing: -0.019em;
     font-weight: 600;
@@ -204,14 +222,14 @@ const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleT
   }
 
   .stat__value {
-    font-size: clamp(30px, 3vw, 34px);
+    font-size: clamp(1.875rem, 3vw, 2.125rem);
     font-weight: 600;
     letter-spacing: -0.024em;
     font-variant-numeric: tabular-nums;
   }
 
   .stat__label {
-    font-size: 14px;
+    font-size: 0.875rem;
     color: var(--ink-muted);
     margin-top: 6px;
   }
@@ -222,7 +240,7 @@ const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleT
   }
 
   .about-body__lead {
-    font-size: clamp(20px, 2.1vw, 28px);
+    font-size: clamp(1.25rem, 2.1vw, 1.75rem);
     font-weight: 300;
     line-height: 1.38;
     max-width: 34ch;
@@ -230,7 +248,7 @@ const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleT
 
   .about-body__primary {
     margin-top: 22px;
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.5;
     letter-spacing: -0.022em;
     max-width: 56ch;
@@ -238,7 +256,7 @@ const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleT
 
   .about-body__secondary {
     margin-top: 18px;
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.5;
     letter-spacing: -0.022em;
     color: var(--ink-muted);
@@ -249,6 +267,11 @@ const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleT
     margin-top: clamp(36px, 6vh, 60px);
     display: flex;
     flex-direction: column;
+    /* <ul> now, for the semantics. The three lines the UA adds for a list are
+       taken back off so the block sits exactly where it did as a <div>. */
+    margin-bottom: 0;
+    padding: 0;
+    list-style: none;
   }
 
   .experience__row {
@@ -264,19 +287,19 @@ const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleT
   }
 
   .experience__role {
-    font-size: 17px;
+    font-size: 1.0625rem;
     font-weight: 600;
     letter-spacing: -0.022em;
   }
 
   .experience__org {
-    font-size: 14px;
+    font-size: 0.875rem;
     color: var(--ink-muted);
     margin-top: 6px;
   }
 
   .experience__period {
-    font-size: 14px;
+    font-size: 0.875rem;
     color: var(--ink-muted);
     white-space: nowrap;
   }
@@ -286,13 +309,16 @@ const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleT
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+    margin-bottom: 0;
+    padding: 0;
+    list-style: none;
   }
 
   .skill {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
-    font-size: 14px;
+    font-size: 0.875rem;
     padding: 0 18px;
     border-radius: var(--r-pill);
     background: var(--surface);

@@ -67,10 +67,27 @@ function writePublicDatabase() {
     throw new Error(`No working database at ${WORKING_DB}.`);
   }
 
-  fs.copyFileSync(WORKING_DB, PUBLIC_DB);
+  /*
+   * Built beside the committed copy, not over it.
+   *
+   * Strapi rewrites `plugin_upload_metrics` with a freshly randomised weekly
+   * cron every time it boots, so every export changed one string inside a
+   * 1.6MB binary and the committed database showed as modified after every
+   * build — with no way to tell that from a real content change without
+   * dumping both and diffing them. The same problem content.json had, in a
+   * file where `git diff` can only say "Bin 1671168 -> 1671168 bytes".
+   *
+   * So the new copy is written to one side, the churn is normalised out of
+   * it, and it only replaces the committed file if the bytes actually
+   * differ. Pinning the schedule is safe: it is Strapi's own telemetry
+   * timer, nothing reads it here, and Strapi rolls a new one on next boot
+   * regardless.
+   */
+  const TEMP_DB = `${PUBLIC_DB}.tmp`;
+  fs.copyFileSync(WORKING_DB, TEMP_DB);
 
   const Database = require('better-sqlite3');
-  const db = new Database(PUBLIC_DB);
+  const db = new Database(TEMP_DB);
 
   const present = new Set(
     db
@@ -88,12 +105,63 @@ function writePublicDatabase() {
     cleared += before;
   }
 
+  /*
+   * The one value Strapi randomises on every boot, pinned so that an export
+   * which changed nothing produces the same bytes as the last one. Guarded,
+   * because the row only exists once the upload plugin has run.
+   */
+  if (present.has('strapi_core_store_settings')) {
+    db.prepare(
+      `UPDATE strapi_core_store_settings
+          SET value = json_set(value, '$.weeklySchedule', '0 0 0 * * 5')
+        WHERE key = 'plugin_upload_metrics'
+          AND json_valid(value)`
+    ).run();
+  }
+
   // Reclaim the pages the deleted rows occupied, so the values are not
-  // recoverable from free space in the committed file.
+  // recoverable from free space in the committed file. Also what makes the
+  // page layout deterministic, which the comparison below depends on.
   db.exec('VACUUM');
   db.close();
 
-  return cleared;
+  // Only touch the committed file when something in it actually moved.
+  const next = fs.readFileSync(TEMP_DB);
+  const unchanged =
+    fs.existsSync(PUBLIC_DB) && sameDatabase(next, fs.readFileSync(PUBLIC_DB));
+
+  if (unchanged) fs.rmSync(TEMP_DB);
+  else fs.renameSync(TEMP_DB, PUBLIC_DB);
+
+  return { cleared, unchanged };
+}
+
+/**
+ * Two SQLite files holding the same thing.
+ *
+ * With the telemetry row pinned above, two exports of unchanged content
+ * differ in exactly two bytes — measured, not assumed: offsets 27 and 95,
+ * the low bytes of the header's *file change counter* (24..27) and
+ * *version-valid-for* (92..95). Both are bookkeeping SQLite increments on
+ * every write; neither says anything about the contents.
+ *
+ * Masking those two fields rather than parsing the whole database: the
+ * comparison has to be cheap enough to run on every export, and after the
+ * VACUUM above the page layout is deterministic, so identical content really
+ * does give identical bytes everywhere else. If that ever stops being true
+ * the check fails safe — it writes the file, which is what it did before.
+ */
+function sameDatabase(a, b) {
+  if (a.length !== b.length) return false;
+
+  const mask = (buf) => {
+    const copy = Buffer.from(buf);
+    copy.fill(0, 24, 28); // file change counter
+    copy.fill(0, 92, 96); // version-valid-for
+    return copy;
+  };
+
+  return Buffer.compare(mask(a), mask(b)) === 0;
 }
 
 /** Fails loudly if a credential ever slips into the committed copy. */

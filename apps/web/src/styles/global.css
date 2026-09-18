@@ -12,6 +12,26 @@
 html {
   scroll-behavior: smooth;
   /*
+   * iOS Safari's text autosizing, switched off.
+   *
+   * WebKit inflates the font of a block it decides is wider than the viewport
+   * can comfortably show, and it does it per block rather than per page — so
+   * on a phone turned sideways one paragraph comes back a size larger than
+   * the one above it while the headings around them, which are `clamp()`ed
+   * off the viewport width, do not move at all. The type scale here is
+   * already written for the width in hand; nothing needs guessing on top.
+   *
+   * `100%` rather than `none`. `none` would also stop the page responding to
+   * the reader's own text-size setting, which is the thing WCAG 1.4.4 exists
+   * to protect. `100%` only declines the automatic inflation; pinch zoom and
+   * the system text size are untouched.
+   *
+   * Prefixed first, standard last, as everywhere. Safari still only reads the
+   * prefixed form — the unprefixed property is not implemented there at all.
+   */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /*
    * The closed menu must not widen the page.
    *
    * `.panel` is `position: fixed`, pinned to the right edge and pushed off by
@@ -97,6 +117,34 @@ svg {
   max-width: 100%;
 }
 
+/*
+ * Present to anything that reads the page, absent to anything that looks at it.
+ *
+ * For the handful of places where the design carries a relationship visually —
+ * a run of rows that is obviously a list, a block that is obviously "the jobs"
+ * — and the markup has no way to say so without drawing something that was
+ * deliberately not drawn. A heading in here gives a screen reader the same
+ * structure the eye already has, and costs the layout nothing.
+ *
+ * `clip-path: inset(50%)` rather than the old `clip: rect(...)`: same effect,
+ * and it is the form that is not deprecated. Same rule the comparison
+ * slider's own label uses — see LabCompare.astro.
+ *
+ * Not `display: none` and not `visibility: hidden`, either of which would take
+ * it out of the accessibility tree as well, which is the opposite of the point.
+ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 h1,
 h2,
 h3,
@@ -176,28 +224,28 @@ figure {
 /* --------------------------------------------------------------------- */
 
 .eyebrow {
-  font-size: 14px;
+  font-size: 0.875rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-muted);
 }
 
 .eyebrow--small {
-  font-size: 13px;
+  font-size: 0.8125rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-faint);
 }
 
 .h2 {
-  font-size: clamp(30px, 4.2vw, 54px);
+  font-size: clamp(1.875rem, 4.2vw, 3.375rem);
   line-height: 1.06;
   letter-spacing: -0.016em;
   font-weight: 600;
 }
 
 .body {
-  font-size: 17px;
+  font-size: 1.0625rem;
   line-height: 1.5;
   letter-spacing: -0.022em;
   color: var(--ink-muted);
@@ -205,7 +253,7 @@ figure {
 }
 
 .lead {
-  font-size: clamp(20px, 2vw, 24px);
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
   font-weight: 300;
   line-height: 1.4;
   color: var(--ink-muted);
@@ -223,7 +271,7 @@ figure {
   padding: 0 26px;
   border: none;
   border-radius: var(--r-pill);
-  font-size: 17px;
+  font-size: 1.0625rem;
   letter-spacing: -0.022em;
   transition: transform 300ms var(--spring), background 0.25s;
 }
@@ -257,7 +305,7 @@ figure {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  font-size: 17px;
+  font-size: 1.0625rem;
   letter-spacing: -0.022em;
   color: var(--blue);
   transition: transform 300ms var(--spring);
@@ -353,6 +401,36 @@ figure {
 [data-shown] {
   opacity: 1;
   transform: none;
+}
+
+/*
+ * Set by reveal() in chrome.ts for the length of one entrance, and taken off
+ * again the moment it ends.
+ *
+ * The promotion the rule above asks for with `translate3d` does not survive
+ * the build — the minifier rewrites it to `translateY`, which promotes
+ * nothing. See the long note in reveal(); this is the half of that fix that
+ * lives in the stylesheet, so the property is here with the rest of the
+ * entrance rather than buried in a script.
+ *
+ * `will-change` on the elements *waiting* would be the easy version and the
+ * wrong one: it would hand a layer to every reveal below the fold and hold
+ * them all for as long as the page is open. This one exists for about half a
+ * second per element.
+ */
+[data-lifting] {
+  will-change: opacity, transform;
+}
+
+/*
+ * Nothing to promote when nothing moves. The blanket reduced-motion reset
+ * below collapses every duration to a thousandth of a millisecond, so the
+ * layer would be created and destroyed for an entrance nobody sees.
+ */
+@media (prefers-reduced-motion: reduce) {
+  [data-lifting] {
+    will-change: auto;
+  }
 }
 
 /* --------------------------------------------------------------------- */

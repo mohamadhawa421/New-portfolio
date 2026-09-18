@@ -44,6 +44,52 @@ const filterKey = project.categories.join('|');
 const tileStyle = project.cover
   ? `color:${project.chipInk}`
   : `background:${project.chipBg};color:${project.chipInk}`;
+
+/*
+ * The small renderings of the cover, if the export made any.
+ *
+ * Measured on the work grid: the tile is 364 CSS px wide and the file behind
+ * it is 1440, so on a 2x screen the browser decodes four times the pixels it
+ * draws and rescales them on every raster — and it re-rasters on every frame
+ * of the entrance, because a fading card is repainted rather than composited.
+ * Fifteen cards is 88MB of decoded bitmap against the 20MB the page shows.
+ *
+ * The names are a convention with apps/cms/scripts/export-content.js, which
+ * writes `foo-480.webp` and `foo-960.webp` beside `foo.webp`. Nothing records
+ * them in content.json — the filename already says it — so the gate on which
+ * ones exist has to match the exporter's: it writes a width only when the
+ * original is at least 1.25x it. Keep the two in step; they are commented at
+ * both ends.
+ *
+ * No srcset at all when the cover is too small to have variants, or is not a
+ * webp. `src` is unchanged either way, so the worst case is what shipped
+ * before.
+ */
+const VARIANT_WIDTHS = [420, 840, 1200];
+
+const cover = project.cover;
+const coverSrcset =
+  cover && cover.url.endsWith('.webp')
+    ? VARIANT_WIDTHS.filter((at) => (cover.width ?? 0) >= at * 1.15)
+        .map((at) => `${cover.url.slice(0, -'.webp'.length)}-${at}.webp ${at}w`)
+        .concat(cover.width ? [`${cover.url} ${cover.width}w`] : [])
+        .join(', ')
+    : '';
+
+/*
+ * What the tile is actually going to be, so the browser can pick from the
+ * list above before it has done layout.
+ *
+ * Measured rather than estimated, because `sizes` being 16% high is enough to
+ * push every card up a step: the grid is
+ * `repeat(auto-fit, minmax(min(100%, 320px), 1fr))` inside the shell, and the
+ * tile came out at 89.2% of the viewport one-up (390-640px), 43.6% two-up
+ * (767-1279px), and a flat 397px three-up, because above 1440 the shell stops
+ * growing and the vw-relative figure keeps shrinking — 28.4% at 1280, 20.7%
+ * at 1920. A percentage for that last band would over-ask on a wide monitor
+ * and under-ask at 1280, so it is stated in pixels.
+ */
+const COVER_SIZES = '(max-width: 700px) 90vw, (max-width: 1279px) 44vw, 397px';
 ---
 
 <a
@@ -67,6 +113,10 @@ const tileStyle = project.cover
       project.cover ? (
         <img
           src={project.cover.url}
+          srcset={coverSrcset || undefined}
+          sizes={coverSrcset ? COVER_SIZES : undefined}
+          width={project.cover.width}
+          height={project.cover.height}
           alt={project.cover.alt}
           loading={eager ? 'eager' : 'lazy'}
           fetchpriority={index === 0 ? 'high' : undefined}
@@ -162,7 +212,7 @@ const tileStyle = project.cover
   }
 
   .card__initials {
-    font-size: clamp(34px, 4.4vw, 58px);
+    font-size: clamp(2.125rem, 4.4vw, 3.625rem);
     font-weight: 600;
     letter-spacing: -0.02em;
     line-height: 1;
@@ -186,21 +236,21 @@ const tileStyle = project.cover
    * what surface the rest.
    */
   .card__meta {
-    font-size: 13px;
+    font-size: 0.8125rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--ink-faint);
   }
 
   .card__title {
-    font-size: clamp(21px, 2.2vw, 28px);
+    font-size: clamp(1.3125rem, 2.2vw, 1.75rem);
     line-height: 1.14;
     letter-spacing: -0.016em;
     font-weight: 600;
   }
 
   .card__summary {
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.47;
     letter-spacing: -0.022em;
     color: var(--ink-muted);
@@ -209,7 +259,7 @@ const tileStyle = project.cover
   .card__cta {
     margin-top: auto;
     padding-top: 14px;
-    font-size: 17px;
+    font-size: 1.0625rem;
     letter-spacing: -0.022em;
     color: var(--blue);
   }

@@ -398,7 +398,7 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     min-height: 44px;
     padding: var(--nav-link-pad, 0 6px);
     border-radius: var(--r-pill);
-    font-size: 15px;
+    font-size: 0.9375rem;
     letter-spacing: -0.014em;
     font-weight: 400;
     color: var(--nav-ink, #1d1d1f);
@@ -419,12 +419,15 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
   }
 
   .nav__link--active:hover {
-    background: color-mix(in srgb, var(--blue) 12%, transparent);
+    background: color-mix(in srgb, var(--nav-accent, var(--blue)) 12%, transparent);
   }
 
+  /* `--nav-accent` is the blue for the ground the bar is currently over, set
+     alongside --nav-ink in chrome.ts; the fallback is the palette's own blue,
+     for the frame before that script has run. */
   .nav__link--active,
   .nav__link--active:hover {
-    color: var(--blue);
+    color: var(--nav-accent, var(--blue));
     font-weight: 600;
   }
 
@@ -788,7 +791,7 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
        and the hover fill are the same shape as the text block inside them. */
     padding: 18px var(--panel-inset);
     min-height: 62px;
-    font-size: clamp(23px, 6.6vw, 29px);
+    font-size: clamp(1.4375rem, 6.6vw, 1.8125rem);
     line-height: 1.15;
     letter-spacing: -0.018em;
     font-weight: 600;
@@ -835,7 +838,7 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
     align-items: center;
     gap: 16px;
     min-height: 48px;
-    font-size: 17px;
+    font-size: 1.0625rem;
     letter-spacing: -0.022em;
     color: var(--ink-muted);
     border-top: 1px solid var(--line);
@@ -859,7 +862,7 @@ const items = links.map((link) => ({ ...link, active: link.match(current) }));
 
   .panel__location {
     margin-top: 18px;
-    font-size: 13px;
+    font-size: 0.8125rem;
     letter-spacing: -0.01em;
     color: var(--ink-softer);
   }
