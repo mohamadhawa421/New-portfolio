@@ -15,6 +15,32 @@ export default defineConfig({
   site,
   output: 'static',
   integrations: [sitemap()],
+
+  /*
+   * Pages are fetched while the pointer is on the way to them.
+   *
+   * The client router swaps pages without a reload, so a navigation is one
+   * HTML request and nothing else — the CSS and every script are already in
+   * memory. That request is the whole of the wait, and it was being started
+   * on the click. Measured before this: hovering a nav link fetched nothing,
+   * `link[rel=prefetch]` count zero. The router reads this config and does
+   * nothing without it; the `prefetchAll` string already in its bundle is the
+   * reader, not the feature.
+   *
+   * `hover` rather than `viewport`. Viewport prefetching would pull every
+   * link on screen, and the work index puts a dozen in view at once for a
+   * visitor who is going to open one of them. Hover is the cheapest signal
+   * that actually predicts a click, and it buys the couple of hundred
+   * milliseconds between the pointer arriving and the finger landing.
+   *
+   * Safe on a static site of this size — each page is one small HTML file,
+   * and `output: 'static'` means there is no server being asked to render
+   * anything speculatively.
+   */
+  prefetch: {
+    prefetchAll: true,
+    defaultStrategy: 'hover',
+  },
   build: {
     /*
      * 'auto' leaves larger stylesheets as separate <link> requests. Those are
