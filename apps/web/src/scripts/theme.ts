@@ -252,7 +252,7 @@ function contentBlocks(root: HTMLElement, depth = 0): HTMLElement[] {
    * Stop at anything text-level, by tag rather than by computed display.
    *
    * A flex or grid container blockifies its children, so the three spans of
-   * "Product Owner · Beirut" all report `display: block` and a test on the
+   * "Product Designer · Beirut" all report `display: block` and a test on the
    * computed value waved them through — the line was then torn into three
    * pieces arriving a few milliseconds apart, which is the one thing the rest
    * of this site is careful never to do to a line of text. The tag is what

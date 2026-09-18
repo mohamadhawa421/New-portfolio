@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-09-09T19:20:28.120Z",
+  "generatedAt": "2026-09-18T07:23:18.160Z",
   "siteSetting": {
     "id": 1,
     "siteName": "Mohamad Hawa",
-    "roleTitle": "Product Owner",
+    "roleTitle": "Product Designer",
     "location": "Beirut, Lebanon",
     "email": "mohamadhawa421@gmail.com",
     "whatsappNumber": "96176824793",
@@ -47,8 +47,8 @@
     },
     "seo": {
       "id": 130,
-      "metaTitle": "Mohamad Hawa — Product Owner",
-      "metaDescription": "Product owner and designer working on web and mobile products — turning complex challenges into interfaces people understand without being taught.",
+      "metaTitle": "Mohamad Hawa — Product Designer",
+      "metaDescription": "Product designer working on web and mobile products — turning complex challenges into interfaces people understand without being taught.",
       "shareImage": null
     }
   },
@@ -56,7 +56,7 @@
     "id": 6,
     "heroTitle": "Mohamad Hawa",
     "heroSubtitle": "Designing intuitive experiences.",
-    "heroIntro": "Product owner working on web and mobile products — turning complex challenges into interfaces people understand without being taught. Freelance since 2020, at Poyesis since 2022.",
+    "heroIntro": "Product designer working on web and mobile products — turning complex challenges into interfaces people understand without being taught. Freelance since 2020, at Poyesis since 2022.",
     "primaryCtaLabel": "See the work",
     "secondaryCtaLabel": "Start a project",
     "workEyebrow": "Selected work",
@@ -97,8 +97,8 @@
     ],
     "seo": {
       "id": 154,
-      "metaTitle": "Mohamad Hawa — Product Owner",
-      "metaDescription": "Product owner and designer working on web and mobile products — turning complex challenges into interfaces people understand without being taught.",
+      "metaTitle": "Mohamad Hawa — Product Designer",
+      "metaDescription": "Product designer working on web and mobile products — turning complex challenges into interfaces people understand without being taught.",
       "shareImage": null
     }
   },
@@ -121,7 +121,7 @@
     "eyebrow": "About",
     "heading": "I am Mohamad Hawa, and I design things people understand.",
     "lead": "I am passionate about designing intuitive experiences.",
-    "bodyPrimary": "As a product owner I work on visually engaging, user-centred products across web and mobile — the kind where creativity has to survive contact with a real workflow. My mission is turning complex challenges into experiences that feel obvious.",
+    "bodyPrimary": "As a product designer I work on visually engaging, user-centred products across web and mobile — the kind where creativity has to survive contact with a real workflow. My mission is turning complex challenges into experiences that feel obvious.",
     "bodySecondary": "I started out freelancing in 2020, working directly with small teams and founders who needed a designer who could also explain the decision. In 2022 I joined Poyesis, where the projects got bigger and the systems behind them got more interesting.",
     "stats": [
       {
@@ -141,7 +141,7 @@
       {
         "order": 0,
         "id": 11,
-        "role": "Product Owner",
+        "role": "Product Designer",
         "organisation": "Poyesis",
         "period": "2022 — now"
       },
