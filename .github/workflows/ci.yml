@@ -1,0 +1,66 @@
+# The four things that can be decided without a browser.
+#
+# Deliberately the same four commands anyone would run locally, in the same
+# order, so a red build here is reproducible with one line rather than by
+# reading the log and guessing which step the runner did differently.
+#
+# What this cannot do is Safari, which is where this site's remaining risk
+# actually lives — there is a WebKit-specific rendering path in the storm and
+# no runner can see it. That stays a manual check; see CLAUDE.md.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A second push to the same branch makes the first one irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Pinned to the top of the range in package.json's engines. The
+          # tests use node:test, which needs nothing newer, but the build
+          # boots Strapi and that is fussier about the runtime than the
+          # site is.
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run check
+
+      # Before the build, because they read the source rather than the
+      # output and a failure here explains a failure there.
+      - name: Invariants
+        run: npm test
+
+      # Runs the CMS export against the committed SQLite snapshot, builds the
+      # site, and then runs verify-build.js as a postbuild step — so this one
+      # command covers content, compilation and the built output.
+      - name: Build and verify the output
+        run: npm run build
+
+      # Kept so a broken build can still be inspected rather than only read
+      # about. Short retention: this is for the afternoon of the failure.
+      - name: Keep the output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: apps/web/dist
+          retention-days: 5

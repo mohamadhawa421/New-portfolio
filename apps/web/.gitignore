@@ -7,3 +7,8 @@ node_modules/
 # Copied out of the CMS by `npm run export`; the originals are committed
 # in apps/cms/public/uploads.
 public/media/
+
+# Derived from the artwork beside them by scripts/make-art-variants.js, the
+# same way public/media/ is derived from the CMS. Committing them means a
+# stale rendering can outlive the drawing it came from.
+public/art/

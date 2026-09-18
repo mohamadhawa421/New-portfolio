@@ -47,6 +47,48 @@ while it runs, and it carries a 5% discount that appears in the enquiry form
 and in the generated message. Ways out: reload, hold `M`, hold the
 `SUPER DESIGNER` badge in the footer, or shake an Android phone.
 
+## The checks, and what each one can see
+
+```bash
+npm run check    # astro check — read the whole output, not the tail
+npm test         # the invariants below, as assertions over the source
+npm run build    # export + build, then verify-build.js over dist/
+npm run verify   # just the output assertions, against the last build
+```
+
+Three of them exist because three different things can go wrong and only one
+of them is visible to the type system.
+
+**`apps/web/tests/invariants.test.js`** asserts the rules in the next
+section against the *source*. Most of them couple two files that have to
+agree and cannot check each other — the reveal stagger is written twice
+(chrome.ts and the inline primer in BaseLayout), the image ladder is written
+twice (the exporter and ProjectCard), and "keep the two in step" as a
+comment is a hope rather than a mechanism. Every test was verified by
+breaking the thing it guards and watching it fail; do the same for any new
+one, because a test that cannot fail is worse than no test.
+
+**`apps/web/scripts/verify-build.js`** asserts things about `dist/` that are
+only true after minification. This exists because the build has twice
+silently changed what the source meant — `backdrop-filter` losing its prefix
+and shipping a nav with no blur, and `translate3d` being rewritten to
+`translateY` so every reveal lost its compositor layer. Neither is visible on
+the dev server, which does not minify. It runs as a `postbuild`, so a build
+that succeeded has also been verified.
+
+It caught a mistake of its own on first run: it asserted `-webkit-appearance`
+survives, and it does not, because unprefixed `appearance` is Safari 15.4 —
+*below* the declared floor — so the minifier is right to drop it. Only
+prefixes for properties whose unprefixed form landed *above* `cssTarget` are
+load-bearing. That reasoning is in the file; extend the list the same way.
+
+**`docs/safari-checklist.md`** is the part no runner can do. Eleven places
+where the two engines are known to diverge here, with the reason for each,
+so the manual pass is ten minutes rather than an afternoon. WebKit-in-CI was
+considered and rejected — the note at the top of that file says why, and the
+short version is that a green WebKit job would read as "Safari is fine",
+which would be false.
+
 ## Invariants that cost real work to establish
 
 These are not preferences. Each one was arrived at by breaking it first.

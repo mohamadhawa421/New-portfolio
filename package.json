@@ -2,7 +2,7 @@
   "name": "mohamad-hawa-portfolio",
   "private": true,
   "version": "1.0.0",
-  "description": "Showcase site for Mohamad Hawa — Astro front end, Strapi CMS.",
+  "description": "Showcase site for Mohamad Hawa \u2014 Astro front end, Strapi CMS.",
   "workspaces": [
     "apps/web",
     "apps/cms"
@@ -21,6 +21,9 @@
     "build": "npm run build:site",
     "build:web": "npm run build --workspace=apps/web",
     "build:cms": "npm run build --workspace=apps/cms",
+    "test": "npm run test --workspace=apps/web",
+    "verify": "npm run verify --workspace=apps/web",
+    "check": "npm run check --workspace=apps/web",
     "seed": "npm run seed --workspace=apps/cms",
     "preview": "npm run preview --workspace=apps/web",
     "deploy": "node scripts/publish.js",

@@ -10,6 +10,20 @@ apps/
 design-source/   The original .dc.html prototype, kept for reference
 ```
 
+## Checks
+
+```bash
+npm run check    # types
+npm test         # the invariants in CLAUDE.md, as source assertions
+npm run build    # export + build, then verify-build.js on the output
+npm run verify   # just the build-output assertions, against the last build
+```
+
+`npm run build` runs `verify-build.js` as a postbuild step, so a build that
+succeeds has also been checked. What none of it can see is Safari — that is
+[`docs/safari-checklist.md`](docs/safari-checklist.md), eleven things, ten
+minutes, once per release that touches CSS or the storm.
+
 ## How this is wired
 
 There is **no server and no database in production**. The content lives in a
