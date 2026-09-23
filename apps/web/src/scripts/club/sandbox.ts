@@ -138,6 +138,7 @@ export class Sandbox {
 
     const named = this.namesFrom(doc);
     const root = doc.querySelector<HTMLElement>('main') ?? doc.body;
+    const view = doc.defaultView;
     let count = 0;
 
     const walk = (el: HTMLElement, parentId: string | null, path: string): void => {
@@ -146,6 +147,27 @@ export class Sandbox {
         const child = raw as HTMLElement;
 
         if (SKIP.has(child.tagName)) continue;
+
+        /*
+         * You cannot design something you cannot see.
+         *
+         * The storm's machinery lives in the page markup and is invisible
+         * until the portrait is clicked: `.flash`, `.rift`, `.scar`, `.bend`,
+         * `.shock`, two rings, the wash and the field canvas. Every one of
+         * them is `opacity: 0` and most are the size of the document — and
+         * `.flash` is 1440x8238, which means it sat on top of the entire page
+         * and won every single hit test. The first click anywhere in the Club
+         * selected a zero-opacity div, on every page, before anything else
+         * could be reached.
+         *
+         * Naming those nine classes would fix today's page and nothing else.
+         * Zero opacity is the actual property they share, it is the property
+         * that makes them undesignable, and it costs one computed style per
+         * element at load. The subtree goes with it: nothing inside something
+         * invisible is visible either.
+         */
+        const seen = view?.getComputedStyle(child);
+        if (seen && (seen.opacity === '0' || seen.visibility === 'hidden')) continue;
 
         /*
          * No box is not the same as nothing inside.
@@ -451,6 +473,55 @@ export class Sandbox {
     }
 
     return under.sort((a, b) => b.area - a.area).map((u) => u.node);
+  }
+
+  /** A node's direct children in the layer tree, in document order. */
+  children(id: string): ClubNode[] {
+    return this.list().filter((n) => n.parentId === id);
+  }
+
+  /** Every ancestor of a node, nearest first. Used to open the tree to it. */
+  ancestors(id: string): string[] {
+    const out: string[] = [];
+    let cur = this.nodes.get(id)?.parentId ?? null;
+    while (cur) {
+      out.push(cur);
+      cur = this.nodes.get(cur)?.parentId ?? null;
+    }
+    return out;
+  }
+
+  /** Whether `id` sits anywhere underneath `maybeAncestor` in the tree. */
+  descends(id: string, maybeAncestor: string): boolean {
+    return this.ancestors(id).includes(maybeAncestor);
+  }
+
+  /**
+   * Everything a marquee caught, with the inside of a catch thrown away.
+   *
+   * Fully contained rather than merely touched, which is the difference
+   * between dragging a box around three project rows and selecting the whole
+   * section because one corner of the box clipped it. And a node whose parent
+   * was also caught is dropped: a box around a row catches the row, its title,
+   * its tag list and every word in it, and handing back all forty is not what
+   * anybody drew a box around.
+   */
+  inside(x0: number, y0: number, x1: number, y1: number): ClubNode[] {
+    const left = Math.min(x0, x1);
+    const right = Math.max(x0, x1);
+    const top = Math.min(y0, y1);
+    const bottom = Math.max(y0, y1);
+
+    const caught: ClubNode[] = [];
+    for (const node of this.nodes.values()) {
+      const box = this.boxOf(node.id);
+      if (!box || box.width === 0 || box.height === 0) continue;
+      if (box.left < left || box.right > right || box.top < top || box.bottom > bottom) continue;
+      caught.push(node);
+    }
+
+    const ids = new Set(caught.map((n) => n.id));
+    return caught.filter((n) => !this.ancestors(n.id).some((a) => ids.has(a)));
   }
 
   /** The text layer inside a button, if this node is a button with one. */

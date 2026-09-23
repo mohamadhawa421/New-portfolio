@@ -697,6 +697,47 @@ const PAGES = [
     font-weight: 500;
   }
 
+  /*
+   * The twist, and the empty box that stands in its place on a leaf.
+   *
+   * Both are the same width, because the moment one row's icon sits eleven
+   * pixels left of its siblings' the column stops being a column — and a deep
+   * tree is read down the column of icons, not across the names.
+   */
+  .club__twist {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 13px;
+    height: 13px;
+    padding: 0;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .club__twist svg {
+    width: 9px;
+    height: 9px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.65;
+    transition: transform 120ms var(--ease-out);
+  }
+
+  .club__twist[data-on='1'] svg {
+    transform: rotate(90deg);
+  }
+
+  .club__twist:hover svg {
+    opacity: 1;
+  }
+
   .club__type {
     flex: none;
     width: 12px;
@@ -1014,9 +1055,13 @@ const PAGES = [
 
   .club__canvas[data-tool='rect'],
   .club__canvas[data-tool='ellipse'],
-  .club__canvas[data-tool='frame'],
-  .club__canvas[data-tool='text'] {
+  .club__canvas[data-tool='frame'] {
     cursor: crosshair;
+  }
+
+  /* The text tool says what it will leave behind, the way every editor does. */
+  .club__canvas[data-tool='text'] {
+    cursor: text;
   }
 
   /*
@@ -1069,6 +1114,50 @@ const PAGES = [
     position: absolute;
     border: 1px solid var(--c-mark);
     opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /*
+   * One of several. Thinner and quieter than the outline round the lot, so a
+   * multiple selection reads as "these things, and this is how big they are
+   * together" rather than as six competing boxes.
+   */
+  .club__member {
+    position: absolute;
+    border: 1px solid var(--c-mark);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  /*
+   * The marquee. A wash rather than an outline, because the thing being
+   * communicated is an area — and at a small zoom a 1px dashed rectangle over
+   * a busy page is invisible.
+   */
+  .club__marquee {
+    position: absolute;
+    border: 1px solid var(--c-mark);
+    background: rgb(168 85 247 / 0.12);
+    pointer-events: none;
+  }
+
+  /*
+   * The layer's name, above its top-left corner.
+   *
+   * On a page like this one a dozen nested wrappers look identical on the
+   * canvas, so the outline tells you what you caught and this tells you what
+   * it is — without a trip to the layers panel to read the highlighted row.
+   */
+  .club__name {
+    position: absolute;
+    max-width: 260px;
+    padding: 0 1px;
+    color: var(--c-mark);
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     pointer-events: none;
   }
 

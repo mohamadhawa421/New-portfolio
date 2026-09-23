@@ -19,6 +19,9 @@ export interface PanelHooks {
   replaceImage(id: string): void;
 }
 
+/** What is selected, in the order it was selected. First is the primary. */
+export type Selection = readonly string[];
+
 /* ------------------------------------------------------------------ */
 /* Layers                                                              */
 /* ------------------------------------------------------------------ */
@@ -40,6 +43,8 @@ const TYPE_ICON: Record<string, string> = {
     '<svg viewBox="0 0 16 16"><path d="M5.5 2v12M10.5 2v12M2 5.5h12M2 10.5h12"/></svg>',
 };
 
+const CHEVRON = '<svg viewBox="0 0 12 12"><path d="M4.5 3 7.5 6l-3 3"/></svg>';
+
 const EYE_OPEN = '<svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.2 10-6.2S22 12 22 12s-3.6 6.2-10 6.2S2 12 2 12Z"/><circle cx="12" cy="12" r="2.6"/></svg>';
 const EYE_SHUT = '<svg viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 6.1A10.6 10.6 0 0 1 12 6c6.4 0 10 6 10 6a18 18 0 0 1-3.3 3.9M6.6 8.2A17.6 17.6 0 0 0 2 12s3.6 6 10 6a10 10 0 0 0 3.6-.64"/></svg>';
 
@@ -47,10 +52,12 @@ export function renderLayers(
   host: HTMLElement,
   sandbox: Sandbox,
   store: Store,
-  selectedId: string | null,
+  selection: Selection,
+  open: ReadonlySet<string>,
   hooks: PanelHooks
 ): void {
   const nodes = sandbox.list();
+  const chosen = new Set(selection);
   const frag = document.createDocumentFragment();
 
   /*
@@ -69,18 +76,31 @@ export function renderLayers(
     childrenOf.set(node.parentId, list);
   }
 
+  /*
+   * Only what has been opened, which is the only way a tree this size is
+   * usable.
+   *
+   * Adopting every element turned forty-four layers into two hundred and
+   * sixty-six, and a flat list of those is not a layer panel — it is a wall.
+   * So a node's children are rendered when the node is open, and nothing is
+   * open until it is twisted open or something inside it is selected. The
+   * sections are always there, because they are the map.
+   */
   const emit = (node: ClubNode, depth: number): void => {
-    frag.appendChild(row(node, depth, selectedId, store, hooks));
-    for (const child of childrenOf.get(node.id) ?? []) emit(child, depth + 1);
+    const kids = childrenOf.get(node.id) ?? [];
+    frag.appendChild(row(node, depth, chosen, kids.length > 0, open.has(node.id), store, hooks));
+    if (!open.has(node.id)) return;
+    for (const child of kids) emit(child, depth + 1);
   };
 
   for (const section of childrenOf.get(null) ?? []) emit(section, 0);
 
   host.replaceChildren(frag);
 
-  // Keep the selected row in view when selection came from the canvas.
-  if (selectedId) {
-    host.querySelector<HTMLElement>(`[data-layer="${cssSafe(selectedId)}"]`)?.scrollIntoView({
+  // Keep the primary row in view when the selection came from the canvas.
+  const primary = selection[0];
+  if (primary) {
+    host.querySelector<HTMLElement>(`[data-layer="${cssSafe(primary)}"]`)?.scrollIntoView({
       block: 'nearest',
     });
   }
@@ -89,7 +109,9 @@ export function renderLayers(
 function row(
   node: ClubNode,
   depth: number,
-  selectedId: string | null,
+  chosen: ReadonlySet<string>,
+  hasKids: boolean,
+  isOpen: boolean,
   store: Store,
   hooks: PanelHooks
 ): HTMLElement {
@@ -99,12 +121,31 @@ function row(
   el.className = `club__layer${depth === 0 ? ' club__layer--section' : ''}`;
   // Indent by depth rather than by a class per level, so the tree can be any
   // depth without the stylesheet knowing how deep.
-  el.style.paddingLeft = `${6 + depth * 13}px`;
+  el.style.paddingLeft = `${4 + depth * 12}px`;
   el.dataset.layer = node.id;
   el.setAttribute('role', 'treeitem');
-  el.setAttribute('aria-selected', String(node.id === selectedId));
+  el.setAttribute('aria-selected', String(chosen.has(node.id)));
+  if (hasKids) el.setAttribute('aria-expanded', String(isOpen));
   el.tabIndex = 0;
   if (!visible) el.dataset.hidden = '1';
+
+  /*
+   * The twist, and a spacer where there is nothing to twist.
+   *
+   * Without the spacer a leaf's icon sits eleven pixels left of its siblings'
+   * and the column stops being a column, which is most of what makes a deep
+   * tree hard to scan.
+   */
+  const twist = document.createElement(hasKids ? 'button' : 'span');
+  twist.className = 'club__twist';
+  if (hasKids) {
+    (twist as HTMLButtonElement).type = 'button';
+    twist.dataset.twist = node.id;
+    twist.dataset.on = isOpen ? '1' : '0';
+    twist.setAttribute('aria-label', `${isOpen ? 'Collapse' : 'Expand'} ${node.label}`);
+    twist.innerHTML = CHEVRON;
+  }
+  el.appendChild(twist);
 
   const icon = document.createElement('span');
   icon.className = 'club__type';
@@ -239,10 +280,13 @@ export function renderProps(
   head: HTMLElement,
   sandbox: Sandbox,
   store: Store,
-  selectedId: string | null,
+  selection: Selection,
   hooks: PanelHooks
 ): void {
-  const node = selectedId ? sandbox.get(selectedId) : undefined;
+  const nodes = selection
+    .map((id) => sandbox.get(id))
+    .filter(Boolean as unknown as (v: ClubNode | undefined) => v is ClubNode);
+  const node = nodes[0];
 
   if (!node) {
     head.textContent = 'Properties';
@@ -251,9 +295,29 @@ export function renderProps(
     return;
   }
 
-  head.textContent = node.label;
+  const many = nodes.length > 1;
+  head.textContent = many ? `${nodes.length} layers selected` : node.label;
 
-  const allowed = new Set(PROPS_FOR[node.type]);
+  /*
+   * With several things selected the panel offers what they all have.
+   *
+   * The intersection rather than the union, because a control that silently
+   * does nothing to three of the five things it is pointed at is worse than no
+   * control — and it is the rule the whole panel already runs on, applied one
+   * level up. Content and the image file drop out of a multiple selection
+   * entirely: there is no sense in which five layers share one sentence.
+   */
+  let allowed = new Set(PROPS_FOR[node.type]);
+  if (many) {
+    for (const other of nodes.slice(1)) {
+      const theirs = new Set(PROPS_FOR[other.type]);
+      allowed = new Set([...allowed].filter((k) => theirs.has(k)));
+    }
+    allowed.delete('text');
+    allowed.delete('src');
+  }
+
+  const targets = nodes.map((n) => n.id);
   const props = store.propsOf(node.id);
   const measured = sandbox.boxOf(node.id);
   const frag = document.createDocumentFragment();
@@ -274,7 +338,7 @@ export function renderProps(
     fields.className = 'club__fields';
 
     for (const key of keys) {
-      fields.appendChild(field(key, node, props, measured, store, hooks));
+      fields.appendChild(field(key, node, targets, props, measured, store, hooks));
     }
 
     box.appendChild(fields);
@@ -293,7 +357,7 @@ export function renderProps(
    * a single step, which is how a palette gets changed in seconds instead of
    * forty clicks.
    */
-  if (node.type === 'container' || node.type === 'button') {
+  if (!many && (node.type === 'container' || node.type === 'button')) {
     const swatches = coloursInside(sandbox, store, node);
     if (swatches.length) {
       const box = document.createElement('div');
@@ -386,6 +450,7 @@ function paletteRow(entry: Swatch, store: Store): HTMLElement {
 function field(
   key: string,
   node: ClubNode,
+  targets: string[],
   props: Props,
   measured: DOMRect | null,
   store: Store,
@@ -423,8 +488,14 @@ function field(
     wrap.appendChild(label);
   }
 
+  /*
+   * One control, every selected layer. The primary supplies what is *shown*
+   * and all of them receive what is typed, which is how a shared control
+   * behaves everywhere else — and `live` keeps a whole drag or a whole typed
+   * number to a single history step across all of them.
+   */
   const commit = (value: unknown, live = false): void => {
-    store.set(node.id, { [key]: value } as Props, key, live);
+    for (const id of targets) store.set(id, { [key]: value } as Props, key, live);
   };
 
   /* ---- Content -------------------------------------------------- */
@@ -537,7 +608,7 @@ function field(
   propInput.addEventListener('change', () => {
     if (propInput.value === '') {
       // Cleared: hand the property back to the stylesheet.
-      store.set(node.id, { [key]: undefined } as Props, key);
+      for (const id of targets) store.set(id, { [key]: undefined } as Props, key);
       return;
     }
     commit(Number(propInput.value));

@@ -25,7 +25,7 @@
  */
 
 import { dismissPicker, renderLayers, renderProps, type PanelHooks } from './panels';
-import { Sandbox } from './sandbox';
+import { Sandbox, type ClubNode } from './sandbox';
 import { Store, type Props } from './store';
 import { runTour, shouldTour } from './tour';
 
@@ -53,7 +53,19 @@ export function startClub(root: HTMLElement): void {
   const sandbox = new Sandbox(frame);
 
   let tool: Tool = 'select';
-  let selected: string | null = null;
+  /**
+   * What is selected, primary first.
+   *
+   * A list rather than an id, because every design tool's selection is one —
+   * and because the things that follow from it (shared properties, a combined
+   * bounding box, moving several layers as one) are not features bolted onto a
+   * single selection, they are what a list gives you for free.
+   */
+  let selection: string[] = [];
+  /** Which branches of the layer tree are twisted open. */
+  const open = new Set<string>();
+  const primary = (): string | null => selection[0] ?? null;
+
   let zoom = 1;
   let panX = 0;
   let panY = 0;
@@ -141,7 +153,7 @@ export function startClub(root: HTMLElement): void {
 
     // Layout may have changed under the edit, so the frame is re-measured.
     sizeFrame();
-    renderLayers(layersHost, sandbox, store, selected, hooks);
+    renderLayers(layersHost, sandbox, store, selection, open, hooks);
 
     /*
      * The panel is not rebuilt underneath the field being typed into.
@@ -156,7 +168,7 @@ export function startClub(root: HTMLElement): void {
      * resumes the moment focus leaves the panel.
      */
     if (!propsHost.contains(document.activeElement)) {
-      renderProps(propsHost, propsHead, sandbox, store, selected, hooks);
+      renderProps(propsHost, propsHead, sandbox, store, selection, hooks);
     }
 
     drawOverlay();
@@ -169,18 +181,72 @@ export function startClub(root: HTMLElement): void {
   /* Selection and its overlay                                         */
   /* ---------------------------------------------------------------- */
 
-  function select(id: string | null): void {
+  /**
+   * The one way the selection changes, and the three views that follow it.
+   *
+   * The overlay, the layer tree and the properties panel are rebuilt rather
+   * than diffed: at this size the rebuild costs a fraction of a millisecond,
+   * and a diff is where the one bug a design tool cannot have comes from — a
+   * panel describing something that is no longer selected.
+   */
+  function setSelection(ids: string[]): void {
     /*
      * A colour picker belongs to the thing that is selected, so changing the
      * selection closes it — but a property *update* must not. It used to be
      * dismissed on every render, which meant the first live frame of a colour
      * drag closed the picker doing the dragging.
      */
-    if (id !== selected) dismissPicker();
-    selected = id;
-    renderLayers(layersHost, sandbox, store, selected, hooks);
-    renderProps(propsHost, propsHead, sandbox, store, selected, hooks);
+    if (ids[0] !== selection[0]) dismissPicker();
+    selection = ids;
+
+    /*
+     * The tree opens itself to whatever was picked on the canvas.
+     *
+     * Nothing is expanded until it is asked for — two hundred and sixty-six
+     * rows at once is a wall rather than a panel — so a selection made by
+     * clicking the page would otherwise be highlighted on a row that is not
+     * rendered, which is a panel quietly lying about what is selected.
+     */
+    for (const id of ids) for (const a of sandbox.ancestors(id)) open.add(a);
+
+    renderLayers(layersHost, sandbox, store, selection, open, hooks);
+    renderProps(propsHost, propsHead, sandbox, store, selection, hooks);
     drawOverlay();
+  }
+
+  function select(id: string | null): void {
+    setSelection(id ? [id] : []);
+  }
+
+  /** Shift-click: in if it was out, out if it was in, and newest is primary. */
+  function toggle(id: string): void {
+    setSelection(selection.includes(id) ? selection.filter((x) => x !== id) : [id, ...selection]);
+  }
+
+  /**
+   * Which layer a shift-click means.
+   *
+   * A plain click drills one level per press, and shift-clicking must not —
+   * adding to a selection is not the same gesture as going deeper, and a
+   * modifier that also changes depth makes multiple selection unusable. So
+   * this looks for the deepest thing under the pointer that is a *sibling* of
+   * what is already selected, which is how a second and third object get added
+   * at the level the designer is working at.
+   *
+   * When there is no sibling under the pointer it takes the deepest thing
+   * there instead. The first version fell back to the *outermost*, which on a
+   * real page is a wrapper the size of a section — so shift-clicking a
+   * paragraph that happened not to be a sibling added the whole hero to the
+   * selection. Nobody has ever meant that.
+   */
+  function siblingPick(stack: ClubNode[]): ClubNode {
+    const at = primary();
+    const level = at ? (sandbox.get(at)?.parentId ?? null) : undefined;
+    if (level !== undefined) {
+      const sibling = [...stack].reverse().find((n) => n.parentId === level);
+      if (sibling) return sibling;
+    }
+    return stack[stack.length - 1];
   }
 
   const HANDLES: [string, number, number][] = [
@@ -197,33 +263,84 @@ export function startClub(root: HTMLElement): void {
   /** What the pointer is over, drawn faintly so selection stays the loud one. */
   let hovered: string | null = null;
 
+  /** A drag on empty ground, in sandbox-document coordinates. */
+  let marquee: { x0: number; y0: number; x1: number; y1: number; add: boolean } | null = null;
+
+  const mark = (className: string, box: DOMRect): HTMLElement => {
+    const el = document.createElement('div');
+    el.className = className;
+    el.style.cssText = `left:${box.x}px;top:${box.y}px;width:${box.width}px;height:${box.height}px;border-width:calc(1px * var(--z,1))`;
+    return el;
+  };
+
   function drawOverlay(): void {
     overlay.replaceChildren();
 
-    if (hovered && hovered !== selected) {
-      const hb = sandbox.boxOf(hovered);
-      if (hb) {
-        const h = document.createElement('div');
-        h.className = 'club__hover';
-        h.style.cssText = `left:${hb.x}px;top:${hb.y}px;width:${hb.width}px;height:${hb.height}px;border-width:calc(1px * var(--z,1))`;
-        overlay.appendChild(h);
-      }
+    if (marquee) {
+      const r = new DOMRect(
+        Math.min(marquee.x0, marquee.x1),
+        Math.min(marquee.y0, marquee.y1),
+        Math.abs(marquee.x1 - marquee.x0),
+        Math.abs(marquee.y1 - marquee.y0)
+      );
+      overlay.appendChild(mark('club__marquee', r));
     }
 
-    if (!selected) return;
-    const box = sandbox.boxOf(selected);
-    const node = sandbox.get(selected);
-    if (!box || !node) return;
+    if (hovered && !selection.includes(hovered)) {
+      const hb = sandbox.boxOf(hovered);
+      if (hb) overlay.appendChild(mark('club__hover', hb));
+    }
 
-    const sel = document.createElement('div');
-    sel.className = 'club__sel';
-    sel.style.cssText = `left:${box.x}px;top:${box.y}px;width:${box.width}px;height:${box.height}px;border-width:calc(1px * var(--z,1))`;
-    overlay.appendChild(sel);
+    if (!selection.length) return;
+
+    /*
+     * Several things selected get thin outlines each and one box around the
+     * lot, which is the only reading that answers both questions a designer
+     * has mid-selection: what exactly did I catch, and how big is it together.
+     */
+    const boxes = selection
+      .map((id) => sandbox.boxOf(id))
+      .filter(Boolean as unknown as (v: DOMRect | null) => v is DOMRect);
+    if (!boxes.length) return;
+
+    const box =
+      boxes.length === 1
+        ? boxes[0]
+        : new DOMRect(
+            Math.min(...boxes.map((b) => b.left)),
+            Math.min(...boxes.map((b) => b.top)),
+            Math.max(...boxes.map((b) => b.right)) - Math.min(...boxes.map((b) => b.left)),
+            Math.max(...boxes.map((b) => b.bottom)) - Math.min(...boxes.map((b) => b.top))
+          );
+
+    if (boxes.length > 1) {
+      for (const b of boxes) overlay.appendChild(mark('club__member', b));
+    }
+
+    const node = sandbox.get(primary()!);
+    if (!node) return;
+
+    overlay.appendChild(mark('club__sel', box));
+
+    /*
+     * The name, above the box, in the selection's own colour.
+     *
+     * Figma puts it there and it earns its place on a page like this one,
+     * where a dozen nested wrappers all look the same on the canvas: the
+     * outline tells you the size of what you caught and the label tells you
+     * what it is, without a trip to the layers panel to find the highlighted
+     * row.
+     */
+    const name = document.createElement('div');
+    name.className = 'club__name';
+    name.textContent = selection.length > 1 ? `${selection.length} layers` : node.label;
+    name.style.cssText = `left:${box.x}px;top:${box.y}px;transform:translate(0, -100%) translate(0, -4px) scale(var(--z,1));transform-origin:0 100%`;
+    overlay.appendChild(name);
 
     /*
      * The badge says the size, under the box, the way Figma's does — a
      * designer mid-drag is reading numbers, not the name of the thing they
-     * are already looking at. The name is in the layers panel, highlighted.
+     * are already looking at.
      */
     const tag = document.createElement('div');
     tag.className = 'club__tag';
@@ -245,18 +362,25 @@ export function startClub(root: HTMLElement): void {
      * Only where there is padding to show: a band of zero is noise, and four
      * of them around every text layer would make the modifier useless.
      */
-    if (altHeld) {
+    if (altHeld && selection.length === 1) {
       drawPadding(node, box);
       // And the gap to whatever the pointer is over, which is the other half
       // of what the modifier is for.
-      if (hovered && hovered !== selected) {
+      if (hovered && !selection.includes(hovered)) {
         const other = sandbox.boxOf(hovered);
         if (other) drawMeasure(box, other);
       }
     }
 
-    // Sections are containers for the tree, not things to drag by the corner.
-    if (node.parentId === null) return;
+    /*
+     * Handles on one thing at a time, and never on a section.
+     *
+     * A section is the tree's container rather than something to drag by the
+     * corner; and resizing several layers at once needs a rule for what
+     * happens to the ones that are not the one you grabbed, which is a
+     * decision the brief explicitly says not to guess at.
+     */
+    if (selection.length > 1 || node.parentId === null) return;
 
     for (const [dir, fx, fy] of HANDLES) {
       const h = document.createElement('div');
@@ -354,9 +478,11 @@ export function startClub(root: HTMLElement): void {
   /* ---------------------------------------------------------------- */
 
   interface Gesture {
-    kind: 'move' | 'resize' | 'pan';
+    kind: 'move' | 'resize' | 'pan' | 'marquee';
     dir?: string;
     id?: string;
+    /** Every layer a move is carrying, and where each of them started. */
+    bases?: Map<string, { x: number; y: number }>;
     startX: number;
     startY: number;
     baseX: number;
@@ -369,22 +495,51 @@ export function startClub(root: HTMLElement): void {
 
   let gesture: Gesture | null = null;
 
-  function beginMove(id: string, docX: number, docY: number): void {
-    const p = store.propsOf(id);
-    const box = sandbox.boxOf(id);
+  function beginMove(ids: string[], docX: number, docY: number): void {
+    const bases = new Map<string, { x: number; y: number }>();
+    for (const id of ids) {
+      const p = store.propsOf(id);
+      bases.set(id, { x: p.x ?? 0, y: p.y ?? 0 });
+    }
     store.beginGesture();
     gesture = {
       kind: 'move',
-      id,
+      id: ids[0],
+      bases,
       startX: docX,
       startY: docY,
-      baseX: p.x ?? 0,
-      baseY: p.y ?? 0,
-      baseW: box?.width ?? 0,
-      baseH: box?.height ?? 0,
+      baseX: 0,
+      baseY: 0,
+      baseW: 0,
+      baseH: 0,
       basePanX: panX,
       basePanY: panY,
     };
+  }
+
+  /** A drag on ground nothing can be moved by: a rectangle, and what it caught. */
+  function beginMarquee(docX: number, docY: number, add: boolean): void {
+    if (!add) setSelection([]);
+    marquee = { x0: docX, y0: docY, x1: docX, y1: docY, add };
+    gesture = {
+      kind: 'marquee',
+      startX: docX,
+      startY: docY,
+      baseX: 0,
+      baseY: 0,
+      baseW: 0,
+      baseH: 0,
+      basePanX: panX,
+      basePanY: panY,
+    };
+    drawOverlay();
+  }
+
+  function dragMarquee(docX: number, docY: number): void {
+    if (!marquee) return;
+    marquee.x1 = docX;
+    marquee.y1 = docY;
+    drawOverlay();
   }
 
   function onGestureMove(docX: number, docY: number, shift: boolean): void {
@@ -392,18 +547,27 @@ export function startClub(root: HTMLElement): void {
     let dx = docX - gesture.startX;
     let dy = docY - gesture.startY;
 
-    if (gesture.kind === 'move' && gesture.id) {
+    if (gesture.kind === 'move' && gesture.bases) {
       // Shift constrains to one axis, the way it does everywhere else.
       if (shift) {
         if (Math.abs(dx) > Math.abs(dy)) dy = 0;
         else dx = 0;
       }
-      store.set(
-        gesture.id,
-        { x: Math.round(gesture.baseX + dx), y: Math.round(gesture.baseY + dy) },
-        'move',
-        true
-      );
+      /*
+       * One write for the whole selection rather than one per layer: `set`
+       * emits, and emitting five times a frame repaints the sandbox five
+       * times for a change the designer makes once.
+       */
+      const bases = gesture.bases;
+      store.live('move', (draft) => {
+        for (const [id, base] of bases) {
+          draft.overrides[id] = {
+            ...(draft.overrides[id] ?? {}),
+            x: Math.round(base.x + dx),
+            y: Math.round(base.y + dy),
+          };
+        }
+      });
       return;
     }
 
@@ -431,6 +595,19 @@ export function startClub(root: HTMLElement): void {
     const was = gesture;
     gesture = null;
     if (was.kind === 'pan') return;
+
+    if (was.kind === 'marquee') {
+      const m = marquee;
+      marquee = null;
+      if (m) {
+        const caught = sandbox.inside(m.x0, m.y0, m.x1, m.y1).map((n) => n.id);
+        setSelection(m.add ? [...new Set([...caught, ...selection])] : caught);
+      } else {
+        drawOverlay();
+      }
+      return;
+    }
+
     /*
      * The panels catch up here, once, on the frame the gesture ends — see the
      * note on `refresh`. `gesture` is already null, so this is the heavy pass.
@@ -472,31 +649,38 @@ export function startClub(root: HTMLElement): void {
       }
 
       /*
-       * Each click goes one level further in.
+       * A press decides nothing on its own any more.
        *
-       * `freeze` took pointer events off the page, so the point is asked
-       * rather than the event, and it answers with everything underneath from
-       * the outside in. The first click on a fresh area takes the outermost
-       * thing — the section — and clicking again in the same place walks down
-       * the stack: the row, then the button, then its label. It is how
-       * selection behaves in the tool this imitates, and it is general: there
-       * is nothing here that knows what a button is.
+       * The old version selected *and* drilled *and* started a move on the
+       * same event, which had a bug you could not work around: pressing on the
+       * layer you had just selected went one level deeper before the drag
+       * began, so there was no way to pick something up and move it. You could
+       * only ever move whatever was one level inside what you meant.
        *
-       * Clicking something already selected but *not* in the current stack
-       * starts again from the outside, which is what makes moving between two
-       * parts of the page feel normal rather than sticky.
+       * So the press records what is under the pointer and waits, which is
+       * what the tool this imitates does. Moving past a few pixels is a drag —
+       * of the selection if it can be moved, of a marquee if it cannot.
+       * Releasing without moving is a click, and a click on something already
+       * selected goes one level in. `freeze` took pointer events off the page,
+       * so the point is asked rather than the event, and it answers with
+       * everything underneath from the outside in.
        */
       const stack = sandbox.stackAt(e.clientX, e.clientY);
       if (!stack.length) {
-        select(null);
+        beginMarquee(e.clientX, e.clientY, e.shiftKey);
+        e.preventDefault();
         return;
       }
 
-      const depth = selected ? stack.findIndex((n) => n.id === selected) : -1;
-      const node = stack[Math.min(depth + 1, stack.length - 1)];
+      if (e.shiftKey) {
+        toggle(siblingPick(stack).id);
+        e.preventDefault();
+        return;
+      }
 
-      select(node.id);
-      if (node.parentId !== null) beginMove(node.id, e.clientX, e.clientY);
+      const already = stack.some((n) => selection.includes(n.id));
+      if (!already) select(stack[0].id);
+      pending = { stack, docX: e.clientX, docY: e.clientY, fresh: !already };
       e.preventDefault();
     });
 
@@ -505,10 +689,21 @@ export function startClub(root: HTMLElement): void {
         panTo(e.clientX + rectLeft(), e.clientY + rectTop());
         return;
       }
+      if (gesture?.kind === 'marquee') {
+        dragMarquee(e.clientX, e.clientY);
+        return;
+      }
       if (gesture) {
         onGestureMove(e.clientX, e.clientY, e.shiftKey);
         return;
       }
+
+      if (pending && startDrag(e.clientX, e.clientY)) {
+        if (gesture) onGestureMove(e.clientX, e.clientY, e.shiftKey);
+        else dragMarquee(e.clientX, e.clientY);
+        return;
+      }
+
       // Nothing is dragging: show what would be picked up.
       const over = tool === 'select' ? (sandbox.at(e.clientX, e.clientY)?.id ?? null) : null;
       if (over !== hovered) {
@@ -517,7 +712,7 @@ export function startClub(root: HTMLElement): void {
       }
     });
 
-    sandboxDoc.addEventListener('pointerup', endGesture);
+    sandboxDoc.addEventListener('pointerup', onSandboxUp);
 
     /*
      * Scrolling and zooming while the pointer is over the artboard.
@@ -543,29 +738,103 @@ export function startClub(root: HTMLElement): void {
       { passive: false }
     );
 
-    /* Double-click a text layer and type into the page itself. */
     /*
-     * Double-click means "go one level in", the way it does in Figma.
+     * Double-click goes all the way in, and again starts typing.
      *
-     * On a frame it selects what is inside — so the first double-click on a
-     * button selects its label rather than dropping a caret into the button
-     * itself. On a text layer, which is as deep as this goes, it starts
-     * editing. Two double-clicks on a button therefore gets you typing, which
-     * is exactly the gesture a designer already has in their hands.
+     * Single clicks descend one level each, which is right for finding your
+     * way around a page nobody laid out as layers — but it is a lot of clicks
+     * to reach a word inside a button inside a row. So the double-click takes
+     * the deepest thing under the pointer in one go, and doing it again on a
+     * text layer that is already selected drops a caret in. That is the pair
+     * of gestures a designer already has in their hands.
      */
     sandboxDoc.addEventListener('dblclick', (e) => {
-      const node = sandbox.at(e.clientX, e.clientY);
-      if (!node) return;
+      const stack = sandbox.stackAt(e.clientX, e.clientY);
+      const deepest = stack[stack.length - 1];
+      if (!deepest) return;
       e.preventDefault();
+      pending = null;
 
-      if (node.type === 'button') {
-        const label = sandbox.labelOf(node.id);
-        if (label) select(label.id);
+      if (selection.includes(deepest.id) && deepest.type === 'text') {
+        editInPlace(deepest.id);
+        return;
+      }
+      select(deepest.id);
+    });
+  }
+
+  /**
+   * A press that has not yet committed to being a click or a drag.
+   *
+   * Held in sandbox-document coordinates, like everything else the canvas
+   * reasons about, so the threshold below is the only place that has to think
+   * about zoom.
+   */
+  interface Pending {
+    stack: ClubNode[];
+    docX: number;
+    docY: number;
+    /** True when the press itself changed the selection, so it cannot drill. */
+    fresh: boolean;
+  }
+
+  let pending: Pending | null = null;
+
+  /** Four screen pixels, which is the distance a click is allowed to wander. */
+  const SLOP = 4;
+
+  /**
+   * Turns a waiting press into a drag, if the pointer has travelled far enough.
+   *
+   * Which drag depends on what is under it. Something movable is picked up;
+   * anything else — a section, the ground outside the artboard — starts a
+   * marquee, which is the same rule Figma runs on and the reason dragging
+   * across a frame's background selects what is inside it rather than sliding
+   * the frame around.
+   */
+  function startDrag(docX: number, docY: number): boolean {
+    if (!pending) return false;
+    const moved = Math.hypot(docX - pending.docX, docY - pending.docY) * zoom;
+    if (moved < SLOP) return false;
+
+    const anchor = pending.stack.find((n) => selection.includes(n.id));
+    if (anchor && anchor.parentId !== null) beginMove(selection, pending.docX, pending.docY);
+    else beginMarquee(pending.docX, pending.docY, false);
+
+    pending = null;
+    return true;
+  }
+
+  /**
+   * A press released without travelling is a click, and a click on something
+   * already selected goes one level in — the row, then its title, then the
+   * word. The press that *made* the selection does not also drill, or a single
+   * click would land two levels down.
+   */
+  function onSandboxUp(): void {
+    if (pending) {
+      const was = pending;
+      pending = null;
+      if (was.fresh) return;
+
+      /*
+       * Clicking one member of a multiple selection keeps only that one,
+       * rather than drilling into it. Dropping five layers to reach the one
+       * under the pointer is the move a designer means by that click; going
+       * deeper would leave them somewhere they never asked to be.
+       */
+      const at = was.stack.findIndex((n) => selection.includes(n.id));
+      if (selection.length > 1) {
+        const member = [...was.stack].reverse().find((n) => selection.includes(n.id));
+        if (member) select(member.id);
         return;
       }
 
-      if (node.type === 'text') editInPlace(node.id);
-    });
+      const next = was.stack[Math.min(at + 1, was.stack.length - 1)];
+      if (next) select(next.id);
+      return;
+    }
+    endGesture();
   }
 
   const rectLeft = (): number => canvas.getBoundingClientRect().left + panX;
@@ -609,15 +878,16 @@ export function startClub(root: HTMLElement): void {
     const target = e.target as HTMLElement | null;
 
     const handle = target?.closest?.<HTMLElement>('.club__handle');
-    if (handle && selected) {
-      const box = sandbox.boxOf(selected);
-      const p = store.propsOf(selected);
+    const only = primary();
+    if (handle && only) {
+      const box = sandbox.boxOf(only);
+      const p = store.propsOf(only);
       const at = toDoc(e.clientX, e.clientY);
       store.beginGesture();
       gesture = {
         kind: 'resize',
         dir: handle.dataset.dir,
-        id: selected,
+        id: only,
         startX: at.x,
         startY: at.y,
         baseX: p.x ?? 0,
@@ -632,16 +902,29 @@ export function startClub(root: HTMLElement): void {
       return;
     }
 
-    // Empty canvas: pan with the hand, otherwise clear the selection.
+    /*
+     * The ground around the artboard. The hand pans it; the select tool draws
+     * a marquee across it, which is the one place in the workspace where
+     * "empty canvas" means what it means in a design tool.
+     */
     if (target === canvas) {
-      if (tool === 'hand' || spaceHeld || e.button === 1) startPan(e.clientX, e.clientY);
-      else select(null);
+      if (tool === 'hand' || spaceHeld || e.button === 1) {
+        startPan(e.clientX, e.clientY);
+        return;
+      }
+      const at = toDoc(e.clientX, e.clientY);
+      beginMarquee(at.x, at.y, e.shiftKey);
     }
   }
 
   function onPointerMove(e: PointerEvent): void {
     if (gesture?.kind === 'pan') {
       panTo(e.clientX, e.clientY);
+      return;
+    }
+    if (gesture?.kind === 'marquee') {
+      const at = toDoc(e.clientX, e.clientY);
+      dragMarquee(at.x, at.y);
       return;
     }
     // A move started inside the frame is tracked by the frame's own listener,
@@ -653,7 +936,12 @@ export function startClub(root: HTMLElement): void {
 
   function onPointerUp(): void {
     canvas.removeAttribute('data-panning');
-    endGesture();
+    /*
+     * A press that began inside the frame and was released outside it — over a
+     * panel, off the window — is still that press ending, so it goes through
+     * the same door rather than being dropped.
+     */
+    onSandboxUp();
   }
 
   /*
@@ -748,8 +1036,9 @@ export function startClub(root: HTMLElement): void {
       b.setAttribute('aria-selected', String(b.dataset.page === path));
     });
 
-    selected = null;
+    selection = [];
     hovered = null;
+    open.clear();
     store.clear();
 
     sandbox.load(path, () => {
@@ -856,41 +1145,71 @@ export function startClub(root: HTMLElement): void {
     filePicker.click();
   }
 
+  /**
+   * Delete, over however many layers are selected, in one history step.
+   *
+   * Two different things, deliberately. A shape the designer added is really
+   * removed, because it was theirs and there is nothing underneath it. A piece
+   * of the portfolio is hidden instead: the sandbox is a layer of overrides
+   * over a page it does not own, and "delete the hero" has no meaning there —
+   * hiding it is the honest version of the same result, and it is the version
+   * that comes back.
+   */
   function removeSelected(): void {
-    if (!selected) return;
-    const node = sandbox.get(selected);
-    if (!node) return;
-    const id = selected;
+    if (!selection.length) return;
+    const ids = selection.slice();
+    const made = new Set(ids.filter((id) => sandbox.get(id)?.created));
 
-    if (node.created) {
-      store.commit('delete', (draft) => {
-        delete draft.overrides[id];
-        draft.addedOrder = draft.addedOrder.filter((x) => x !== id);
-      });
-      select(null);
-    } else {
-      // The portfolio's own elements are hidden rather than destroyed: the
-      // sandbox is a layer over the real page and there is nothing to delete.
-      store.set(id, { visible: false }, 'hide');
-    }
+    store.commit('delete', (draft) => {
+      for (const id of ids) {
+        if (made.has(id)) {
+          delete draft.overrides[id];
+          draft.addedOrder = draft.addedOrder.filter((x) => x !== id);
+        } else {
+          draft.overrides[id] = { ...(draft.overrides[id] ?? {}), visible: false };
+        }
+      }
+    });
+
+    if (made.size) setSelection(ids.filter((id) => !made.has(id)));
     say('Brave.');
   }
 
+  /**
+   * Duplicate, for the things that can honestly be duplicated.
+   *
+   * A shape the designer added is described by a `CreatedSpec`, so a copy is a
+   * second spec offset a little — the same mechanism as every other edit, with
+   * undo and redo already working. A piece of the portfolio is an *adopted*
+   * element: there is no description of it to copy, only a reference to a node
+   * the sandbox does not own, and cloning it would be inventing a second
+   * headline the store has no way to describe.
+   *
+   * So it says so rather than doing nothing. A control that looks like it
+   * worked and did not is the thing the brief warns about.
+   */
   function duplicateSelected(): void {
-    if (!selected) return;
-    const node = sandbox.get(selected);
-    const spec = store.propsOf(selected).created;
-    if (!node || !spec) return;
-    const id = `added.${Date.now().toString(36)}.${addedCount++}`;
-    const from = store.propsOf(selected);
+    const made = selection.filter((id) => store.propsOf(id).created);
+    if (!made.length) {
+      if (selection.length) flash('Only shapes you added can be duplicated.');
+      return;
+    }
+
+    const fresh: string[] = [];
     store.commit('duplicate', (draft) => {
-      draft.overrides[id] = {
-        ...from,
-        created: { ...spec, left: spec.left + 24, top: spec.top + 24 },
-      };
-      draft.addedOrder.push(id);
+      for (const from of made) {
+        const spec = draft.overrides[from]?.created;
+        if (!spec) continue;
+        const id = `added.${Date.now().toString(36)}.${addedCount++}`;
+        draft.overrides[id] = {
+          ...draft.overrides[from],
+          created: { ...spec, left: spec.left + 24, top: spec.top + 24 },
+        };
+        draft.addedOrder.push(id);
+        fresh.push(id);
+      }
     });
-    select(id);
+    setSelection(fresh);
   }
 
   /* ---------------------------------------------------------------- */
@@ -933,9 +1252,24 @@ export function startClub(root: HTMLElement): void {
       return;
     }
 
+    /*
+     * The twist is inside the row, so it is asked about first — otherwise
+     * opening a branch would also select it, and opening the tree to look
+     * around would keep changing what the properties panel is describing.
+     */
+    const twist = hit('[data-twist]')?.dataset.twist;
+    if (twist) {
+      e.stopPropagation();
+      if (open.has(twist)) open.delete(twist);
+      else open.add(twist);
+      renderLayers(layersHost, sandbox, store, selection, open, hooks);
+      return;
+    }
+
     const layer = hit('[data-layer]');
     if (layer?.dataset.layer) {
-      select(layer.dataset.layer);
+      if (e.shiftKey) toggle(layer.dataset.layer);
+      else select(layer.dataset.layer);
       return;
     }
 
@@ -981,7 +1315,7 @@ export function startClub(root: HTMLElement): void {
     root.dataset.mode = mode;
     resume.hidden = mode !== 'preview';
     if (mode === 'preview') {
-      select(null);
+      setSelection([]);
       // The artboard gets the whole window back.
       requestAnimationFrame(fit);
     } else {
@@ -1034,7 +1368,8 @@ export function startClub(root: HTMLElement): void {
     const focusedLayer = (e.target as HTMLElement | null)?.dataset?.layer;
     if (focusedLayer && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
-      select(focusedLayer);
+      if (e.shiftKey) toggle(focusedLayer);
+      else select(focusedLayer);
       return;
     }
 
@@ -1060,7 +1395,10 @@ export function startClub(root: HTMLElement): void {
         setTool('frame');
         break;
       case 'escape':
-        select(null);
+        stepOut();
+        break;
+      case 'enter':
+        stepIn();
         break;
       case '0':
         fit();
@@ -1094,17 +1432,57 @@ export function startClub(root: HTMLElement): void {
      * without it, and this is that: select with the keyboard in the layers
      * tree, nudge with the arrows, hold shift for ten at a time.
      */
-    if (selected && e.key.startsWith('Arrow')) {
+    if (selection.length && e.key.startsWith('Arrow')) {
       e.preventDefault();
       const step = e.shiftKey ? 10 : 1;
-      const p = store.propsOf(selected);
-      const patch: Props = {};
-      if (e.key === 'ArrowLeft') patch.x = (p.x ?? 0) - step;
-      if (e.key === 'ArrowRight') patch.x = (p.x ?? 0) + step;
-      if (e.key === 'ArrowUp') patch.y = (p.y ?? 0) - step;
-      if (e.key === 'ArrowDown') patch.y = (p.y ?? 0) + step;
-      store.set(selected, patch, 'nudge');
+      const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+      const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
+      const ids = selection.slice();
+      store.commit('nudge', (draft) => {
+        for (const id of ids) {
+          const was = draft.overrides[id] ?? {};
+          draft.overrides[id] = { ...was, x: (was.x ?? 0) + dx, y: (was.y ?? 0) + dy };
+        }
+      });
     }
+  }
+
+  /**
+   * Escape, which climbs rather than clears.
+   *
+   * A drag in progress is what it undoes first, then the level of nesting the
+   * designer has clicked down into, one press at a time, and only when there
+   * is nowhere further up does it clear the selection. Pressing it never
+   * leaves the Club: that is a deliberate act with a door of its own, and an
+   * editor you can fall out of by pressing Escape is an editor nobody trusts
+   * with their work.
+   */
+  function stepOut(): void {
+    if (gesture?.kind === 'marquee') {
+      gesture = null;
+      marquee = null;
+      drawOverlay();
+      return;
+    }
+    const id = primary();
+    if (!id) return;
+    if (selection.length > 1) {
+      select(id);
+      return;
+    }
+    select(sandbox.get(id)?.parentId ?? null);
+  }
+
+  /** Enter, which is the opposite: into the frame, or into the words. */
+  function stepIn(): void {
+    const id = primary();
+    if (!id) return;
+    const kids = sandbox.children(id);
+    if (kids.length) {
+      select(kids[0].id);
+      return;
+    }
+    if (sandbox.get(id)?.type === 'text') editInPlace(id);
   }
 
   function onKeyUp(e: KeyboardEvent): void {
