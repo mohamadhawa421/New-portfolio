@@ -229,8 +229,20 @@ export function catalogueFor(path: string): SectionSpec[] | null {
  */
 export const PROPS_FOR: Record<ClubType, readonly string[]> = {
   text: ['text', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'color', 'align', 'x', 'y', 'opacity', 'visible'],
-  button: ['text', 'bg', 'color', 'radius', 'w', 'h', 'x', 'y', 'opacity', 'visible'],
+  /*
+   * A button is a frame, and a frame has one fill.
+   *
+   * It used to offer both `bg` and `color`, which put two swatches under Fill
+   * and left the designer guessing which was the button — and it is not how
+   * the tool this imitates works. In Figma a button is a frame with a text
+   * layer inside it: the frame has a fill, the text has its own, and you reach
+   * the text by double-clicking into the frame. So the label is adopted as a
+   * child of type `text` (see `ensureLabel` in sandbox.ts) and carries the
+   * typography and the text colour, and the button keeps only what a frame
+   * has.
+   */
+  button: ['bg', 'radius', 'w', 'h', 'padX', 'padY', 'x', 'y', 'opacity', 'visible'],
   image: ['src', 'w', 'h', 'fit', 'radius', 'opacity', 'x', 'y', 'visible'],
   surface: ['bg', 'radius', 'w', 'h', 'x', 'y', 'opacity', 'visible'],
-  container: ['w', 'h', 'padding', 'gap', 'bg', 'radius', 'x', 'y', 'opacity', 'visible'],
+  container: ['w', 'h', 'padX', 'padY', 'gap', 'bg', 'radius', 'x', 'y', 'opacity', 'visible'],
 };

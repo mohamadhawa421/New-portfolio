@@ -148,7 +148,7 @@ const GROUPS: { name: string; keys: string[] }[] = [
    * before a single control has been used.
    */
   { name: 'Position', keys: ['x', 'y', 'w', 'h'] },
-  { name: 'Auto layout', keys: ['padding', 'gap'] },
+  { name: 'Auto layout', keys: ['padX', 'padY', 'gap'] },
   { name: 'Text', keys: ['text', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'align'] },
   { name: 'Appearance', keys: ['opacity', 'radius', 'fit'] },
   { name: 'Fill', keys: ['bg', 'color'] },
@@ -180,7 +180,8 @@ const LABEL: Record<string, string> = {
   y: 'Y',
   w: 'W',
   h: 'H',
-  padding: '⊞',
+  padX: '↔',
+  padY: '↕',
   gap: '⇹',
 };
 
@@ -202,7 +203,8 @@ const TITLE: Record<string, string> = {
   y: 'Y position',
   w: 'Width',
   h: 'Height',
-  padding: 'Padding',
+  padX: 'Horizontal padding',
+  padY: 'Vertical padding',
   gap: 'Gap',
 };
 
@@ -253,7 +255,106 @@ export function renderProps(
     frag.appendChild(box);
   }
 
+  /*
+   * Figma's "Selected colors", which is the thing that makes selecting a
+   * parent useful rather than a dead end.
+   *
+   * Pick a section and the panel above can only offer what a section itself
+   * has — a width, some padding — which is almost never what a designer
+   * wanted. What they wanted was to restyle everything inside it. So the
+   * fills actually in use underneath are gathered, deduplicated, and offered
+   * as swatches; changing one rewrites every layer using that exact colour in
+   * a single step, which is how a palette gets changed in seconds instead of
+   * forty clicks.
+   */
+  if (node.type === 'container' || node.type === 'button') {
+    const swatches = coloursInside(sandbox, store, node);
+    if (swatches.length) {
+      const box = document.createElement('div');
+      box.className = 'club__group';
+
+      const title = document.createElement('div');
+      title.className = 'club__group-name';
+      title.textContent = 'Selected colors';
+      box.appendChild(title);
+
+      for (const entry of swatches) {
+        box.appendChild(paletteRow(entry, store));
+      }
+
+      frag.appendChild(box);
+    }
+  }
+
   host.replaceChildren(frag);
+}
+
+/** One colour and every place inside the selection that is using it. */
+interface Swatch {
+  hex: string;
+  uses: { id: string; key: 'bg' | 'color' }[];
+}
+
+function coloursInside(sandbox: Sandbox, store: Store, node: ClubNode): Swatch[] {
+  const found = new Map<string, Swatch>();
+
+  /*
+   * By DOM containment rather than by the layer tree.
+   *
+   * The tree is deliberately shallow — a button's label and a project row are
+   * both filed under their section — so "children of this node" in the tree is
+   * not the same as "inside this node" on the page. Containment is the
+   * question actually being asked.
+   */
+  for (const other of sandbox.list()) {
+    if (other === node || !node.el.contains(other.el)) continue;
+
+    const allowed = new Set(PROPS_FOR[other.type]);
+    for (const key of ['bg', 'color'] as const) {
+      if (!allowed.has(key)) continue;
+      const value = (store.propsOf(other.id)[key] as string) ?? computed(other, key);
+      if (!value || value === 'rgba(0, 0, 0, 0)' || value === 'transparent') continue;
+      const hex = toHex(value);
+      const entry = found.get(hex) ?? { hex, uses: [] };
+      entry.uses.push({ id: other.id, key });
+      found.set(hex, entry);
+    }
+  }
+
+  // Most-used first: the colour a designer means is the one they can see most.
+  return [...found.values()].sort((a, b) => b.uses.length - a.uses.length).slice(0, 8);
+}
+
+function paletteRow(entry: Swatch, store: Store): HTMLElement {
+  const wrap = document.createElement('div');
+  wrap.className = 'club__field club__field--wide';
+
+  const propInput = document.createElement('button');
+  propInput.type = 'button';
+  propInput.className = 'club__swatch';
+  propInput.setAttribute('aria-label', `${entry.hex}, used ${entry.uses.length} times`);
+  propInput.innerHTML =
+    `<span class="club__chip" style="background:${entry.hex}"></span>` +
+    `<span>${entry.hex.toUpperCase()}</span>` +
+    `<span class="club__count">${entry.uses.length}</span>`;
+
+  propInput.addEventListener('click', () => {
+    openPicker(propInput, entry.hex, (hex, live) => {
+      const chip = propInput.firstElementChild as HTMLElement | null;
+      if (chip) chip.style.background = hex;
+      const text = propInput.children[1] as HTMLElement | null;
+      if (text) text.textContent = hex.toUpperCase();
+      /*
+       * One history step for the whole palette change, not one per layer —
+       * `live` keeps the intermediate frames out of the stack exactly as a
+       * drag does, and the last call commits them together.
+       */
+      for (const use of entry.uses) store.set(use.id, { [use.key]: hex }, 'palette', live);
+    });
+  });
+
+  wrap.appendChild(propInput);
+  return wrap;
 }
 
 function field(
@@ -452,7 +553,9 @@ function fallback(key: string, node: ClubNode, box: DOMRect | null): number | st
     }
     case 'letterSpacing':
       return cs && cs.letterSpacing !== 'normal' ? parseFloat(cs.letterSpacing).toFixed(1) : 0;
-    case 'padding':
+    case 'padX':
+      return cs ? Math.round(parseFloat(cs.paddingLeft) || 0) : 0;
+    case 'padY':
       return cs ? Math.round(parseFloat(cs.paddingTop) || 0) : 0;
     case 'gap':
       return cs && cs.gap !== 'normal' ? Math.round(parseFloat(cs.gap) || 0) : 0;

@@ -64,6 +64,10 @@ const WRITTEN = [
   'textAlign',
   'objectFit',
   'padding',
+  'paddingLeft',
+  'paddingRight',
+  'paddingTop',
+  'paddingBottom',
   'gap',
 ] as const;
 
@@ -199,12 +203,54 @@ export class Sandbox {
     node.el.dataset.clubId = node.id;
     this.nodes.set(node.id, node);
     this.order.push(node.id);
-    if (node.type === 'text' || node.type === 'button') {
+    if (node.type === 'text') {
       this.baseText.set(node.id, node.el.textContent ?? '');
     }
     if (node.type === 'image') {
       this.baseSrc.set(node.id, (node.el as HTMLImageElement).getAttribute('src') ?? '');
     }
+    // A button is a frame, so its words become a layer of their own.
+    if (node.type === 'button') this.addLabel(node);
+  }
+
+  /**
+   * The text inside a button, made into a layer you can select.
+   *
+   * Figma has no such thing as a button with a text property — it has a frame
+   * with a text layer in it, and you reach the text by double-clicking into
+   * the frame. Matching that is what makes the properties panel honest: one
+   * fill on the frame, one on the text, and no panel offering two colours and
+   * leaving you to work out which is which.
+   *
+   * Most of the site's buttons hold a bare text node, which cannot be styled
+   * or selected on its own, so one is wrapped. `display: contents` was the
+   * first choice and is exactly wrong: an element with no box has no
+   * rectangle, so the geometric hit test could never find it and the selection
+   * had nothing to draw. It is left as an ordinary inline span, which is the
+   * box the anonymous text already occupied — the button lays out as it did,
+   * and the wrapper exists only in the sandbox document, which is thrown away
+   * on reload like everything else.
+   */
+  private addLabel(button: ClubNode): void {
+    const el = button.el;
+    let label = el.querySelector<HTMLElement>('[data-club-label]');
+
+    if (!label) {
+      const doc = el.ownerDocument;
+      label = doc.createElement('span');
+      label.dataset.clubLabel = '';
+      // Everything the button says, moved inside the wrapper.
+      while (el.firstChild) label.appendChild(el.firstChild);
+      el.appendChild(label);
+    }
+
+    this.add({
+      id: `${button.id}.label`,
+      label: 'Label',
+      type: 'text',
+      parentId: button.parentId,
+      el: label,
+    });
   }
 
   /* ---------------------------------------------------------------- */
@@ -347,21 +393,35 @@ export class Sandbox {
    * anonymous wrapper that happens to be on top.
    */
   at(x: number, y: number): ClubNode | undefined {
-    let best: ClubNode | undefined;
-    let bestArea = Infinity;
+    return this.stackAt(x, y)[0];
+  }
+
+  /**
+   * Everything under this point, outermost first.
+   *
+   * Ordered by area descending, which for nested boxes is the same as
+   * outermost-to-innermost and needs no tree walk to work out. The editor
+   * uses it to go one level deeper on each click — the section, then the row,
+   * then the button, then its label — which is how selection works in the
+   * tool this borrows from, and it applies to everything rather than being a
+   * special case for buttons.
+   */
+  stackAt(x: number, y: number): ClubNode[] {
+    const under: { node: ClubNode; area: number }[] = [];
 
     for (const node of this.nodes.values()) {
       const r = node.el.getBoundingClientRect();
       if (r.width === 0 || r.height === 0) continue;
       if (x < r.left || x > r.right || y < r.top || y > r.bottom) continue;
-      const area = r.width * r.height;
-      if (area < bestArea) {
-        bestArea = area;
-        best = node;
-      }
+      under.push({ node, area: r.width * r.height });
     }
 
-    return best;
+    return under.sort((a, b) => b.area - a.area).map((u) => u.node);
+  }
+
+  /** The text layer inside a button, if this node is a button with one. */
+  labelOf(id: string): ClubNode | undefined {
+    return this.nodes.get(`${id}.label`);
   }
 
   /** Which adopted node owns this element, walking up from an element. */
@@ -419,7 +479,14 @@ export class Sandbox {
       if (has('letterSpacing')) s.letterSpacing = `${p.letterSpacing}px`;
       if (has('align')) s.textAlign = p.align!;
       if (has('fit')) s.objectFit = p.fit!;
-      if (has('padding')) s.padding = `${p.padding}px`;
+      if (has('padX')) {
+        s.paddingLeft = `${p.padX}px`;
+        s.paddingRight = `${p.padX}px`;
+      }
+      if (has('padY')) {
+        s.paddingTop = `${p.padY}px`;
+        s.paddingBottom = `${p.padY}px`;
+      }
       if (has('gap')) s.gap = `${p.gap}px`;
 
       /*

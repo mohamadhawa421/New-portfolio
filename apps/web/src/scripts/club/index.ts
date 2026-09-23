@@ -142,7 +142,23 @@ export function startClub(root: HTMLElement): void {
     // Layout may have changed under the edit, so the frame is re-measured.
     sizeFrame();
     renderLayers(layersHost, sandbox, store, selected, hooks);
-    renderProps(propsHost, propsHead, sandbox, store, selected, hooks);
+
+    /*
+     * The panel is not rebuilt underneath the field being typed into.
+     *
+     * Every keystroke in a property field commits, and committing repaints —
+     * which threw away the input the caret was in and built a new one, so the
+     * field lost focus after a single character and the rest of the number
+     * went nowhere. Typing "120" produced a 1.
+     *
+     * The values in the other fields are still stale-free, because the only
+     * thing that changed is the one the designer is holding. Rebuilding
+     * resumes the moment focus leaves the panel.
+     */
+    if (!propsHost.contains(document.activeElement)) {
+      renderProps(propsHost, propsHead, sandbox, store, selected, hooks);
+    }
+
     drawOverlay();
     syncHistoryButtons();
   }
@@ -397,18 +413,34 @@ export function startClub(root: HTMLElement): void {
         return;
       }
 
-      // `freeze` took pointer events off the page, so ask the point instead.
-      const node = sandbox.at(e.clientX, e.clientY);
-
       if (tool !== 'select') {
         createAt(e.clientX, e.clientY);
         return;
       }
 
-      if (!node) {
+      /*
+       * Each click goes one level further in.
+       *
+       * `freeze` took pointer events off the page, so the point is asked
+       * rather than the event, and it answers with everything underneath from
+       * the outside in. The first click on a fresh area takes the outermost
+       * thing — the section — and clicking again in the same place walks down
+       * the stack: the row, then the button, then its label. It is how
+       * selection behaves in the tool this imitates, and it is general: there
+       * is nothing here that knows what a button is.
+       *
+       * Clicking something already selected but *not* in the current stack
+       * starts again from the outside, which is what makes moving between two
+       * parts of the page feel normal rather than sticky.
+       */
+      const stack = sandbox.stackAt(e.clientX, e.clientY);
+      if (!stack.length) {
         select(null);
         return;
       }
+
+      const depth = selected ? stack.findIndex((n) => n.id === selected) : -1;
+      const node = stack[Math.min(depth + 1, stack.length - 1)];
 
       select(node.id);
       if (node.parentId !== null) beginMove(node.id, e.clientX, e.clientY);
@@ -459,11 +491,27 @@ export function startClub(root: HTMLElement): void {
     );
 
     /* Double-click a text layer and type into the page itself. */
+    /*
+     * Double-click means "go one level in", the way it does in Figma.
+     *
+     * On a frame it selects what is inside — so the first double-click on a
+     * button selects its label rather than dropping a caret into the button
+     * itself. On a text layer, which is as deep as this goes, it starts
+     * editing. Two double-clicks on a button therefore gets you typing, which
+     * is exactly the gesture a designer already has in their hands.
+     */
     sandboxDoc.addEventListener('dblclick', (e) => {
       const node = sandbox.at(e.clientX, e.clientY);
-      if (!node || (node.type !== 'text' && node.type !== 'button')) return;
+      if (!node) return;
       e.preventDefault();
-      editInPlace(node.id);
+
+      if (node.type === 'button') {
+        const label = sandbox.labelOf(node.id);
+        if (label) select(label.id);
+        return;
+      }
+
+      if (node.type === 'text') editInPlace(node.id);
     });
   }
 
@@ -572,12 +620,27 @@ export function startClub(root: HTMLElement): void {
   function wheelAt(clientX: number, clientY: number, e: WheelEvent): void {
     if (e.ctrlKey || e.metaKey) {
       const before = toDoc(clientX, clientY);
-      zoom = clamp(zoom * (1 - e.deltaY / 320), MIN_ZOOM, MAX_ZOOM);
+      /*
+       * One notch is a step, not a leap.
+       *
+       * The first version scaled by `1 - deltaY / 320`, which turns a single
+       * mouse-wheel notch into a 1.75× jump — 60% to 105% in one click, which
+       * overshoots whatever the designer was aiming at every time. A trackpad
+       * pinch sends many small deltas and a wheel sends few large ones, so the
+       * factor is clamped rather than the delta: the pinch keeps its
+       * smoothness and the wheel gets a sane step.
+       */
+      const factor = clamp(Math.exp(-e.deltaY / 420), 0.82, 1.22);
+      zoom = clamp(zoom * factor, MIN_ZOOM, MAX_ZOOM);
       paintView();
       const after = toDoc(clientX, clientY);
       // Keep the point under the cursor where it was.
       panX += (after.x - before.x) * zoom;
       panY += (after.y - before.y) * zoom;
+    } else if (e.shiftKey) {
+      // Shift makes a vertical wheel horizontal, which is the convention a
+      // mouse with one wheel relies on.
+      panX -= e.deltaY || e.deltaX;
     } else {
       panX -= e.deltaX;
       panY -= e.deltaY;

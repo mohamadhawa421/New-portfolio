@@ -45,7 +45,16 @@ export interface Props {
   text?: string;
   src?: string;
   fit?: string;
-  padding?: number;
+  /*
+   * Horizontal and vertical padding, separately.
+   *
+   * One `padding` field was a trap: it was seeded from `paddingTop`, which is
+   * 0 on a button whose real padding is `0 22px` — so the field read zero,
+   * and typing anything into it wrote that value to all four sides and
+   * reshaped the button. Figma shows the pair for the same reason.
+   */
+  padX?: number;
+  padY?: number;
   gap?: number;
   /** Set on nodes the designer added, so the sandbox knows to build them. */
   created?: CreatedSpec;
