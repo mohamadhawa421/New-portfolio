@@ -92,7 +92,21 @@ const PAGES = [
 
         <div class="club__right">
           <button class="club__ghost" type="button" data-act="zoom-out" aria-label="Zoom out">−</button>
-          <span class="club__zoom" data-club-zoom>100%</span>
+          {/*
+            The readout is a button, and the field behind it is markup rather
+            than something built on click: the client router owns this page,
+            and a control created by script and left in the DOM is a control
+            that outlives the navigation it should not have survived.
+          */}
+          <button class="club__zoom" type="button" data-act="zoom-set" data-club-zoom>100%</button>
+          <input
+            class="club__zoom club__zoom--field"
+            type="text"
+            inputmode="numeric"
+            aria-label="Zoom level, in per cent"
+            data-club-zoom-field
+            hidden
+          />
           <button class="club__ghost" type="button" data-act="zoom-in" aria-label="Zoom in">+</button>
           <button class="club__ghost" type="button" data-act="fit">Fit</button>
           <span class="club__div"></span>
@@ -507,9 +521,32 @@ const PAGES = [
   }
 
   .club__zoom {
-    min-width: 40px;
+    min-width: 46px;
+    height: 26px;
+    padding: 0 6px;
+    border: 1px solid transparent;
+    border-radius: var(--c-r);
+    background: transparent;
     text-align: center;
     color: var(--c-dim);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .club__zoom:hover {
+    background: #ffffff14;
+    color: var(--c-ink);
+  }
+
+  .club__zoom--field {
+    background: var(--c-field);
+    color: var(--c-ink);
+    cursor: text;
+  }
+
+  .club__zoom--field:focus {
+    outline: none;
+    border-color: var(--c-mark);
   }
 
   .club__ghost,
@@ -1158,6 +1195,16 @@ const PAGES = [
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    pointer-events: none;
+  }
+
+  /*
+   * An alignment guide. A hairline in the selection's own colour, drawn only
+   * along the run it is about, and gone the moment the drag ends.
+   */
+  .club__guide {
+    position: absolute;
+    background: var(--c-mark);
     pointer-events: none;
   }
 

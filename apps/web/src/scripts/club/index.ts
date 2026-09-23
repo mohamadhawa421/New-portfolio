@@ -46,6 +46,7 @@ export function startClub(root: HTMLElement): void {
   const propsHost = root.querySelector<HTMLElement>('[data-club-props]')!;
   const propsHead = root.querySelector<HTMLElement>('[data-club-prop-head]')!;
   const zoomOut = root.querySelector<HTMLElement>('[data-club-zoom]')!;
+  const zoomField = root.querySelector<HTMLInputElement>('[data-club-zoom-field]')!;
   const toast = root.querySelector<HTMLElement>('[data-club-toast]')!;
   const resume = root.querySelector<HTMLButtonElement>('[data-club-resume]')!;
 
@@ -81,7 +82,7 @@ export function startClub(root: HTMLElement): void {
     stage.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
     // Hairlines that stay hairlines. See the note at the top of the file.
     overlay.style.setProperty('--z', String(1 / zoom));
-    zoomOut.textContent = `${Math.round(zoom * 100)}%`;
+    if (zoomField.hidden) zoomOut.textContent = `${Math.round(zoom * 100)}%`;
   }
 
   function sizeFrame(): void {
@@ -94,12 +95,88 @@ export function startClub(root: HTMLElement): void {
     stage.style.height = `${h}px`;
   }
 
+  /**
+   * Fit the artboard's *width*, and start at the top.
+   *
+   * Not the whole document, which is what "zoom to fit" means in a tool whose
+   * frames are a screen tall. This one is eight thousand pixels: fitting it
+   * vertically puts the portfolio on screen at eight per cent, which is a
+   * thumbnail rather than a view. The width is the dimension that matters —
+   * it is the dimension the design was laid out against.
+   */
   function fit(): void {
     const box = canvas.getBoundingClientRect();
     const pad = 48;
     zoom = Math.max(MIN_ZOOM, Math.min(1, (box.width - pad * 2) / ARTBOARD));
     panX = (box.width - ARTBOARD * zoom) / 2;
     panY = pad / 2;
+    paintView();
+  }
+
+  /** Put a rectangle of the document in the middle of the view, comfortably. */
+  function fitTo(box: DOMRect, pad = 72): void {
+    if (box.width <= 0 || box.height <= 0) return;
+    const view = canvas.getBoundingClientRect();
+    zoom = clamp(
+      Math.min((view.width - pad * 2) / box.width, (view.height - pad * 2) / box.height),
+      MIN_ZOOM,
+      MAX_ZOOM
+    );
+    panX = (view.width - box.width * zoom) / 2 - box.x * zoom;
+    panY = (view.height - box.height * zoom) / 2 - box.y * zoom;
+    paintView();
+  }
+
+  /** Shift+2: everything selected, filling the view. Nothing selected, nothing. */
+  function fitSelection(): void {
+    const boxes = selection
+      .map((id) => sandbox.boxOf(id))
+      .filter(Boolean as unknown as (v: DOMRect | null) => v is DOMRect);
+    if (!boxes.length) return;
+    fitTo(
+      new DOMRect(
+        Math.min(...boxes.map((b) => b.left)),
+        Math.min(...boxes.map((b) => b.top)),
+        Math.max(...boxes.map((b) => b.right)) - Math.min(...boxes.map((b) => b.left)),
+        Math.max(...boxes.map((b) => b.bottom)) - Math.min(...boxes.map((b) => b.top))
+      )
+    );
+  }
+
+  /** Any percentage, about the middle of the view. */
+  function zoomTo(next: number): void {
+    const box = canvas.getBoundingClientRect();
+    const cx = box.width / 2;
+    const cy = box.height / 2;
+    const before = { x: (cx - panX) / zoom, y: (cy - panY) / zoom };
+    zoom = clamp(next, MIN_ZOOM, MAX_ZOOM);
+    panX = cx - before.x * zoom;
+    panY = cy - before.y * zoom;
+    paintView();
+  }
+
+  /**
+   * The zoom readout, which is also a field.
+   *
+   * Both halves are in the markup and one of them is hidden, rather than an
+   * input being built on demand: the client router owns this page, and a
+   * control created by script and left in the DOM is a control that survives
+   * a navigation it should not have.
+   */
+  function openZoomField(): void {
+    zoomOut.hidden = true;
+    zoomField.hidden = false;
+    zoomField.value = String(Math.round(zoom * 100));
+    zoomField.focus();
+    zoomField.select();
+  }
+
+  function closeZoomField(apply: boolean): void {
+    if (zoomField.hidden) return;
+    const asked = parseFloat(zoomField.value);
+    zoomField.hidden = true;
+    zoomOut.hidden = false;
+    if (apply && Number.isFinite(asked) && asked > 0) zoomTo(asked / 100);
     paintView();
   }
 
@@ -289,6 +366,46 @@ export function startClub(root: HTMLElement): void {
     if (hovered && !selection.includes(hovered)) {
       const hb = sandbox.boxOf(hovered);
       if (hb) overlay.appendChild(mark('club__hover', hb));
+    }
+
+    /*
+     * The alignment guides, drawn only along the run they are about.
+     *
+     * A line from edge to edge of an eight-thousand-pixel document tells you
+     * that something lined up and not with what. Extending the guide to cover
+     * the moving box and whatever it landed on is the whole message in one
+     * mark, and it disappears with the drag.
+     */
+    if (holdingX || holdingY) {
+      const now = selection
+        .map((id) => sandbox.boxOf(id))
+        .filter(Boolean as unknown as (v: DOMRect | null) => v is DOMRect);
+      const span = (g: Guide, lo: number, hi: number): [number, number] => [
+        Math.min(g.a, lo),
+        Math.max(g.b, hi),
+      ];
+      // A true hairline: one screen pixel, whatever the canvas is scaled to.
+      const hair = 1 / zoom;
+      if (holdingX && now.length) {
+        const [a, b] = span(
+          holdingX,
+          Math.min(...now.map((r) => r.top)),
+          Math.max(...now.map((r) => r.bottom))
+        );
+        overlay.appendChild(
+          mark('club__guide', new DOMRect(holdingX.v - hair / 2, a, hair, b - a))
+        );
+      }
+      if (holdingY && now.length) {
+        const [a, b] = span(
+          holdingY,
+          Math.min(...now.map((r) => r.left)),
+          Math.max(...now.map((r) => r.right))
+        );
+        overlay.appendChild(
+          mark('club__guide', new DOMRect(a, holdingY.v - hair / 2, b - a, hair))
+        );
+      }
     }
 
     if (!selection.length) return;
@@ -495,12 +612,123 @@ export function startClub(root: HTMLElement): void {
 
   let gesture: Gesture | null = null;
 
+  /**
+   * Where a moving layer is allowed to click into place.
+   *
+   * Built once, when the drag starts, and never touched again until it ends —
+   * which is the whole performance story for this feature. Measuring every
+   * candidate on every pointermove is what makes snapping in a hand-written
+   * editor feel like treacle: it is a full geometric pass over the document
+   * sixty times a second to answer a question whose answer cannot change,
+   * because nothing except the thing in your hand is moving.
+   *
+   * Candidates are the moved layers' own parents and their siblings, and
+   * nothing else. Snapping the hero's headline to a paragraph six sections
+   * down is not alignment, it is a coincidence — and offering it costs the
+   * guides their meaning, because a guide that appears for a relationship
+   * nobody can see reads as a bug.
+   */
+  interface Guide {
+    /** The coordinate the edge lands on. */
+    v: number;
+    /** How far the line is worth drawing, along the other axis. */
+    a: number;
+    b: number;
+  }
+
+  let guidesX: Guide[] = [];
+  let guidesY: Guide[] = [];
+  let holdingX: Guide | null = null;
+  let holdingY: Guide | null = null;
+  /** The moving selection's box before the drag, so snaps read off one rect. */
+  let movedFrom: DOMRect | null = null;
+
+  /** Six screen pixels: close enough to want, far enough not to fight. */
+  const SNAP = 6;
+
+  /** How many siblings are worth measuring. A list can be very long. */
+  const SNAP_POOL = 160;
+
+  function armGuides(ids: string[]): void {
+    guidesX = [];
+    guidesY = [];
+    holdingX = null;
+    holdingY = null;
+
+    const moving = new Set(ids);
+    const levels = new Set(ids.map((id) => sandbox.get(id)?.parentId ?? null));
+
+    const edges = (box: DOMRect): void => {
+      guidesX.push(
+        { v: box.left, a: box.top, b: box.bottom },
+        { v: box.left + box.width / 2, a: box.top, b: box.bottom },
+        { v: box.right, a: box.top, b: box.bottom }
+      );
+      guidesY.push(
+        { v: box.top, a: box.left, b: box.right },
+        { v: box.top + box.height / 2, a: box.left, b: box.right },
+        { v: box.bottom, a: box.left, b: box.right }
+      );
+    };
+
+    const pool: string[] = [];
+    for (const level of levels) {
+      if (level) {
+        const parent = sandbox.boxOf(level);
+        if (parent) edges(parent);
+      }
+      for (const node of sandbox.list()) {
+        if (node.parentId !== level || moving.has(node.id)) continue;
+        pool.push(node.id);
+        if (pool.length >= SNAP_POOL) break;
+      }
+    }
+
+    for (const id of pool) {
+      const box = sandbox.boxOf(id);
+      if (box && box.width > 0 && box.height > 0) edges(box);
+    }
+
+    const boxes = ids
+      .map((id) => sandbox.boxOf(id))
+      .filter(Boolean as unknown as (v: DOMRect | null) => v is DOMRect);
+    movedFrom = boxes.length
+      ? new DOMRect(
+          Math.min(...boxes.map((b) => b.left)),
+          Math.min(...boxes.map((b) => b.top)),
+          Math.max(...boxes.map((b) => b.right)) - Math.min(...boxes.map((b) => b.left)),
+          Math.max(...boxes.map((b) => b.bottom)) - Math.min(...boxes.map((b) => b.top))
+        )
+      : null;
+  }
+
+  /**
+   * The nudge that puts an edge on a guide, or nothing.
+   *
+   * Three anchors per axis — the two edges and the centre — and the smallest
+   * correction of the three wins, so a box a hair off centre snaps to centre
+   * rather than to whichever edge was checked first.
+   */
+  function pull(anchors: number[], guides: Guide[]): { shift: number; on: Guide } | null {
+    const tol = SNAP / zoom;
+    let best: { shift: number; on: Guide } | null = null;
+    for (const anchor of anchors) {
+      for (const guide of guides) {
+        const shift = guide.v - anchor;
+        if (Math.abs(shift) > tol) continue;
+        if (!best || Math.abs(shift) < Math.abs(best.shift)) best = { shift, on: guide };
+      }
+    }
+    return best;
+  }
+
   function beginMove(ids: string[], docX: number, docY: number): void {
     const bases = new Map<string, { x: number; y: number }>();
     for (const id of ids) {
       const p = store.propsOf(id);
       bases.set(id, { x: p.x ?? 0, y: p.y ?? 0 });
     }
+    armGuides(ids);
     store.beginGesture();
     gesture = {
       kind: 'move',
@@ -549,15 +777,48 @@ export function startClub(root: HTMLElement): void {
 
     if (gesture.kind === 'move' && gesture.bases) {
       // Shift constrains to one axis, the way it does everywhere else.
+      let locked: 'x' | 'y' | null = null;
       if (shift) {
-        if (Math.abs(dx) > Math.abs(dy)) dy = 0;
-        else dx = 0;
+        if (Math.abs(dx) > Math.abs(dy)) {
+          dy = 0;
+          locked = 'y';
+        } else {
+          dx = 0;
+          locked = 'x';
+        }
       }
       /*
        * One write for the whole selection rather than one per layer: `set`
        * emits, and emitting five times a frame repaints the sandbox five
        * times for a change the designer makes once.
        */
+      /*
+       * Snapping is applied to the *offset*, not to each layer, so a group of
+       * five keeps its internal spacing exactly and the whole thing lands on
+       * the guide together. Shift has already flattened one axis above, and a
+       * flattened axis is not snapped: the designer has said which direction
+       * this move is in and a snap sideways would contradict them.
+       */
+      holdingX = null;
+      holdingY = null;
+      if (movedFrom) {
+        const at = movedFrom;
+        if (locked !== 'x') {
+          const hit = pull([at.left + dx, at.left + at.width / 2 + dx, at.right + dx], guidesX);
+          if (hit) {
+            dx += hit.shift;
+            holdingX = hit.on;
+          }
+        }
+        if (locked !== 'y') {
+          const hit = pull([at.top + dy, at.top + at.height / 2 + dy, at.bottom + dy], guidesY);
+          if (hit) {
+            dy += hit.shift;
+            holdingY = hit.on;
+          }
+        }
+      }
+
       const bases = gesture.bases;
       store.live('move', (draft) => {
         for (const [id, base] of bases) {
@@ -595,6 +856,10 @@ export function startClub(root: HTMLElement): void {
     const was = gesture;
     gesture = null;
     if (was.kind === 'pan') return;
+
+    holdingX = null;
+    holdingY = null;
+    movedFrom = null;
 
     if (was.kind === 'marquee') {
       const m = marquee;
@@ -989,7 +1254,20 @@ export function startClub(root: HTMLElement): void {
     paintView();
   }
 
+  /*
+   * Clicking away from the zoom field is the same as pressing Enter.
+   *
+   * `focusout` rather than `blur`, because blur does not bubble and this is
+   * delegated from the document like every other listener in here — the
+   * client router detaches this page's markup on a navigation, and the field
+   * is markup.
+   */
+  function onFocusOut(e: FocusEvent): void {
+    if (e.target === zoomField) closeZoomField(true);
+  }
+
   function bindEditorInput(): void {
+    document.addEventListener('focusout', onFocusOut);
     document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
@@ -1296,6 +1574,7 @@ export function startClub(root: HTMLElement): void {
     if (act === 'zoom-in') zoomBy(1.25);
     else if (act === 'zoom-out') zoomBy(1 / 1.25);
     else if (act === 'fit') fit();
+    else if (act === 'zoom-set') openZoomField();
     else if (act === 'undo') store.undo();
     else if (act === 'redo') store.redo();
     else if (act === 'preview') setMode('preview');
@@ -1350,6 +1629,44 @@ export function startClub(root: HTMLElement): void {
       if (!altHeld) {
         altHeld = true;
         drawOverlay();
+      }
+    }
+
+    /*
+     * The zoom field owns its own keys while it has focus.
+     *
+     * Without this, typing 150 into it would set the Frame tool on the 1 and
+     * leave the field holding a number nobody asked for.
+     */
+    if (e.target === zoomField) {
+      if (e.key === 'Enter') closeZoomField(true);
+      if (e.key === 'Escape') closeZoomField(false);
+      return;
+    }
+
+    /*
+     * The view shortcuts, read off the physical key rather than the character.
+     *
+     * Shift+1 arrives as "!" on a US layout, as "&" on a French one and as
+     * something else again on a German one — `e.code` is the same key on all
+     * of them, which is what makes these work for a designer who is not
+     * typing in English.
+     */
+    if (e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      if (e.code === 'Digit1') {
+        e.preventDefault();
+        fit();
+        return;
+      }
+      if (e.code === 'Digit2') {
+        e.preventDefault();
+        fitSelection();
+        return;
+      }
+      if (e.code === 'Digit0') {
+        e.preventDefault();
+        zoomTo(1);
+        return;
       }
     }
 
@@ -1432,6 +1749,24 @@ export function startClub(root: HTMLElement): void {
      * without it, and this is that: select with the keyboard in the layers
      * tree, nudge with the arrows, hold shift for ten at a time.
      */
+    /*
+     * Arrows move the thing, or move the view when there is no thing.
+     *
+     * Both of them stop the browser scrolling whatever it thinks is
+     * scrollable underneath, which in a fixed workspace is nothing useful and
+     * in the frame is the artboard sliding out from under the pointer.
+     */
+    if (!selection.length && e.key.startsWith('Arrow')) {
+      e.preventDefault();
+      const step = e.shiftKey ? 160 : 40;
+      if (e.key === 'ArrowLeft') panX += step;
+      if (e.key === 'ArrowRight') panX -= step;
+      if (e.key === 'ArrowUp') panY += step;
+      if (e.key === 'ArrowDown') panY -= step;
+      paintView();
+      return;
+    }
+
     if (selection.length && e.key.startsWith('Arrow')) {
       e.preventDefault();
       const step = e.shiftKey ? 10 : 1;
@@ -1677,6 +2012,7 @@ export function startClub(root: HTMLElement): void {
     disposed = true;
     document.removeEventListener('keydown', onKey);
     document.removeEventListener('keyup', onKeyUp);
+    document.removeEventListener('focusout', onFocusOut);
     document.removeEventListener('pointerdown', onPointerDown);
     document.removeEventListener('pointermove', onPointerMove);
     window.removeEventListener('pointerup', onPointerUp);
