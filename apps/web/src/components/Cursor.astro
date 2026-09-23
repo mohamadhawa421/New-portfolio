@@ -96,6 +96,22 @@
    * first paint and gone the moment the visitor followed any link.
    */
   function claimCursor() {
+    /*
+     * The Club is the one room where the native arrow is the right pointer,
+     * and it has to be said *here* rather than only in the editor.
+     *
+     * The editor removes `has-custom-cursor` when it starts. That works on a
+     * cold load and not at all when a visitor arrives from the portfolio,
+     * because this file is already running: `astro:after-swap` re-adds the
+     * class a moment later, and the observer in `guardCursor` re-adds it
+     * again every time the editor takes it off. The result was `cursor: none`
+     * on every element of a design tool with no drawn pointer to replace it —
+     * no pointer on screen at all.
+     */
+    if (isClub() || isClubEditor()) {
+      document.documentElement.classList.remove('has-custom-cursor');
+      return;
+    }
     if (running) document.documentElement.classList.add('has-custom-cursor');
     raiseCursor();
   }
@@ -168,6 +184,7 @@
 
   function guardCursor(): void {
     new MutationObserver(() => {
+      if (isClub() || isClubEditor()) return;
       if (running && !document.documentElement.classList.contains('has-custom-cursor')) {
         document.documentElement.classList.add('has-custom-cursor');
       }
@@ -1126,6 +1143,18 @@
      * the pointer while it is the thing being pointed with.
      */
     if (isClub() || isClubEditor()) return;
+
+    /*
+     * And on the way back out, the drawn pointer is un-hidden.
+     *
+     * The editor hides it on entry — a ring following the pointer across a
+     * properties panel is the editor's own chrome fighting the portfolio's —
+     * and the element is `transition:persist`, so the attribute crosses the
+     * navigation with it. Nothing else in this file ever looks at `hidden`, so
+     * without this the visitor left the Club with no pointer for the rest of
+     * the session.
+     */
+    document.querySelector<HTMLElement>('[data-cursor]')?.removeAttribute('hidden');
 
     const w = window as unknown as { __mhCursor?: boolean };
     if (w.__mhCursor) {

@@ -341,6 +341,46 @@ export function startClub(root: HTMLElement): void {
   /** What the pointer is over, drawn faintly so selection stays the loud one. */
   let hovered: string | null = null;
 
+  /** Where the pointer last was, in document coordinates, so the hover can be
+   *  recomputed when something other than the pointer changes what it means. */
+  let pointerAt: { x: number; y: number } | null = null;
+
+  /**
+   * What the *next* click would take, which is what a hover outline promises.
+   *
+   * It used to be the outermost thing under the pointer, which on this page is
+   * always a section — so the hover outline was a box round a whole third of
+   * the screen no matter what you pointed at, and it never agreed with what
+   * clicking actually did once you had drilled in. Following the same rule the
+   * press follows makes the outline a genuine preview: click, and the hover
+   * moves one level deeper with you.
+   *
+   * With Alt down it resolves the way a shift-click does: a sibling of what is
+   * selected if there is one under the pointer, and otherwise the deepest
+   * layer. That modifier is for measuring, and the measurement a designer
+   * means is almost always between two things at the same level — the two
+   * buttons, the two rows. Measuring to the section that contains what you are
+   * pointing at is not a measurement anybody wanted, and measuring to the text
+   * *inside* the button reports the gap plus that button's padding, which is a
+   * correct number and the wrong answer.
+   */
+  function nextPick(stack: ClubNode[]): ClubNode {
+    if (altHeld) return siblingPick(stack);
+    const at = stack.findIndex((n) => selection.includes(n.id));
+    if (at === -1) return stack[0];
+    return stack[Math.min(at + 1, stack.length - 1)];
+  }
+
+  function reHover(): boolean {
+    const was = hovered;
+    if (!pointerAt || tool !== 'select') hovered = null;
+    else {
+      const stack = sandbox.stackAt(pointerAt.x, pointerAt.y);
+      hovered = stack.length ? nextPick(stack).id : null;
+    }
+    return hovered !== was;
+  }
+
   /** A drag on empty ground, in sandbox-document coordinates. */
   let marquee: { x0: number; y0: number; x1: number; y1: number; add: boolean } | null = null;
 
@@ -842,12 +882,36 @@ export function startClub(root: HTMLElement): void {
       if (dir.includes('s')) h = gesture.baseH + dy;
       if (dir.includes('n')) h = gesture.baseH - dy;
 
+      /*
+       * Shift on a corner keeps the proportions.
+       *
+       * Only on a corner: an edge handle changes one dimension by definition,
+       * and "constrain proportions" applied to it would move the edge the
+       * designer is not holding, which is the kind of modifier behaviour the
+       * brief rightly says to leave out unless it can be made predictable.
+       * The axis that moved further is the one believed, so the box follows
+       * whichever way the hand went.
+       */
+      if (shift && dir.length === 2 && gesture.baseH > 0) {
+        const ratio = gesture.baseW / gesture.baseH;
+        if (Math.abs(w - gesture.baseW) >= Math.abs(h - gesture.baseH)) h = w / ratio;
+        else w = h * ratio;
+      }
+
+      w = Math.max(8, Math.round(w));
+      h = Math.max(8, Math.round(h));
+
       const patch: Props = {};
-      if (dir.match(/[ew]/)) patch.w = Math.max(8, Math.round(w));
-      if (dir.match(/[ns]/)) patch.h = Math.max(8, Math.round(h));
-      // Dragging a west or north edge also moves the origin.
-      if (dir.includes('w')) patch.x = Math.round(gesture.baseX + dx);
-      if (dir.includes('n')) patch.y = Math.round(gesture.baseY + dy);
+      if (dir.match(/[ew]/)) patch.w = w;
+      if (dir.match(/[ns]/)) patch.h = h;
+      /*
+       * Dragging a west or north edge also moves the origin — and it is
+       * derived from the size rather than from the pointer, so the opposite
+       * edge stays exactly where it is even when the size has been clamped to
+       * the minimum or bent by the ratio above.
+       */
+      if (dir.includes('w')) patch.x = Math.round(gesture.baseX + (gesture.baseW - w));
+      if (dir.includes('n')) patch.y = Math.round(gesture.baseY + (gesture.baseH - h));
       store.set(gesture.id, patch, 'resize', true);
     }
   }
@@ -971,11 +1035,8 @@ export function startClub(root: HTMLElement): void {
       }
 
       // Nothing is dragging: show what would be picked up.
-      const over = tool === 'select' ? (sandbox.at(e.clientX, e.clientY)?.id ?? null) : null;
-      if (over !== hovered) {
-        hovered = over;
-        drawOverlay();
-      }
+      pointerAt = { x: e.clientX, y: e.clientY };
+      if (reHover()) drawOverlay();
     });
 
     sandboxDoc.addEventListener('pointerup', onSandboxUp);
@@ -1726,6 +1787,9 @@ export function startClub(root: HTMLElement): void {
       e.preventDefault();
       if (!altHeld) {
         altHeld = true;
+        // Alt changes what the pointer is pointing *at*, not just what is
+        // drawn over it, so the hover is resolved again before the redraw.
+        reHover();
         drawOverlay();
       }
     }
@@ -1935,6 +1999,7 @@ export function startClub(root: HTMLElement): void {
 
     if (!e.altKey && altHeld) {
       altHeld = false;
+      reHover();
       drawOverlay();
     }
   }
@@ -1951,6 +2016,7 @@ export function startClub(root: HTMLElement): void {
     altHeld = false;
     spaceHeld = false;
     canvas.dataset.tool = tool;
+    reHover();
     drawOverlay();
   }
 
@@ -2152,6 +2218,10 @@ export function startClub(root: HTMLElement): void {
     window.removeEventListener('blur', onBlur);
     window.removeEventListener('resize', fit);
     frame.src = 'about:blank';
+    // The drawn pointer was hidden on the way in and is given back on the way
+    // out. It is `transition:persist`, so the attribute would otherwise cross
+    // the navigation and leave the portfolio with no pointer at all.
+    document.querySelector<HTMLElement>('[data-cursor]')?.removeAttribute('hidden');
     document.removeEventListener('astro:before-swap', dispose);
   }
 
