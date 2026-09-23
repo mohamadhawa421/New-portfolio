@@ -81,6 +81,14 @@ const PAGES = [
           </svg>
         </a>
         <span class="club__wordmark">Designers&nbsp;Club</span>
+        {/*
+          Said once, quietly, and never again.
+
+          A designer needs to know within a second that this is a sandbox and
+          not the live site — and then never be told twice. A banner across the
+          top would be a disclaimer; a word in the title bar is a file name.
+        */}
+        <span class="club__where">Editing sandbox</span>
 
         <div class="club__right">
           <button class="club__ghost" type="button" data-act="zoom-out" aria-label="Zoom out">−</button>
@@ -373,14 +381,62 @@ const PAGES = [
   /* The workspace                                                     */
   /* ---------------------------------------------------------------- */
 
+  /*
+   * The workspace's palette is the portfolio's, not the tool's.
+   *
+   * Every value below is lifted from `tokens.css` — the dark theme's three
+   * surfaces and two rules, and the violet the storm and super designer mode
+   * are painted in. Nothing here is Figma's: its greys are a shade warmer than
+   * this site's near-blacks and its blue belongs to it, and a workspace
+   * wearing them would be a clone rather than a room in this portfolio.
+   *
+   * The accent is split the way the site splits its own, and for the reason
+   * written out in `tokens.css`: a colour bright enough to be read *as a line*
+   * on a near-black ground is not dark enough to carry white text on top of
+   * it. So `--c-mark` draws — selection outlines, guides, the active dot — and
+   * `--c-fill` fills anything with white words on it. #6d28d9 carries white at
+   * 7:1, which is the same pair the enquiry form's primary button uses.
+   *
+   * Measurements get the site's blue under the same split, because they have
+   * to be legible *beside* the violet rather than through it. Figma uses red
+   * for this; red is not in this palette at all.
+   *
+   * Dark whatever the visitor's theme is, deliberately. A design tool's chrome
+   * recedes so the work can be judged — and the work, inside the frame, still
+   * follows the visitor's own theme.
+   */
   .club {
-    --c-bg: #1e1e1e;
-    --c-panel: #2c2c2c;
-    --c-line: #3d3d3d;
-    --c-field: #383838;
-    --c-ink: #ffffff;
-    --c-dim: #b3b3b3;
-    --c-blue: #0d99ff;
+    /* --surface, --surface-card, --surface-chip in the dark theme. */
+    --c-bg: #0b0b0d;
+    --c-panel: #141417;
+    --c-field: #1b1b1f;
+    --c-field-hi: #232328;
+    /* --line and --line-dark. */
+    --c-line: #232328;
+    --c-edge: #33333a;
+    /* --ink and --ink-muted. */
+    --c-ink: #f5f5f7;
+    --c-dim: #a1a1a6;
+    /* --blue-on-dark and --blue-fill / --blue-fill-hover, in the violet key. */
+    --c-mark: #a855f7;
+    --c-fill: #6d28d9;
+    --c-fill-hi: #7c3aed;
+    /* The same split again, in the site's blue, for spacing overlays. */
+    --c-measure: #2997ff;
+    --c-measure-fill: #0066cc;
+    --c-measure-soft: rgb(41 151 255 / 0.22);
+
+    /*
+     * Corners keep the family's *ratio* rather than its numbers.
+     *
+     * `tokens.css` tunes every surface to roughly a fifth of its short side at
+     * the small end — a 120x75 thumbnail takes 15px. A 26px-tall field at the
+     * same ratio is 5px, and a 42px tool pill is 9px. Borrowing the numbers
+     * instead would put a 12px radius on a 24px input, which is a pill.
+     */
+    --c-r: 5px;
+    --c-r-lg: 9px;
+
     --c-bar: 44px;
     --c-panel-w: 240px;
 
@@ -391,6 +447,7 @@ const PAGES = [
     grid-template-rows: var(--c-bar) 1fr;
     background: var(--c-bg);
     color: var(--c-ink);
+    font-family: var(--font-sans);
     font-size: 11px;
     font-variant-numeric: tabular-nums;
   }
@@ -415,7 +472,7 @@ const PAGES = [
     background: transparent;
     color: inherit;
     cursor: pointer;
-    border-radius: 5px;
+    border-radius: var(--c-r);
     font: inherit;
     transition: background-color 120ms ease;
   }
@@ -434,6 +491,11 @@ const PAGES = [
   .club__wordmark {
     font-weight: 600;
     letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  .club__where {
+    color: var(--c-dim);
     white-space: nowrap;
   }
 
@@ -463,13 +525,13 @@ const PAGES = [
   }
 
   .club__go {
-    background: var(--c-blue);
+    background: var(--c-fill);
     color: #fff;
     font-weight: 600;
   }
 
   .club__go:hover {
-    background: #3badff;
+    background: var(--c-fill-hi);
   }
 
   .club__div {
@@ -561,7 +623,7 @@ const PAGES = [
     height: 26px;
     padding: 0 7px;
     border: 0;
-    border-radius: 4px;
+    border-radius: var(--c-r);
     background: transparent;
     color: var(--c-dim);
     font: inherit;
@@ -582,7 +644,7 @@ const PAGES = [
   }
 
   .club__page[aria-selected='true'] {
-    background: var(--c-blue);
+    background: var(--c-fill);
     color: #fff;
   }
 
@@ -603,7 +665,7 @@ const PAGES = [
     height: 24px;
     padding: 0 6px;
     border: 0;
-    border-radius: 4px;
+    border-radius: var(--c-r);
     background: transparent;
     color: var(--c-dim);
     font: inherit;
@@ -622,7 +684,7 @@ const PAGES = [
    * survive being one of forty rows of very similar text.
    */
   .club__layer[aria-selected='true'] {
-    background: var(--c-blue);
+    background: var(--c-fill);
     color: #fff;
   }
 
@@ -778,7 +840,7 @@ const PAGES = [
     height: 24px;
     padding: 0 6px;
     border: 1px solid transparent;
-    border-radius: 4px;
+    border-radius: var(--c-r);
     background: var(--c-field);
     color: var(--c-ink);
     font: inherit;
@@ -802,14 +864,14 @@ const PAGES = [
   .club__field select:focus,
   .club__field textarea:focus {
     outline: none;
-    border-color: var(--c-blue);
+    border-color: var(--c-mark);
   }
 
   .club__btn {
     width: 100%;
     height: 24px;
     border: 1px solid #ffffff24;
-    border-radius: 4px;
+    border-radius: var(--c-r);
     background: var(--c-field);
     color: var(--c-ink);
     font: inherit;
@@ -817,7 +879,7 @@ const PAGES = [
   }
 
   .club__btn:hover {
-    background: #454545;
+    background: var(--c-field-hi);
   }
 
   .club__empty {
@@ -845,7 +907,7 @@ const PAGES = [
     height: 24px;
     padding: 0 6px;
     border: 1px solid transparent;
-    border-radius: 4px;
+    border-radius: var(--c-r);
     background: var(--c-field);
     color: var(--c-ink);
     font: inherit;
@@ -876,16 +938,16 @@ const PAGES = [
     z-index: 95;
     width: 216px;
     padding: 10px;
-    border-radius: 8px;
+    border-radius: var(--c-r-lg);
     background: var(--c-panel);
     border: 1px solid var(--c-line);
-    box-shadow: 0 12px 40px #00000073;
+    box-shadow: 0 12px 40px #000000a6;
   }
 
   .club__sv {
     position: relative;
     height: 128px;
-    border-radius: 4px;
+    border-radius: var(--c-r);
     cursor: crosshair;
     touch-action: none;
   }
@@ -926,7 +988,7 @@ const PAGES = [
     margin-top: 9px;
     padding: 0 6px;
     border: 1px solid transparent;
-    border-radius: 4px;
+    border-radius: var(--c-r);
     background: var(--c-field);
     color: var(--c-ink);
     font: inherit;
@@ -971,7 +1033,14 @@ const PAGES = [
     top: 0;
     left: 0;
     transform-origin: 0 0;
-    box-shadow: 0 10px 50px #00000080;
+    /*
+     * A ring and a shadow, because on a near-black ground a shadow alone is
+     * invisible — the artboard's white edge needs something to sit against or
+     * it reads as a hole cut in the canvas rather than a sheet laid on it.
+     */
+    box-shadow:
+      0 0 0 1px var(--c-edge),
+      0 18px 60px #000000b3;
     background: #fff;
     will-change: transform;
   }
@@ -992,13 +1061,13 @@ const PAGES = [
 
   .club__sel {
     position: absolute;
-    border: 1px solid var(--c-blue);
+    border: 1px solid var(--c-mark);
     pointer-events: none;
   }
 
   .club__hover {
     position: absolute;
-    border: 1px solid var(--c-blue);
+    border: 1px solid var(--c-mark);
     opacity: 0.5;
     pointer-events: none;
   }
@@ -1008,7 +1077,7 @@ const PAGES = [
     width: 7px;
     height: 7px;
     margin: -4px 0 0 -4px;
-    border: 1px solid var(--c-blue);
+    border: 1px solid var(--c-mark);
     border-radius: 1px;
     background: #fff;
     pointer-events: auto;
@@ -1024,7 +1093,7 @@ const PAGES = [
     position: absolute;
     padding: 1px 5px;
     border-radius: 3px;
-    background: var(--c-blue);
+    background: var(--c-fill);
     color: #fff;
     font-size: 10px;
     font-weight: 500;
@@ -1043,14 +1112,14 @@ const PAGES = [
     position: absolute;
     display: grid;
     place-items: center;
-    background: rgb(255 61 138 / 0.28);
+    background: var(--c-measure-soft);
     pointer-events: none;
   }
 
   .club__pad-n {
     padding: 0 4px;
     border-radius: 3px;
-    background: #ff3d8a;
+    background: var(--c-measure-fill);
     color: #fff;
     font-size: 10px;
     font-weight: 600;
@@ -1069,14 +1138,14 @@ const PAGES = [
     position: absolute;
     display: grid;
     place-items: center;
-    background: #ff3d8a;
+    background: var(--c-measure);
     pointer-events: none;
   }
 
   .club__measure-n {
     padding: 0 4px;
     border-radius: 3px;
-    background: #ff3d8a;
+    background: var(--c-measure-fill);
     color: #fff;
     font-size: 10px;
     font-weight: 600;
@@ -1103,10 +1172,12 @@ const PAGES = [
     gap: 2px;
     padding: 5px;
     transform: translateX(-50%);
-    border-radius: 12px;
+    border-radius: var(--c-r-lg);
     background: var(--c-panel);
     border: 1px solid var(--c-line);
-    box-shadow: 0 8px 32px #0000008c;
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 0.04) inset,
+      0 10px 34px #00000099;
   }
 
   .club__tools button {
@@ -1115,7 +1186,7 @@ const PAGES = [
     width: 32px;
     height: 32px;
     border: 0;
-    border-radius: 7px;
+    border-radius: 6px;
     background: transparent;
     color: var(--c-ink);
     cursor: pointer;
@@ -1137,7 +1208,7 @@ const PAGES = [
   }
 
   .club__tools button[aria-pressed='true'] {
-    background: var(--c-blue);
+    background: var(--c-fill);
     color: #fff;
   }
 
@@ -1179,7 +1250,7 @@ const PAGES = [
     padding: 0 14px;
     border: 0;
     border-radius: 999px;
-    background: var(--c-blue);
+    background: var(--c-fill);
     color: #fff;
     font-size: 11px;
     font-weight: 600;
@@ -1194,10 +1265,10 @@ const PAGES = [
     z-index: 80;
     width: 268px;
     padding: 12px 13px 11px;
-    border-radius: 9px;
+    border-radius: var(--c-r-lg);
     background: var(--c-panel);
     border: 1px solid var(--c-line);
-    box-shadow: 0 14px 44px #00000099;
+    box-shadow: 0 14px 44px #000000b3;
   }
 
   .club__coach p {
@@ -1227,7 +1298,7 @@ const PAGES = [
   }
 
   .club__dots i[data-on='1'] {
-    background: var(--c-blue);
+    background: var(--c-mark);
   }
 
   /*
