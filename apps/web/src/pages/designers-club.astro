@@ -1,0 +1,1220 @@
+---
+/**
+ * The Designers Club.
+ *
+ * A room off the portfolio where a visitor can take the thing apart and put it
+ * back differently. The canvas is the real site in a same-origin frame — see
+ * `club/sandbox.ts` — so what is being redesigned is genuinely this portfolio
+ * rather than a drawing of it.
+ *
+ * The chrome follows Figma's grammar deliberately: dark panels either side, a
+ * floating tool pill at the bottom, layers on the left, contextual properties
+ * on the right, and a blue selection. A designer should not have to learn
+ * where anything is. The one place it departs is the canvas, which is somebody
+ * else's finished website rather than a blank artboard — so the selection is
+ * drawn a hair quieter than Figma's, because it sits on top of real work.
+ *
+ * The workspace is dark whatever the portfolio is wearing, for the reason
+ * every design tool is: the chrome has to recede so the work can be judged.
+ * The canvas inside it still follows the visitor's own theme.
+ *
+ * The page ships three states and only ever shows one: the desktop editor, the
+ * too-small message, and nothing at all while it decides. Which one is decided
+ * in CSS from the viewport, before any script runs, so a phone never sees a
+ * flash of an editor it cannot use — and the editor's own code sits behind a
+ * dynamic import that a phone never reaches.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getSiteSettings } from '../lib/content';
+
+const settings = await getSiteSettings();
+
+/**
+ * The pages the Club can open.
+ *
+ * Navigation lives here rather than in the canvas: inside the frame every link
+ * is inert, because a click there means "select this", so the only way to
+ * another page is to ask for it from the panel. That is also how Figma works —
+ * you change page in the sidebar, not by clicking something in the design.
+ */
+const PAGES = [
+  { path: '/', label: 'Home' },
+  { path: '/work', label: 'Work' },
+  { path: '/about', label: 'About' },
+  { path: '/contact', label: 'Contact' },
+];
+---
+
+<BaseLayout
+  title={`Designers Club — ${settings.siteName}`}
+  description="A little playground for designers. Redesign this portfolio in the browser, then send the result over."
+>
+  {/*
+    The skip link's destination, which every page owes it.
+
+    No `data-shell` here, unlike the rest of the site: that opts a page into
+    the shell's padding and section rhythm, and the Club is a fixed workspace
+    that fills the window rather than a document that flows down it.
+  */}
+  <main id="main">
+    {/*
+      The too-small state.
+
+      Not an error and not an apology. Panels and a canvas is a desktop
+      interaction model, and squeezing it onto a phone would make a worse thing
+      rather than a smaller one — so this says what it is and offers the way in.
+      He is here because this is still an invitation, just a deferred one.
+    */}
+    <div class="club-small" data-club-small>
+      <img src="/character-club.webp" alt="" width="560" height="463" />
+      <h1>Designers Club is made for desktop.</h1>
+      <p>Open the portfolio on a bigger screen to enter the club and play with the design.</p>
+      <a class="btn btn--secondary" href="/">Back to the portfolio</a>
+    </div>
+
+    <div class="club" data-club-root hidden>
+      {/* ---- Top bar: identity, view controls, and the way out -------- */}
+      <header class="club__bar">
+        <a class="club__home" href="/" aria-label="Leave the club">
+          <svg viewBox="0 0 9 14" aria-hidden="true" focusable="false">
+            <path d="M7.5 1 1.5 7l6 6" fill="none" stroke="currentColor" stroke-width="1.8"></path>
+          </svg>
+        </a>
+        <span class="club__wordmark">Designers&nbsp;Club</span>
+
+        <div class="club__right">
+          <button class="club__ghost" type="button" data-act="zoom-out" aria-label="Zoom out">−</button>
+          <span class="club__zoom" data-club-zoom>100%</span>
+          <button class="club__ghost" type="button" data-act="zoom-in" aria-label="Zoom in">+</button>
+          <button class="club__ghost" type="button" data-act="fit">Fit</button>
+          <span class="club__div"></span>
+          <button class="club__ghost" type="button" data-act="reset">Reset</button>
+          <button class="club__ghost" type="button" data-act="preview">Preview</button>
+          <button class="club__go" type="button" data-act="export">Export my redesign</button>
+        </div>
+      </header>
+
+      <div class="club__body">
+        {/* ---- Left: pages, then layers ------------------------------ */}
+        <aside class="club__panel club__panel--left" aria-label="Pages and layers">
+          <div class="club__section">
+            <div class="club__section-head">Pages</div>
+            <div class="club__pages" data-club-pages role="tablist" aria-label="Portfolio pages">
+              {
+                PAGES.map((page, i) => (
+                  <button
+                    class="club__page"
+                    type="button"
+                    role="tab"
+                    data-page={page.path}
+                    aria-selected={i === 0 ? 'true' : 'false'}
+                  >
+                    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                      <rect
+                        x="2.5"
+                        y="2"
+                        width="11"
+                        height="12"
+                        rx="1.5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.2"
+                      />
+                      <path
+                        d="M5 5.5h6M5 8h6M5 10.5h3.5"
+                        stroke="currentColor"
+                        stroke-width="1.2"
+                        fill="none"
+                      />
+                    </svg>
+                    <span>{page.label}</span>
+                  </button>
+                ))
+              }
+            </div>
+          </div>
+
+          <div class="club__section club__section--grow">
+            <div class="club__section-head">Layers</div>
+            <div class="club__layers" data-club-layers role="tree" aria-label="Page layers"></div>
+          </div>
+        </aside>
+
+        {/* ---- Canvas ------------------------------------------------- */}
+        <div class="club__canvas" data-club-canvas>
+          <div class="club__stage" data-club-stage>
+            <iframe
+              class="club__frame"
+              data-club-frame
+              title="Portfolio sandbox"
+              src="about:blank"
+              scrolling="no"></iframe>
+            <div class="club__overlay" data-club-overlay aria-hidden="true"></div>
+          </div>
+        </div>
+
+        {/* ---- Right: contextual properties --------------------------- */}
+        <aside class="club__panel club__panel--right" aria-label="Properties">
+          <div class="club__section-head club__section-head--main" data-club-prop-head>
+            Properties
+          </div>
+          <div class="club__props" data-club-props></div>
+        </aside>
+      </div>
+
+      {/* ---- The tool pill, floating over the canvas ----------------- */}
+      <div class="club__tools" role="toolbar" aria-label="Tools" data-club-tools>
+        <button type="button" data-tool="select" aria-pressed="true" title="Move — V">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 8-6 1.6L9.6 19z"></path></svg>
+          <span class="club__sr">Move</span>
+        </button>
+        <button type="button" data-tool="hand" aria-pressed="false" title="Hand — H">
+          <svg viewBox="0 0 24 24" aria-hidden="true"
+            ><path
+              d="M8 11V5.6a1.6 1.6 0 0 1 3.2 0V11m0-.8V4.4a1.6 1.6 0 0 1 3.2 0v5.8m0-.4a1.6 1.6 0 0 1 3.2 0V15a5.6 5.6 0 0 1-5.6 5.6h-1A5.6 5.6 0 0 1 5.2 15v-2.6a1.6 1.6 0 0 1 3-.8"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"></path></svg
+          >
+          <span class="club__sr">Hand</span>
+        </button>
+        <span class="club__tools-div"></span>
+        <button type="button" data-tool="frame" aria-pressed="false" title="Frame — F">
+          <svg viewBox="0 0 24 24" aria-hidden="true"
+            ><path
+              d="M7 3v18M17 3v18M3 7h18M3 17h18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"></path></svg
+          >
+          <span class="club__sr">Frame</span>
+        </button>
+        <button type="button" data-tool="rect" aria-pressed="false" title="Rectangle — R">
+          <svg viewBox="0 0 24 24" aria-hidden="true"
+            ><rect
+              x="4"
+              y="5"
+              width="16"
+              height="14"
+              rx="2.5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"></rect></svg
+          >
+          <span class="club__sr">Rectangle</span>
+        </button>
+        <button type="button" data-tool="ellipse" aria-pressed="false" title="Ellipse — O">
+          <svg viewBox="0 0 24 24" aria-hidden="true"
+            ><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6"
+            ></circle></svg
+          >
+          <span class="club__sr">Ellipse</span>
+        </button>
+        <button type="button" data-tool="text" aria-pressed="false" title="Text — T">
+          <svg viewBox="0 0 24 24" aria-hidden="true"
+            ><path d="M5 6h14M12 6v13" fill="none" stroke="currentColor" stroke-width="1.7"
+            ></path></svg
+          >
+          <span class="club__sr">Text</span>
+        </button>
+        <span class="club__tools-div"></span>
+        <button type="button" data-act="undo" title="Undo — ⌘Z" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"
+            ><path
+              d="M9 7 4 11l5 4M4 11h9a6 6 0 0 1 0 12h-1"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"></path></svg
+          >
+          <span class="club__sr">Undo</span>
+        </button>
+        <button type="button" data-act="redo" title="Redo — ⇧⌘Z" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"
+            ><path
+              d="m15 7 5 4-5 4M20 11h-9a6 6 0 0 0 0 12h1"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"></path></svg
+          >
+          <span class="club__sr">Redo</span>
+        </button>
+      </div>
+
+      {/*
+        The tour, which is chrome rather than a character.
+
+        He does the inviting, on the home page and on the too-small screen,
+        and then gets out of the way. Five speech bubbles from a cartoon over a
+        design tool is a mascot explaining an interface, and the interface is
+        the thing being learnt.
+      */}
+      <div class="club__coach" data-club-host hidden role="dialog" aria-label="Designers Club tour">
+        <p data-club-says></p>
+        <div class="club__coach-foot">
+          <span class="club__dots" data-club-dots></span>
+          <button class="club__ghost" type="button" data-tour="skip">Skip</button>
+          <button class="club__go" type="button" data-tour="next">Next</button>
+        </div>
+      </div>
+
+      {/* Preview mode's way back, and the only chrome left on screen. */}
+      <button class="club__resume" type="button" data-club-resume hidden>Edit again</button>
+
+      <div class="club__toast" data-club-toast role="status" aria-live="polite" hidden></div>
+
+      {/* Spotlight for the tour. One element, moved and resized. */}
+      <div class="club__spot" data-club-spot hidden aria-hidden="true"></div>
+    </div>
+  </main>
+</BaseLayout>
+
+<style is:global>
+  /*
+   * The Club takes the window.
+   *
+   * The site's own page chrome — nav, logo, footer, the drawn scrollbar — is
+   * the portfolio's furniture, and in here the portfolio is the *content*.
+   * Leaving them on screen would put two navs in view at once, one of them
+   * inside the artboard.
+   */
+  html:has(.club),
+  html:has(.club-small) {
+    overflow: hidden;
+  }
+
+  html:has(.club) body > .site-nav,
+  html:has(.club) body > .site-logo,
+  html:has(.club) body > footer,
+  html:has(.club) .scroller,
+  html:has(.club-small) body > .site-nav,
+  html:has(.club-small) body > footer {
+    display: none !important;
+  }
+</style>
+
+<!--
+  Global, and it has to be.
+
+  Astro scopes a component's styles by stamping `data-astro-cid-…` on the
+  elements in its markup and adding a matching attribute selector to every
+  rule. That works perfectly for markup and not at all for elements built in
+  JavaScript — and the layers rows, every property field, the selection
+  overlay and the colour picker are all built in JavaScript. Scoped, they
+  matched nothing: a layer row rendered as an unstyled 240-pixel block and the
+  picker's saturation square had no height, which is why dragging it returned
+  black.
+
+  Every selector below is already namespaced under `.club` or `.club-small`,
+  so there is nothing here that can reach the rest of the site.
+-->
+<style is:global>
+  /* ---------------------------------------------------------------- */
+  /* Which state shows                                                 */
+  /* ---------------------------------------------------------------- */
+
+  .club-small {
+    display: none;
+    min-height: 100dvh;
+    place-content: center;
+    justify-items: center;
+    text-align: center;
+    gap: 14px;
+    padding: 8vh 24px;
+  }
+
+  .club-small img {
+    width: min(260px, 54vw);
+    height: auto;
+  }
+
+  .club-small h1 {
+    margin: 4px 0 0;
+    font-size: clamp(1.3rem, 4.4vw, 1.75rem);
+    letter-spacing: -0.02em;
+  }
+
+  .club-small p {
+    margin: 0;
+    max-width: 34ch;
+    color: var(--ink-muted);
+  }
+
+  .club-small .btn {
+    margin-top: 10px;
+  }
+
+  /*
+   * Decided in CSS, before a line of script.
+   *
+   * A phone must never see a frame of an editor it cannot use, and the
+   * decision cannot wait for JavaScript to measure the window.
+   */
+  @media (max-width: 1023px), (pointer: coarse) and (max-width: 1279px) {
+    .club-small {
+      display: grid;
+    }
+
+    .club {
+      display: none !important;
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* The workspace                                                     */
+  /* ---------------------------------------------------------------- */
+
+  .club {
+    --c-bg: #1e1e1e;
+    --c-panel: #2c2c2c;
+    --c-line: #3d3d3d;
+    --c-field: #383838;
+    --c-ink: #ffffff;
+    --c-dim: #b3b3b3;
+    --c-blue: #0d99ff;
+    --c-bar: 44px;
+    --c-panel-w: 240px;
+
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    grid-template-rows: var(--c-bar) 1fr;
+    background: var(--c-bg);
+    color: var(--c-ink);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- Top bar ---------------------------------------------------- */
+
+  .club__bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 8px 0 4px;
+    background: var(--c-panel);
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .club__home,
+  .club__ghost,
+  .club__go {
+    display: inline-grid;
+    place-items: center;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    border-radius: 5px;
+    font: inherit;
+    transition: background-color 120ms ease;
+  }
+
+  .club__home {
+    width: 26px;
+    height: 26px;
+    flex: none;
+  }
+
+  .club__home svg {
+    width: 8px;
+    height: 13px;
+  }
+
+  .club__wordmark {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  .club__right {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: auto;
+  }
+
+  .club__zoom {
+    min-width: 40px;
+    text-align: center;
+    color: var(--c-dim);
+  }
+
+  .club__ghost,
+  .club__go {
+    height: 26px;
+    padding: 0 9px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .club__ghost:hover {
+    background: #ffffff1a;
+  }
+
+  .club__go {
+    background: var(--c-blue);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .club__go:hover {
+    background: #3badff;
+  }
+
+  .club__div {
+    width: 1px;
+    height: 16px;
+    margin: 0 4px;
+    background: var(--c-line);
+  }
+
+  .club__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* ---- Panels ----------------------------------------------------- */
+
+  .club__body {
+    display: grid;
+    grid-template-columns: var(--c-panel-w) minmax(0, 1fr) var(--c-panel-w);
+    min-height: 0;
+  }
+
+  .club__panel {
+    background: var(--c-panel);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .club__panel--left {
+    border-right: 1px solid var(--c-line);
+  }
+
+  .club__panel--right {
+    border-left: 1px solid var(--c-line);
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .club__section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .club__section--grow {
+    flex: 1;
+    border-bottom: 0;
+  }
+
+  /*
+   * Section headings in Figma's key: small, bold, air above, and a rule
+   * underneath rather than a box around. It is the grammar that makes a long
+   * panel readable at a glance.
+   */
+  .club__section-head {
+    padding: 10px 10px 7px;
+    font-weight: 600;
+    color: var(--c-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .club__section-head--main {
+    border-bottom: 1px solid var(--c-line);
+    position: sticky;
+    top: 0;
+    background: var(--c-panel);
+    z-index: 2;
+  }
+
+  /* ---- Pages ------------------------------------------------------ */
+
+  .club__pages {
+    padding: 0 4px 8px;
+  }
+
+  .club__page {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    height: 26px;
+    padding: 0 7px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--c-dim);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .club__page svg {
+    width: 13px;
+    height: 13px;
+    flex: none;
+    opacity: 0.85;
+  }
+
+  .club__page:hover {
+    background: #ffffff12;
+    color: var(--c-ink);
+  }
+
+  .club__page[aria-selected='true'] {
+    background: var(--c-blue);
+    color: #fff;
+  }
+
+  /* ---- Layers ----------------------------------------------------- */
+
+  .club__layers {
+    flex: 1;
+    overflow: auto;
+    padding: 0 4px 16px;
+    overscroll-behavior: contain;
+  }
+
+  .club__layer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    height: 24px;
+    padding: 0 6px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--c-dim);
+    font: inherit;
+    text-align: left;
+    cursor: default;
+    user-select: none;
+  }
+
+  .club__layer:hover {
+    background: #ffffff12;
+  }
+
+  /*
+   * The selected row gets Figma's own treatment: a filled blue row, not a tint
+   * with a border. It is the strongest signal in the panel and it has to
+   * survive being one of forty rows of very similar text.
+   */
+  .club__layer[aria-selected='true'] {
+    background: var(--c-blue);
+    color: #fff;
+  }
+
+  .club__layer[aria-selected='true'] .club__type {
+    opacity: 1;
+  }
+
+  .club__layer--child {
+    padding-left: 20px;
+  }
+
+  .club__layer--section {
+    color: var(--c-ink);
+    font-weight: 500;
+  }
+
+  .club__type {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    opacity: 0.7;
+  }
+
+  .club__type svg {
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.3;
+  }
+
+  .club__layer-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .club__layer[data-hidden='1'] .club__layer-name {
+    opacity: 0.45;
+  }
+
+  .club__eye {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: inherit;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .club__layer:hover .club__eye,
+  .club__eye[data-on='0'],
+  .club__eye:focus-visible {
+    opacity: 0.8;
+  }
+
+  .club__eye:hover {
+    opacity: 1;
+    background: #ffffff1f;
+  }
+
+  .club__eye svg {
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+  }
+
+  /* ---- Properties ------------------------------------------------- */
+
+  .club__props {
+    padding-bottom: 20px;
+  }
+
+  .club__group {
+    padding: 9px 10px 11px;
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .club__group:last-child {
+    border-bottom: 0;
+  }
+
+  .club__group-name {
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--c-ink);
+  }
+
+  .club__fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 8px;
+  }
+
+  .club__field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .club__field--wide {
+    grid-column: 1 / -1;
+  }
+
+  .club__field--stack {
+    display: grid;
+    gap: 4px;
+  }
+
+  /*
+   * The label sits at the field's leading edge rather than above it.
+   *
+   * Figma puts a tiny X, Y, W, H beside the number instead of a caption over
+   * it, and the result is twice the density with no loss of clarity — which is
+   * what lets a properties panel hold this much without scrolling.
+   */
+  .club__field label {
+    flex: none;
+    min-width: 12px;
+    color: var(--c-dim);
+    font-size: 10px;
+  }
+
+  .club__field input[type='text'],
+  .club__field input[type='number'],
+  .club__field select,
+  .club__field textarea {
+    width: 100%;
+    min-width: 0;
+    height: 24px;
+    padding: 0 6px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: var(--c-field);
+    color: var(--c-ink);
+    font: inherit;
+  }
+
+  .club__field textarea {
+    height: auto;
+    min-height: 54px;
+    padding: 5px 6px;
+    resize: vertical;
+    line-height: 1.4;
+  }
+
+  .club__field input:hover,
+  .club__field select:hover,
+  .club__field textarea:hover {
+    border-color: #ffffff2e;
+  }
+
+  .club__field input:focus,
+  .club__field select:focus,
+  .club__field textarea:focus {
+    outline: none;
+    border-color: var(--c-blue);
+  }
+
+  .club__btn {
+    width: 100%;
+    height: 24px;
+    border: 1px solid #ffffff24;
+    border-radius: 4px;
+    background: var(--c-field);
+    color: var(--c-ink);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .club__btn:hover {
+    background: #454545;
+  }
+
+  .club__empty {
+    padding: 16px 12px;
+    color: var(--c-dim);
+    line-height: 1.55;
+  }
+
+  /* ---- Colour ----------------------------------------------------- */
+
+  /*
+   * A swatch that opens an inline picker, not the operating system's.
+   *
+   * `<input type="color">` hands the whole interaction to a native dialog that
+   * looks nothing like this and cannot be dragged smoothly — and dragging is
+   * the entire point of choosing a colour. The picker is two draggable
+   * surfaces and a hex field, which is what every design tool offers and what
+   * a designer's hands already know.
+   */
+  .club__swatch {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    height: 24px;
+    padding: 0 6px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: var(--c-field);
+    color: var(--c-ink);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .club__swatch:hover {
+    border-color: #ffffff2e;
+  }
+
+  .club__chip {
+    width: 14px;
+    height: 14px;
+    flex: none;
+    border-radius: 3px;
+    box-shadow: inset 0 0 0 1px #0000004d;
+  }
+
+  .club__picker {
+    position: fixed;
+    z-index: 95;
+    width: 216px;
+    padding: 10px;
+    border-radius: 8px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-line);
+    box-shadow: 0 12px 40px #00000073;
+  }
+
+  .club__sv {
+    position: relative;
+    height: 128px;
+    border-radius: 4px;
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  .club__hue {
+    position: relative;
+    height: 12px;
+    margin-top: 9px;
+    border-radius: 6px;
+    cursor: ew-resize;
+    touch-action: none;
+    background: linear-gradient(
+      to right,
+      #f00 0%,
+      #ff0 17%,
+      #0f0 33%,
+      #0ff 50%,
+      #00f 67%,
+      #f0f 83%,
+      #f00 100%
+    );
+  }
+
+  .club__knob {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 0 -6px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px #00000059;
+    pointer-events: none;
+  }
+
+  .club__hex {
+    width: 100%;
+    height: 24px;
+    margin-top: 9px;
+    padding: 0 6px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: var(--c-field);
+    color: var(--c-ink);
+    font: inherit;
+    text-transform: uppercase;
+  }
+
+  /* ---- Canvas ----------------------------------------------------- */
+
+  .club__canvas {
+    position: relative;
+    overflow: hidden;
+    background: var(--c-bg);
+    cursor: default;
+  }
+
+  .club__canvas[data-tool='hand'] {
+    cursor: grab;
+  }
+
+  .club__canvas[data-panning='1'] {
+    cursor: grabbing;
+  }
+
+  .club__canvas[data-tool='rect'],
+  .club__canvas[data-tool='ellipse'],
+  .club__canvas[data-tool='frame'],
+  .club__canvas[data-tool='text'] {
+    cursor: crosshair;
+  }
+
+  /*
+   * The artboard.
+   *
+   * Transformed rather than resized: scaling the frame would make the page
+   * inside it re-layout at a different width, so a designer zooming out would
+   * watch the portfolio reflow into its tablet breakpoint. A transform leaves
+   * the document at its real width and only changes how big it is drawn, which
+   * is what zoom means in a design tool.
+   */
+  .club__stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+    box-shadow: 0 10px 50px #00000080;
+    background: #fff;
+    will-change: transform;
+  }
+
+  .club__frame {
+    display: block;
+    border: 0;
+    background: #fff;
+  }
+
+  .club__overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* ---- Selection -------------------------------------------------- */
+
+  .club__sel {
+    position: absolute;
+    border: 1px solid var(--c-blue);
+    pointer-events: none;
+  }
+
+  .club__hover {
+    position: absolute;
+    border: 1px solid var(--c-blue);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .club__handle {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    margin: -4px 0 0 -4px;
+    border: 1px solid var(--c-blue);
+    border-radius: 1px;
+    background: #fff;
+    pointer-events: auto;
+  }
+
+  /*
+   * The size badge, under the selection, where Figma puts it.
+   *
+   * It is the one label a designer reads mid-drag, and below rather than above
+   * keeps it off whatever is being selected.
+   */
+  .club__tag {
+    position: absolute;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--c-blue);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  /* ---- Floating tool pill ----------------------------------------- */
+
+  /*
+   * At the bottom, over the canvas, where the tool it is imitating puts it.
+   *
+   * A toolbar in the top chrome is a website's toolbar; a pill floating over
+   * the artboard is a design tool's. It also puts the tools nearer the work
+   * than a strip at the top of an 860-pixel window ever could.
+   */
+  .club__tools {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    z-index: 55;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 5px;
+    transform: translateX(-50%);
+    border-radius: 12px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-line);
+    box-shadow: 0 8px 32px #0000008c;
+  }
+
+  .club__tools button {
+    display: inline-grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--c-ink);
+    cursor: pointer;
+    transition: background-color 120ms ease;
+  }
+
+  .club__tools svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+  }
+
+  .club__tools button[data-tool='select'] svg {
+    fill: currentColor;
+  }
+
+  .club__tools button:hover:not(:disabled) {
+    background: #ffffff1a;
+  }
+
+  .club__tools button[aria-pressed='true'] {
+    background: var(--c-blue);
+    color: #fff;
+  }
+
+  .club__tools button:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  .club__tools-div {
+    width: 1px;
+    height: 18px;
+    margin: 0 4px;
+    background: var(--c-line);
+  }
+
+  /* ---- Preview ---------------------------------------------------- */
+
+  .club[data-mode='preview'] .club__bar,
+  .club[data-mode='preview'] .club__panel,
+  .club[data-mode='preview'] .club__overlay,
+  .club[data-mode='preview'] .club__tools {
+    display: none;
+  }
+
+  .club[data-mode='preview'] .club__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .club[data-mode='preview'] {
+    grid-template-rows: 1fr;
+  }
+
+  .club__resume {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 70;
+    height: 32px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--c-blue);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 8px 24px #00000059;
+  }
+
+  /* ---- The tour --------------------------------------------------- */
+
+  .club__coach {
+    position: fixed;
+    z-index: 80;
+    width: 268px;
+    padding: 12px 13px 11px;
+    border-radius: 9px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-line);
+    box-shadow: 0 14px 44px #00000099;
+  }
+
+  .club__coach p {
+    margin: 0 0 11px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--c-ink);
+  }
+
+  .club__coach-foot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .club__dots {
+    display: flex;
+    gap: 4px;
+    margin-right: auto;
+  }
+
+  .club__dots i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #ffffff38;
+  }
+
+  .club__dots i[data-on='1'] {
+    background: var(--c-blue);
+  }
+
+  /*
+   * The spotlight: one element that moves, rather than four masks.
+   *
+   * A huge spread shadow is what dims everything outside the hole, which means
+   * the "cut-out" is really just this box's own border-radius. Nothing is
+   * layered over the UI, so the editor underneath stays visible and legible
+   * the whole way through the tour.
+   */
+  .club__spot {
+    position: fixed;
+    z-index: 75;
+    border-radius: 10px;
+    pointer-events: none;
+    box-shadow: 0 0 0 9999px #00000073;
+    transition:
+      top 300ms var(--ease-out),
+      left 300ms var(--ease-out),
+      width 300ms var(--ease-out),
+      height 300ms var(--ease-out);
+  }
+
+  /* ---- Toast ------------------------------------------------------ */
+
+  .club__toast {
+    position: fixed;
+    left: 50%;
+    top: calc(var(--c-bar) + 12px);
+    z-index: 90;
+    transform: translateX(-50%);
+    padding: 7px 13px;
+    border-radius: 999px;
+    background: var(--c-panel);
+    border: 1px solid var(--c-line);
+    box-shadow: 0 10px 30px #0000006b;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .club__spot {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  /*
+   * Nothing of the editor loads until the window is big enough to hold it.
+   *
+   * The dynamic import is the point: on a phone this module is never fetched,
+   * never parsed and never run, so the too-small state costs a few hundred
+   * bytes of markup rather than an editor's worth of JavaScript. It also keeps
+   * every byte of the Club out of the normal portfolio's bundle, because
+   * nothing else imports it.
+   */
+  const FITS = '(min-width: 1024px)';
+
+  function boot(): void {
+    const root = document.querySelector<HTMLElement>('[data-club-root]');
+    if (!root) return;
+
+    const fits = window.matchMedia(FITS).matches && !window.matchMedia('(pointer: coarse)').matches;
+    if (!fits) return;
+
+    root.hidden = false;
+    void import('../scripts/club/index').then((m) => m.startClub(root));
+  }
+
+  document.addEventListener('astro:page-load', boot);
+</script>

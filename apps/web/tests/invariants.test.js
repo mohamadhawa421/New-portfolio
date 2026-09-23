@@ -140,6 +140,41 @@ test('module listeners are bound to document or window', () => {
     'frame', // figma-explorer builds the iframe itself
     'button', // designer-sound's own control, created and held by the module
     'audio', // the AudioContext's element, likewise
+    /*
+     * The Designers Club sandbox's own Document — a different document, not an
+     * element in this page. The rule above is about the router replacing *this*
+     * page underneath a binding; that document is recreated whenever the frame
+     * loads and `bindSandboxInput` runs again each time it does. Named
+     * `sandboxDoc` rather than `doc` precisely so this exemption stays narrow
+     * and cannot quietly cover an ordinary page element.
+     */
+    'sandboxDoc',
+    /*
+     * An element in the sandbox document made editable for the length of one
+     * edit. Both its listeners are removed when the edit ends, so nothing
+     * survives the gesture, let alone a navigation.
+     */
+    'editable',
+    // Created and owned outright by the Club's image picker, like `button` above.
+    'filePicker',
+    // Not a DOM node at all — a FileReader, which has the same interface.
+    'fileReader',
+    /*
+     * A control the properties panel builds for one field. It is created,
+     * bound and discarded together — the panel replaces its children on every
+     * render — so the binding never outlives the element, which is the thing
+     * this test exists to catch. Named `propInput` rather than `input` so the
+     * exemption cannot quietly cover a form control in page markup.
+     */
+    'propInput',
+    /*
+     * The Club's colour picker builds these and owns them for their whole
+     * life — it is removed as one, listeners and all, whenever it closes. The
+     * drag surfaces in particular must be bound directly, because they use
+     * pointer capture to keep reporting once the pointer has left the square.
+     */
+    'pickerSurface',
+    'pickerHex',
   ]);
 
   const offenders = [];

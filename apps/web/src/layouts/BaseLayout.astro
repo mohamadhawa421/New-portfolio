@@ -402,8 +402,24 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
     </script>
 
     <script>
+      import { isClub } from '../scripts/club';
       import '../scripts/chrome.ts';
       import '../scripts/theme.ts';
+
+      /*
+       * The Club's canvas can serialise itself, and only the canvas can.
+       *
+       * Turning this document into a PNG means reading the computed style of
+       * every node, and computed style belongs to a window — asked from the
+       * editor's window about nodes living in this one, the answers are
+       * unreliable across engines and the export comes back missing half its
+       * styling. So the capture runs in the realm that owns the nodes, which
+       * is here.
+       *
+       * Behind a dynamic import inside a club-only branch, so an ordinary
+       * visit never fetches the module or the imaging library under it.
+       */
+      if (isClub()) void import('../scripts/club/capture');
 
       /**
        * The logo becomes the way back, on a phone, inside a project.

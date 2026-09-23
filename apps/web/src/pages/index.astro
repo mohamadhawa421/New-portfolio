@@ -389,6 +389,49 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     </section>
 
     {/* ---------------------------------------------------------------- */}
+    {/* Designers Club                                                    */}
+    {/* ---------------------------------------------------------------- */}
+    {/*
+      A side door, not a feature banner.
+
+      It sits here on purpose: after the work, the services and the about —
+      everything a client came to read — and immediately before the contact
+      block. Somebody who has got this far is either hiring or curious, and
+      this is addressed squarely at the second. Putting it any higher would
+      make the portfolio's first offer "come and play" rather than "here is
+      the work", and the hero and the project list are not negotiable.
+
+      One line, one aside, one link. The temptation with an easter egg is to
+      announce it, and announcing it is what turns a private joke into an ad.
+    */}
+    <section class="section section--light club-invite" data-lift data-tile="light">
+      <div class="shell club-invite__inner">
+        <img
+          class="club-invite__who"
+          src="/character-club.webp"
+          alt=""
+          width="560"
+          height="463"
+          loading="lazy"
+          decoding="async"
+          data-reveal="0"
+        />
+        <div class="club-invite__copy">
+          <div class="eyebrow" data-reveal="0">Designers Club</div>
+          <h2 class="club-invite__title" data-reveal="1">Think you can improve my portfolio?</h2>
+          <p class="club-invite__note" data-reveal="2">
+            A little playground for designers. Move things, retype them, recolour them — then
+            export the result and send it over. Desktop only, and nothing you do here touches
+            the real thing.
+          </p>
+          <a class="btn btn--primary club-invite__go" href="/designers-club" data-reveal="3">
+            Enter the club&nbsp;→
+          </a>
+        </div>
+      </div>
+    </section>
+
+    {/* ---------------------------------------------------------------- */}
     {/* Contact                                                           */}
     {/* ---------------------------------------------------------------- */}
     <section class="section section--dark contact" data-lift data-tile="dark">
@@ -1646,6 +1689,70 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
 
     .hero__portrait {
       margin-top: 52px;
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Designers Club invitation                                         */
+  /* ---------------------------------------------------------------- */
+
+  /*
+   * Quiet, and deliberately the smallest section on the page.
+   *
+   * Everything above it is the case for hiring him; this is an aside to a
+   * different reader. So it takes the narrow measure, sits the character at a
+   * size that reads as a sticker rather than a mascot, and uses the page's own
+   * eyebrow and button rather than inventing a treatment of its own — the Club
+   * is allowed to be playful once you are inside it, not on the way in.
+   */
+  .club-invite__inner {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(18px, 3vw, 40px);
+    max-width: 880px;
+  }
+
+  .club-invite__who {
+    width: clamp(120px, 15vw, 186px);
+    height: auto;
+    display: block;
+  }
+
+  .club-invite__title {
+    margin: 6px 0 10px;
+    font-size: clamp(1.45rem, 3vw, 2.1rem);
+    letter-spacing: -0.022em;
+    line-height: 1.1;
+    text-wrap: balance;
+  }
+
+  .club-invite__note {
+    margin: 0 0 18px;
+    max-width: 52ch;
+    color: var(--ink-muted);
+    line-height: 1.55;
+  }
+
+  .club-invite__go {
+    /* The one place on the page a button says something playful. */
+    white-space: nowrap;
+  }
+
+  /*
+   * On a phone the Club itself is unavailable, so the invitation says less and
+   * stacks — it is still worth knowing the room exists, and the page it links
+   * to explains why it will not open here.
+   */
+  @media (max-width: 640px) {
+    .club-invite__inner {
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: start;
+      gap: 12px;
+    }
+
+    .club-invite__who {
+      width: 112px;
     }
   }
 </style>
