@@ -71,7 +71,7 @@ export const SECTIONS: SectionSpec[] = [
     children: [
       { key: 'meta', label: 'Role · Location', selector: '.hero__meta', type: 'text' },
       { key: 'title', label: 'Name', selector: '.hero__title', type: 'text' },
-      { key: 'lead', label: 'Headline', selector: '.hero__lead', type: 'text' },
+      { key: 'lead', label: 'Headline', selector: '.hero__subtitle', type: 'text' },
       { key: 'intro', label: 'Description', selector: '.hero__intro', type: 'text' },
       { key: 'cta1', label: 'Button · See the work', selector: '.btn--primary', type: 'button' },
       { key: 'cta2', label: 'Button · Start a project', selector: '.btn--secondary', type: 'button' },

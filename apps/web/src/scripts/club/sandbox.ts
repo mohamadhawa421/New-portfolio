@@ -23,15 +23,7 @@
  * the bookkeeping that leaves an element stuck at an opacity nobody set.
  */
 
-import {
-  GENERIC,
-  GENERIC_CAP,
-  PROPS_FOR,
-  catalogueFor,
-  type ClubType,
-  type NodeSpec,
-  type SectionSpec,
-} from './schema';
+import { PROPS_FOR, catalogueFor, type ClubType } from './schema';
 import type { Props, SandboxState } from './store';
 
 export interface ClubNode {
@@ -118,85 +110,123 @@ export class Sandbox {
   /* Adoption                                                          */
   /* ---------------------------------------------------------------- */
 
+  /**
+   * Everything on the page becomes a layer.
+   *
+   * This started as a hand-written catalogue, which produced a beautiful
+   * layer list and a frustrating editor: if a thing was not in the table it
+   * could not be clicked, and no table is ever going to cover a whole site.
+   * In the tool this imitates every element on the canvas is selectable, so
+   * every element here is too — the tree is walked, and what is found is
+   * typed by what it actually is.
+   *
+   * The catalogue did not go away; it stopped being a gate and became a
+   * dictionary. Where it names something, that name is used — Name, Headline,
+   * Button · See the work read far better than H1, P, A — and everything else
+   * is named after its own content. Best of both: a legible tree at the top,
+   * and nothing unreachable underneath it.
+   *
+   * What is skipped is only what could not be edited anyway: the insides of an
+   * SVG (the icon itself is adopted, its forty paths are not), scripts and
+   * templates, and anything with no box on screen. Bounded by `MAX_NODES`,
+   * because the hit test and the layers list are both linear in this and a
+   * page is allowed to be enormous.
+   */
   private adopt(doc: Document): void {
     this.nodes.clear();
     this.order = [];
 
+    const named = this.namesFrom(doc);
+    const root = doc.querySelector<HTMLElement>('main') ?? doc.body;
+    let count = 0;
+
+    const walk = (el: HTMLElement, parentId: string | null, path: string): void => {
+      for (const [i, raw] of Array.from(el.children).entries()) {
+        if (count >= MAX_NODES) return;
+        const child = raw as HTMLElement;
+
+        if (SKIP.has(child.tagName)) continue;
+
+        /*
+         * No box is not the same as nothing inside.
+         *
+         * The hero's copy wrapper is `display: contents`, which has no
+         * rectangle at all — and the first version treated that as "skip",
+         * which skipped the headline, the role line, the description and both
+         * buttons with it, because every one of them lives inside it. An
+         * element with no box cannot be a layer, but its children still can:
+         * it is passed through, and they are adopted onto its parent.
+         */
+        const box = child.getBoundingClientRect();
+        const real = box.width > 0 && box.height > 0;
+
+        let id = `${path}-${i}`;
+
+        if (real) {
+          const known = named.get(child);
+          id = known?.id ?? id;
+          const type = known?.type ?? typeOf(child);
+
+          this.add({
+            id,
+            label: known?.label ?? nameOf(child, type),
+            type,
+            parentId,
+            el: child,
+          });
+          count += 1;
+        }
+
+        /*
+         * An SVG is a picture, not a folder of paths. Descending into one
+         * produces dozens of layers nobody can select meaningfully and buries
+         * everything after it in the list.
+         */
+        if (child.tagName.toUpperCase() === 'SVG') continue;
+
+        walk(child, real ? id : parentId, id);
+      }
+    };
+
+    walk(root, null, 'n');
+  }
+
+  /**
+   * The catalogue, resolved to the elements it describes.
+   *
+   * Only for the names and the types: the walk above adopts everything either
+   * way, and this is what decides whether a thing is called "Headline" or "P".
+   */
+  private namesFrom(doc: Document): Map<HTMLElement, { id: string; label: string; type: ClubType }> {
+    const named = new Map<HTMLElement, { id: string; label: string; type: ClubType }>();
     const catalogue = catalogueFor(this.path);
-    if (!catalogue) {
-      this.adoptGenerically(doc);
-      return;
-    }
+    if (!catalogue) return named;
 
     for (const section of catalogue) {
       const host = doc.querySelector<HTMLElement>(section.selector);
       if (!host) continue;
-
-      this.add({
-        id: section.key,
-        label: section.label,
-        type: 'container',
-        parentId: null,
-        el: host,
-      });
+      named.set(host, { id: section.key, label: section.label, type: 'container' });
 
       for (const spec of section.children) {
         const found = spec.all
           ? Array.from(host.querySelectorAll<HTMLElement>(spec.selector))
-          : [host.querySelector<HTMLElement>(spec.selector)].filter(Boolean as unknown as (v: HTMLElement | null) => v is HTMLElement);
+          : [host.querySelector<HTMLElement>(spec.selector)].filter(
+              Boolean as unknown as (v: HTMLElement | null) => v is HTMLElement
+            );
 
         found.forEach((el, i) => {
-          const id = spec.all ? `${section.key}.${spec.key}.${i}` : `${section.key}.${spec.key}`;
-          const label = spec.all
-            ? (spec.eachLabel ?? `${spec.label} %n`).replace('%n', String(i + 1))
-            : spec.label;
-          this.add({ id, label, type: spec.type, parentId: section.key, el });
+          named.set(el, {
+            id: spec.all ? `${section.key}.${spec.key}.${i}` : `${section.key}.${spec.key}`,
+            label: spec.all
+              ? (spec.eachLabel ?? `${spec.label} %n`).replace('%n', String(i + 1))
+              : spec.label,
+            type: spec.type,
+          });
         });
       }
     }
-  }
 
-  /**
-   * A page with no catalogue of its own, read by shape.
-   *
-   * Every `section` becomes a group named after its own heading, and the
-   * headings, paragraphs, pictures and buttons inside it become layers. It is
-   * plainer than the home page's hand-written tree and it is the reason the
-   * Club is not a one-page feature: About, Work and Contact are editable
-   * without a line of code describing them, and so is whatever page ships
-   * next.
-   */
-  private adoptGenerically(doc: Document): void {
-    const sections = Array.from(doc.querySelectorAll<HTMLElement>('main section, main > div'));
-
-    sections.forEach((host, s) => {
-      const heading = host.querySelector('h1, h2')?.textContent?.trim();
-      const key = `s${s}`;
-      this.add({
-        id: key,
-        label: trim(heading) || `Section ${s + 1}`,
-        type: 'container',
-        parentId: null,
-        el: host,
-      });
-
-      let taken = 0;
-      for (const spec of GENERIC) {
-        for (const [i, el] of Array.from(host.querySelectorAll<HTMLElement>(spec.selector)).entries()) {
-          if (taken >= GENERIC_CAP) break;
-          // A node already adopted by an earlier rule is not adopted twice.
-          if (el.dataset.clubId) continue;
-          taken += 1;
-          this.add({
-            id: `${key}.${spec.key}.${i}`,
-            label: labelFor(spec, el, i),
-            type: spec.type,
-            parentId: key,
-            el,
-          });
-        }
-      }
-    });
+    return named;
   }
 
   private add(node: ClubNode): void {
@@ -209,15 +239,12 @@ export class Sandbox {
     if (node.type === 'image') {
       this.baseSrc.set(node.id, (node.el as HTMLImageElement).getAttribute('src') ?? '');
     }
-    // A button is a frame, so its words become a layer of their own.
-    if (node.type === 'button') this.addLabel(node);
-
     /*
-     * And so does any other frame inside a section. Sections themselves are
-     * left to the catalogue, which already names their parts properly — doing
-     * both would list the hero's headline twice.
+     * A button holding a bare text node is the one case the walk cannot
+     * reach, because a text node is not an element and has no box to adopt.
+     * Wrapping it is what gives the words a layer of their own.
      */
-    if (node.type === 'container' && node.parentId !== null) this.addTextInside(node);
+    if (node.type === 'button') this.addLabel(node);
   }
 
   /**
@@ -258,59 +285,6 @@ export class Sandbox {
       parentId: button.id,
       el: label,
     });
-  }
-
-  /**
-   * Every run of text inside a frame becomes a layer of its own.
-   *
-   * This is the same idea as a button's label, generalised — because that is
-   * what the tool this imitates does everywhere. A project row is a frame
-   * holding a number, a title and a tag; selecting it gave one box and no way
-   * to reach the words, so the title could not be retyped or recoloured
-   * without editing the whole row. In Figma there is no such thing as a frame
-   * with text in it that you cannot select.
-   *
-   * "A run of text" means the deepest element that directly holds words: an
-   * element with text whose children have none. That is what stops this
-   * adopting a wrapper and its contents as two layers saying the same thing,
-   * and it is why nothing here needs a list of tag names.
-   *
-   * Capped, because a frame is allowed to be a paragraph of spans and a layer
-   * list nobody can read is no more use than no list at all.
-   */
-  private addTextInside(host: ClubNode): void {
-    const CAP = 10;
-    let found = 0;
-
-    const walk = (el: Element): void => {
-      for (const child of Array.from(el.children)) {
-        if (found >= CAP) return;
-        const node = child as HTMLElement;
-
-        // Already a layer in its own right — the catalogue got there first.
-        if (node.dataset.clubId) continue;
-
-        const words = (node.textContent ?? '').trim();
-        if (!words) continue;
-
-        const deeper = Array.from(node.children).some((c) => (c.textContent ?? '').trim());
-        if (deeper) {
-          walk(node);
-          continue;
-        }
-
-        found += 1;
-        this.add({
-          id: `${host.id}.t${found}`,
-          label: trim(words) || `Text ${found}`,
-          type: 'text',
-          parentId: host.id,
-          el: node,
-        });
-      }
-    };
-
-    walk(host.el);
   }
 
   /* ---------------------------------------------------------------- */
@@ -646,11 +620,58 @@ function trim(text: string | undefined): string {
   return clean.length > 28 ? `${clean.slice(0, 27)}…` : clean;
 }
 
-/** A generic layer is named after what it says, and numbered only if it is mute. */
-function labelFor(spec: NodeSpec, el: HTMLElement, i: number): string {
-  if (spec.type === 'image') {
-    const alt = trim((el as HTMLImageElement).alt);
-    return alt || (spec.eachLabel ?? 'Image %n').replace('%n', String(i + 1));
+/**
+ * The ceiling on how many things one page offers.
+ *
+ * Both the hit test and the layers list are linear in this, and a page is
+ * allowed to be enormous. Set where the cost stops being free rather than
+ * where it starts to hurt.
+ */
+const MAX_NODES = 600;
+
+/** Not layers: no box, no meaning, or metadata. */
+const SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'BR', 'META', 'LINK', 'TITLE']);
+
+/** What an element is, which decides the properties it is offered. */
+function typeOf(el: HTMLElement): ClubType {
+  const tag = el.tagName.toUpperCase();
+  if (tag === 'IMG' || tag === 'PICTURE' || tag === 'VIDEO' || tag === 'CANVAS' || tag === 'SVG') {
+    return 'image';
   }
-  return trim(el.textContent ?? '') || (spec.eachLabel ?? '%n').replace('%n', String(i + 1));
+  if (tag === 'A' || tag === 'BUTTON' || el.getAttribute('role') === 'button') return 'button';
+
+  /*
+   * Text is the deepest thing holding words, not anything containing them. A
+   * section contains its headline; only the headline *is* text, and only it
+   * should be offered a font size.
+   */
+  const words = (el.textContent ?? '').trim();
+  if (words) {
+    const deeper = Array.from(el.children).some((c) => (c.textContent ?? '').trim());
+    if (!deeper) return 'text';
+  }
+
+  return 'container';
+}
+
+/** What to call it, when the catalogue has no opinion. */
+function nameOf(el: HTMLElement, type: ClubType): string {
+  if (type === 'image') {
+    const alt = trim((el as HTMLImageElement).alt ?? '');
+    return alt || 'Image';
+  }
+  if (type === 'text' || type === 'button') {
+    const words = trim(el.textContent ?? '');
+    if (words) return words;
+  }
+
+  // A frame is named after what it is, the way an unnamed frame is in Figma.
+  const tag = el.tagName.toLowerCase();
+  if (tag === 'section') return 'Section';
+  if (tag === 'header' || tag === 'footer' || tag === 'nav' || tag === 'main') {
+    return tag[0].toUpperCase() + tag.slice(1);
+  }
+  if (tag === 'ul' || tag === 'ol') return 'List';
+  if (tag === 'li') return 'List item';
+  return 'Frame';
 }

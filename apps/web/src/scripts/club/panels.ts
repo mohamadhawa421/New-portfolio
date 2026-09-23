@@ -181,26 +181,35 @@ const GROUPS: { name: string; keys: string[] }[] = [
  * place relative to the field.
  */
 const LABEL: Record<string, string> = {
-  text: '',
-  src: '',
-  fontSize: 'Aa',
-  fontWeight: 'W',
-  lineHeight: '↕',
-  letterSpacing: '↔',
-  align: '',
-  color: '',
-  bg: '',
-  radius: '⌜',
-  opacity: '◐',
-  fit: '',
   x: 'X',
   y: 'Y',
   w: 'W',
   h: 'H',
-  padX: '↔',
-  padY: '↕',
-  gap: '⇹',
+  fontWeight: 'W',
 };
+
+/*
+ * Drawn marks where a letter will not do.
+ *
+ * X, Y, W and H are glyphs a designer reads instantly and nothing is gained by
+ * drawing them. Everything else was a unicode character standing in for an
+ * icon — ⌜ for corner radius, ◐ for opacity, ⇹ for gap — and those arrive at a
+ * different weight and baseline from the type around them in every font, which
+ * is most of what made the panel look improvised. These are all the same box,
+ * the same stroke, and they line up with each other.
+ */
+const ICON: Record<string, string> = {
+  fontSize: '<path d="M2 11V3h5M4 7h3M8.5 11V6h3.5M10 9h2" />',
+  lineHeight: '<path d="M2 2h10M2 11h10M7 4.5v4M5.6 6 7 4.5 8.4 6M5.6 7 7 8.5 8.4 7" />',
+  letterSpacing: '<path d="M2 2v9M12 2v9M4.5 8.5 7 4l2.5 4.5M5.4 7h3.2" />',
+  radius: '<path d="M2 11V6a4 4 0 0 1 4-4h5" />',
+  opacity:
+    '<circle cx="7" cy="6.5" r="4.6" /><path d="M7 1.9v9.2a4.6 4.6 0 0 0 0-9.2Z" fill="currentColor" stroke="none" />',
+  padX: '<path d="M2 2v9M12 2v9M4.5 6.5h5M4.5 6.5 6 5M4.5 6.5 6 8M9.5 6.5 8 5M9.5 6.5 8 8" />',
+  padY: '<path d="M2 2h10M2 11h10M7 4v5M7 4 5.5 5.5M7 4 8.5 5.5M7 9l-1.5-1.5M7 9l1.5-1.5" />',
+  gap: '<path d="M2 2v9M12 2v9M5 6.5h4M5 6.5 6.4 5M5 6.5 6.4 8M9 6.5 7.6 5M9 6.5 7.6 8" />',
+};
+
 
 /** What the control is, for a screen reader and for the field's `title`. */
 const TITLE: Record<string, string> = {
@@ -399,12 +408,18 @@ function field(
    * and `aria-label` on the control carries the name. A field with no glyph at
    * all — the textarea, the colour swatch — gets no empty label box either.
    */
-  if (glyph) {
+  const drawn = ICON[key];
+  if (glyph || drawn) {
     const label = document.createElement('label');
     label.setAttribute('for', id);
     label.setAttribute('aria-hidden', 'true');
-    label.textContent = glyph;
     label.title = title;
+    if (drawn) {
+      label.className = 'club__ico';
+      label.innerHTML = `<svg viewBox="0 0 14 13">${drawn}</svg>`;
+    } else {
+      label.textContent = glyph;
+    }
     wrap.appendChild(label);
   }
 
@@ -492,18 +507,22 @@ function field(
   propInput.setAttribute('aria-label', title);
 
   /*
-   * The placeholder is the measured value, and the field itself is empty
-   * until the designer sets one.
+   * The measured value is shown, in full, as the field's value.
    *
-   * That distinction is the whole reason overrides are sparse: an empty W
-   * means "whatever the portfolio does", which is responsive and correct, and
-   * typing a number is a deliberate act of pinning it. Pre-filling every box
-   * with a measurement would turn simply selecting something into overriding
-   * everything about it.
+   * It began as a placeholder — empty field, grey measurement behind it — on
+   * the reasoning that an empty W means "whatever the portfolio does" and
+   * typing is a deliberate act of pinning it. That reasoning is sound and the
+   * result was still wrong: a panel of grey ghosts reads as a form nobody has
+   * filled in, when in fact every one of those numbers is the truth about the
+   * selection. Figma shows the live value in white for that reason, and so
+   * does this.
+   *
+   * The sparse-override model underneath is untouched: showing a number is not
+   * storing one. Nothing is written until the field is edited, and emptying it
+   * hands the property back to the stylesheet.
    */
   const current = props[key as keyof Props];
-  if (current !== undefined) propInput.value = String(current);
-  propInput.placeholder = String(fallback(key, node, measured));
+  propInput.value = String(current ?? fallback(key, node, measured));
 
   if (key === 'opacity') {
     propInput.step = '0.05';

@@ -751,6 +751,24 @@ const PAGES = [
     font-size: 10px;
   }
 
+  /* Drawn field marks: the same box and stroke as each other, and aligned. */
+  .club__ico {
+    display: grid;
+    place-items: center;
+    width: 14px;
+    height: 13px;
+  }
+
+  .club__ico svg {
+    width: 14px;
+    height: 13px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.15;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
   .club__field input[type='text'],
   .club__field input[type='number'],
   .club__field select,
@@ -1030,6 +1048,32 @@ const PAGES = [
   }
 
   .club__pad-n {
+    padding: 0 4px;
+    border-radius: 3px;
+    background: #ff3d8a;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 15px;
+    white-space: nowrap;
+  }
+
+  /*
+   * The measurement between two things, in the same key as the padding.
+   *
+   * A hairline rather than a band, because a distance is a line and an area is
+   * a fill — reading them as the same thing is what makes a measuring overlay
+   * confusing the moment both are on screen at once.
+   */
+  .club__measure {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    background: #ff3d8a;
+    pointer-events: none;
+  }
+
+  .club__measure-n {
     padding: 0 4px;
     border-radius: 3px;
     background: #ff3d8a;

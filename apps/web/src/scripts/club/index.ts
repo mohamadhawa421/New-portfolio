@@ -245,7 +245,15 @@ export function startClub(root: HTMLElement): void {
      * Only where there is padding to show: a band of zero is noise, and four
      * of them around every text layer would make the modifier useless.
      */
-    if (altHeld) drawPadding(node, box);
+    if (altHeld) {
+      drawPadding(node, box);
+      // And the gap to whatever the pointer is over, which is the other half
+      // of what the modifier is for.
+      if (hovered && hovered !== selected) {
+        const other = sandbox.boxOf(hovered);
+        if (other) drawMeasure(box, other);
+      }
+    }
 
     // Sections are containers for the tree, not things to drag by the corner.
     if (node.parentId === null) return;
@@ -257,6 +265,51 @@ export function startClub(root: HTMLElement): void {
       h.style.cssText = `left:${box.x + box.width * fx}px;top:${box.y + box.height * fy}px;transform:scale(var(--z,1));cursor:${dir}-resize`;
       overlay.appendChild(h);
     }
+  }
+
+  /**
+   * The distance from the selection to whatever the pointer is over.
+   *
+   * This is the half of Alt that answers "how far apart are these two", and it
+   * is the measurement a designer reaches for constantly — the gap between a
+   * heading and the paragraph under it, between two rows, between a button and
+   * the edge of its section.
+   *
+   * Only the axes where the boxes genuinely do not overlap. Two things that
+   * overlap horizontally have no horizontal gap to report, and inventing one —
+   * the distance between their left edges, say — is a number that looks
+   * authoritative and means nothing. Figma shows nothing there for the same
+   * reason.
+   */
+  function drawMeasure(from: DOMRect, to: DOMRect): void {
+    const line = (x: number, y: number, w: number, h: number, value: number): void => {
+      const rule = document.createElement('div');
+      rule.className = 'club__measure';
+      rule.style.cssText = `left:${x}px;top:${y}px;width:${Math.max(w, 1)}px;height:${Math.max(h, 1)}px`;
+
+      const tag = document.createElement('span');
+      tag.className = 'club__measure-n';
+      tag.textContent = String(Math.round(value));
+      tag.style.transform = 'translate(-50%, -50%) scale(var(--z,1))';
+      rule.appendChild(tag);
+
+      overlay.appendChild(rule);
+    };
+
+    // Horizontal: one is entirely to the left of the other.
+    const midY = Math.max(from.top, to.top) + Math.min(from.bottom, to.bottom) > 0
+      ? (Math.max(from.top, to.top) + Math.min(from.bottom, to.bottom)) / 2
+      : from.top + from.height / 2;
+
+    if (to.right <= from.left) line(to.right, midY, from.left - to.right, 0, from.left - to.right);
+    else if (from.right <= to.left) line(from.right, midY, to.left - from.right, 0, to.left - from.right);
+
+    // Vertical: one is entirely above the other.
+    const midX = (Math.max(from.left, to.left) + Math.min(from.right, to.right)) / 2;
+    const useX = Number.isFinite(midX) ? midX : from.left + from.width / 2;
+
+    if (to.bottom <= from.top) line(useX, to.bottom, 0, from.top - to.bottom, from.top - to.bottom);
+    else if (from.bottom <= to.top) line(useX, from.bottom, 0, to.top - from.bottom, to.top - from.bottom);
   }
 
   /** The four inside edges of a box, drawn and labelled. */
@@ -950,9 +1003,20 @@ export function startClub(root: HTMLElement): void {
       canvas.dataset.tool = 'hand';
     }
 
-    if (e.altKey && !altHeld) {
-      altHeld = true;
-      drawOverlay();
+    /*
+     * Alt belongs to the editor for as long as the editor is open.
+     *
+     * Windows and Linux give a bare Alt press to the browser's menu bar, which
+     * takes focus out of the page — so the modifier worked exactly once and
+     * then every following press went to the chrome instead. Preventing the
+     * default keeps it here, which is what a design tool does with it.
+     */
+    if (e.key === 'Alt' || e.altKey) {
+      e.preventDefault();
+      if (!altHeld) {
+        altHeld = true;
+        drawOverlay();
+      }
     }
 
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
@@ -1049,10 +1113,27 @@ export function startClub(root: HTMLElement): void {
       canvas.dataset.tool = tool;
     }
 
+    if (e.key === 'Alt') e.preventDefault();
+
     if (!e.altKey && altHeld) {
       altHeld = false;
       drawOverlay();
     }
+  }
+
+  /*
+   * And a window that loses focus has no modifier held any more.
+   *
+   * Without this, alt-tabbing away leaves `altHeld` true for ever: the keyup
+   * lands in whatever window took focus, never here, so the measurements stay
+   * frozen on screen until the key is pressed and released again.
+   */
+  function onBlur(): void {
+    if (!altHeld && !spaceHeld) return;
+    altHeld = false;
+    spaceHeld = false;
+    canvas.dataset.tool = tool;
+    drawOverlay();
   }
 
   /*
@@ -1172,7 +1253,24 @@ export function startClub(root: HTMLElement): void {
 
   document.addEventListener('keydown', onKey);
   document.addEventListener('keyup', onKeyUp);
+  window.addEventListener('blur', onBlur);
   window.addEventListener('resize', fit);
+
+  /*
+   * The drawn pointer goes, even when it was already running.
+   *
+   * `Cursor.astro` now declines to *start* inside the workspace, which covers
+   * a cold load — but arriving from the home page it is already running, and
+   * `has-custom-cursor` sets `cursor: none !important` on every element in the
+   * document and is never taken off. So the ring followed the pointer into the
+   * panels and the native arrow stayed hidden underneath it.
+   *
+   * Taking the class off is enough and is self-repairing: the cursor's own
+   * page-load handler puts it back whenever it is running and the class is
+   * missing, which is exactly what happens on the way out of the Club.
+   */
+  document.documentElement.classList.remove('has-custom-cursor');
+  document.querySelector<HTMLElement>('[data-cursor]')?.setAttribute('hidden', '');
 
   bindEditorInput();
   setTool('select');
@@ -1206,6 +1304,7 @@ export function startClub(root: HTMLElement): void {
     window.removeEventListener('pointerup', onPointerUp);
     document.removeEventListener('wheel', onWheel);
     document.removeEventListener('click', onClick);
+    window.removeEventListener('blur', onBlur);
     window.removeEventListener('resize', fit);
     frame.src = 'about:blank';
     document.removeEventListener('astro:before-swap', dispose);
