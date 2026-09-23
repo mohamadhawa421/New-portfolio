@@ -51,16 +51,30 @@ export function renderLayers(
   hooks: PanelHooks
 ): void {
   const nodes = sandbox.list();
-  const sections = nodes.filter((n) => n.parentId === null);
-
   const frag = document.createDocumentFragment();
 
-  for (const section of sections) {
-    frag.appendChild(row(section, true, selectedId, store, hooks));
-    for (const child of nodes.filter((n) => n.parentId === section.id)) {
-      frag.appendChild(row(child, false, selectedId, store, hooks));
-    }
+  /*
+   * The tree renders to whatever depth it has, rather than to two levels.
+   *
+   * It used to assume section-then-child, which was true until frames started
+   * adopting the text inside them: a project row's title is a child of the
+   * row, which is a child of the section, and under the old renderer it simply
+   * did not appear. Walking parents is both correct and shorter, and it means
+   * a deeper catalogue needs no change here.
+   */
+  const childrenOf = new Map<string | null, ClubNode[]>();
+  for (const node of nodes) {
+    const list = childrenOf.get(node.parentId) ?? [];
+    list.push(node);
+    childrenOf.set(node.parentId, list);
   }
+
+  const emit = (node: ClubNode, depth: number): void => {
+    frag.appendChild(row(node, depth, selectedId, store, hooks));
+    for (const child of childrenOf.get(node.id) ?? []) emit(child, depth + 1);
+  };
+
+  for (const section of childrenOf.get(null) ?? []) emit(section, 0);
 
   host.replaceChildren(frag);
 
@@ -74,7 +88,7 @@ export function renderLayers(
 
 function row(
   node: ClubNode,
-  isSection: boolean,
+  depth: number,
   selectedId: string | null,
   store: Store,
   hooks: PanelHooks
@@ -82,7 +96,10 @@ function row(
   const visible = store.propsOf(node.id).visible !== false;
 
   const el = document.createElement('div');
-  el.className = `club__layer ${isSection ? 'club__layer--section' : 'club__layer--child'}`;
+  el.className = `club__layer${depth === 0 ? ' club__layer--section' : ''}`;
+  // Indent by depth rather than by a class per level, so the tree can be any
+  // depth without the stylesheet knowing how deep.
+  el.style.paddingLeft = `${6 + depth * 13}px`;
   el.dataset.layer = node.id;
   el.setAttribute('role', 'treeitem');
   el.setAttribute('aria-selected', String(node.id === selectedId));

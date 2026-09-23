@@ -211,6 +211,13 @@ export class Sandbox {
     }
     // A button is a frame, so its words become a layer of their own.
     if (node.type === 'button') this.addLabel(node);
+
+    /*
+     * And so does any other frame inside a section. Sections themselves are
+     * left to the catalogue, which already names their parts properly — doing
+     * both would list the hero's headline twice.
+     */
+    if (node.type === 'container' && node.parentId !== null) this.addTextInside(node);
   }
 
   /**
@@ -248,9 +255,62 @@ export class Sandbox {
       id: `${button.id}.label`,
       label: 'Label',
       type: 'text',
-      parentId: button.parentId,
+      parentId: button.id,
       el: label,
     });
+  }
+
+  /**
+   * Every run of text inside a frame becomes a layer of its own.
+   *
+   * This is the same idea as a button's label, generalised — because that is
+   * what the tool this imitates does everywhere. A project row is a frame
+   * holding a number, a title and a tag; selecting it gave one box and no way
+   * to reach the words, so the title could not be retyped or recoloured
+   * without editing the whole row. In Figma there is no such thing as a frame
+   * with text in it that you cannot select.
+   *
+   * "A run of text" means the deepest element that directly holds words: an
+   * element with text whose children have none. That is what stops this
+   * adopting a wrapper and its contents as two layers saying the same thing,
+   * and it is why nothing here needs a list of tag names.
+   *
+   * Capped, because a frame is allowed to be a paragraph of spans and a layer
+   * list nobody can read is no more use than no list at all.
+   */
+  private addTextInside(host: ClubNode): void {
+    const CAP = 10;
+    let found = 0;
+
+    const walk = (el: Element): void => {
+      for (const child of Array.from(el.children)) {
+        if (found >= CAP) return;
+        const node = child as HTMLElement;
+
+        // Already a layer in its own right — the catalogue got there first.
+        if (node.dataset.clubId) continue;
+
+        const words = (node.textContent ?? '').trim();
+        if (!words) continue;
+
+        const deeper = Array.from(node.children).some((c) => (c.textContent ?? '').trim());
+        if (deeper) {
+          walk(node);
+          continue;
+        }
+
+        found += 1;
+        this.add({
+          id: `${host.id}.t${found}`,
+          label: trim(words) || `Text ${found}`,
+          type: 'text',
+          parentId: host.id,
+          el: node,
+        });
+      }
+    };
+
+    walk(host.el);
   }
 
   /* ---------------------------------------------------------------- */
