@@ -256,8 +256,48 @@ export const PROPS_FOR: Record<ClubType, readonly string[]> = {
    * typography and the text colour, and the button keeps only what a frame
    * has.
    */
-  button: ['bg', 'radius', 'w', 'h', 'padX', 'padY', 'x', 'y', 'opacity', 'visible'],
+  button: [
+    'bg',
+    'radius',
+    'w',
+    'h',
+    'flow',
+    'justify',
+    'items',
+    'gap',
+    'padX',
+    'padY',
+    'x',
+    'y',
+    'opacity',
+    'visible',
+  ],
   image: ['src', 'w', 'h', 'fit', 'radius', 'opacity', 'x', 'y', 'visible'],
   surface: ['bg', 'radius', 'w', 'h', 'x', 'y', 'opacity', 'visible'],
-  container: ['w', 'h', 'padX', 'padY', 'gap', 'bg', 'radius', 'x', 'y', 'opacity', 'visible'],
+  /*
+   * The auto-layout keys are a ceiling here, not a promise.
+   *
+   * `PROPS_FOR` says what a *kind* of thing may ever be offered; whether a
+   * particular frame gets flow, alignment and gap is decided from the element
+   * itself, because they mean nothing on a frame that is not laid out that
+   * way. A gap field on a `display: block` div is a control that does nothing,
+   * which is the failure this table exists to prevent — so the panel narrows
+   * this list per selection rather than widening it.
+   */
+  container: [
+    'w',
+    'h',
+    'flow',
+    'justify',
+    'items',
+    'gap',
+    'padX',
+    'padY',
+    'bg',
+    'radius',
+    'x',
+    'y',
+    'opacity',
+    'visible',
+  ],
 };

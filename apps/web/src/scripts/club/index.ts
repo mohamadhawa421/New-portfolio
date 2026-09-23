@@ -24,7 +24,13 @@
  * nothing to do with what they did.
  */
 
-import { dismissPicker, renderLayers, renderProps, type PanelHooks } from './panels';
+import {
+  dismissPicker,
+  placement,
+  renderLayers,
+  renderProps,
+  type PanelHooks,
+} from './panels';
 import { Sandbox, type ClubNode } from './sandbox';
 import { Store, type Props } from './store';
 import { runTour, shouldTour } from './tour';
@@ -534,11 +540,38 @@ export function startClub(root: HTMLElement): void {
      * Only where there is padding to show: a band of zero is noise, and four
      * of them around every text layer would make the modifier useless.
      */
-    if (altHeld && selection.length === 1) {
-      drawPadding(node, box);
+    if (selection.length === 1) {
+      /*
+       * An auto-layout frame shows how it lays out, the moment it is selected.
+       *
+       * Figma does this and it is most of what makes auto layout legible: the
+       * padding and the gaps are the layout, so they are drawn where they
+       * happen rather than only described as numbers in a panel eighteen
+       * inches away. They are draggable for the same reason — the shortest
+       * path from "that gap is too tight" to a fixed gap is to pull it.
+       *
+       * A frame with no auto layout has nothing to show until it is asked, so
+       * it keeps the old behaviour: padding on Alt, and nothing otherwise.
+       */
+      /*
+       * Not while the frame itself is being dragged or resized.
+       *
+       * Its internal spacing has not changed — only where the box is — so
+       * every frame of the drag would re-measure a set of children to draw
+       * the same numbers again, which is the one place this costs anything
+       * measurable. It is also calmer: Figma drops these while you are
+       * moving something for the same reason.
+       */
+      const settled = gesture?.kind !== 'move' && gesture?.kind !== 'resize';
+
+      if (node.flow && settled) drawPadding(node, box, true);
+      else if (altHeld && settled) drawPadding(node, box, false);
+
+      if (node.flow && settled) drawGaps(node, box);
+
       // And the gap to whatever the pointer is over, which is the other half
       // of what the modifier is for.
-      if (hovered && !selection.includes(hovered)) {
+      if (altHeld && hovered && !selection.includes(hovered)) {
         const other = sandbox.boxOf(hovered);
         if (other) drawMeasure(box, other);
       }
@@ -608,41 +641,129 @@ export function startClub(root: HTMLElement): void {
     else if (from.bottom <= to.top) line(useX, from.bottom, 0, to.top - from.bottom, to.top - from.bottom);
   }
 
+  /**
+   * One tinted region with its measurement on it.
+   *
+   * Padding and gaps are the same object as far as the canvas is concerned —
+   * a rectangle of space with a number and, when the frame is laying its
+   * children out, a handle to pull. `key`, `sign` and `axis` are what the drag
+   * needs to know: which property it is changing, which way the pointer moves
+   * to make it bigger, and along which axis to read the movement.
+   */
+  function band(
+    at: DOMRect,
+    value: number,
+    key: 'gap' | 'padX' | 'padY',
+    axis: 'x' | 'y',
+    sign: number,
+    live: boolean
+  ): void {
+    if (at.width < 0.5 || at.height < 0.5) return;
+
+    const el = document.createElement('div');
+    el.className = 'club__space';
+    el.style.cssText = `left:${at.x}px;top:${at.y}px;width:${at.width}px;height:${at.height}px`;
+    if (live) {
+      el.dataset.space = key;
+      el.dataset.axis = axis;
+      el.dataset.sign = String(sign);
+      el.dataset.base = String(Math.round(value));
+    }
+
+    const label = document.createElement('span');
+    label.className = 'club__space-n';
+    label.textContent = String(Math.round(value));
+    label.style.transform = 'translate(-50%, -50%) scale(var(--z,1))';
+    el.appendChild(label);
+
+    overlay.appendChild(el);
+  }
+
   /** The four inside edges of a box, drawn and labelled. */
-  function drawPadding(node: { el: HTMLElement }, box: DOMRect): void {
+  function drawPadding(node: { el: HTMLElement }, box: DOMRect, live: boolean): void {
     const view = node.el.ownerDocument.defaultView;
     if (!view) return;
     const cs = view.getComputedStyle(node.el);
 
-    const sides: [string, number, string][] = [
-      ['top', parseFloat(cs.paddingTop) || 0, 'row'],
-      ['bottom', parseFloat(cs.paddingBottom) || 0, 'row'],
-      ['left', parseFloat(cs.paddingLeft) || 0, 'col'],
-      ['right', parseFloat(cs.paddingRight) || 0, 'col'],
-    ];
+    const top = parseFloat(cs.paddingTop) || 0;
+    const bottom = parseFloat(cs.paddingBottom) || 0;
+    const left = parseFloat(cs.paddingLeft) || 0;
+    const right = parseFloat(cs.paddingRight) || 0;
 
-    for (const [side, size, axis] of sides) {
-      if (size < 1) continue;
-
-      const band = document.createElement('div');
-      band.className = 'club__pad';
-
-      const horizontal = axis === 'row';
-      const w = horizontal ? box.width : size;
-      const h = horizontal ? size : box.height;
-      const left = side === 'right' ? box.x + box.width - size : box.x;
-      const top = side === 'bottom' ? box.y + box.height - size : box.y;
-
-      band.style.cssText = `left:${left}px;top:${top}px;width:${w}px;height:${h}px`;
-
-      const label = document.createElement('span');
-      label.className = 'club__pad-n';
-      label.textContent = String(Math.round(size));
-      label.style.transform = `translate(-50%, -50%) scale(var(--z,1))`;
-      band.appendChild(label);
-
-      overlay.appendChild(band);
+    // Dragging the near edge outward makes the padding bigger; the far edge
+    // is the same gesture mirrored, which is what the sign carries.
+    if (top >= 1) band(new DOMRect(box.x, box.y, box.width, top), top, 'padY', 'y', 1, live);
+    if (bottom >= 1) {
+      band(
+        new DOMRect(box.x, box.y + box.height - bottom, box.width, bottom),
+        bottom,
+        'padY',
+        'y',
+        -1,
+        live
+      );
     }
+    if (left >= 1) band(new DOMRect(box.x, box.y, left, box.height), left, 'padX', 'x', 1, live);
+    if (right >= 1) {
+      band(
+        new DOMRect(box.x + box.width - right, box.y, right, box.height),
+        right,
+        'padX',
+        'x',
+        -1,
+        live
+      );
+    }
+  }
+
+  /**
+   * The space between the children, wherever two of them are genuinely in a
+   * row.
+   *
+   * One rule covers a flex row, a flex column and a grid: two consecutive
+   * children are side by side if one ends before the other begins *and* they
+   * overlap on the other axis. A grid's items in the same row overlap
+   * vertically, so their horizontal gaps are drawn; items in different rows do
+   * not, so nothing is drawn across the wrap — which is right, because there
+   * is no gap there to pull.
+   */
+  function drawGaps(node: ClubNode, box: DOMRect): void {
+    const kids = sandbox.childBoxes(node.id);
+    if (kids.length < 2) return;
+
+    const meets = (a0: number, a1: number, b0: number, b1: number): boolean =>
+      Math.min(a1, b1) - Math.max(a0, b0) > 1;
+
+    for (let i = 1; i < kids.length; i += 1) {
+      const a = kids[i - 1];
+      const b = kids[i];
+
+      if (b.left >= a.right && meets(a.top, a.bottom, b.top, b.bottom)) {
+        const top = Math.max(a.top, b.top);
+        band(
+          new DOMRect(a.right, top, b.left - a.right, Math.min(a.bottom, b.bottom) - top),
+          b.left - a.right,
+          'gap',
+          'x',
+          1,
+          true
+        );
+        continue;
+      }
+
+      if (b.top >= a.bottom && meets(a.left, a.right, b.left, b.right)) {
+        const left = Math.max(a.left, b.left);
+        band(
+          new DOMRect(left, a.bottom, Math.min(a.right, b.right) - left, b.top - a.bottom),
+          b.top - a.bottom,
+          'gap',
+          'y',
+          1,
+          true
+        );
+      }
+    }
+    void box;
   }
 
   /* ---------------------------------------------------------------- */
@@ -650,9 +771,14 @@ export function startClub(root: HTMLElement): void {
   /* ---------------------------------------------------------------- */
 
   interface Gesture {
-    kind: 'move' | 'resize' | 'pan' | 'marquee';
+    kind: 'move' | 'resize' | 'pan' | 'marquee' | 'space';
     dir?: string;
     id?: string;
+    /** For a spacing drag: which property, which way, and where it started. */
+    spaceKey?: 'gap' | 'padX' | 'padY';
+    spaceAxis?: 'x' | 'y';
+    spaceSign?: number;
+    spaceBase?: number;
     /** Every layer a move is carrying, and where each of them started. */
     bases?: Map<string, { x: number; y: number }>;
     startX: number;
@@ -874,6 +1000,13 @@ export function startClub(root: HTMLElement): void {
           };
         }
       });
+      return;
+    }
+
+    if (gesture.kind === 'space' && gesture.id && gesture.spaceKey) {
+      const along = gesture.spaceAxis === 'x' ? dx : dy;
+      const value = Math.max(0, Math.round((gesture.spaceBase ?? 0) + along * (gesture.spaceSign ?? 1)));
+      store.set(gesture.id, { [gesture.spaceKey]: value } as Props, gesture.spaceKey, true);
       return;
     }
 
@@ -1207,8 +1340,39 @@ export function startClub(root: HTMLElement): void {
   function onPointerDown(e: PointerEvent): void {
     const target = e.target as HTMLElement | null;
 
-    const handle = target?.closest?.<HTMLElement>('.club__handle');
     const only = primary();
+
+    /*
+     * A spacing band, pulled. The bands are rebuilt on every live frame, so
+     * the element under the pointer is gone a moment later — which is fine,
+     * because the move is tracked from the document and from the sandbox,
+     * neither of which cares what started it.
+     */
+    const space = target?.closest?.<HTMLElement>('.club__space');
+    if (space?.dataset.space && only) {
+      const at = toDoc(e.clientX, e.clientY);
+      store.beginGesture();
+      gesture = {
+        kind: 'space',
+        id: only,
+        spaceKey: space.dataset.space as 'gap' | 'padX' | 'padY',
+        spaceAxis: space.dataset.axis === 'y' ? 'y' : 'x',
+        spaceSign: Number(space.dataset.sign) || 1,
+        spaceBase: Number(space.dataset.base) || 0,
+        startX: at.x,
+        startY: at.y,
+        baseX: 0,
+        baseY: 0,
+        baseW: 0,
+        baseH: 0,
+        basePanX: panX,
+        basePanY: panY,
+      };
+      e.preventDefault();
+      return;
+    }
+
+    const handle = target?.closest?.<HTMLElement>('.club__handle');
     if (handle && only) {
       const box = sandbox.boxOf(only);
       const p = store.propsOf(only);
@@ -1809,6 +1973,34 @@ export function startClub(root: HTMLElement): void {
     const how = hit('[data-align]')?.dataset.align;
     if (how) {
       alignSelection(how);
+      return;
+    }
+
+    /* Which way the children run. */
+    const flow = hit('[data-flow]')?.dataset.flow;
+    if (flow) {
+      for (const id of selection) store.set(id, { flow }, 'flow');
+      return;
+    }
+
+    /*
+     * And where they sit, from the nine-square picker.
+     *
+     * The cell is a position on screen; which CSS property each half of it
+     * means depends on the direction, so the translation lives with the
+     * picker that drew it rather than being written out twice.
+     */
+    const cell = hit('[data-place]')?.dataset.place;
+    if (cell) {
+      const id = primary();
+      if (!id) return;
+      const now = (store.propsOf(id).flow as string) ?? sandbox.get(id)?.flow ?? 'row';
+      const [col, row] = cell.split(',').map(Number);
+      const patch = placement(now, col, row);
+      const ids = selection.slice();
+      store.commit('place', (draft) => {
+        for (const one of ids) draft.overrides[one] = { ...(draft.overrides[one] ?? {}), ...patch };
+      });
       return;
     }
 

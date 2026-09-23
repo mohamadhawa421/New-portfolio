@@ -994,6 +994,105 @@ const PAGES = [
     grid-column: 1 / -1;
   }
 
+  /* ---- Auto layout ------------------------------------------------ */
+
+  /*
+   * Direction on the left, the nine-square picker on the right — which is the
+   * arrangement every design tool has settled on, and it works because the two
+   * answer the same question in different grain: which way do the children
+   * run, and where in the box do they sit.
+   */
+  .club__auto {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: start;
+    margin-bottom: 2px;
+  }
+
+  .club__seg {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    padding: 2px;
+    border-radius: var(--c-r);
+    background: var(--c-field);
+  }
+
+  .club__seg button {
+    display: grid;
+    place-items: center;
+    height: 20px;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--c-dim);
+    cursor: pointer;
+  }
+
+  .club__seg button:hover {
+    color: var(--c-ink);
+  }
+
+  .club__seg button[aria-pressed='true'] {
+    background: var(--c-field-hi);
+    color: var(--c-ink);
+  }
+
+  .club__seg svg {
+    width: 13px;
+    height: 13px;
+    fill: currentColor;
+  }
+
+  /*
+   * Nine cells, and a dot in each.
+   *
+   * The dot rather than a letter or an arrow: the control is a picture of the
+   * box, so the mark has to read as "a thing, here" and nothing else. The one
+   * that is chosen takes the accent and its cell lifts, which is the whole of
+   * the feedback it needs.
+   */
+  .club__place {
+    display: grid;
+    grid-template-columns: repeat(3, 17px);
+    grid-template-rows: repeat(3, 17px);
+    gap: 1px;
+    padding: 2px;
+    border-radius: var(--c-r);
+    background: var(--c-field);
+  }
+
+  .club__place button {
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 2px;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .club__place button:hover {
+    background: #ffffff14;
+  }
+
+  .club__place i {
+    width: 4px;
+    height: 4px;
+    border-radius: 1px;
+    background: var(--c-dim);
+    opacity: 0.55;
+  }
+
+  .club__place button[aria-pressed='true'] {
+    background: var(--c-field-hi);
+  }
+
+  .club__place button[aria-pressed='true'] i {
+    background: var(--c-mark);
+    opacity: 1;
+  }
+
   .club__field--stack {
     display: grid;
     gap: 4px;
@@ -1360,13 +1459,15 @@ const PAGES = [
   }
 
   /*
-   * Padding, shown while Alt is held.
+   * Space: padding and the gaps between children, drawn where they happen.
    *
-   * Figma's own colour for this, and for a good reason: it is the one overlay
-   * that has to be legible *through* whatever it is lying on, which rules out
-   * anything in the blue family the selection already owns.
+   * One treatment for both, because to a designer they are one idea — the room
+   * inside a frame — and drawing them differently would suggest they are not.
+   * They take the measurement blue rather than the selection violet: this is
+   * an overlay that has to stay legible *through* whatever it lies on, and the
+   * violet is already spoken for by the outline around the same frame.
    */
-  .club__pad {
+  .club__space {
     position: absolute;
     display: grid;
     place-items: center;
@@ -1374,7 +1475,24 @@ const PAGES = [
     pointer-events: none;
   }
 
-  .club__pad-n {
+  /* A band belonging to a frame that lays out is a handle as well as a mark. */
+  .club__space[data-space] {
+    pointer-events: auto;
+  }
+
+  .club__space[data-axis='x'] {
+    cursor: ew-resize;
+  }
+
+  .club__space[data-axis='y'] {
+    cursor: ns-resize;
+  }
+
+  .club__space[data-space]:hover {
+    background: rgb(41 151 255 / 0.4);
+  }
+
+  .club__space-n {
     padding: 0 4px;
     border-radius: 3px;
     background: var(--c-measure-fill);
@@ -1383,6 +1501,7 @@ const PAGES = [
     font-weight: 600;
     line-height: 15px;
     white-space: nowrap;
+    pointer-events: none;
   }
 
   /*

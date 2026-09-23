@@ -36,6 +36,15 @@ export interface ClubNode {
   el: HTMLElement;
   /** True for nodes the designer created rather than adopted. */
   created?: boolean;
+  /**
+   * How this frame lays its children out, if it lays them out at all.
+   *
+   * Read once, at adoption, rather than on every render: the layers panel
+   * draws an icon from it and the properties panel decides a whole group on
+   * it, and asking two hundred and fifty elements for a computed style on
+   * every keystroke in a number field is not a thing to do twice.
+   */
+  flow?: 'row' | 'column' | 'grid';
 }
 
 /** Everything written by `apply`, so the next pass can clear it exactly. */
@@ -55,6 +64,9 @@ const WRITTEN = [
   'letterSpacing',
   'textAlign',
   'objectFit',
+  'flexDirection',
+  'justifyContent',
+  'alignItems',
   'padding',
   'paddingLeft',
   'paddingRight',
@@ -73,6 +85,8 @@ export class Sandbox {
   /** A responsive image's own candidates, so clearing an override restores them. */
   private baseSrcset = new Map<string, { srcset: string | null; sizes: string | null }>();
   private addedHost: HTMLElement | null = null;
+  /** Which nodes the last `apply` wrote to, so the next one knows what to clear. */
+  private wrote = new Set<string>();
   private onReady: (() => void) | null = null;
 
   constructor(frame: HTMLIFrameElement) {
@@ -228,6 +242,7 @@ export class Sandbox {
   private adopt(doc: Document): void {
     this.nodes.clear();
     this.order = [];
+    this.wrote.clear();
 
     const named = this.namesFrom(doc);
     const root = doc.querySelector<HTMLElement>('main') ?? doc.body;
@@ -352,6 +367,24 @@ export class Sandbox {
 
   private add(node: ClubNode): void {
     node.el.dataset.clubId = node.id;
+
+    /*
+     * Whether this is an auto-layout frame, decided once.
+     *
+     * Grid is included, and it has to be: two thirds of this site's frames
+     * that arrange anything are grids, and the three things auto layout means
+     * to a designer — the gap, the padding and how the children sit inside —
+     * are as true of a grid as of a flex row. The direction control is the one
+     * part that is not, so it is the one part a grid does not get.
+     */
+    const how = node.el.ownerDocument.defaultView?.getComputedStyle(node.el);
+    const display = how?.display ?? '';
+    if (display === 'flex' || display === 'inline-flex') {
+      node.flow = how!.flexDirection.startsWith('column') ? 'column' : 'row';
+    } else if (display === 'grid' || display === 'inline-grid') {
+      node.flow = 'grid';
+    }
+
     this.nodes.set(node.id, node);
     this.order.push(node.id);
     if (node.type === 'text') {
@@ -662,6 +695,39 @@ export class Sandbox {
     return undefined;
   }
 
+  /**
+   * The laid-out element children of a frame, in document coordinates.
+   *
+   * Elements rather than layers, because the gaps a designer sees are between
+   * whatever is actually in the box — a frame can hold something the tree
+   * skipped, and a gap drawn around it would be a gap in the wrong place.
+   * Anything with no box, or nothing on screen, is not in a row with anything.
+   */
+  childBoxes(id: string): DOMRect[] {
+    const node = this.nodes.get(id);
+    const doc = this.doc;
+    if (!node || !doc) return [];
+    const sx = doc.documentElement.scrollLeft || 0;
+    const sy = doc.documentElement.scrollTop || 0;
+
+    /*
+     * No `instanceof` here, and that is not a style choice.
+     *
+     * These elements live in the iframe's realm, which has its own
+     * `HTMLElement` — so `child instanceof HTMLElement`, evaluated in the
+     * editor's realm, is false for every single one of them. It type-checks,
+     * it reads correctly, and it silently returned an empty list: the gap
+     * bands simply never appeared. Asking about the tag name works across
+     * realms because a string is a string.
+     */
+    return Array.from(node.el.children)
+      .map((child) => child as HTMLElement)
+      .filter((child) => !SKIP.has(child.tagName.toUpperCase()) && onScreen(child))
+      .map((child) => child.getBoundingClientRect())
+      .filter((r) => r.width > 0 && r.height > 0)
+      .map((r) => new DOMRect(r.left + sx, r.top + sy, r.width, r.height));
+  }
+
   /** A node's box in sandbox-document coordinates, before the canvas zoom. */
   boxOf(id: string): DOMRect | null {
     const n = this.nodes.get(id);
@@ -676,13 +742,31 @@ export class Sandbox {
   /* Painting the state on                                             */
   /* ---------------------------------------------------------------- */
 
+  /**
+   * The state, painted on. Two hundred and fifty nodes were visited for it.
+   *
+   * A full repaint over every adopted node is the right *shape* — it cannot
+   * leak, because every pass clears exactly what the last one wrote — but
+   * visiting all of them was twenty `removeProperty` calls each, five thousand
+   * style operations, on every frame of a drag. Since a drag changes one
+   * layer, the pass now visits the layers that have an override now plus the
+   * ones that had one a moment ago, which is the same guarantee for a fortieth
+   * of the work: nothing can be left behind, because anything written is in
+   * `wrote` until the pass that clears it.
+   */
   apply(state: SandboxState): void {
     const doc = this.doc;
     if (!doc) return;
 
     this.syncCreated(doc, state);
 
-    for (const node of this.nodes.values()) {
+    const now = new Set(Object.keys(state.overrides));
+    const visit = new Set<string>([...now, ...this.wrote]);
+    this.wrote = now;
+
+    for (const id of visit) {
+      const node = this.nodes.get(id);
+      if (!node) continue;
       const p = state.overrides[node.id] ?? {};
       const s = node.el.style;
 
@@ -715,6 +799,9 @@ export class Sandbox {
         s.paddingBottom = `${p.padY}px`;
       }
       if (has('gap')) s.gap = `${p.gap}px`;
+      if (has('flow')) s.flexDirection = p.flow!;
+      if (has('justify')) s.justifyContent = p.justify!;
+      if (has('items')) s.alignItems = p.items!;
 
       /*
        * Text and src are content rather than style, so "no override" has to

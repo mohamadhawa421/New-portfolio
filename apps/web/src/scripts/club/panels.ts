@@ -44,6 +44,21 @@ const TYPE_ICON: Record<string, string> = {
 };
 
 /*
+ * A frame that arranges its children says so in the tree.
+ *
+ * It is the fastest thing to lose in a list of two hundred and fifty rows —
+ * which frames have auto layout and which are just boxes — and in the tool
+ * this imitates it is exactly what the icon column is for. Two bars lying the
+ * way the children run, and a four-square for a grid.
+ */
+const FLOW_ICON: Record<string, string> = {
+  row: '<svg viewBox="0 0 16 16"><rect x="2" y="2.5" width="12" height="11" rx="1.5"/><path d="M6 5.5v5M10 5.5v5"/></svg>',
+  column:
+    '<svg viewBox="0 0 16 16"><rect x="2" y="2.5" width="12" height="11" rx="1.5"/><path d="M5 6.5h6M5 9.5h6"/></svg>',
+  grid: '<svg viewBox="0 0 16 16"><rect x="2" y="2.5" width="12" height="11" rx="1.5"/><path d="M8 3v10M2.5 8h11"/></svg>',
+};
+
+/*
  * The align row, which is the first thing at the top of the right panel in
  * every design tool there has ever been.
  *
@@ -187,7 +202,8 @@ function row(
 
   const icon = document.createElement('span');
   icon.className = 'club__type';
-  icon.innerHTML = TYPE_ICON[node.type] ?? TYPE_ICON.container;
+  icon.innerHTML =
+    (node.flow && FLOW_ICON[node.flow]) ?? TYPE_ICON[node.type] ?? TYPE_ICON.container;
   el.appendChild(icon);
 
   const name = document.createElement('span');
@@ -355,6 +371,20 @@ export function renderProps(
     allowed.delete('src');
   }
 
+  /*
+   * Auto layout is offered only where there is auto layout.
+   *
+   * `PROPS_FOR` is the ceiling — what a *kind* of thing may ever be shown —
+   * and this is the floor for one particular selection. A gap on a
+   * `display: block` div does nothing, an alignment grid on it does nothing,
+   * and a control that looks live and is not is the exact failure the whole
+   * properties model was built to avoid. Several things selected lose the
+   * group outright: there is no one direction five different frames run in.
+   */
+  if (many || !node.flow) {
+    for (const key of ['flow', 'justify', 'items', 'gap']) allowed.delete(key);
+  }
+
   const targets = nodes.map((n) => n.id);
   const props = store.propsOf(node.id);
   const measured = sandbox.boxOf(node.id);
@@ -370,18 +400,30 @@ export function renderProps(
 
   for (const group of GROUPS) {
     const keys = group.keys.filter((k) => allowed.has(k));
-    if (!keys.length) continue;
+    if (!keys.length && !(group.name === 'Auto layout' && allowed.has('flow'))) continue;
 
     const box = document.createElement('div');
     box.className = 'club__group';
 
     const title = document.createElement('div');
     title.className = 'club__group-name';
-    title.textContent = group.name;
+    /*
+     * A frame that does not lay anything out still has padding, and calling
+     * that "Auto layout" would be the panel claiming something the frame
+     * cannot do. Same group, named for what is actually in it.
+     */
+    title.textContent =
+      group.name === 'Auto layout' && !allowed.has('flow') ? 'Padding' : group.name;
     box.appendChild(title);
 
     const fields = document.createElement('div');
     fields.className = 'club__fields';
+
+    // Direction and the alignment grid sit above the numbers, as they do in
+    // the tool this borrows from — the shape of the layout, then its sizes.
+    if (group.name === 'Auto layout' && allowed.has('flow')) {
+      fields.appendChild(flowBlock(node, props));
+    }
 
     for (const key of keys) {
       fields.appendChild(field(key, node, targets, props, measured, store, hooks));
@@ -491,6 +533,91 @@ function paletteRow(entry: Swatch, store: Store): HTMLElement {
 
   wrap.appendChild(propInput);
   return wrap;
+}
+
+/*
+ * Direction, as the two ways a row of things can run.
+ *
+ * Only for flexbox: a grid's children are placed on two axes at once and
+ * "which way does this run" has no answer, so a grid gets the alignment and
+ * the spacing and not this.
+ */
+const DIRS: [string, string, string][] = [
+  ['row', 'Horizontal', '<rect x="1.5" y="3" width="4" height="8" rx="1"/><rect x="8.5" y="3" width="4" height="8" rx="1"/>'],
+  ['column', 'Vertical', '<rect x="3" y="1.5" width="8" height="4" rx="1"/><rect x="3" y="8.5" width="8" height="4" rx="1"/>'],
+];
+
+/** start / centre / end, which is all three of these properties ever mean. */
+const ALIGN_TO = ['flex-start', 'center', 'flex-end'];
+
+const placeAt = (value: string): number =>
+  value.includes('center') ? 1 : value.includes('end') ? 2 : 0;
+
+/**
+ * The direction control and the nine-square alignment picker.
+ *
+ * The picker is the part that makes a properties panel read as a design tool
+ * rather than as a form: a designer points at where the children should sit
+ * instead of choosing `justify-content: flex-end` from a list. Underneath it
+ * is exactly those two properties — the main axis and the cross axis — and
+ * which is which swaps with the direction, because that is what the axes do.
+ */
+function flowBlock(node: ClubNode, props: Props): HTMLElement {
+  const wrap = document.createElement('div');
+  wrap.className = 'club__auto club__field--wide';
+
+  const flow = (props.flow as string) ?? node.flow ?? 'row';
+
+  if (node.flow !== 'grid') {
+    const seg = document.createElement('div');
+    seg.className = 'club__seg';
+    for (const [value, title, path] of DIRS) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.flow = value;
+      button.dataset.tip = title;
+      button.setAttribute('aria-label', title);
+      button.setAttribute('aria-pressed', String(flow === value));
+      button.innerHTML = `<svg viewBox="0 0 14 14" aria-hidden="true">${path}</svg>`;
+      seg.appendChild(button);
+    }
+    wrap.appendChild(seg);
+  }
+
+  const main = placeAt((props.justify as string) ?? computed(node, 'justify'));
+  const cross = placeAt((props.items as string) ?? computed(node, 'items'));
+  // Down the page when the children run down it; across when they run across.
+  const onCol = flow === 'column' ? main : cross;
+  const onRow = flow === 'column' ? cross : main;
+
+  const grid = document.createElement('div');
+  grid.className = 'club__place';
+  grid.setAttribute('role', 'group');
+  grid.setAttribute('aria-label', 'Align the contents');
+  for (let row = 0; row < 3; row += 1) {
+    for (let col = 0; col < 3; col += 1) {
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.dataset.place = `${col},${row}`;
+      cell.setAttribute('aria-label', `${DOWN[row]} ${ACROSS[col]}`);
+      cell.setAttribute('aria-pressed', String(col === onRow && row === onCol));
+      cell.innerHTML = '<i></i>';
+      grid.appendChild(cell);
+    }
+  }
+  wrap.appendChild(grid);
+
+  return wrap;
+}
+
+const ACROSS = ['left', 'centre', 'right'];
+const DOWN = ['top', 'middle', 'bottom'];
+
+/** What a cell means, once the direction has decided which axis is which. */
+export function placement(flow: string, col: number, row: number): Props {
+  const main = flow === 'column' ? row : col;
+  const cross = flow === 'column' ? col : row;
+  return { justify: ALIGN_TO[main], items: ALIGN_TO[cross] };
 }
 
 function field(
@@ -756,6 +883,8 @@ function computed(node: ClubNode, key: string): string {
   if (key === 'bg') return cs.backgroundColor;
   if (key === 'align') return cs.textAlign;
   if (key === 'fit') return cs.objectFit;
+  if (key === 'justify') return cs.justifyContent;
+  if (key === 'items') return cs.alignItems;
   return '';
 }
 
@@ -803,8 +932,20 @@ function fallback(key: string, node: ClubNode, box: DOMRect | null): number | st
       return cs ? Math.round(parseFloat(cs.paddingLeft) || 0) : 0;
     case 'padY':
       return cs ? Math.round(parseFloat(cs.paddingTop) || 0) : 0;
-    case 'gap':
-      return cs && cs.gap !== 'normal' ? Math.round(parseFloat(cs.gap) || 0) : 0;
+    case 'gap': {
+      /*
+       * The gap along the axis the children run on.
+       *
+       * `cs.gap` is the shorthand and comes back as "normal 57.6px" on a grid
+       * with only a column gap — `parseFloat` of that is NaN, which is how
+       * every grid on this site used to report a gap of zero. The two
+       * longhands are unambiguous, and "normal" means none.
+       */
+      if (!cs) return 0;
+      const down = node.flow === 'column' || node.flow === 'grid';
+      const raw = down ? cs.rowGap : cs.columnGap;
+      return raw === 'normal' ? 0 : Math.round(parseFloat(raw) || 0);
+    }
     default:
       return 0;
   }

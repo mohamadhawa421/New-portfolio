@@ -56,6 +56,18 @@ export interface Props {
   padX?: number;
   padY?: number;
   gap?: number;
+  /*
+   * Auto layout, in the three properties it actually is.
+   *
+   * `flow` is the direction items run in, `justify` how they sit along it and
+   * `items` how they sit across it — which is `flex-direction`,
+   * `justify-content` and `align-items`, because auto layout is flexbox with
+   * a designer's vocabulary on top of it. They are only ever offered on an
+   * element that is genuinely laid out this way; see the note in `panels.ts`.
+   */
+  flow?: string;
+  justify?: string;
+  items?: string;
   /** Set on nodes the designer added, so the sandbox knows to build them. */
   created?: CreatedSpec;
 }
