@@ -130,18 +130,8 @@ export function startClub(root: HTMLElement): void {
 
   /** Shift+2: everything selected, filling the view. Nothing selected, nothing. */
   function fitSelection(): void {
-    const boxes = selection
-      .map((id) => sandbox.boxOf(id))
-      .filter(Boolean as unknown as (v: DOMRect | null) => v is DOMRect);
-    if (!boxes.length) return;
-    fitTo(
-      new DOMRect(
-        Math.min(...boxes.map((b) => b.left)),
-        Math.min(...boxes.map((b) => b.top)),
-        Math.max(...boxes.map((b) => b.right)) - Math.min(...boxes.map((b) => b.left)),
-        Math.max(...boxes.map((b) => b.bottom)) - Math.min(...boxes.map((b) => b.top))
-      )
-    );
+    const box = unionOf(boxesOf(selection));
+    if (box) fitTo(box);
   }
 
   /** Any percentage, about the middle of the view. */
@@ -384,6 +374,25 @@ export function startClub(root: HTMLElement): void {
   /** A drag on empty ground, in sandbox-document coordinates. */
   let marquee: { x0: number; y0: number; x1: number; y1: number; add: boolean } | null = null;
 
+  /** The smallest rectangle containing all of them. */
+  function unionOf(boxes: DOMRect[]): DOMRect | null {
+    if (!boxes.length) return null;
+    const left = Math.min(...boxes.map((b) => b.left));
+    const top = Math.min(...boxes.map((b) => b.top));
+    return new DOMRect(
+      left,
+      top,
+      Math.max(...boxes.map((b) => b.right)) - left,
+      Math.max(...boxes.map((b) => b.bottom)) - top
+    );
+  }
+
+  /** Every selected layer's measured box, in document coordinates. */
+  const boxesOf = (ids: readonly string[]): DOMRect[] =>
+    ids
+      .map((id) => sandbox.boxOf(id))
+      .filter(Boolean as unknown as (v: DOMRect | null) => v is DOMRect);
+
   const mark = (className: string, box: DOMRect): HTMLElement => {
     const el = document.createElement('div');
     el.className = className;
@@ -418,9 +427,7 @@ export function startClub(root: HTMLElement): void {
      * mark, and it disappears with the drag.
      */
     if (holdingX || holdingY) {
-      const now = selection
-        .map((id) => sandbox.boxOf(id))
-        .filter(Boolean as unknown as (v: DOMRect | null) => v is DOMRect);
+      const now = boxesOf(selection);
       const span = (g: Guide, lo: number, hi: number): [number, number] => [
         Math.min(g.a, lo),
         Math.max(g.b, hi),
@@ -456,20 +463,9 @@ export function startClub(root: HTMLElement): void {
      * lot, which is the only reading that answers both questions a designer
      * has mid-selection: what exactly did I catch, and how big is it together.
      */
-    const boxes = selection
-      .map((id) => sandbox.boxOf(id))
-      .filter(Boolean as unknown as (v: DOMRect | null) => v is DOMRect);
-    if (!boxes.length) return;
-
-    const box =
-      boxes.length === 1
-        ? boxes[0]
-        : new DOMRect(
-            Math.min(...boxes.map((b) => b.left)),
-            Math.min(...boxes.map((b) => b.top)),
-            Math.max(...boxes.map((b) => b.right)) - Math.min(...boxes.map((b) => b.left)),
-            Math.max(...boxes.map((b) => b.bottom)) - Math.min(...boxes.map((b) => b.top))
-          );
+    const boxes = boxesOf(selection);
+    const box = unionOf(boxes);
+    if (!box) return;
 
     if (boxes.length > 1) {
       for (const b of boxes) overlay.appendChild(mark('club__member', b));
@@ -730,17 +726,7 @@ export function startClub(root: HTMLElement): void {
       if (box && box.width > 0 && box.height > 0) edges(box);
     }
 
-    const boxes = ids
-      .map((id) => sandbox.boxOf(id))
-      .filter(Boolean as unknown as (v: DOMRect | null) => v is DOMRect);
-    movedFrom = boxes.length
-      ? new DOMRect(
-          Math.min(...boxes.map((b) => b.left)),
-          Math.min(...boxes.map((b) => b.top)),
-          Math.max(...boxes.map((b) => b.right)) - Math.min(...boxes.map((b) => b.left)),
-          Math.max(...boxes.map((b) => b.bottom)) - Math.min(...boxes.map((b) => b.top))
-        )
-      : null;
+    movedFrom = unionOf(boxesOf(ids));
   }
 
   /**
@@ -1554,6 +1540,55 @@ export function startClub(root: HTMLElement): void {
     setSelection(fresh);
   }
 
+  /**
+   * Align, which means two different things and should not.
+   *
+   * With several layers selected they are aligned to each other, inside the
+   * box they already occupy together. With one, it is aligned inside its
+   * parent — because "align this to itself" is nothing, and aligning a single
+   * thing to its container is what a designer means every time they press it
+   * with one thing selected. Figma reads it the same way, and the reason it
+   * feels like one command rather than two is that both are "put this edge on
+   * that edge" with a different `that`.
+   *
+   * It writes offsets like every other move, so it undoes as one step and
+   * resets to nothing along with everything else.
+   */
+  function alignSelection(how: string): void {
+    if (!selection.length) return;
+
+    const boxes = new Map<string, DOMRect>();
+    for (const id of selection) {
+      const box = sandbox.boxOf(id);
+      if (box) boxes.set(id, box);
+    }
+    if (!boxes.size) return;
+
+    const parent = sandbox.get(selection[0])?.parentId ?? null;
+    const field =
+      boxes.size > 1 ? unionOf([...boxes.values()]) : parent ? sandbox.boxOf(parent) : null;
+    if (!field) return;
+
+    store.commit('align', (draft) => {
+      for (const [id, box] of boxes) {
+        const was = draft.overrides[id] ?? {};
+        let dx = 0;
+        let dy = 0;
+        if (how === 'left') dx = field.left - box.left;
+        else if (how === 'centre') dx = field.left + field.width / 2 - (box.left + box.width / 2);
+        else if (how === 'right') dx = field.right - box.right;
+        else if (how === 'top') dy = field.top - box.top;
+        else if (how === 'middle') dy = field.top + field.height / 2 - (box.top + box.height / 2);
+        else if (how === 'bottom') dy = field.bottom - box.bottom;
+        draft.overrides[id] = {
+          ...was,
+          x: Math.round((was.x ?? 0) + dx),
+          y: Math.round((was.y ?? 0) + dy),
+        };
+      }
+    });
+  }
+
   /* ---------------------------------------------------------------- */
   /* Toolbar, shortcuts and the top-right actions                      */
   /* ---------------------------------------------------------------- */
@@ -1707,6 +1742,12 @@ export function startClub(root: HTMLElement): void {
     }
 
     hideTip();
+
+    const how = hit('[data-align]')?.dataset.align;
+    if (how) {
+      alignSelection(how);
+      return;
+    }
 
     const toolBtn = hit('[data-tool]');
     if (toolBtn) {

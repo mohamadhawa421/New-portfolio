@@ -912,6 +912,56 @@ const PAGES = [
     padding-bottom: 20px;
   }
 
+  /*
+   * The align row: six equal cells across the panel's width, above everything.
+   *
+   * Spread rather than packed left, because the six are a set and reading them
+   * as three pairs — the horizontals, then the verticals — is what makes the
+   * row scannable without labels.
+   */
+  .club__align {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 2px;
+    padding: 8px 8px 9px;
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .club__align button {
+    display: grid;
+    place-items: center;
+    height: 24px;
+    border: 0;
+    border-radius: var(--c-r);
+    background: transparent;
+    color: var(--c-dim);
+    cursor: pointer;
+  }
+
+  .club__align button:hover {
+    background: #ffffff14;
+    color: var(--c-ink);
+  }
+
+  .club__align svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 1.1;
+    stroke-linecap: round;
+  }
+
+  /* The rule is a stroke and the two bars are fills; one element, both roles. */
+  .club__align svg rect {
+    stroke: none;
+    opacity: 0.75;
+  }
+
+  .club__align svg path {
+    fill: none;
+  }
+
   .club__group {
     padding: 9px 10px 11px;
     border-bottom: 1px solid var(--c-line);

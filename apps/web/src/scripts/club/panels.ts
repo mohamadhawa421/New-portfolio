@@ -43,6 +43,44 @@ const TYPE_ICON: Record<string, string> = {
     '<svg viewBox="0 0 16 16"><path d="M5.5 2v12M10.5 2v12M2 5.5h12M2 10.5h12"/></svg>',
 };
 
+/*
+ * The align row, which is the first thing at the top of the right panel in
+ * every design tool there has ever been.
+ *
+ * Six marks, all the same box: a rule showing where the edge lands and two
+ * bars landing on it. They are drawn rather than lettered because "align
+ * left" beside "align horizontal centres" is two lines of prose where a
+ * designer's eye wants two shapes.
+ */
+const ALIGN: { how: string; title: string; path: string }[] = [
+  { how: 'left', title: 'Align left', path: '<path d="M2 1v12"/><rect x="4" y="3" width="8" height="3" rx="1"/><rect x="4" y="8" width="5" height="3" rx="1"/>' },
+  { how: 'centre', title: 'Align horizontal centres', path: '<path d="M7 1v12"/><rect x="3" y="3" width="8" height="3" rx="1"/><rect x="4.5" y="8" width="5" height="3" rx="1"/>' },
+  { how: 'right', title: 'Align right', path: '<path d="M12 1v12"/><rect x="2" y="3" width="8" height="3" rx="1"/><rect x="5" y="8" width="5" height="3" rx="1"/>' },
+  { how: 'top', title: 'Align top', path: '<path d="M1 2h12"/><rect x="3" y="4" width="3" height="8" rx="1"/><rect x="8" y="4" width="3" height="5" rx="1"/>' },
+  { how: 'middle', title: 'Align vertical centres', path: '<path d="M1 7h12"/><rect x="3" y="3" width="3" height="8" rx="1"/><rect x="8" y="4.5" width="3" height="5" rx="1"/>' },
+  { how: 'bottom', title: 'Align bottom', path: '<path d="M1 12h12"/><rect x="3" y="2" width="3" height="8" rx="1"/><rect x="8" y="5" width="3" height="5" rx="1"/>' },
+];
+
+function alignRow(): HTMLElement {
+  const row = document.createElement('div');
+  row.className = 'club__align';
+  for (const one of ALIGN) {
+    /*
+     * Attributes, no handlers — the panel is rebuilt on every edit and the
+     * router detaches it on every navigation, so these are routed by the
+     * workspace's one delegated click handler like every other control.
+     */
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.align = one.how;
+    button.dataset.tip = one.title;
+    button.setAttribute('aria-label', one.title);
+    button.innerHTML = `<svg viewBox="0 0 14 14" aria-hidden="true">${one.path}</svg>`;
+    row.appendChild(button);
+  }
+  return row;
+}
+
 const CHEVRON = '<svg viewBox="0 0 12 12"><path d="M4.5 3 7.5 6l-3 3"/></svg>';
 
 const EYE_OPEN = '<svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.2 10-6.2S22 12 22 12s-3.6 6.2-10 6.2S2 12 2 12Z"/><circle cx="12" cy="12" r="2.6"/></svg>';
@@ -321,6 +359,14 @@ export function renderProps(
   const props = store.propsOf(node.id);
   const measured = sandbox.boxOf(node.id);
   const frag = document.createDocumentFragment();
+
+  /*
+   * Alignment first, above everything, because that is where a designer's
+   * hand goes and because it is the one control that reads the same whether
+   * one thing is selected or five: one aligns inside its parent, several align
+   * to each other. Only for layers that can be moved at all.
+   */
+  if (allowed.has('x')) frag.appendChild(alignRow());
 
   for (const group of GROUPS) {
     const keys = group.keys.filter((k) => allowed.has(k));
@@ -726,8 +772,21 @@ function fallback(key: string, node: ClubNode, box: DOMRect | null): number | st
       return 0;
     case 'opacity':
       return cs ? Number(cs.opacity).toFixed(2) : 1;
-    case 'radius':
-      return cs ? Math.round(parseFloat(cs.borderTopLeftRadius) || 0) : 0;
+    case 'radius': {
+      /*
+       * A pill is reported as its effective radius, not as 9999.
+       *
+       * The buttons are `border-radius: var(--r-pill)`, which computes to
+       * 9999px — true, useless, and it made the Appearance group read like a
+       * bug. Half the shorter side is the radius the shape actually has, and
+       * it is the number that reproduces it exactly if a designer types it
+       * back in.
+       */
+      if (!cs) return 0;
+      const asked = Math.round(parseFloat(cs.borderTopLeftRadius) || 0);
+      const most = Math.floor(Math.min(box?.width ?? asked, box?.height ?? asked) / 2);
+      return Math.min(asked, Math.max(0, most) || asked);
+    }
     case 'fontSize':
       return cs ? Math.round(parseFloat(cs.fontSize) || 0) : 16;
     case 'fontWeight':
