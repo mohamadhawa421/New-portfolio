@@ -13,6 +13,7 @@
  *    throttled through rAF.
  */
 
+import { isClub } from './club';
 import { resolvedTheme, restoreTheme } from './theme-state';
 
 const root = document.documentElement;
@@ -342,7 +343,21 @@ function triggerFor(el: HTMLElement): HTMLElement {
 function setUpReveals(): void {
   const elements = Array.from(document.querySelectorAll<HTMLElement>(REVEAL_SELECTOR));
 
-  if (reduced || typeof IntersectionObserver === 'undefined') {
+  /*
+   * Club mode takes the same exit reduced motion does.
+   *
+   * Inside the Club's canvas the page is inside a transformed, scaled iframe
+   * that the editor scrolls itself, and an IntersectionObserver watching that
+   * frame's own viewport does not fire the way it does in a window somebody is
+   * scrolling. The failure is total rather than subtle — every section below
+   * the fold stays at zero opacity, so the designer opens the Club and finds
+   * most of the portfolio missing.
+   *
+   * `showAll()` already exists for exactly this shape of problem and is the
+   * honest answer here too: there is no entrance to play, because nobody is
+   * arriving. They are editing.
+   */
+  if (reduced || isClub() || typeof IntersectionObserver === 'undefined') {
     showAll();
     return;
   }

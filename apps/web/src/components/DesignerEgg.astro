@@ -252,6 +252,7 @@ import EggSound from './EggSound.astro';
 <EggSound />
 
 <script>
+  import { isClub } from '../scripts/club';
   import * as mode from '../scripts/designer-mode';
   import * as sound from '../scripts/designer-sound';
 
@@ -267,6 +268,19 @@ import EggSound from './EggSound.astro';
   let globalsBound = false;
 
   function setupEgg() {
+    /*
+     * Not inside the Club's canvas.
+     *
+     * The wave itself is untouched — this does not reach any of its timing,
+     * physics or sound, and a normal visit is bit for bit what it was. It
+     * simply is not armed here, because in the Club a press on the portrait
+     * means "select the portrait", and a shockwave taking the page apart
+     * underneath a designer who was reaching for a layer is not an easter egg,
+     * it is a bug. Preview mode leaves the frame in club mode too: the wave is
+     * the site's, and the Club is not the site.
+     */
+    if (isClub()) return;
+
     const ring = document.querySelector<HTMLElement>('[data-egg-ring]');
     const trail = document.querySelector<HTMLElement>('[data-egg-ring-trail]');
     const wash = document.querySelector<HTMLElement>('[data-egg-wash]');

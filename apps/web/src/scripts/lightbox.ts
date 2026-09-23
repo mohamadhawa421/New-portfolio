@@ -13,6 +13,8 @@
  * animation is the difference between where it is and where it came from.
  */
 
+import { isClub } from './club';
+
 /** How long the picture takes to arrive, and to go back. */
 const TRAVEL_MS = 520;
 const RETURN_MS = 420;
@@ -83,6 +85,13 @@ function badge(): HTMLElement {
  * actually has is the only answer that is true in both cases.
  */
 export function stampZoomables(): void {
+  /*
+   * Nothing opens in the Club. Clicking a project shot there means "select
+   * this image so I can replace it", and a full-screen viewer swallowing that
+   * click is the single most confusing thing the canvas could do.
+   */
+  if (isClub()) return;
+
   document.querySelectorAll<HTMLElement>('[data-zoom]').forEach((frame) => {
     const image = frame.querySelector('img');
     // A cover with no picture in it is initials on a colour, and there is

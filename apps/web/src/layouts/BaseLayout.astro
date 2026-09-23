@@ -107,6 +107,32 @@ const faviconHref = settings.logoMark?.url ?? '/favicon.svg';
         seeing a white page for a frame on every load. */}
     <script is:inline>
       (function () {
+        /*
+         * Club mode, decided before the first paint.
+         *
+         * The Designers Club canvas is this very page running in a same-origin
+         * iframe, so that the sandbox is the real portfolio rather than a
+         * mockup of it. Several of the site's own behaviours are wrong in that
+         * context — reveals that wait for an IntersectionObserver which never
+         * fires in a scaled frame would leave whole sections at zero opacity,
+         * the pointer ring would chase a cursor belonging to the editor
+         * outside, and the shockwave would fire on what the Club means as a
+         * selection.
+         *
+         * It is set here, with the theme, because both have to be true before
+         * anything paints: a guard read later would let a frame of the wrong
+         * behaviour through. Read from the URL and never stored — club mode
+         * belongs to one document in one frame, and a persisted flag would
+         * leak the editor's behaviour into an ordinary visit.
+         */
+        try {
+          if (new URLSearchParams(location.search).get('club') === '1') {
+            document.documentElement.setAttribute('data-club', '');
+          }
+        } catch (e) {
+          /* No URLSearchParams is no club; the site behaves normally. */
+        }
+
         try {
           // Session-scoped: a new visit starts from the system preference.
           var saved = sessionStorage.getItem('mh-theme');

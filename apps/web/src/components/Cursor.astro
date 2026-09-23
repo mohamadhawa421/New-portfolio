@@ -76,6 +76,8 @@
 </div>
 
 <script>
+  import { isClub } from '../scripts/club';
+
   /**
    * Re-states everything the router's DOM swap knocks out from under the
    * pointer. Set once the pointer is actually running; a no-op until then.
@@ -1115,6 +1117,16 @@
   document.addEventListener('astro:after-swap', claimCursor);
 
   document.addEventListener('astro:page-load', () => {
+    /*
+     * The Club's canvas keeps the machine's own arrow.
+     *
+     * Two drawn pointers, one per document, is the obvious failure: the ring
+     * inside the frame would chase a position the editor is also drawing to,
+     * a frame behind it and offset by the canvas transform. The editor owns
+     * the pointer while it is the thing being pointed with.
+     */
+    if (isClub()) return;
+
     const w = window as unknown as { __mhCursor?: boolean };
     if (w.__mhCursor) {
       // Also covers the router's no-view-transition fallback path, where

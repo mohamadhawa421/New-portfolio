@@ -22,14 +22,25 @@
 </div>
 
 <script>
+  import { isClub } from '../scripts/club';
+
   /*
-   * Bound once for the life of the tab.
+   * Bound once for the life of the tab, and never inside the Club.
    *
    * This script runs again on every swap and the listeners are on `window`,
    * which the router never replaces, so registering twice would leave two
    * loops writing the same two properties.
+   *
+   * The Club's canvas has no scrollbar of its own: the frame is sized to the
+   * whole document and the editor moves it, so a drawn bar down the right edge
+   * would be a permanent artefact across the artboard — and it would be
+   * exported into the PNG. The check belongs in this condition rather than
+   * further down as an early return, both because a `return` at the top level
+   * of a module is not legal (which is how this was first written, and the
+   * compiler said so), and because failing the guard here means the scroll and
+   * resize listeners are never bound at all.
    */
-  if (!(window as unknown as { __mhScroller?: boolean }).__mhScroller) {
+  if (!isClub() && !(window as unknown as { __mhScroller?: boolean }).__mhScroller) {
     (window as unknown as { __mhScroller?: boolean }).__mhScroller = true;
 
     const root = document.documentElement;

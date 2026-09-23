@@ -101,6 +101,13 @@ const canDraw = Boolean(viewBox) && paths.length > 0;
     if (!curtain) return;
 
     var KEY = 'mh-intro-seen';
+    /*
+     * Never over the Club's canvas. The frame reloads whenever the designer
+     * resets the sandbox, and a full-screen curtain wiping across the artboard
+     * each time is the editor appearing to hang. Inline script, so it reads the
+     * attribute the primer set rather than importing the helper.
+     */
+    var club = document.documentElement.hasAttribute('data-club');
     var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var seen = false;
 
@@ -110,7 +117,7 @@ const canDraw = Boolean(viewBox) && paths.length > 0;
       // Private mode or storage disabled — treat as a first visit.
     }
 
-    if (seen || reduced) {
+    if (seen || reduced || club) {
       curtain.remove();
       return;
     }

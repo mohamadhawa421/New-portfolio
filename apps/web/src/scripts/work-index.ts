@@ -16,6 +16,8 @@
  * past it — the browser does that on its own, with nothing here involved.
  */
 
+import { isClub } from './club';
+
 /** Matches the CSS: below this there is no frame and no mechanism. */
 const WIDE = '(min-width: 901px)';
 
@@ -298,6 +300,16 @@ export function bindWorkIndex(): void {
    * rotated phone that kept the frame's copy would navigate without one.
    */
   window.addEventListener('resize', assignMorph);
+
+  /*
+   * The preview stack does not follow the pointer in here.
+   *
+   * On the site, moving across the list swaps the sticky preview, which is the
+   * whole interaction. In the Club the pointer is a design tool: crossing a
+   * project row on the way to a layer would silently change what the canvas is
+   * showing, and the designer would be editing a project they did not choose.
+   */
+  if (isClub()) return;
 
   document.addEventListener('astro:page-load', start);
   start();

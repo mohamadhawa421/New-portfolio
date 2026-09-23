@@ -32,6 +32,7 @@
 </div>
 
 <script>
+  import { isClub } from '../scripts/club';
   import { bindSuperTrigger, restoreSuper } from '../scripts/super';
 
   /*
@@ -47,7 +48,13 @@
     // Before the new page is drawn rather than after it, or the visitor sees a
     // frame of the normal theme on the way into every link they follow.
     document.addEventListener('astro:after-swap', restoreSuper);
-    document.addEventListener('astro:page-load', restoreSuper);
+    /*
+     * The third theme is found, and it is not found in here. A press-and-hold
+     * on the theme toggle inside the canvas is a designer selecting a button,
+     * and having the whole artboard turn violet in reply is the editor
+     * appearing to break.
+     */
+    if (!isClub()) document.addEventListener('astro:page-load', restoreSuper);
   }
 </script>
 

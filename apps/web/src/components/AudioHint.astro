@@ -254,6 +254,7 @@
 </style>
 
 <script>
+  import { isClub } from '../scripts/club';
   import * as sound from '../scripts/designer-sound';
 
   const KEY = 'mh-audio-hint-seen';
@@ -295,7 +296,13 @@
      * client router would otherwise offer it again on every navigation, since
      * the markup is part of every document.
      */
-    if (window.location.pathname !== '/') {
+    /*
+     * The home page only, and never the Club's copy of it. Inside the canvas
+     * this is a pill floating over the artboard that the designer cannot
+     * select, cannot move, and did not ask for — and the sound it recommends
+     * is not going to play there either, because the wave is not armed.
+     */
+    if (window.location.pathname !== '/' || isClub()) {
       card.remove();
       return;
     }
