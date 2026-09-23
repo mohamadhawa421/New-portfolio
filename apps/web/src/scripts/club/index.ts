@@ -48,6 +48,7 @@ export function startClub(root: HTMLElement): void {
   const zoomOut = root.querySelector<HTMLElement>('[data-club-zoom]')!;
   const zoomField = root.querySelector<HTMLInputElement>('[data-club-zoom-field]')!;
   const toast = root.querySelector<HTMLElement>('[data-club-toast]')!;
+  const tip = root.querySelector<HTMLElement>('[data-club-tip]')!;
   const resume = root.querySelector<HTMLButtonElement>('[data-club-resume]')!;
 
   const store = new Store();
@@ -1267,6 +1268,8 @@ export function startClub(root: HTMLElement): void {
   }
 
   function bindEditorInput(): void {
+    document.addEventListener('pointerover', onOver);
+    document.addEventListener('pointerout', onOut);
     document.addEventListener('focusout', onFocusOut);
     document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('pointermove', onPointerMove);
@@ -1502,6 +1505,97 @@ export function startClub(root: HTMLElement): void {
     });
   }
 
+  /* ---------------------------------------------------------------- */
+  /* Tooltips, and the panels they describe                            */
+  /* ---------------------------------------------------------------- */
+
+  /**
+   * Which keyboard this is, which is the one thing the Club has to sniff.
+   *
+   * Not to change behaviour — Cmd and Ctrl are read together everywhere in
+   * here, so both work on both — but to *write the label down*. A Mac
+   * designer reading "Ctrl Z" on a tooltip learns the wrong thing, and there
+   * is no feature to detect that would answer the question.
+   */
+  const MAC = /mac|iphone|ipad/i.test(
+    (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform ??
+      navigator.platform ??
+      ''
+  );
+
+  const keyLabel = (raw: string): string =>
+    raw.replace('Mod', MAC ? '⌘' : 'Ctrl').replace('Alt', MAC ? '⌥' : 'Alt');
+
+  /**
+   * One tooltip, after a pause, naming the control and its key.
+   *
+   * `title` was doing this and doing it badly: the browser's own tooltip
+   * arrives after a second and a half, in the operating system's font, at the
+   * pointer rather than at the control, and it cannot show a key in a
+   * different weight. It is also the one piece of chrome in here that would
+   * have looked like neither Figma nor this portfolio.
+   */
+  let tipTimer = 0;
+
+  function showTip(on: HTMLElement): void {
+    tip.replaceChildren();
+    const says = document.createElement('span');
+    says.textContent = on.dataset.tip ?? '';
+    tip.appendChild(says);
+    if (on.dataset.key) {
+      const key = document.createElement('kbd');
+      key.textContent = keyLabel(on.dataset.key);
+      tip.appendChild(key);
+    }
+
+    tip.hidden = false;
+    const at = on.getBoundingClientRect();
+    const box = tip.getBoundingClientRect();
+    // Above, unless there is no above — the tool pill is at the bottom, the
+    // top bar is at the top, and one rule has to serve both.
+    const top = at.top - box.height - 8;
+    tip.style.top = `${top < 6 ? at.bottom + 8 : top}px`;
+    tip.style.left = `${Math.max(6, Math.min(at.left + at.width / 2 - box.width / 2, window.innerWidth - box.width - 6))}px`;
+  }
+
+  function hideTip(): void {
+    window.clearTimeout(tipTimer);
+    tip.hidden = true;
+  }
+
+  function onOver(e: PointerEvent): void {
+    const on = (e.target as HTMLElement | null)?.closest?.<HTMLElement>('[data-tip]');
+    if (!on) return;
+    window.clearTimeout(tipTimer);
+    tipTimer = window.setTimeout(() => showTip(on), 420);
+  }
+
+  function onOut(e: PointerEvent): void {
+    if (!(e.target as HTMLElement | null)?.closest?.('[data-tip]')) return;
+    hideTip();
+  }
+
+  /**
+   * Folding a panel away, which is what a small screen and a long look at the
+   * work both want.
+   *
+   * Each side folds on its own and both fold together on the shortcut, which
+   * is the pair of gestures the tool this imitates offers. The buttons stay in
+   * the top bar when a panel is away, so getting it back is where putting it
+   * away was rather than a hunt along the window edge.
+   */
+  const folded = new Set<string>();
+
+  function fold(side: string): void {
+    if (folded.has(side)) folded.delete(side);
+    else folded.add(side);
+    root.dataset.fold = [...folded].join(' ');
+    requestAnimationFrame(() => {
+      drawOverlay();
+      paintView();
+    });
+  }
+
   function syncHistoryButtons(): void {
     const u = root.querySelector<HTMLButtonElement>('[data-act="undo"]');
     const r = root.querySelector<HTMLButtonElement>('[data-act="redo"]');
@@ -1551,6 +1645,8 @@ export function startClub(root: HTMLElement): void {
       return;
     }
 
+    hideTip();
+
     const toolBtn = hit('[data-tool]');
     if (toolBtn) {
       setTool(toolBtn.dataset.tool as Tool);
@@ -1575,6 +1671,8 @@ export function startClub(root: HTMLElement): void {
     else if (act === 'zoom-out') zoomBy(1 / 1.25);
     else if (act === 'fit') fit();
     else if (act === 'zoom-set') openZoomField();
+    else if (act === 'fold-left') fold('left');
+    else if (act === 'fold-right') fold('right');
     else if (act === 'undo') store.undo();
     else if (act === 'redo') store.redo();
     else if (act === 'preview') setMode('preview');
@@ -1652,6 +1750,13 @@ export function startClub(root: HTMLElement): void {
      * of them, which is what makes these work for a designer who is not
      * typing in English.
      */
+    if ((e.metaKey || e.ctrlKey) && e.code === 'Backslash') {
+      e.preventDefault();
+      fold('left');
+      fold('right');
+      return;
+    }
+
     if (e.shiftKey && !e.metaKey && !e.ctrlKey) {
       if (e.code === 'Digit1') {
         e.preventDefault();
@@ -1950,6 +2055,28 @@ export function startClub(root: HTMLElement): void {
    * character who comments on every edit stops being a character and becomes a
    * notification system.
    */
+  /**
+   * The single hint the Club offers after the tour, once per browser.
+   *
+   * Measuring is the interaction a designer will not go looking for and will
+   * use constantly once they know it exists — there is nothing on screen that
+   * suggests a modifier key does anything. Everything else in here is either
+   * visible or is a shortcut for something visible, so this is the only one
+   * worth spending a message on.
+   */
+  const ALT_TIP = 'mh-club-measure-tip';
+
+  function altTip(): void {
+    try {
+      if (localStorage.getItem(ALT_TIP) === '1') return;
+      localStorage.setItem(ALT_TIP, '1');
+    } catch {
+      // Storage refused. Showing it once more costs far less than a designer
+      // never finding the measurement overlay at all.
+    }
+    flash(`Tip: hold ${MAC ? 'Option' : 'Alt'} and hover to measure spacing.`, 5600);
+  }
+
   let lastSaid = 0;
 
   function say(line: string): void {
@@ -1996,7 +2123,8 @@ export function startClub(root: HTMLElement): void {
     sizeFrame();
     fit();
     refresh();
-    if (shouldTour()) runTour(root, () => flash('Tip: V select · H hand · R rectangle · T text'));
+    if (shouldTour()) runTour(root, altTip);
+    else altTip();
   });
 
   /*
@@ -2012,6 +2140,9 @@ export function startClub(root: HTMLElement): void {
     disposed = true;
     document.removeEventListener('keydown', onKey);
     document.removeEventListener('keyup', onKeyUp);
+    window.clearTimeout(tipTimer);
+    document.removeEventListener('pointerover', onOver);
+    document.removeEventListener('pointerout', onOut);
     document.removeEventListener('focusout', onFocusOut);
     document.removeEventListener('pointerdown', onPointerDown);
     document.removeEventListener('pointermove', onPointerMove);

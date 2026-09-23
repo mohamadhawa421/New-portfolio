@@ -228,7 +228,15 @@ export function catalogueFor(path: string): SectionSpec[] | null {
  * an editor stops feeling real.
  */
 export const PROPS_FOR: Record<ClubType, readonly string[]> = {
-  text: ['text', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'color', 'align', 'x', 'y', 'opacity', 'visible'],
+  /*
+   * Text carries a width and not a height.
+   *
+   * A text layer's width is a real decision — it is where the lines break, and
+   * it is the control a designer reaches for after changing a font size. Its
+   * height is not: it is whatever the words came to, and offering a field that
+   * fights the content is how a panel starts lying.
+   */
+  text: ['text', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'color', 'align', 'w', 'x', 'y', 'opacity', 'visible'],
   /*
    * A button is a frame, and a frame has one fill.
    *

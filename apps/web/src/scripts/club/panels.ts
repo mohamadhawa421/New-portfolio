@@ -474,18 +474,22 @@ function field(
    * all — the textarea, the colour swatch — gets no empty label box either.
    */
   const drawn = ICON[key];
+  const numeric = !NOT_A_NUMBER.has(key);
+  let propLabel: HTMLLabelElement | null = null;
+
   if (glyph || drawn) {
-    const label = document.createElement('label');
-    label.setAttribute('for', id);
-    label.setAttribute('aria-hidden', 'true');
-    label.title = title;
+    propLabel = document.createElement('label');
+    propLabel.setAttribute('for', id);
+    propLabel.setAttribute('aria-hidden', 'true');
+    propLabel.title = title;
     if (drawn) {
-      label.className = 'club__ico';
-      label.innerHTML = `<svg viewBox="0 0 14 13">${drawn}</svg>`;
+      propLabel.className = 'club__ico';
+      propLabel.innerHTML = `<svg viewBox="0 0 14 13">${drawn}</svg>`;
     } else {
-      label.textContent = glyph;
+      propLabel.textContent = glyph;
     }
-    wrap.appendChild(label);
+    if (numeric) propLabel.dataset.scrub = '';
+    wrap.appendChild(propLabel);
   }
 
   /*
@@ -601,6 +605,60 @@ function field(
     propInput.max = '1';
   }
 
+  /*
+   * The arrows, and the same arrows ten at a time.
+   *
+   * A number input already steps on an arrow key, and it steps by one — so
+   * Shift, which is how every design tool asks for a coarse adjustment, did
+   * nothing at all. Taking both over is simpler than trying to add to the
+   * native behaviour, and it puts opacity on its own sensible step rather
+   * than making a designer type 0.05 by hand.
+   */
+  propInput.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    e.preventDefault();
+    const size = (TAP[key] ?? 1) * (e.shiftKey ? 10 : 1);
+    const next = round(Number(propInput.value || 0) + (e.key === 'ArrowUp' ? size : -size), key);
+    propInput.value = String(next);
+    commit(next);
+  });
+
+  /*
+   * Scrubbing: drag the field's own mark to change its number.
+   *
+   * It is the gesture designers reach for without thinking and it costs
+   * almost nothing — the label was already sitting there doing nothing but
+   * naming the field. Pointer capture is what makes it usable: the drag keeps
+   * reporting long after the pointer has left a fourteen-pixel icon, which is
+   * within the first few pixels of every scrub anyone has ever done.
+   *
+   * `live` for the whole drag and a plain commit at the end, so pulling a
+   * width from 200 to 480 is one step in the history rather than two hundred.
+   */
+  if (propLabel && numeric) {
+    propLabel.addEventListener('pointerdown', (e: PointerEvent) => {
+      propLabel!.setPointerCapture(e.pointerId);
+      const from = Number(propInput.value || 0);
+      const at = e.clientX;
+      const size = DRAG[key] ?? 1;
+      let value = from;
+
+      const move = (ev: PointerEvent): void => {
+        value = round(from + (ev.clientX - at) * size * (ev.shiftKey ? 10 : 1), key);
+        propInput.value = String(value);
+        commit(value, true);
+      };
+      const up = (): void => {
+        propLabel!.removeEventListener('pointermove', move);
+        propLabel!.removeEventListener('pointerup', up);
+        commit(value);
+      };
+      propLabel!.addEventListener('pointermove', move);
+      propLabel!.addEventListener('pointerup', up);
+      e.preventDefault();
+    });
+  }
+
   propInput.addEventListener('input', () => {
     if (propInput.value === '') return;
     commit(Number(propInput.value), true);
@@ -616,6 +674,28 @@ function field(
 
   wrap.appendChild(propInput);
   return wrap;
+}
+
+/** The fields that are not numbers, and so are neither scrubbed nor stepped. */
+const NOT_A_NUMBER = new Set(['text', 'src', 'align', 'fit', 'color', 'bg']);
+
+/*
+ * How much a field moves, per keypress and per pixel of drag.
+ *
+ * One size does not fit these. A width is a pixel, so one is right; a line
+ * height is a ratio around 1.4, where one is the whole control at once and
+ * makes the field useless. The default is 1 and only the ratios are named.
+ */
+const TAP: Record<string, number> = { opacity: 0.05, lineHeight: 0.05, letterSpacing: 0.1 };
+const DRAG: Record<string, number> = { opacity: 0.01, lineHeight: 0.01, letterSpacing: 0.1 };
+const PLACES: Record<string, number> = { opacity: 2, lineHeight: 2, letterSpacing: 1 };
+
+/** Keeps a scrubbed or stepped value at a precision a designer would type. */
+function round(value: number, key: string): number {
+  const places = PLACES[key] ?? 0;
+  const scale = 10 ** places;
+  const at = Math.round(value * scale) / scale;
+  return key === 'opacity' ? Math.min(1, Math.max(0, at)) : at;
 }
 
 /* ------------------------------------------------------------------ */

@@ -175,6 +175,15 @@ test('module listeners are bound to document or window', () => {
      */
     'pickerSurface',
     'pickerHex',
+    /*
+     * A property field's own label, which is also its scrub handle. Built and
+     * discarded with the field it names — the panel replaces its children on
+     * every render — and it has to be bound directly, because the drag uses
+     * pointer capture to keep reporting once the pointer has left a
+     * fourteen-pixel icon. Named `propLabel` so the exemption cannot quietly
+     * cover a `<label>` in page markup.
+     */
+    'propLabel',
   ]);
 
   const offenders = [];
