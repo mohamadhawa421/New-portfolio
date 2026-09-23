@@ -300,6 +300,19 @@ export class Sandbox {
       /* Except while something is genuinely being typed into. */
       [contenteditable="plaintext-only"] { pointer-events: auto !important; caret-color: auto; }
       [contenteditable="plaintext-only"]::selection { background: Highlight; }
+
+      /*
+       * The site's own navigation is not part of the artboard.
+       *
+       * It is \`position: fixed\`, and the frame is sized to the whole document
+       * rather than to a viewport — so it does not follow anything, it just
+       * sits across the top of an eight-thousand-pixel page and lands in the
+       * export that way. Changing page is the Pages panel's job in here, which
+       * leaves the nav with nothing to do and a permanent stripe to occupy.
+       * The skip link goes for the same reason: it appears on focus, and focus
+       * moves around constantly while editing.
+       */
+      [data-nav], [data-logo], .skip-link, .scroller { display: none !important; }
     `;
     sandboxDoc.head.appendChild(style);
   }
@@ -317,15 +330,38 @@ export class Sandbox {
   }
 
   /**
-   * What is under this point in the sandbox.
+   * What is under this point in the sandbox, found geometrically.
    *
-   * `elementFromPoint` rather than an event target, because `freeze` has taken
-   * pointer events off everything in the body — so every click lands on the
-   * document and `event.target` is useless. This ignores pointer-events by
-   * design, which is exactly why the two work together.
+   * Neither of the obvious answers works here. `event.target` is always the
+   * document, because `freeze` takes pointer events off everything in the body
+   * so that no `:hover` can ever match. And `elementFromPoint` — which was the
+   * second attempt — *honours* `pointer-events: none`, so it walks straight
+   * past every element and hands back the body as well.
+   *
+   * So the hit test is done against the adopted nodes' own rectangles. It is
+   * the smallest box containing the point, which resolves "the headline inside
+   * the hero" to the headline; sections lose to their children on area, which
+   * is the behaviour a designer expects from a click. Forty-odd rectangles is
+   * nothing to measure, and it has a property the DOM version never had: only
+   * things in the catalogue can be hit, so a click can never select some
+   * anonymous wrapper that happens to be on top.
    */
   at(x: number, y: number): ClubNode | undefined {
-    return this.hit(this.doc?.elementFromPoint(x, y) ?? null);
+    let best: ClubNode | undefined;
+    let bestArea = Infinity;
+
+    for (const node of this.nodes.values()) {
+      const r = node.el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) continue;
+      if (x < r.left || x > r.right || y < r.top || y > r.bottom) continue;
+      const area = r.width * r.height;
+      if (area < bestArea) {
+        bestArea = area;
+        best = node;
+      }
+    }
+
+    return best;
   }
 
   /** Which adopted node owns this element, walking up from an element. */

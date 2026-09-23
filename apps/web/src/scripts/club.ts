@@ -38,6 +38,21 @@ export function isClub(): boolean {
 }
 
 /**
+ * Whether this document is the Club's *workspace* — the editor itself, rather
+ * than the canvas inside it.
+ *
+ * The two are different documents and want opposite things. The canvas is the
+ * portfolio and answers to `data-club`; the workspace is an ordinary page of
+ * this site, so everything the site does runs there by default — including the
+ * drawn pointer, which is exactly wrong in a design tool. A designer needs to
+ * see where the hairline of a resize handle is, and the arrow the operating
+ * system draws is the one every editor uses for that reason.
+ */
+export function isClubEditor(): boolean {
+  return !!document.querySelector('[data-club-root]');
+}
+
+/**
  * The query flag the primer looks for, exported so the editor builds the
  * iframe's URL from the same constant rather than from a second string
  * literal that can drift from this one.

@@ -76,7 +76,7 @@
 </div>
 
 <script>
-  import { isClub } from '../scripts/club';
+  import { isClub, isClubEditor } from '../scripts/club';
 
   /**
    * Re-states everything the router's DOM swap knocks out from under the
@@ -1125,7 +1125,7 @@
      * a frame behind it and offset by the canvas transform. The editor owns
      * the pointer while it is the thing being pointed with.
      */
-    if (isClub()) return;
+    if (isClub() || isClubEditor()) return;
 
     const w = window as unknown as { __mhCursor?: boolean };
     if (w.__mhCursor) {

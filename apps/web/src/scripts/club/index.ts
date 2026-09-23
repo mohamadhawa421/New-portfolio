@@ -58,6 +58,7 @@ export function startClub(root: HTMLElement): void {
   let panX = 0;
   let panY = 0;
   let spaceHeld = false;
+  let altHeld = false;
   let disposed = false;
 
   /* ---------------------------------------------------------------- */
@@ -113,9 +114,31 @@ export function startClub(root: HTMLElement): void {
     replaceImage: (id) => pickImage(id),
   };
 
-  function refresh(): void {
+  /**
+   * Repaint, in one of two weights.
+   *
+   * The heavy pass rebuilds both panels, and during a drag that is a
+   * catastrophe: a pointermove arrives every frame, and each one was throwing
+   * away forty-four layer rows and a dozen property fields and building them
+   * again, then reading `scrollHeight` off the frame to re-measure it. That is
+   * why dragging felt like it was catching — the work per frame was tens of
+   * milliseconds of DOM churn for a change the designer could already see.
+   *
+   * While a gesture is running only two things can have changed: where the
+   * element is, and therefore where its selection box is. So the live pass
+   * applies the state to the sandbox and redraws the overlay, and nothing
+   * else. The panels catch up once on the frame the pointer comes up, which is
+   * also the frame the edit becomes a history step.
+   */
+  function refresh(live = false): void {
     if (disposed) return;
     sandbox.apply(store.current);
+
+    if (live) {
+      drawOverlay();
+      return;
+    }
+
     // Layout may have changed under the edit, so the frame is re-measured.
     sizeFrame();
     renderLayers(layersHost, sandbox, store, selected, hooks);
@@ -124,7 +147,7 @@ export function startClub(root: HTMLElement): void {
     syncHistoryButtons();
   }
 
-  store.subscribe(() => refresh());
+  store.subscribe(() => refresh(gesture !== null));
 
   /* ---------------------------------------------------------------- */
   /* Selection and its overlay                                         */
@@ -192,6 +215,22 @@ export function startClub(root: HTMLElement): void {
     tag.style.cssText = `left:${box.x + box.width / 2}px;top:${box.y + box.height}px;transform:translate(-50%, 6px) scale(var(--z,1));transform-origin:50% 0`;
     overlay.appendChild(tag);
 
+    /*
+     * Hold Alt and the padding appears, the way it does in the tool this
+     * borrows from.
+     *
+     * Figma shows the space *inside* a container as filled bands with their
+     * measurements on them, and it is the fastest way to understand why
+     * something sits where it does. The numbers here are read straight off the
+     * computed style, so they are the real values the stylesheet produced
+     * rather than anything the Club has invented — which also means they are
+     * the numbers to type into the Padding field beside them.
+     *
+     * Only where there is padding to show: a band of zero is noise, and four
+     * of them around every text layer would make the modifier useless.
+     */
+    if (altHeld) drawPadding(node, box);
+
     // Sections are containers for the tree, not things to drag by the corner.
     if (node.parentId === null) return;
 
@@ -201,6 +240,43 @@ export function startClub(root: HTMLElement): void {
       h.dataset.dir = dir;
       h.style.cssText = `left:${box.x + box.width * fx}px;top:${box.y + box.height * fy}px;transform:scale(var(--z,1));cursor:${dir}-resize`;
       overlay.appendChild(h);
+    }
+  }
+
+  /** The four inside edges of a box, drawn and labelled. */
+  function drawPadding(node: { el: HTMLElement }, box: DOMRect): void {
+    const view = node.el.ownerDocument.defaultView;
+    if (!view) return;
+    const cs = view.getComputedStyle(node.el);
+
+    const sides: [string, number, string][] = [
+      ['top', parseFloat(cs.paddingTop) || 0, 'row'],
+      ['bottom', parseFloat(cs.paddingBottom) || 0, 'row'],
+      ['left', parseFloat(cs.paddingLeft) || 0, 'col'],
+      ['right', parseFloat(cs.paddingRight) || 0, 'col'],
+    ];
+
+    for (const [side, size, axis] of sides) {
+      if (size < 1) continue;
+
+      const band = document.createElement('div');
+      band.className = 'club__pad';
+
+      const horizontal = axis === 'row';
+      const w = horizontal ? box.width : size;
+      const h = horizontal ? size : box.height;
+      const left = side === 'right' ? box.x + box.width - size : box.x;
+      const top = side === 'bottom' ? box.y + box.height - size : box.y;
+
+      band.style.cssText = `left:${left}px;top:${top}px;width:${w}px;height:${h}px`;
+
+      const label = document.createElement('span');
+      label.className = 'club__pad-n';
+      label.textContent = String(Math.round(size));
+      label.style.transform = `translate(-50%, -50%) scale(var(--z,1))`;
+      band.appendChild(label);
+
+      overlay.appendChild(band);
     }
   }
 
@@ -286,8 +362,10 @@ export function startClub(root: HTMLElement): void {
     const was = gesture;
     gesture = null;
     if (was.kind === 'pan') return;
-    // The gesture's start is already on the history stack; this is the frame
-    // that makes the result a step rather than eighty of them.
+    /*
+     * The panels catch up here, once, on the frame the gesture ends — see the
+     * note on `refresh`. `gesture` is already null, so this is the heavy pass.
+     */
     refresh();
   }
 
@@ -355,6 +433,30 @@ export function startClub(root: HTMLElement): void {
     });
 
     sandboxDoc.addEventListener('pointerup', endGesture);
+
+    /*
+     * Scrolling and zooming while the pointer is over the artboard.
+     *
+     * This is the one piece of input the editor cannot get from its own
+     * document. A wheel event over an iframe is delivered to the *frame's*
+     * document and stops there — it does not bubble out to the parent — so the
+     * editor's own wheel handler never saw a single tick while the pointer was
+     * over the canvas, which is the whole canvas. The result was a page that
+     * refused to scroll everywhere except the thin margin around the artboard.
+     *
+     * The frame's coordinates are the document's, so they are converted to the
+     * editor's before being handed to the same handler the margin uses.
+     */
+    sandboxDoc.addEventListener(
+      'wheel',
+      (e) => {
+        e.preventDefault();
+        // Document coordinates → editor-window coordinates.
+        const box = canvas.getBoundingClientRect();
+        wheelAt(box.left + panX + e.clientX * zoom, box.top + panY + e.clientY * zoom, e);
+      },
+      { passive: false }
+    );
 
     /* Double-click a text layer and type into the page itself. */
     sandboxDoc.addEventListener('dblclick', (e) => {
@@ -463,11 +565,16 @@ export function startClub(root: HTMLElement): void {
   function onWheel(e: WheelEvent): void {
     if (!(e.target as HTMLElement | null)?.closest?.('[data-club-canvas]')) return;
     e.preventDefault();
+    wheelAt(e.clientX, e.clientY, e);
+  }
+
+  /** Editor-window coordinates in, pan or zoom out. Shared with the frame. */
+  function wheelAt(clientX: number, clientY: number, e: WheelEvent): void {
     if (e.ctrlKey || e.metaKey) {
-      const before = toDoc(e.clientX, e.clientY);
+      const before = toDoc(clientX, clientY);
       zoom = clamp(zoom * (1 - e.deltaY / 320), MIN_ZOOM, MAX_ZOOM);
       paintView();
-      const after = toDoc(e.clientX, e.clientY);
+      const after = toDoc(clientX, clientY);
       // Keep the point under the cursor where it was.
       panX += (after.x - before.x) * zoom;
       panY += (after.y - before.y) * zoom;
@@ -532,6 +639,7 @@ export function startClub(root: HTMLElement): void {
     sandbox.load(path, () => {
       if (disposed) return;
       bindSandboxInput();
+      bindSandboxKeys();
       sizeFrame();
       fit();
       refresh();
@@ -779,6 +887,11 @@ export function startClub(root: HTMLElement): void {
       canvas.dataset.tool = 'hand';
     }
 
+    if (e.altKey && !altHeld) {
+      altHeld = true;
+      drawOverlay();
+    }
+
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
       e.preventDefault();
       if (e.shiftKey) store.redo();
@@ -872,6 +985,23 @@ export function startClub(root: HTMLElement): void {
       spaceHeld = false;
       canvas.dataset.tool = tool;
     }
+
+    if (!e.altKey && altHeld) {
+      altHeld = false;
+      drawOverlay();
+    }
+  }
+
+  /*
+   * The frame gets the keystroke when the pointer is over it, and keyboard
+   * events do not cross out of an iframe any more than wheel events do. So the
+   * sandbox document listens too and hands the modifier back.
+   */
+  function bindSandboxKeys(): void {
+    const sandboxDoc = sandbox.doc;
+    if (!sandboxDoc) return;
+    sandboxDoc.addEventListener('keydown', onKey);
+    sandboxDoc.addEventListener('keyup', onKeyUp);
   }
 
   /* ---------------------------------------------------------------- */
@@ -988,6 +1118,7 @@ export function startClub(root: HTMLElement): void {
   sandbox.load('/', () => {
     if (disposed) return;
     bindSandboxInput();
+    bindSandboxKeys();
     sizeFrame();
     fit();
     refresh();

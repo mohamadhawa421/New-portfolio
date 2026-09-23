@@ -134,29 +134,74 @@ function row(
  * right third of the panel without reading the labels.
  */
 const GROUPS: { name: string; keys: string[] }[] = [
-  { name: 'Content', keys: ['text', 'src'] },
-  { name: 'Type', keys: ['fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'align'] },
-  { name: 'Appearance', keys: ['color', 'bg', 'radius', 'opacity', 'fit'] },
-  { name: 'Layout', keys: ['x', 'y', 'w', 'h', 'padding', 'gap'] },
+  /*
+   * Figma's order, because a designer's eye already knows it.
+   *
+   * Position and size first — they are what you reach for most and what the
+   * selection badge is already telling you — then the spacing inside the box,
+   * then what it says, then how it is set, then how it looks. The earlier
+   * version led with Content, which put a textarea at the top of every panel
+   * and pushed X and Y below the fold on a short window.
+   *
+   * The names are Figma's too: Position, Auto layout, Appearance, Fill, Text.
+   * Borrowing the vocabulary is most of what makes a panel feel familiar
+   * before a single control has been used.
+   */
+  { name: 'Position', keys: ['x', 'y', 'w', 'h'] },
+  { name: 'Auto layout', keys: ['padding', 'gap'] },
+  { name: 'Text', keys: ['text', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'align'] },
+  { name: 'Appearance', keys: ['opacity', 'radius', 'fit'] },
+  { name: 'Fill', keys: ['bg', 'color'] },
+  { name: 'Image', keys: ['src'] },
 ];
 
+/*
+ * One or two characters wherever Figma uses one or two characters.
+ *
+ * These sit *beside* the input rather than above it, so a long word would
+ * halve the space the number gets. Figma's panel is dense because its labels
+ * are glyphs, and the glyphs are legible because they are always in the same
+ * place relative to the field.
+ */
 const LABEL: Record<string, string> = {
-  text: 'Content',
-  src: 'Image',
-  fontSize: 'Size',
-  fontWeight: 'Weight',
-  lineHeight: 'Line height',
-  letterSpacing: 'Letter spacing',
-  align: 'Align',
-  color: 'Text',
-  bg: 'Background',
-  radius: 'Radius',
-  opacity: 'Opacity',
-  fit: 'Fit',
+  text: '',
+  src: '',
+  fontSize: 'Aa',
+  fontWeight: 'W',
+  lineHeight: '↕',
+  letterSpacing: '↔',
+  align: '',
+  color: '',
+  bg: '',
+  radius: '⌜',
+  opacity: '◐',
+  fit: '',
   x: 'X',
   y: 'Y',
   w: 'W',
   h: 'H',
+  padding: '⊞',
+  gap: '⇹',
+};
+
+/** What the control is, for a screen reader and for the field's `title`. */
+const TITLE: Record<string, string> = {
+  text: 'Content',
+  src: 'Image',
+  fontSize: 'Font size',
+  fontWeight: 'Font weight',
+  lineHeight: 'Line height',
+  letterSpacing: 'Letter spacing',
+  align: 'Alignment',
+  color: 'Text colour',
+  bg: 'Background',
+  radius: 'Corner radius',
+  opacity: 'Opacity',
+  fit: 'Image fit',
+  x: 'X position',
+  y: 'Y position',
+  w: 'Width',
+  h: 'Height',
   padding: 'Padding',
   gap: 'Gap',
 };
@@ -225,10 +270,25 @@ function field(
   if (wide) wrap.classList.add('club__field--wide');
 
   const id = `club-${node.id.replace(/\W/g, '-')}-${key}`;
-  const label = document.createElement('label');
-  label.setAttribute('for', id);
-  label.textContent = LABEL[key] ?? key;
-  wrap.appendChild(label);
+  const title = TITLE[key] ?? key;
+  const glyph = LABEL[key] ?? '';
+
+  /*
+   * The glyph is decoration; the accessible name is the real word.
+   *
+   * "X" and "Aa" are perfectly clear to an eye that has used a design tool and
+   * meaningless to a screen reader, so the label carries the glyph visually
+   * and `aria-label` on the control carries the name. A field with no glyph at
+   * all — the textarea, the colour swatch — gets no empty label box either.
+   */
+  if (glyph) {
+    const label = document.createElement('label');
+    label.setAttribute('for', id);
+    label.setAttribute('aria-hidden', 'true');
+    label.textContent = glyph;
+    label.title = title;
+    wrap.appendChild(label);
+  }
 
   const commit = (value: unknown, live = false): void => {
     store.set(node.id, { [key]: value } as Props, key, live);
@@ -239,6 +299,7 @@ function field(
   if (key === 'text') {
     const propInput = document.createElement('textarea');
     propInput.id = id;
+    propInput.setAttribute('aria-label', title);
     propInput.value = (props.text ?? node.el.textContent ?? '').trim();
     propInput.addEventListener('input', () => commit(propInput.value, true));
     propInput.addEventListener('change', () => commit(propInput.value));
@@ -250,9 +311,8 @@ function field(
     const propInput = document.createElement('button');
     propInput.type = 'button';
     propInput.id = id;
-    propInput.className = 'club__ghost';
-    propInput.style.width = '100%';
-    propInput.style.border = '1px solid var(--club-line)';
+    propInput.className = 'club__btn';
+    propInput.setAttribute('aria-label', title);
     propInput.textContent = 'Replace image…';
     propInput.addEventListener('click', () => hooks.replaceImage(node.id));
     wrap.appendChild(propInput);
@@ -264,6 +324,7 @@ function field(
   if (key === 'align' || key === 'fit') {
     const propInput = document.createElement('select');
     propInput.id = id;
+    propInput.setAttribute('aria-label', title);
     const options = key === 'align' ? ['left', 'center', 'right'] : ['cover', 'contain', 'fill'];
     const current = (props[key as 'align' | 'fit'] ?? computed(node, key)) as string;
     for (const opt of options) {
@@ -287,6 +348,7 @@ function field(
     propInput.type = 'button';
     propInput.id = id;
     propInput.className = 'club__swatch';
+    propInput.setAttribute('aria-label', title);
     propInput.dataset.colour = current;
     propInput.innerHTML =
       `<span class="club__chip" style="background:${current}"></span><span>${current.toUpperCase()}</span>`;
@@ -309,6 +371,7 @@ function field(
   const propInput = document.createElement('input');
   propInput.type = 'number';
   propInput.id = id;
+  propInput.setAttribute('aria-label', title);
 
   /*
    * The placeholder is the measured value, and the field itself is empty

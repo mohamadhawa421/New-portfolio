@@ -1697,62 +1697,69 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
   /* ---------------------------------------------------------------- */
 
   /*
-   * Quiet, and deliberately the smallest section on the page.
+   * An aside in the page's own voice, not a banner dropped into it.
    *
-   * Everything above it is the case for hiring him; this is an aside to a
-   * different reader. So it takes the narrow measure, sits the character at a
-   * size that reads as a sticker rather than a mascot, and uses the page's own
-   * eyebrow and button rather than inventing a treatment of its own — the Club
+   * The first version had no vertical padding at all, so it sat tight against
+   * the sections either side and read as an advert someone had slotted in —
+   * which is exactly the thing this must not look like. Every other section
+   * here breathes on `clamp(58px, min(12vh, 16vw), 140px)`, and taking the
+   * same measure is most of what makes it belong.
+   *
+   * It stays the quietest section on the page: the narrow measure, the
+   * character at sticker size rather than mascot size, and the page's own
+   * eyebrow, heading and button rather than a treatment of its own. The Club
    * is allowed to be playful once you are inside it, not on the way in.
    */
+  .club-invite {
+    padding-block: clamp(58px, min(12vh, 16vw), 140px);
+  }
+
   .club-invite__inner {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
-    gap: clamp(18px, 3vw, 40px);
-    max-width: 880px;
+    gap: clamp(24px, 4vw, 64px);
+    max-width: 920px;
   }
 
   .club-invite__who {
-    width: clamp(120px, 15vw, 186px);
+    width: clamp(132px, 16vw, 208px);
     height: auto;
     display: block;
   }
 
   .club-invite__title {
-    margin: 6px 0 10px;
-    font-size: clamp(1.45rem, 3vw, 2.1rem);
-    letter-spacing: -0.022em;
-    line-height: 1.1;
+    /* The eyebrow sets the top margin, the paragraph the bottom. */
+    margin: 10px 0 14px;
+    font-size: clamp(1.5rem, 3.1vw, 2.25rem);
+    letter-spacing: -0.024em;
+    line-height: 1.08;
     text-wrap: balance;
   }
 
   .club-invite__note {
-    margin: 0 0 18px;
-    max-width: 52ch;
+    margin: 0 0 clamp(22px, 3vh, 30px);
+    max-width: 48ch;
     color: var(--ink-muted);
-    line-height: 1.55;
-  }
-
-  .club-invite__go {
-    /* The one place on the page a button says something playful. */
-    white-space: nowrap;
+    line-height: 1.6;
+    text-wrap: pretty;
   }
 
   /*
-   * On a phone the Club itself is unavailable, so the invitation says less and
-   * stacks — it is still worth knowing the room exists, and the page it links
+   * On a phone the Club itself is unavailable, so the invitation stacks and
+   * says less. It is still worth knowing the room exists — the page it links
    * to explains why it will not open here.
    */
-  @media (max-width: 640px) {
+  @media (max-width: 680px) {
     .club-invite__inner {
       grid-template-columns: minmax(0, 1fr);
       justify-items: start;
-      gap: 12px;
+      gap: 18px;
     }
 
     .club-invite__who {
-      width: 112px;
+      width: 124px;
     }
   }
+
 </style>

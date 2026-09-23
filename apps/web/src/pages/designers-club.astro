@@ -282,11 +282,21 @@ const PAGES = [
     overflow: hidden;
   }
 
-  html:has(.club) body > .site-nav,
-  html:has(.club) body > .site-logo,
+  /*
+   * Matched on the data attributes, not the class names.
+   *
+   * The first version guessed `.site-nav`, and the nav's class is `nav` — so
+   * the portfolio's own menu went on rendering across the top of the
+   * workspace, over the canvas, with the editor's bar underneath it. The
+   * logo's `data-logo` was right by luck. `data-nav` and `data-logo` are what
+   * the site's own scripts address these by, which makes them the stable
+   * handles; a class is a styling detail and moved once already.
+   */
+  html:has(.club) [data-nav],
+  html:has(.club) [data-logo],
   html:has(.club) body > footer,
   html:has(.club) .scroller,
-  html:has(.club-small) body > .site-nav,
+  html:has(.club-small) [data-nav],
   html:has(.club-small) body > footer {
     display: none !important;
   }
@@ -999,6 +1009,32 @@ const PAGES = [
     font-weight: 500;
     white-space: nowrap;
     pointer-events: none;
+  }
+
+  /*
+   * Padding, shown while Alt is held.
+   *
+   * Figma's own colour for this, and for a good reason: it is the one overlay
+   * that has to be legible *through* whatever it is lying on, which rules out
+   * anything in the blue family the selection already owns.
+   */
+  .club__pad {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    background: rgb(255 61 138 / 0.28);
+    pointer-events: none;
+  }
+
+  .club__pad-n {
+    padding: 0 4px;
+    border-radius: 3px;
+    background: #ff3d8a;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 15px;
+    white-space: nowrap;
   }
 
   /* ---- Floating tool pill ----------------------------------------- */
