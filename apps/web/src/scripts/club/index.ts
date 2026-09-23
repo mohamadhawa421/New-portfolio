@@ -38,8 +38,17 @@ import { runTour, shouldTour } from './tour';
 /** The artboard's width. A desktop document, not the editor's window. */
 const ARTBOARD = 1440;
 
-const MIN_ZOOM = 0.15;
-const MAX_ZOOM = 2.5;
+/*
+ * How far out and how far in.
+ *
+ * Out to five per cent, because this artboard is eight thousand pixels tall
+ * and "see the whole page" is a real thing to want. In to sixteen hundred,
+ * which is past the point where one CSS pixel is a sixteen-pixel block — the
+ * level a designer means by "zoom in on the pixels". The old ceiling of 250%
+ * was a website's idea of zoom rather than a design tool's.
+ */
+const MIN_ZOOM = 0.05;
+const MAX_ZOOM = 16;
 
 type Tool = 'select' | 'hand' | 'frame' | 'rect' | 'ellipse' | 'text';
 
@@ -85,8 +94,31 @@ export function startClub(root: HTMLElement): void {
   /* The view                                                          */
   /* ---------------------------------------------------------------- */
 
+  /**
+   * Promoted while the view is moving, and let go the moment it stops.
+   *
+   * `will-change: transform` is what made zooming smooth and what made the
+   * result blurry. It is a promise to the compositor that this subtree is
+   * about to move, so the subtree is rasterised once into a texture and that
+   * texture is then *scaled* — which at 400% is a 100% picture stretched four
+   * times, soft edges and all. Selecting something appeared to fix it because
+   * writing a style into the frame forced a fresh raster at the real scale.
+   *
+   * Dropping the hint destroys the cached layer and the content is painted
+   * again at the scale it is actually being shown at. So it is held for a
+   * fifth of a second after the last change — long enough to cover a wheel or
+   * a pan, short enough that a designer who has stopped moving is looking at
+   * sharp type.
+   */
+  let sharpen = 0;
+
   function paintView(): void {
     stage.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    stage.style.willChange = 'transform';
+    window.clearTimeout(sharpen);
+    sharpen = window.setTimeout(() => {
+      stage.style.willChange = 'auto';
+    }, 200);
     // Hairlines that stay hairlines. See the note at the top of the file.
     overlay.style.setProperty('--z', String(1 / zoom));
     if (zoomField.hidden) zoomOut.textContent = `${Math.round(zoom * 100)}%`;
@@ -331,6 +363,30 @@ export function startClub(root: HTMLElement): void {
    * paragraph that happened not to be a sibling added the whole hero to the
    * selection. Nobody has ever meant that.
    */
+  /**
+   * What a click means, in one rule.
+   *
+   * The outermost thing under the pointer that is not a frame — the button,
+   * the picture, the paragraph — because that is the thing the designer is
+   * pointing at. Everything above it is scaffolding: a section, a shell, the
+   * wrapper around a pair of buttons. Clicking down through five of those to
+   * reach a button, which is what this did before, is four clicks spent on
+   * boxes nobody can see.
+   *
+   * And when there is no object under the pointer — the gap between two
+   * buttons, a section's own padding — it takes the innermost *frame*
+   * instead. That is how a frame gets selected, and it is why the auto-layout
+   * overlay is reachable at all: the space inside a frame belongs to the
+   * frame.
+   *
+   * Going further in is a double-click, which is the same bargain the tool
+   * this borrows from makes with a component: the whole thing is one click,
+   * and you enter it deliberately.
+   */
+  function pickObject(stack: ClubNode[]): ClubNode {
+    return stack.find((n) => n.type !== 'container') ?? stack[stack.length - 1];
+  }
+
   function siblingPick(stack: ClubNode[]): ClubNode {
     const at = primary();
     const level = at ? (sandbox.get(at)?.parentId ?? null) : undefined;
@@ -360,14 +416,15 @@ export function startClub(root: HTMLElement): void {
   let pointerAt: { x: number; y: number } | null = null;
 
   /**
-   * What the *next* click would take, which is what a hover outline promises.
+   * What a click would take, which is what a hover outline promises.
    *
    * It used to be the outermost thing under the pointer, which on this page is
-   * always a section — so the hover outline was a box round a whole third of
-   * the screen no matter what you pointed at, and it never agreed with what
-   * clicking actually did once you had drilled in. Following the same rule the
-   * press follows makes the outline a genuine preview: click, and the hover
-   * moves one level deeper with you.
+   * always a section — so the outline was a box round a whole third of the
+   * screen no matter what you pointed at, and it never agreed with what
+   * clicking actually did.
+   *
+   * It is the same rule a click uses, so the outline is exactly a promise of
+   * what pressing would take.
    *
    * With Alt down it resolves the way a shift-click does: a sibling of what is
    * selected if there is one under the pointer, and otherwise the deepest
@@ -380,9 +437,7 @@ export function startClub(root: HTMLElement): void {
    */
   function nextPick(stack: ClubNode[]): ClubNode {
     if (altHeld) return siblingPick(stack);
-    const at = stack.findIndex((n) => selection.includes(n.id));
-    if (at === -1) return stack[0];
-    return stack[Math.min(at + 1, stack.length - 1)];
+    return pickObject(stack);
   }
 
   function reHover(): boolean {
@@ -1104,6 +1159,25 @@ export function startClub(root: HTMLElement): void {
     if (!sandboxDoc) return;
 
     sandboxDoc.addEventListener('pointerdown', (e) => {
+      /*
+       * A press inside the words being edited belongs to the browser.
+       *
+       * Placing a caret where you clicked is the default behaviour of a
+       * mousedown on editable content, and this file was calling
+       * `preventDefault` on every press in the sandbox — so the caret stayed
+       * wherever it was put when the edit began and no amount of clicking
+       * moved it. Standing down is the whole fix: click, double-click to take
+       * a word, drag to select a run, exactly as in any other text field.
+       *
+       * A press anywhere else is the designer finishing, so the edit is
+       * closed before the press is dealt with normally.
+       */
+      if (editing) {
+        const at = e.target as Node | null;
+        if (at && editing.contains(at)) return;
+        stopEditing?.();
+      }
+
       if (tool === 'hand' || spaceHeld || e.button === 1) {
         startPan(e.clientX + rectLeft(), e.clientY + rectTop());
         e.preventDefault();
@@ -1146,7 +1220,7 @@ export function startClub(root: HTMLElement): void {
       }
 
       const already = stack.some((n) => selection.includes(n.id));
-      if (!already) select(stack[0].id);
+      if (!already) select(pickObject(stack).id);
       pending = { stack, docX: e.clientX, docY: e.clientY, fresh: !already };
       e.preventDefault();
     });
@@ -1215,6 +1289,9 @@ export function startClub(root: HTMLElement): void {
      * gesture too many for the most ordinary edit there is.
      */
     sandboxDoc.addEventListener('dblclick', (e) => {
+      // Inside a live edit a double-click takes a word, as it does anywhere.
+      if (editing && editing.contains(e.target as Node)) return;
+
       const stack = sandbox.stackAt(e.clientX, e.clientY);
       const deepest = stack[stack.length - 1];
       if (!deepest) return;
@@ -1242,6 +1319,17 @@ export function startClub(root: HTMLElement): void {
   }
 
   let pending: Pending | null = null;
+
+  /**
+   * The element currently being typed into, and the way out of it.
+   *
+   * The editor has to know, because while an edit is running the press that
+   * places a caret is a press the *browser* should handle — and every other
+   * press in this file ends in `preventDefault`, which is precisely what
+   * stops a caret from moving.
+   */
+  let editing: HTMLElement | null = null;
+  let stopEditing: (() => void) | null = null;
 
   /** Four screen pixels, which is the distance a click is allowed to wander. */
   const SLOP = 4;
@@ -1293,8 +1381,18 @@ export function startClub(root: HTMLElement): void {
         return;
       }
 
-      const next = was.stack[Math.min(at + 1, was.stack.length - 1)];
-      if (next) select(next.id);
+      /*
+       * A second click on the same place takes the object again.
+       *
+       * It matters after Escape: having stepped up to the frame, clicking back
+       * on the button selects the button rather than doing nothing. It never
+       * goes deeper than the object — that is the double-click's job — so
+       * clicking repeatedly on a button leaves the button selected, wherever
+       * on it the pointer lands.
+       */
+      void at;
+      const want = pickObject(was.stack);
+      if (want && !selection.includes(want.id)) select(want.id);
       return;
     }
     endGesture();
@@ -1412,6 +1510,21 @@ export function startClub(root: HTMLElement): void {
   }
 
   function onPointerMove(e: PointerEvent): void {
+    /*
+     * A pointer move that reaches the *editor* means the pointer is no longer
+     * over the artboard — the frame is a separate document and keeps its own
+     * moves — so whatever was hovered is not hovered any more.
+     *
+     * Without this the outline stayed on the last thing the pointer crossed
+     * on its way out, and sat there over the design while the designer worked
+     * in the panels. A frame is a picture: nothing on it reacts to a pointer
+     * that has gone.
+     */
+    if (!gesture && pointerAt) {
+      pointerAt = null;
+      if (reHover()) drawOverlay();
+    }
+
     if (gesture?.kind === 'pan') {
       panTo(e.clientX, e.clientY);
       return;
@@ -1612,6 +1725,7 @@ export function startClub(root: HTMLElement): void {
      */
     const editable = node.el;
     editable.setAttribute('contenteditable', 'plaintext-only');
+    editing = editable;
     editable.focus();
 
     /*
@@ -1635,11 +1749,16 @@ export function startClub(root: HTMLElement): void {
     }
 
     const done = (): void => {
+      if (editing !== editable) return;
+      editing = null;
+      stopEditing = null;
       editable.removeAttribute('contenteditable');
       editable.removeEventListener('blur', done);
       editable.removeEventListener('keydown', onKeyDown);
       store.set(id, { text: editable.textContent ?? '' }, 'text');
     };
+
+    stopEditing = done;
 
     function onKeyDown(e: KeyboardEvent): void {
       if (e.key === 'Escape' || (e.key === 'Enter' && !e.shiftKey)) {
@@ -1883,6 +2002,7 @@ export function startClub(root: HTMLElement): void {
 
   function hideTip(): void {
     window.clearTimeout(tipTimer);
+    window.clearTimeout(sharpen);
     tip.hidden = true;
   }
 

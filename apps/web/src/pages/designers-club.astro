@@ -1345,7 +1345,13 @@ const PAGES = [
       0 0 0 1px var(--c-edge),
       0 18px 60px #000000b3;
     background: #fff;
-    will-change: transform;
+    /*
+     * No `will-change` here on purpose — it is set from script while the view
+     * is moving and dropped when it settles. Left on permanently it keeps the
+     * artboard as a cached texture that gets *scaled* rather than redrawn, so
+     * everything on it goes soft the moment you zoom past 100%. See
+     * `paintView` in club/index.ts.
+     */
   }
 
   .club__frame {
