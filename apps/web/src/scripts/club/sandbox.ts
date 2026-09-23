@@ -70,6 +70,8 @@ export class Sandbox {
   /** Original text, kept so clearing a text override puts the real copy back. */
   private baseText = new Map<string, string>();
   private baseSrc = new Map<string, string>();
+  /** A responsive image's own candidates, so clearing an override restores them. */
+  private baseSrcset = new Map<string, { srcset: string | null; sizes: string | null }>();
   private addedHost: HTMLElement | null = null;
   private onReady: (() => void) | null = null;
 
@@ -92,18 +94,109 @@ export class Sandbox {
   load(path: string, ready: () => void): void {
     this.path = path;
     this.onReady = ready;
-    this.frame.addEventListener('load', () => this.afterLoad(), { once: true });
+    this.frame.addEventListener('load', () => void this.afterLoad(), { once: true });
     // The flag is what BaseLayout's primer reads to set `data-club`.
     const join = path.includes('?') ? '&' : '?';
     this.frame.src = `${path}${join}club=1`;
   }
 
-  private afterLoad(): void {
+  /**
+   * Quiet the page, let it finish laying itself out, and only then adopt it.
+   *
+   * The order is the whole point and it was the other way round, which cost
+   * the editor a third of the page. Adoption reads every element's rectangle
+   * and anything measuring zero cannot be a layer — and at the `load` event
+   * the portfolio's images are still `loading="lazy"` and unloaded, so every
+   * container sized by its picture is zero high. The work index's preview is
+   * one: the five project covers stack inside it, it had no height yet, and
+   * the whole branch — stack, figure, five images — was walked past and never
+   * became selectable. "Some elements I cannot click" was this.
+   *
+   * `quiet` is what flips those images to eager, so it has to run first; then
+   * the decode is waited on, under one budget for the lot rather than one each;
+   * then two frames, so the browser has actually laid out at the new sizes.
+   */
+  private async afterLoad(): Promise<void> {
     const doc = this.doc;
     if (!doc) return;
-    this.adopt(doc);
+
     this.quiet(doc);
+    await this.settle(doc);
+    // A page change while the pictures were arriving. That load owns the
+    // sandbox now, and adopting this one would overwrite its nodes.
+    if (this.doc !== doc) return;
+
+    this.adopt(doc);
     this.onReady?.();
+  }
+
+  /** Waits for the pictures, bounded, and then for a frame drawn with them. */
+  private settle(doc: Document): Promise<void> {
+    const view = doc.defaultView;
+
+    /*
+     * Only the pictures that are actually still coming.
+     *
+     * The frame's `load` event has already waited for every image the markup
+     * asked for; the ones worth waiting on here are the handful `quiet` has
+     * just flipped from lazy to eager, which start loading after that event.
+     * Everything else already has its size and adoption needs nothing more
+     * from it.
+     *
+     * `complete` rather than `decode()`, deliberately. Decoding answers "ready
+     * to paint", which is more than is being asked and is not always answered
+     * at all — measured here, `decode()` on a fully loaded image never settled
+     * in a window that was not painting, so every page change waited out the
+     * whole budget for pictures that had arrived long before. `complete` is
+     * the actual question, it is true on an error as well as on a success, and
+     * a poll needs no listener on a node whose lifetime is the sandbox's.
+     */
+    const pending = Array.from(doc.images).filter(
+      (picture) => !picture.complete || picture.naturalWidth === 0
+    );
+
+    /*
+     * One budget for the whole set. Per-image timeouts would let a page of
+     * twenty pictures wait twenty times, and the thing being waited for is a
+     * layout that stops changing rather than any particular file.
+     */
+    const arrived = new Promise<void>((go) => {
+      if (!pending.length || !view) {
+        go();
+        return;
+      }
+      const started = Date.now();
+      const tick = view.setInterval(() => {
+        if (!pending.every((picture) => picture.complete) && Date.now() - started < 2500) return;
+        view.clearInterval(tick);
+        go();
+      }, 32);
+    });
+
+    return arrived.then(() => this.painted(view));
+  }
+
+  /**
+   * Two animation frames, or 48ms, whichever comes first.
+   *
+   * Two because one only gets to the end of the current frame's callbacks and
+   * the layout with the decoded sizes is drawn in the next. The timer is not a
+   * belt-and-braces addition: `requestAnimationFrame` does not fire at all in
+   * a background tab, and a visitor who opens the Club and switches away while
+   * it loads would otherwise come back to an editor that never adopted
+   * anything.
+   */
+  private painted(view: Window | null): Promise<void> {
+    return new Promise((go) => {
+      let done = false;
+      const once = (): void => {
+        if (done) return;
+        done = true;
+        go();
+      };
+      view?.requestAnimationFrame(() => view.requestAnimationFrame(once));
+      view?.setTimeout(once, 48);
+    });
   }
 
   /* ---------------------------------------------------------------- */
@@ -138,7 +231,6 @@ export class Sandbox {
 
     const named = this.namesFrom(doc);
     const root = doc.querySelector<HTMLElement>('main') ?? doc.body;
-    const view = doc.defaultView;
     let count = 0;
 
     const walk = (el: HTMLElement, parentId: string | null, path: string): void => {
@@ -149,25 +241,32 @@ export class Sandbox {
         if (SKIP.has(child.tagName)) continue;
 
         /*
-         * You cannot design something you cannot see.
+         * The storm's own scaffolding is not part of the design.
          *
-         * The storm's machinery lives in the page markup and is invisible
-         * until the portrait is clicked: `.flash`, `.rift`, `.scar`, `.bend`,
-         * `.shock`, two rings, the wash and the field canvas. Every one of
-         * them is `opacity: 0` and most are the size of the document — and
-         * `.flash` is 1440x8238, which means it sat on top of the entire page
-         * and won every single hit test. The first click anywhere in the Club
-         * selected a zero-opacity div, on every page, before anything else
-         * could be reached.
+         * `.flash`, `.rift`, `.scar`, `.bend`, `.shock`, two rings, the wash
+         * and the field canvas all live in the page markup, all the time, and
+         * most of them are the size of the document — `.flash` is 1440x8238,
+         * so it sat on top of the entire page and won every hit test. The
+         * first click anywhere in the Club selected an invisible div before
+         * anything else could be reached.
          *
-         * Naming those nine classes would fix today's page and nothing else.
-         * Zero opacity is the actual property they share, it is the property
-         * that makes them undesignable, and it costs one computed style per
-         * element at load. The subtree goes with it: nothing inside something
-         * invisible is visible either.
+         * The first fix was "zero opacity is not a layer", which was wrong in
+         * a way worth writing down. Zero opacity on this site is a *state*,
+         * not a property: the work index cross-fades five project previews in
+         * the same box and four of them are transparent at any moment, and the
+         * light and dark portraits are a pair where one is always at zero. The
+         * rule took all of them — and their whole subtrees — out of the
+         * editor, which is exactly the "some elements I cannot click" this
+         * replaced. Reveals made it a race as well, since a section not yet
+         * revealed when the frame loads would have been skipped for good.
+         *
+         * So it is asked of the component that owns them instead. Every one of
+         * those elements carries a `data-egg-*` attribute, which is how
+         * `designer-mode.ts` addresses them, and CLAUDE.md is explicit that a
+         * data attribute is the stable handle where a class is a styling
+         * detail that has already moved once.
          */
-        const seen = view?.getComputedStyle(child);
-        if (seen && (seen.opacity === '0' || seen.visibility === 'hidden')) continue;
+        if (isEffect(child)) continue;
 
         /*
          * No box is not the same as nothing inside.
@@ -259,7 +358,12 @@ export class Sandbox {
       this.baseText.set(node.id, node.el.textContent ?? '');
     }
     if (node.type === 'image') {
-      this.baseSrc.set(node.id, (node.el as HTMLImageElement).getAttribute('src') ?? '');
+      const picture = node.el as HTMLImageElement;
+      this.baseSrc.set(node.id, picture.getAttribute('src') ?? '');
+      this.baseSrcset.set(node.id, {
+        srcset: picture.getAttribute('srcset'),
+        sizes: picture.getAttribute('sizes'),
+      });
     }
     /*
      * A button holding a bare text node is the one case the walk cannot
@@ -472,7 +576,24 @@ export class Sandbox {
       under.push({ node, area: r.width * r.height });
     }
 
-    return under.sort((a, b) => b.area - a.area).map((u) => u.node);
+    /*
+     * Transparent layers are not under the pointer.
+     *
+     * The work index stacks five project covers in one box and fades between
+     * them, so every click on the preview had five identical rectangles to
+     * choose from and took whichever came last in the document — an invisible
+     * one, four times out of five. A layer you cannot see is not a layer you
+     * can click, which is also what the tool this imitates does with a hidden
+     * layer: still in the panel, not on the canvas.
+     *
+     * Asked only of the handful actually under the point rather than of all
+     * two hundred and fifty, so the per-move cost stays a hit test rather than
+     * a style pass over the document.
+     */
+    return under
+      .filter((u) => onScreen(u.node.el))
+      .sort((a, b) => b.area - a.area)
+      .map((u) => u.node);
   }
 
   /** A node's direct children in the layer tree, in document order. */
@@ -517,6 +638,7 @@ export class Sandbox {
       const box = this.boxOf(node.id);
       if (!box || box.width === 0 || box.height === 0) continue;
       if (box.left < left || box.right > right || box.top < top || box.bottom > bottom) continue;
+      if (!onScreen(node.el)) continue;
       caught.push(node);
     }
 
@@ -609,6 +731,29 @@ export class Sandbox {
         const want = p.src ?? base;
         const img = node.el as HTMLImageElement;
         if (want !== undefined && img.getAttribute('src') !== want) img.setAttribute('src', want);
+
+        /*
+         * `src` loses to `srcset`, always.
+         *
+         * A responsive image picks its file from the candidate list and only
+         * falls back to `src` when there is no list — so writing the
+         * designer's picture into `src` and leaving the candidates in place
+         * changes nothing on screen, which reads as the replace button being
+         * broken. The candidates are put back the moment the override is
+         * cleared, because the portfolio's own picture wants them.
+         */
+        const own = this.baseSrcset.get(node.id);
+        if (p.src !== undefined) {
+          img.removeAttribute('srcset');
+          img.removeAttribute('sizes');
+        } else if (own) {
+          if (own.srcset !== null && img.getAttribute('srcset') !== own.srcset) {
+            img.setAttribute('srcset', own.srcset);
+          }
+          if (own.sizes !== null && img.getAttribute('sizes') !== own.sizes) {
+            img.setAttribute('sizes', own.sizes);
+          }
+        }
       }
     }
   }
@@ -682,6 +827,28 @@ export class Sandbox {
 
 const camelToKebab = (s: string): string => s.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
 
+/**
+ * Whether this element is actually being drawn.
+ *
+ * `checkVisibility` answers for the ancestors too, which is the whole reason
+ * it is worth a feature test: the five stacked project covers carry their
+ * opacity on the figure around the picture, so asking the picture about its
+ * own computed style says "opaque" for all five. Walking up by hand would be
+ * ten style reads per candidate per pointer move; this is one.
+ *
+ * The fallback is that walk's first step only — own opacity and own
+ * visibility — which is right for the common case and never worse than the
+ * behaviour this replaced.
+ */
+function onScreen(el: HTMLElement): boolean {
+  const ask = (el as HTMLElement & { checkVisibility?: (o?: object) => boolean }).checkVisibility;
+  if (typeof ask === 'function') {
+    return ask.call(el, { opacityProperty: true, visibilityProperty: true });
+  }
+  const cs = el.ownerDocument.defaultView?.getComputedStyle(el);
+  return !cs || (cs.opacity !== '0' && cs.visibility !== 'hidden');
+}
+
 /** `CSS.escape` is not in every target this ships to; the ids are known-safe. */
 const cssEscape = (s: string): string => s.replace(/"/g, '\\"');
 
@@ -702,6 +869,31 @@ const MAX_NODES = 600;
 
 /** Not layers: no box, no meaning, or metadata. */
 const SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'BR', 'META', 'LINK', 'TITLE']);
+
+/**
+ * An element that belongs to an effect rather than to the design.
+ *
+ * The storm's layers name themselves `data-egg-*` — flash, rift, scar, bend,
+ * shock, two rings, wash, field — and the tear's filter host is a 1x1 `<svg>`
+ * holding nothing but `<defs>`. None of it is anything a visitor could
+ * redesign, and all of it is in the markup of every page whether the effect
+ * has ever run or not.
+ *
+ * The trigger is the exception, and it is the whole reason this is written as
+ * "the prefix, minus one" rather than as a list. `data-egg-trigger` is on the
+ * hero portrait — the most designable element on the page, which merely also
+ * happens to be the thing you click to set the storm off. A plain prefix rule
+ * took the portrait, its frame and both images out of the editor. The default
+ * is right for a *new* effect layer, which should be invisible to the Club the
+ * day it is added; a new trigger is something somebody has to think about, and
+ * this is where they will find the thought.
+ */
+function isEffect(el: HTMLElement): boolean {
+  for (const key in el.dataset) {
+    if (key.startsWith('egg') && key !== 'eggTrigger') return true;
+  }
+  return el.classList.contains('dm-tear-defs');
+}
 
 /** What an element is, which decides the properties it is offered. */
 function typeOf(el: HTMLElement): ClubType {

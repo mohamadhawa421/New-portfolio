@@ -86,8 +86,26 @@ export function startClub(root: HTMLElement): void {
     if (zoomField.hidden) zoomOut.textContent = `${Math.round(zoom * 100)}%`;
   }
 
+  /**
+   * The artboard's box, and it has to be set *before* the page inside it loads.
+   *
+   * An `<iframe>` with no width is 300 pixels wide, and a document laid out in
+   * 300 pixels is the phone layout. Adoption measures every element and skips
+   * the ones with no box, so for as long as this ran after the load the editor
+   * was reading the *mobile* portfolio: the work index's preview is
+   * `display: none` below the desktop breakpoint, so the five project covers
+   * and everything around them simply did not exist as far as the Club was
+   * concerned. That is the other half of "some elements I cannot click", and
+   * it was true of every desktop-only element on every page.
+   *
+   * The height floor is the canvas's own height rather than a number, so that
+   * a section measured before the document's real height is known is measured
+   * against a plausible viewport instead of a letterbox — `100vh` is a real
+   * unit on this site.
+   */
   function sizeFrame(): void {
-    const h = Math.max(sandbox.pageHeight, 600);
+    const floor = Math.round(canvas.getBoundingClientRect().height) || 600;
+    const h = Math.max(sandbox.pageHeight, floor);
     frame.style.width = `${ARTBOARD}px`;
     frame.style.height = `${h}px`;
     overlay.style.width = `${ARTBOARD}px`;
@@ -1052,14 +1070,16 @@ export function startClub(root: HTMLElement): void {
     );
 
     /*
-     * Double-click goes all the way in, and again starts typing.
+     * Double-click goes all the way in, and on words it starts typing.
      *
      * Single clicks descend one level each, which is right for finding your
      * way around a page nobody laid out as layers — but it is a lot of clicks
      * to reach a word inside a button inside a row. So the double-click takes
-     * the deepest thing under the pointer in one go, and doing it again on a
-     * text layer that is already selected drops a caret in. That is the pair
-     * of gestures a designer already has in their hands.
+     * the deepest thing under the pointer in one go, and if that turns out to
+     * be text it drops a caret in rather than waiting to be asked twice. It
+     * used to require the text to be selected already, which meant two
+     * double-clicks to type into anything you had not just clicked — one
+     * gesture too many for the most ordinary edit there is.
      */
     sandboxDoc.addEventListener('dblclick', (e) => {
       const stack = sandbox.stackAt(e.clientX, e.clientY);
@@ -1068,11 +1088,8 @@ export function startClub(root: HTMLElement): void {
       e.preventDefault();
       pending = null;
 
-      if (selection.includes(deepest.id) && deepest.type === 'text') {
-        editInPlace(deepest.id);
-        return;
-      }
       select(deepest.id);
+      if (deepest.type === 'text') editInPlace(deepest.id);
     });
   }
 
@@ -1366,9 +1383,12 @@ export function startClub(root: HTMLElement): void {
 
     selection = [];
     hovered = null;
+    pointerAt = null;
     open.clear();
     store.clear();
 
+    // The artboard is sized before the page arrives, so it arrives desktop.
+    sizeFrame();
     sandbox.load(path, () => {
       if (disposed) return;
       bindSandboxInput();
@@ -1430,6 +1450,26 @@ export function startClub(root: HTMLElement): void {
     editable.setAttribute('contenteditable', 'plaintext-only');
     editable.focus();
 
+    /*
+     * The caret goes to the end of what is already there.
+     *
+     * Focusing a contenteditable leaves the caret wherever the browser decides,
+     * which in practice is the very start — so the first keystroke went in
+     * front of the headline instead of after it, and a designer wanting to add
+     * a word had to click again to get somewhere useful. The end is the one
+     * position that is right whether the intention is to extend the sentence or
+     * to select it all and start again.
+     */
+    const view = editable.ownerDocument.defaultView;
+    const caret = view?.getSelection();
+    if (caret) {
+      const at = editable.ownerDocument.createRange();
+      at.selectNodeContents(editable);
+      at.collapse(false);
+      caret.removeAllRanges();
+      caret.addRange(at);
+    }
+
     const done = (): void => {
       editable.removeAttribute('contenteditable');
       editable.removeEventListener('blur', done);
@@ -1464,7 +1504,30 @@ export function startClub(root: HTMLElement): void {
       if (!file) return;
       const fileReader = new FileReader();
       fileReader.addEventListener('load', () => {
-        store.set(id, { src: String(fileReader.result) }, 'image');
+        /*
+         * The new picture goes into the old one's frame.
+         *
+         * Figma replaces the *fill* of a shape and leaves the shape alone —
+         * which is what makes swapping an image feel safe rather than like
+         * dropping a file onto a layout. Here the element keeps its own CSS
+         * for free, corner radius included, but not its size: a portrait
+         * dropped into a landscape slot would have re-laid the page out around
+         * it. So the measured box is pinned and the picture is told to cover
+         * it, unless the designer has already said otherwise.
+         *
+         * One commit, so the whole replacement is a single undo.
+         */
+        const box = sandbox.boxOf(id);
+        store.commit('image', (draft) => {
+          const was = draft.overrides[id] ?? {};
+          draft.overrides[id] = {
+            ...was,
+            src: String(fileReader.result),
+            w: was.w ?? (box ? Math.round(box.width) : undefined),
+            h: was.h ?? (box ? Math.round(box.height) : undefined),
+            fit: was.fit ?? 'cover',
+          };
+        });
         say('Okay… I see you.');
       });
       fileReader.addEventListener('error', () => flash("Couldn't read that file."));
@@ -2223,6 +2286,8 @@ export function startClub(root: HTMLElement): void {
   setTool('select');
   setMode('edit');
 
+  // Likewise on the way in: 1440 wide before the first byte of the page.
+  sizeFrame();
   sandbox.load('/', () => {
     if (disposed) return;
     bindSandboxInput();

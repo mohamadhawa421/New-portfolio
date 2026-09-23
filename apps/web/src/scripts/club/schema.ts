@@ -90,7 +90,14 @@ export const SECTIONS: SectionSpec[] = [
     selector: 'section.work',
     children: [
       { key: 'eyebrow', label: 'Eyebrow', selector: '.work__header .eyebrow', type: 'text' },
-      { key: 'count', label: 'Count', selector: '.work__count', type: 'text' },
+      /*
+       * The "15 projects." line. Its class is `work__heading`, not
+       * `work__count` — the second dead selector this table has had (the
+       * headline pointed at `.hero__lead` for a while), and both were invisible
+       * because a name that resolves to nothing simply leaves the layer
+       * unnamed rather than failing.
+       */
+      { key: 'count', label: 'Count', selector: '.work__heading', type: 'text' },
       {
         key: 'row',
         label: 'Projects',
