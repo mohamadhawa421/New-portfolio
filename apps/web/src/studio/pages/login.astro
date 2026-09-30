@@ -1,0 +1,471 @@
+---
+/**
+ * The Studio's door.
+ *
+ * One field, because there is one person. The Auth email is on the server
+ * (STUDIO_EMAIL), so the page asks for the only thing a stranger would not
+ * know and does not tell them whose account they are guessing at.
+ *
+ * Deliberately not BaseLayout: none of the site's chrome belongs here — no
+ * nav to wander off through, no cursor ring, no shockwave on the portrait.
+ * It shares the tokens and the theme, so it is visibly the same place.
+ *
+ * Works without JavaScript. The form posts to the endpoint and the answer
+ * comes back as `?e=<code>`; the script only makes it nicer — no reload, a
+ * different line for each wrong guess, and the character reacting.
+ */
+import '../../styles/tokens.css';
+
+export const prerender = false;
+
+const MESSAGES: Record<string, string> = {
+  wrong: 'Nope. Nice try though.',
+  slow: 'Too many guesses. Even he needs a minute — try again shortly.',
+  offline: 'Can’t reach the database right now. Try again in a moment.',
+  unset: 'This Studio isn’t connected to Supabase yet.',
+  'not-staff': 'Right password, wrong person. This account isn’t on the list.',
+  bye: 'Signed out. He’ll keep it quiet.',
+};
+
+const code = Astro.url.searchParams.get('e') ?? '';
+const message = MESSAGES[code] ?? '';
+const isError = Boolean(message) && code !== 'bye';
+const next = Astro.url.searchParams.get('next') ?? '';
+const frontDoor = Astro.site?.origin ?? '/';
+
+const POSE = {
+  hush: { src: '/character-hush.webp', small: '/art/character-hush-320.webp', w: 560, h: 640 },
+  thinking: { src: '/character-thinking.webp', small: '/art/character-thinking-320.webp', w: 560, h: 662 },
+  club: { src: '/character-club.webp', small: '/art/character-club-320.webp', w: 560, h: 463 },
+};
+const start = isError ? 'thinking' : 'hush';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Portfolio Studio</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script is:inline>
+      try {
+        var t = sessionStorage.getItem('mh-theme');
+        if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+    {Object.values(POSE).map((p) => <link rel="preload" as="image" href={p.small} />)}
+  </head>
+  <body>
+    <main class="door">
+      <div class="door__art" aria-hidden="true">
+        {
+          Object.entries(POSE).map(([name, p]) => (
+            <img
+              class="door__pose"
+              data-pose={name}
+              data-on={name === start ? '' : undefined}
+              src={p.src}
+              srcset={`${p.small} 320w, ${p.src} 560w`}
+              sizes="(max-width: 720px) 168px, 260px"
+              width={p.w}
+              height={p.h}
+              alt=""
+              decoding="async"
+            />
+          ))
+        }
+      </div>
+
+      <div class="door__body">
+        <p class="door__eyebrow">Portfolio Studio</p>
+        <h1 class="door__title">Shh. This is the back&nbsp;room.</h1>
+        <p class="door__lede">
+          Where the portfolio gets rearranged before anyone sees it. If you’re not Mohamad,{' '}
+          <a href={frontDoor}>the front door</a> is much nicer.
+        </p>
+
+        <form class="door__form" method="post" action="/studio/api/login" data-door novalidate>
+          <input type="hidden" name="next" value={next} />
+          <label class="door__label" for="door-password">Password</label>
+          <div class="door__field" data-invalid={isError ? '' : undefined}>
+            <input
+              id="door-password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+              maxlength="256"
+              spellcheck="false"
+              aria-describedby="door-status"
+              aria-invalid={isError ? 'true' : undefined}
+              autofocus
+            />
+            <button class="door__peek" type="button" aria-pressed="false" data-peek>
+              <span data-peek-label>Show</span>
+            </button>
+          </div>
+          <button class="door__go" type="submit" data-go>Let me in</button>
+          <p
+            id="door-status"
+            class="door__status"
+            role="status"
+            aria-live="polite"
+            data-status
+            data-tone={isError ? 'error' : code === 'bye' ? 'calm' : undefined}
+          >
+            {message}
+          </p>
+        </form>
+      </div>
+    </main>
+
+    <script>
+      /*
+       * Each wrong guess gets its own line, and he reacts. The count lives in
+       * this document only — it is a joke, not a lockout; the real limit is
+       * Supabase's.
+       */
+      const WRONG = [
+        'Nope. Nice try though.',
+        'Still no. He’s starting to squint.',
+        'Wrong again. This is getting awkward for both of us.',
+        'The front door is open, you know. And it’s very nice.',
+      ];
+      const OTHER: Record<string, string> = {
+        slow: 'Too many guesses. Even he needs a minute — try again shortly.',
+        offline: 'Can’t reach the database right now. Try again in a moment.',
+        unset: 'This Studio isn’t connected to Supabase yet.',
+        'not-staff': 'Right password, wrong person. This account isn’t on the list.',
+      };
+
+      const form = document.querySelector<HTMLFormElement>('[data-door]')!;
+      const input = form.querySelector<HTMLInputElement>('input[name="password"]')!;
+      const field = form.querySelector<HTMLElement>('.door__field')!;
+      const status = form.querySelector<HTMLElement>('[data-status]')!;
+      const go = form.querySelector<HTMLButtonElement>('[data-go]')!;
+      const peek = form.querySelector<HTMLButtonElement>('[data-peek]')!;
+      const peekLabel = peek.querySelector<HTMLElement>('[data-peek-label]')!;
+      let wrong = 0;
+
+      const pose = (name: 'hush' | 'thinking' | 'club') => {
+        document.querySelectorAll<HTMLElement>('.door__pose').forEach((img) => {
+          img.toggleAttribute('data-on', img.dataset.pose === name);
+        });
+      };
+
+      const say = (text: string, tone?: 'error' | 'calm' | 'ok') => {
+        status.textContent = text;
+        if (tone) status.dataset.tone = tone;
+        else delete status.dataset.tone;
+        const bad = tone === 'error';
+        field.toggleAttribute('data-invalid', bad);
+        input.setAttribute('aria-invalid', String(bad));
+      };
+
+      peek.addEventListener('click', () => {
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        peek.setAttribute('aria-pressed', String(show));
+        peekLabel.textContent = show ? 'Hide' : 'Show';
+        input.focus();
+      });
+
+      input.addEventListener('input', () => {
+        if (field.hasAttribute('data-invalid')) {
+          field.removeAttribute('data-invalid');
+          input.setAttribute('aria-invalid', 'false');
+        }
+      });
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!input.value) {
+          say('It’s a password field. It wants a password.', 'error');
+          input.focus();
+          return;
+        }
+
+        go.disabled = true;
+        form.setAttribute('aria-busy', 'true');
+        say('Checking…');
+
+        try {
+          const res = await fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: { accept: 'application/json' },
+            credentials: 'same-origin',
+          });
+          const body = await res.json().catch(() => ({}));
+
+          if (res.ok && body.ok) {
+            pose('club');
+            say('There he is.', 'ok');
+            // Long enough to see the wink; short enough not to be a wait.
+            setTimeout(() => location.assign(body.next || '/studio'), 520);
+            return;
+          }
+
+          if (body.error === 'wrong') {
+            say(WRONG[Math.min(wrong, WRONG.length - 1)], 'error');
+            wrong += 1;
+            pose('thinking');
+            input.select();
+          } else {
+            say(OTHER[body.error] ?? OTHER.offline, 'error');
+            pose('thinking');
+          }
+        } catch {
+          say(OTHER.offline, 'error');
+        } finally {
+          go.disabled = false;
+          form.removeAttribute('aria-busy');
+        }
+      });
+    </script>
+
+    <style is:global>
+      html {
+        color-scheme: light dark;
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        background: var(--surface);
+        color: var(--ink);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+      }
+    </style>
+
+    <style>
+      .door {
+        --door-error: #c4001a;
+        --door-ok: var(--blue);
+
+        min-height: 100dvh;
+        box-sizing: border-box;
+        display: grid;
+        grid-template-columns: auto minmax(0, 26rem);
+        align-items: center;
+        justify-content: center;
+        gap: clamp(2rem, 6vw, 5rem);
+        padding: 2rem 1rem;
+      }
+
+      :global(:root[data-theme='dark']) .door {
+        --door-error: var(--error-on-dark);
+      }
+      @media (prefers-color-scheme: dark) {
+        :global(:root:not([data-theme='light'])) .door {
+          --door-error: var(--error-on-dark);
+        }
+      }
+
+      /* ---- Him ---- */
+
+      .door__art {
+        display: grid;
+        width: 260px;
+      }
+
+      .door__pose {
+        grid-area: 1 / 1;
+        width: 100%;
+        height: auto;
+        align-self: end;
+        opacity: 0;
+        transform: translateY(6px);
+        transition:
+          opacity 260ms var(--ease-out),
+          transform 420ms var(--ease-out);
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+
+      .door__pose[data-on] {
+        opacity: 1;
+        transform: none;
+      }
+
+      /* ---- The words ---- */
+
+      .door__eyebrow {
+        margin: 0 0 0.75rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: var(--blue);
+      }
+
+      .door__title {
+        margin: 0;
+        font-size: clamp(2rem, 4.4vw, 2.75rem);
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+        font-weight: 600;
+        text-wrap: balance;
+      }
+
+      .door__lede {
+        margin: 1rem 0 2rem;
+        font-size: 1.0625rem;
+        line-height: 1.5;
+        color: var(--ink-muted);
+        text-wrap: pretty;
+      }
+
+      .door__lede a {
+        color: var(--blue);
+        text-decoration: underline;
+        text-underline-offset: 0.18em;
+        text-decoration-thickness: 1px;
+      }
+
+      /* ---- The form ---- */
+
+      .door__form {
+        display: grid;
+        gap: 0.5rem;
+      }
+
+      .door__label {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--ink-muted);
+      }
+
+      .door__field {
+        position: relative;
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--line-parchment);
+        border-radius: 12px;
+        background: var(--surface-card);
+        transition: border-color 160ms ease, box-shadow 160ms ease;
+      }
+
+      .door__field:focus-within {
+        border-color: var(--blue);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 22%, transparent);
+      }
+
+      .door__field[data-invalid] {
+        border-color: var(--door-error);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--door-error) 16%, transparent);
+      }
+
+      .door__field input {
+        flex: 1;
+        min-width: 0;
+        height: 48px;
+        padding: 0 0.875rem;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        font-size: 1.0625rem;
+        letter-spacing: 0.02em;
+        outline: none;
+      }
+
+      .door__peek {
+        margin-right: 6px;
+        min-width: 44px;
+        height: 36px;
+        padding: 0 0.625rem;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--ink-muted);
+        font: inherit;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .door__peek:hover {
+        color: var(--ink);
+        background: var(--surface-chip);
+      }
+
+      .door__peek:focus-visible,
+      .door__go:focus-visible,
+      .door__lede a:focus-visible {
+        outline: 2px solid var(--blue);
+        outline-offset: 2px;
+      }
+
+      .door__go {
+        margin-top: 0.5rem;
+        height: 48px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--blue-fill);
+        color: #fff;
+        font: inherit;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 160ms ease, transform 160ms var(--ease-out);
+      }
+
+      .door__go:hover {
+        background: var(--blue-fill-hover);
+      }
+
+      .door__go:active {
+        transform: scale(0.985);
+      }
+
+      .door__go:disabled {
+        cursor: progress;
+        opacity: 0.7;
+      }
+
+      .door__status {
+        min-height: 1.5em;
+        margin: 0.25rem 0 0;
+        font-size: 0.9375rem;
+        line-height: 1.5;
+        color: var(--ink-muted);
+      }
+
+      .door__status[data-tone='error'] {
+        color: var(--door-error);
+      }
+
+      .door__status[data-tone='ok'] {
+        color: var(--door-ok);
+        font-weight: 600;
+      }
+
+      /* ---- Narrow ---- */
+
+      @media (max-width: 720px) {
+        .door {
+          grid-template-columns: minmax(0, 26rem);
+          align-content: center;
+          gap: 1.5rem;
+        }
+        .door__art {
+          width: 168px;
+          justify-self: start;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .door__pose {
+          transform: none;
+          transition: opacity 1ms;
+        }
+        .door__go:active {
+          transform: none;
+        }
+      }
+    </style>
+  </body>
+</html>

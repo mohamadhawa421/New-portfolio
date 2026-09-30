@@ -49,6 +49,11 @@ jobs:
       - name: Invariants
         run: npm test
 
+      # The Supabase migrations, applied to a real Postgres (PGlite) and
+      # attacked as a visitor, an app user and the owner.
+      - name: Database policies
+        run: npm run test:db
+
       # Runs the CMS export against the committed SQLite snapshot, builds the
       # site, and then runs verify-build.js as a postbuild step — so this one
       # command covers content, compilation and the built output.

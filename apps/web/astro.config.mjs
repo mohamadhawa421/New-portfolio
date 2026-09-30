@@ -1,6 +1,8 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import vercel from '@astrojs/vercel';
+import { studio } from './src/studio/integration.ts';
 
 // Only used for canonical URLs and sitemap.xml. Content and media come from the
 // snapshot in src/data/content.json and public/media, so the build needs no
@@ -11,10 +13,21 @@ import sitemap from '@astrojs/sitemap';
 // SITE_URL in Vercel's environment variables — the variable wins.
 const site = process.env.SITE_URL || 'https://mohamadhawa.vercel.app';
 
+/*
+ * The Studio build (admin.mohamadhawa.com), or the public one.
+ *
+ * Same pages, same output for them; the Studio build adds the /studio routes
+ * and the adapter that renders them on demand. Without STUDIO=1 neither is
+ * loaded, so the public build is exactly what it was before the Studio
+ * existed — verify-build.js checks that no /studio route got into it.
+ */
+const STUDIO = process.env.STUDIO === '1';
+
 export default defineConfig({
   site,
   output: 'static',
-  integrations: [sitemap()],
+  integrations: STUDIO ? [sitemap(), studio()] : [sitemap()],
+  ...(STUDIO ? { adapter: vercel() } : {}),
 
   /*
    * Pages are fetched while the pointer is on the way to them.

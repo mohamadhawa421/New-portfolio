@@ -26,3 +26,6 @@ apps/cms/exports/
 .env.local
 .env.*.local
 !.env.example
+
+# Vercel adapter output (Studio build)
+.vercel/

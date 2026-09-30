@@ -12,6 +12,19 @@
         "--host"
       ],
       "port": 4321
+    },
+    {
+      "name": "studio",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:studio",
+        "--workspace=apps/web",
+        "--",
+        "--port",
+        "4330"
+      ],
+      "port": 4330
     }
   ]
 }

@@ -28,6 +28,9 @@
     "preview": "npm run preview --workspace=apps/web",
     "deploy": "node scripts/publish.js",
     "edit": "npm run dev --workspace=apps/cms",
-    "prune-media": "npm run prune-media --workspace=apps/cms"
+    "prune-media": "npm run prune-media --workspace=apps/cms",
+    "dev:studio": "npm run dev:studio --workspace=apps/web",
+    "build:studio": "npm run export --workspace=apps/cms && npm run build:studio --workspace=apps/web",
+    "test:db": "npm run test:db --workspace=apps/web"
   }
 }

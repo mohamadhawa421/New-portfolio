@@ -247,6 +247,24 @@ check(
 );
 
 check(
+  'the public build has no Studio in it',
+  'The Studio is injected only when STUDIO=1, so the public site cannot ' +
+    'change because of editor code it never sees. If a /studio page or the ' +
+    'Supabase client turns up here, a public component has started importing ' +
+    'from src/studio — and every visitor is downloading the editor.',
+  () => {
+    const bad = [];
+    if (fs.existsSync(path.join(DIST, 'studio'))) bad.push('dist/studio exists');
+    for (const p of [...pages, ...scripts]) {
+      const text = fs.readFileSync(p, 'utf8');
+      if (/supabase/i.test(text)) bad.push(`${rel(p)} mentions supabase`);
+      if (/["'`]\/studio[/"'`?]/.test(text)) bad.push(`${rel(p)} links into /studio`);
+    }
+    return bad.length === 0 || bad.join('; ');
+  }
+);
+
+check(
   'zoom is not disabled',
   'A viewport meta with user-scalable=no or a maximum-scale fails WCAG ' +
     '1.4.4 outright, and it is the kind of line that gets pasted in while ' +

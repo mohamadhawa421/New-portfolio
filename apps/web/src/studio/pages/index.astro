@@ -1,0 +1,84 @@
+---
+/**
+ * The Studio, behind the door.
+ *
+ * A holding page for now: the middleware has already refused anyone who is
+ * not staff, so reaching this line means the session is real and the admins
+ * table said yes. The editor itself replaces this in the Studio-shell phase.
+ */
+import '../../styles/tokens.css';
+
+export const prerender = false;
+
+const { staff } = Astro.locals.studio;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Portfolio Studio</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script is:inline>
+      try {
+        var t = sessionStorage.getItem('mh-theme');
+        if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <main class="held">
+      <img src="/art/character-club-320.webp" width="320" height="265" alt="" />
+      <h1>You’re in.</h1>
+      <p>The editor moves in here next. Signed in as the {staff?.role}.</p>
+      <form method="post" action="/studio/api/logout">
+        <button type="submit">Sign out</button>
+      </form>
+    </main>
+    <style is:global>
+      body {
+        margin: 0;
+        background: var(--surface);
+        color: var(--ink);
+        font-family: var(--font-sans);
+      }
+    </style>
+    <style>
+      .held {
+        min-height: 100dvh;
+        display: grid;
+        place-content: center;
+        justify-items: center;
+        gap: 0.75rem;
+        text-align: center;
+        padding: 1rem;
+      }
+      img {
+        width: 200px;
+        height: auto;
+      }
+      h1 {
+        margin: 0;
+        font-size: 2.25rem;
+        letter-spacing: -0.02em;
+      }
+      p {
+        margin: 0;
+        color: var(--ink-muted);
+      }
+      button {
+        margin-top: 1rem;
+        height: 40px;
+        padding: 0 1.25rem;
+        border: 1px solid var(--line-parchment);
+        border-radius: 999px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+    </style>
+  </body>
+</html>

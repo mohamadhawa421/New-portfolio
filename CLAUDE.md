@@ -186,6 +186,25 @@ load, resize and navigation.
 **Reduced motion is honoured throughout**, and every effect has a quiet
 variant rather than being switched off.
 
+## Portfolio Studio (admin.mohamadhawa.com) — in progress
+
+Replacing Strapi with Supabase plus a visual editor, in phases. The plan and
+its reasoning are in the conversation that started it; what is built so far:
+
+- `supabase/` — migrations, and `npm run test:db`, which attacks the policies
+  as a visitor, an app user and the owner. **The Supabase project is shared
+  with app.mohamadhawa.com**, which will have public sign-up: no portfolio
+  policy may trust `authenticated` on its own. Everything goes through
+  `public.is_admin()`. See `supabase/README.md`.
+- `apps/web/src/studio/` — the Studio, injected only when `STUDIO=1`
+  (`npm run dev:studio`, `npm run build:studio`). The public build does not
+  contain it, and verify-build asserts that. **Nothing in a public page may
+  import from `src/studio/`.**
+- The admin Vercel project builds from `apps/web` with `apps/web/vercel.json`.
+  The root `vercel.json` is the public project's, unchanged.
+
+Strapi is still the source of truth until the migration is verified.
+
 ## Dependencies, and the one command never to run
 
 **Never `npm audit fix --force` in this repo.** npm's "fix" for the Strapi
