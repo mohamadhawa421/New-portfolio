@@ -216,6 +216,14 @@ the old path; `CONTENT_SOURCE=supabase` forbids the fallback.
 content. The switch was verified by building both ways: every page, script and
 stylesheet identical, 295 files.
 
+**Edit keys.** Elements that show CMS content carry
+`data-edit={edit('page.home.heroTitle')}` (`src/lib/edit.ts` has the key
+grammar). In the public build `edit()` returns undefined and the attribute is
+not rendered at all; verify-build fails if one ever is. Two traps found the
+hard way: a spread (`{...edit()}`) makes Astro add its scoping class even when
+empty, and adding an import to a component can reorder the inlined CSS — so
+the public build is compared byte-for-byte after any change here.
+
 **Editing in Strapi no longer reaches the site.** It is kept as the fallback
 and the rollback, not as the place to edit. `npm run pull` refreshes the local
 `content.json` from the current release.

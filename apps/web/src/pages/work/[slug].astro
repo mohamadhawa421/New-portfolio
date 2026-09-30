@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import FigmaExplorer from '../../components/FigmaExplorer.astro';
 import { getProjects } from '../../lib/content';
 import type { Project } from '../../lib/types';
+import { edit } from '../../lib/edit';
 
 export async function getStaticPaths() {
   const projects = await getProjects();
@@ -69,17 +70,17 @@ const coverStyle = project.cover
         <div class="eyebrow case-hero__meta" data-reveal="0">
           {project.num} — {project.categories.join(' · ')}
         </div>
-        <h1 class="case-hero__title"><span data-rise="0">{project.title}</span></h1>
-        <p class="lead case-hero__summary"><span data-rise="1">{project.summary}</span></p>
+        <h1 class="case-hero__title"><span data-rise="0" data-edit={edit(`project.${project.slug}.title`)}>{project.title}</span></h1>
+        <p class="lead case-hero__summary"><span data-rise="1" data-edit={edit(`project.${project.slug}.summary`)}>{project.summary}</span></p>
 
         <dl class="case-hero__facts" data-reveal="3">
           <div>
             <dt>Discipline</dt>
-            <dd>{project.discipline}</dd>
+            <dd data-edit={edit(`project.${project.slug}.discipline`)}>{project.discipline}</dd>
           </div>
           <div>
             <dt>Role</dt>
-            <dd>{project.role}</dd>
+            <dd data-edit={edit(`project.${project.slug}.role`)}>{project.role}</dd>
           </div>
         </dl>
       </div>
@@ -122,6 +123,7 @@ const coverStyle = project.cover
           {
             opener ? (
               <img
+                data-edit={edit(project.approachShot ? `image.block.${project.slug}.approach.image` : `image.project.${project.slug}.cover`)}
                 src={opener.url}
                 alt={opener.alt}
                 width={opener.width}
@@ -136,7 +138,7 @@ const coverStyle = project.cover
         </div>
 
         {project.approachCaption && project.approachShot && (
-          <div class="case-caption case-caption--opener">{project.approachCaption}</div>
+          <div class="case-caption case-caption--opener" data-edit={edit(`block.${project.slug}.approach.caption`)}>{project.approachCaption}</div>
         )}
 
         {
@@ -144,8 +146,8 @@ const coverStyle = project.cover
             <div class="case-row" data-reveal="0">
               <div class="eyebrow--small case-row__label">The brief</div>
               <div class="case-row__body">
-                {project.briefLead && <p class="case-lead">{project.briefLead}</p>}
-                {project.briefBody && <p class="case-body">{project.briefBody}</p>}
+                {project.briefLead && <p class="case-lead" data-edit={edit(`block.${project.slug}.brief.lead`)}>{project.briefLead}</p>}
+                {project.briefBody && <p class="case-body" data-edit={edit(`block.${project.slug}.brief.body`)}>{project.briefBody}</p>}
               </div>
             </div>
           )
@@ -156,7 +158,7 @@ const coverStyle = project.cover
             <div class="case-row" data-reveal="0">
               <div class="eyebrow--small case-row__label">The problem</div>
               <div class="case-row__body">
-                {project.problemLead && <p class="case-lead">{project.problemLead}</p>}
+                {project.problemLead && <p class="case-lead" data-edit={edit(`block.${project.slug}.problem.lead`)}>{project.problemLead}</p>}
 
                 {project.constraints.length > 0 && (
                   <div class="constraints">
@@ -164,9 +166,9 @@ const coverStyle = project.cover
                       <div class="constraint">
                         <span class="constraint__num">{String(i + 1).padStart(2, '0')}</span>
                         <div>
-                          <div class="constraint__title">{constraint.title}</div>
+                          <div class="constraint__title" data-edit={edit(`item.${project.slug}.problem.${i}.title`)}>{constraint.title}</div>
                           {constraint.body && (
-                            <p class="case-body constraint__body">{constraint.body}</p>
+                            <p class="case-body constraint__body" data-edit={edit(`item.${project.slug}.problem.${i}.body`)}>{constraint.body}</p>
                           )}
                         </div>
                       </div>
@@ -190,8 +192,8 @@ const coverStyle = project.cover
             <div class="case-row case-row--flush" data-reveal="0">
               <div class="eyebrow--small case-row__label">The approach</div>
               <div class="case-row__body">
-                {project.approachLead && <p class="case-lead">{project.approachLead}</p>}
-                {project.approachBody && <p class="case-body">{project.approachBody}</p>}
+                {project.approachLead && <p class="case-lead" data-edit={edit(`block.${project.slug}.approach.lead`)}>{project.approachLead}</p>}
+                {project.approachBody && <p class="case-body" data-edit={edit(`block.${project.slug}.approach.body`)}>{project.approachBody}</p>}
               </div>
             </div>
 
@@ -206,11 +208,11 @@ const coverStyle = project.cover
 
             {project.decisions.length > 0 && (
               <div class="decisions" data-reveal="0">
-                {project.decisions.map((decision) => (
+                {project.decisions.map((decision, i) => (
                   <div>
-                    <div class="eyebrow--small">{decision.eyebrow}</div>
-                    <div class="decision__title">{decision.title}</div>
-                    <p class="decision__body">{decision.body}</p>
+                    <div class="eyebrow--small" data-edit={edit(`item.${project.slug}.decisions.${i}.eyebrow`)}>{decision.eyebrow}</div>
+                    <div class="decision__title" data-edit={edit(`item.${project.slug}.decisions.${i}.title`)}>{decision.title}</div>
+                    <p class="decision__body" data-edit={edit(`item.${project.slug}.decisions.${i}.body`)}>{decision.body}</p>
                   </div>
                 ))}
               </div>
@@ -228,13 +230,14 @@ const coverStyle = project.cover
         <section class="section section--parchment case-shipped" data-lift data-tile="parchment">
           <div class="shell--narrow">
             <div class="eyebrow--small" data-reveal="0">What shipped</div>
-            <h2 class="case-shipped__heading" data-reveal="0">{project.shippedHeading}</h2>
+            <h2 class="case-shipped__heading" data-reveal="0" data-edit={edit(`block.${project.slug}.gallery.heading`)}>{project.shippedHeading}</h2>
 
             {project.gallery.length > 0 && (
               <div class="gallery">
                 {project.gallery.map((image, i) => (
                   <div class="gallery__item" data-reveal={String(i)} data-zoom>
                     <img
+                      data-edit={edit(`image.block.${project.slug}.gallery.${i}`)}
                       src={image.url}
                       alt={image.alt}
                       width={image.width}
@@ -249,16 +252,17 @@ const coverStyle = project.cover
 
             {project.metrics.length > 0 && (
               <div class="metrics" data-reveal="0">
-                {project.metrics.map((metric) => (
+                {project.metrics.map((metric, i) => (
                   <div>
                     <div
                       class="metric__value"
                       class:list={[{ 'metric__value--text': compactMetrics }]}
                       data-num={metric.animate ? '1' : undefined}
+                      data-edit={edit(`item.${project.slug}.metrics.${i}.value`)}
                     >
                       {metric.value}
                     </div>
-                    <div class="metric__label">{metric.label}</div>
+                    <div class="metric__label" data-edit={edit(`item.${project.slug}.metrics.${i}.label`)}>{metric.label}</div>
                   </div>
                 ))}
               </div>
@@ -288,8 +292,8 @@ const coverStyle = project.cover
           <div class="shell--narrow case-row case-row--flush">
             <div class="eyebrow--small case-row__label">Looking back</div>
             <div class="case-row__body">
-              {project.reflectionLead && <p class="case-lead">{project.reflectionLead}</p>}
-              {project.reflectionBody && <p class="case-body">{project.reflectionBody}</p>}
+              {project.reflectionLead && <p class="case-lead" data-edit={edit(`block.${project.slug}.reflection.lead`)}>{project.reflectionLead}</p>}
+              {project.reflectionBody && <p class="case-body" data-edit={edit(`block.${project.slug}.reflection.body`)}>{project.reflectionBody}</p>}
             </div>
           </div>
         </section>

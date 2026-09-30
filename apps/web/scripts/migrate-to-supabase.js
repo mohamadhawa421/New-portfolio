@@ -218,7 +218,7 @@ async function main() {
 
   say(`\n\x1b[32m✓ Supabase now holds exactly what the live site shows.\x1b[0m`);
   say(`  ${rows.projects.length} projects · ${rows.media.length} images, all reachable · release ${rel.id}`);
-  say(`  The live site still builds from Strapi; nothing public has changed.`);
+  say(`  The next build of the public site will use this release.`);
   await db.auth.signOut();
 }
 

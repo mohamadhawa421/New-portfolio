@@ -259,6 +259,7 @@ check(
       const text = fs.readFileSync(p, 'utf8');
       if (/supabase/i.test(text)) bad.push(`${rel(p)} mentions supabase`);
       if (/["'`]\/studio[/"'`?]/.test(text)) bad.push(`${rel(p)} links into /studio`);
+      if (/\sdata-edit(-kind)?=/.test(text)) bad.push(`${rel(p)} carries Studio edit keys`);
     }
     return bad.length === 0 || bad.join('; ');
   }

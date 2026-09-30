@@ -14,6 +14,7 @@ import {
   getSiteSettings,
   pad,
 } from '../lib/content';
+import { edit } from '../lib/edit';
 
 const [home, settings, services, steps, projects, contact, split] = await Promise.all([
   getHomePage(),
@@ -85,21 +86,21 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
             assembled.
           */}
           <div class="hero__meta" data-reveal="0">
-            <span>{settings.roleTitle}</span>
+            <span data-edit={edit('settings.roleTitle')}>{settings.roleTitle}</span>
             <span aria-hidden="true">·</span>
-            <span>{settings.location}</span>
+            <span data-edit={edit('settings.location')}>{settings.location}</span>
           </div>
 
-          <h1 class="hero__title"><span data-rise="0">{home.heroTitle}</span></h1>
+          <h1 class="hero__title"><span data-rise="0" data-edit={edit('page.home.heroTitle')}>{home.heroTitle}</span></h1>
 
           {/* Everything the name is not. Grouped so the grid can place it as
               one block beside the picture, under the full-width title. */}
           <div class="hero__body">
-            <div class="hero__subtitle"><span data-rise="1">{home.heroSubtitle}</span></div>
-            <p class="hero__intro" data-reveal="3">{home.heroIntro}</p>
+            <div class="hero__subtitle"><span data-rise="1" data-edit={edit('page.home.heroSubtitle')}>{home.heroSubtitle}</span></div>
+            <p class="hero__intro" data-reveal="3" data-edit={edit('page.home.heroIntro')}>{home.heroIntro}</p>
             <div class="hero__actions" data-reveal="4">
-              <a class="btn btn--primary" href="/work">{home.primaryCtaLabel}</a>
-              <a class="btn btn--secondary" href="/contact">{home.secondaryCtaLabel}</a>
+              <a class="btn btn--primary" href="/work" data-edit={edit('page.home.primaryCtaLabel')}>{home.primaryCtaLabel}</a>
+              <a class="btn btn--secondary" href="/contact" data-edit={edit('page.home.secondaryCtaLabel')}>{home.secondaryCtaLabel}</a>
             </div>
           </div>
         </div>
@@ -188,7 +189,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     <section class="section section--light work" data-lift data-tile="light">
       <div class="shell">
         <div class="work__header" data-reveal="0">
-          <div class="eyebrow">{home.workEyebrow}</div>
+          <div class="eyebrow" data-edit={edit('page.home.workEyebrow')}>{home.workEyebrow}</div>
           <h2 class="h2 work__heading">{projects.length} {home.workHeadingSuffix}</h2>
         </div>
 
@@ -216,7 +217,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
           href="/work"
           data-reveal={String(featured.length + 1)}
         >
-          <span>{home.workLinkLabel}</span>
+          <span data-edit={edit('page.home.workLinkLabel')}>{home.workLinkLabel}</span>
           <span class="work__more-arrow" aria-hidden="true">›</span>
         </a>
       </div>
@@ -227,9 +228,9 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     {/* ---------------------------------------------------------------- */}
     <section class="section section--parchment services" data-lift data-tile="parchment">
       <div class="shell">
-        <div class="eyebrow" data-reveal="0">{home.servicesEyebrow}</div>
-        <h2 class="h2 services__heading" data-reveal="1">{home.servicesHeading}</h2>
-        <p class="services__intro" data-reveal="2">{home.servicesIntro}</p>
+        <div class="eyebrow" data-reveal="0" data-edit={edit('page.home.servicesEyebrow')}>{home.servicesEyebrow}</div>
+        <h2 class="h2 services__heading" data-reveal="1" data-edit={edit('page.home.servicesHeading')}>{home.servicesHeading}</h2>
+        <p class="services__intro" data-reveal="2" data-edit={edit('page.home.servicesIntro')}>{home.servicesIntro}</p>
 
         <div class="services__list">
           {
@@ -240,10 +241,10 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
                 data-reveal={String(i)}
               >
                 <div class="service__num">{pad(i + 1)}</div>
-                <div class="service__title">{service.title}</div>
-                <div class="service__desc">{service.description}</div>
+                <div class="service__title" data-edit={edit(`list.services.${i}.title`)}>{service.title}</div>
+                <div class="service__desc" data-edit={edit(`list.services.${i}.description`)}>{service.description}</div>
                 <div class="service__cta">
-                  <span>{service.ctaLabel}</span>
+                  <span data-edit={edit(`list.services.${i}.ctaLabel`)}>{service.ctaLabel}</span>
                   <span class="service__chevron" aria-hidden="true">
                     ›
                   </span>
@@ -279,7 +280,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
             ))
           }
         </h2>
-        <p class="manifesto__body">{home.manifestoBody}</p>
+        <p class="manifesto__body" data-edit={edit('page.home.manifestoBody')}>{home.manifestoBody}</p>
       </div>
     </section>
 
@@ -289,15 +290,15 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     <section class="section section--light process" data-lift data-tile="light">
       <div class="shell process__inner">
         <div class="process__label" data-reveal="0">
-          <div class="eyebrow">{home.processEyebrow}</div>
+          <div class="eyebrow" data-edit={edit('page.home.processEyebrow')}>{home.processEyebrow}</div>
         </div>
 
         <div class="process__list" data-reveal="1">
           {
-            steps.map((step) => (
+            steps.map((step, i) => (
               <div class="process__step">
-                <div class="process__title">{step.title}</div>
-                <div class="process__desc">{step.description}</div>
+                <div class="process__title" data-edit={edit(`list.process.${i}.title`)}>{step.title}</div>
+                <div class="process__desc" data-edit={edit(`list.process.${i}.description`)}>{step.description}</div>
               </div>
             ))
           }
@@ -366,18 +367,18 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
         </div>
 
         <div class="about__copy" data-reveal="1">
-          <div class="eyebrow about__eyebrow">{home.aboutEyebrow}</div>
-          <h2 class="about__heading">{home.aboutHeading}</h2>
-          <p class="about__body">{home.aboutBody}</p>
+          <div class="eyebrow about__eyebrow" data-edit={edit('page.home.aboutEyebrow')}>{home.aboutEyebrow}</div>
+          <h2 class="about__heading" data-edit={edit('page.home.aboutHeading')}>{home.aboutHeading}</h2>
+          <p class="about__body" data-edit={edit('page.home.aboutBody')}>{home.aboutBody}</p>
 
           <div class="about__stats">
             {
-              home.stats.map((stat) => (
+              home.stats.map((stat, i) => (
                 <div>
-                  <div class="about__stat-value" data-num={stat.animate ? '1' : undefined}>
+                  <div class="about__stat-value" data-num={stat.animate ? '1' : undefined} data-edit={edit(`list.home.stats.${i}.value`)}>
                     {stat.value}
                   </div>
-                  <div class="about__stat-label">{stat.label}</div>
+                  <div class="about__stat-label" data-edit={edit(`list.home.stats.${i}.label`)}>{stat.label}</div>
                 </div>
               ))
             }

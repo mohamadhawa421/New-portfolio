@@ -33,6 +33,11 @@ export function studio(): AstroIntegration {
         injectRoute({ pattern: '/studio/login', entrypoint: new URL('./pages/login.astro', import.meta.url) });
         injectRoute({ pattern: '/studio/api/login', entrypoint: new URL('./api/login.ts', import.meta.url) });
         injectRoute({ pattern: '/studio/api/logout', entrypoint: new URL('./api/logout.ts', import.meta.url) });
+        injectRoute({ pattern: '/studio/api/draft', entrypoint: new URL('./api/draft.ts', import.meta.url) });
+        injectRoute({ pattern: '/studio/api/save', entrypoint: new URL('./api/save.ts', import.meta.url) });
+        injectRoute({ pattern: '/studio/api/publish', entrypoint: new URL('./api/publish.ts', import.meta.url) });
+        injectRoute({ pattern: '/studio/api/releases', entrypoint: new URL('./api/releases.ts', import.meta.url) });
+        injectRoute({ pattern: '/studio/api/upload', entrypoint: new URL('./api/upload.ts', import.meta.url) });
       },
     },
   };

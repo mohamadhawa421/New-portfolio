@@ -1,4 +1,5 @@
 ---
+import { edit } from '../lib/edit';
 import type { Project } from '../lib/types';
 
 interface Props {
@@ -98,6 +99,7 @@ const COVER_SIZES = '(max-width: 700px) 90vw, (max-width: 1279px) 44vw, 397px';
   data-reveal="0"
   data-stagger
   data-categories={filterKey}
+  data-edit={edit(`project.${project.slug}`)}
 >
   <!-- Pairs with the cover on the case study. The browser lifts this element
        out of the page transition and morphs it into its counterpart, so the
@@ -112,6 +114,7 @@ const COVER_SIZES = '(max-width: 700px) 90vw, (max-width: 1279px) 44vw, 397px';
     {
       project.cover ? (
         <img
+          data-edit={edit(`image.project.${project.slug}.cover`)}
           src={project.cover.url}
           srcset={coverSrcset || undefined}
           sizes={coverSrcset ? COVER_SIZES : undefined}
@@ -130,8 +133,8 @@ const COVER_SIZES = '(max-width: 700px) 90vw, (max-width: 1279px) 44vw, 397px';
 
   <div class="card__body">
     <div class="card__meta">{project.num} — {project.category}</div>
-    <h2 class="card__title">{project.title}</h2>
-    <p class="card__summary">{project.summary}</p>
+    <h2 class="card__title" data-edit={edit(`project.${project.slug}.title`)}>{project.title}</h2>
+    <p class="card__summary" data-edit={edit(`project.${project.slug}.summary`)}>{project.summary}</p>
     <span class="card__cta">View project&nbsp;›</span>
   </div>
 </a>

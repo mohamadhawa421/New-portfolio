@@ -156,7 +156,14 @@ export function fromRows(snap, { generatedAt = null } = {}) {
   };
   const seo = (s) => ({ metaTitle: s?.metaTitle ?? null, metaDescription: s?.metaDescription ?? null, shareImage: media(s?.shareImage) });
   const byOrder = (a, b) => a.sort_order - b.sort_order;
-  const listOf = (key) => (snap.lists ?? []).filter((l) => l.list_key === key && l.visible).sort(byOrder).map((l) => l.content);
+  // Position is the order. A list item that carries an `order` of its own
+  // (services, process, experience — content.ts sorts on it) gets its index,
+  // so reordering in the Studio is moving a row and nothing else.
+  const listOf = (key) =>
+    (snap.lists ?? [])
+      .filter((l) => l.list_key === key && l.visible)
+      .sort(byOrder)
+      .map((l, i) => ('order' in l.content ? { ...l.content, order: i } : l.content));
   const pageOf = (key) => (snap.pages ?? []).find((p) => p.key === key) ?? { fields: {}, seo: {} };
 
   const sf = snap.settings?.fields ?? {};

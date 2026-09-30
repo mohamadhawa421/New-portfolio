@@ -45,6 +45,13 @@
  * into the case study is the thing you were looking at.
  */
 import type { Project } from '../lib/types';
+/*
+ * The Studio's edit keys are written with the build flag directly rather than
+ * through lib/edit.ts. Importing any module here moved this component's CSS
+ * after CharacterAside's in the home page's inlined stylesheet — harmless, the
+ * selectors are scoped, but the public build is held to byte-identical and
+ * that is a change. `__STUDIO__` is a compile-time constant (astro.config.mjs).
+ */
 
 interface Props {
   projects: Project[];
@@ -73,6 +80,7 @@ const { projects } = Astro.props;
             href={`/work/${project.slug}`}
             data-work-row
             data-slug={project.slug}
+            data-edit={__STUDIO__ ? `project.${project.slug}` : undefined}
             data-i={String(i)}
             data-reveal={String(i)}
           >
@@ -81,8 +89,8 @@ const { projects } = Astro.props;
             </span>
 
             <span class="index__text">
-              <span class="index__title">{project.title}</span>
-              <span class="index__tag">{project.discipline}</span>
+              <span class="index__title" data-edit={__STUDIO__ ? `project.${project.slug}.title` : undefined}>{project.title}</span>
+              <span class="index__tag" data-edit={__STUDIO__ ? `project.${project.slug}.discipline` : undefined}>{project.discipline}</span>
             </span>
 
             {/*

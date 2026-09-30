@@ -69,6 +69,8 @@ export default defineConfig({
     inlineStylesheets: 'always',
   },
   vite: {
+    // Read by src/lib/edit.ts: edit keys exist in the Studio build only.
+    define: { __STUDIO__: JSON.stringify(STUDIO) },
     build: {
       /*
        * Old enough that the vendor prefixes survive minification.

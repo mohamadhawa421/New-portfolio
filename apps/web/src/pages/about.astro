@@ -1,4 +1,5 @@
 ---
+import { edit } from '../lib/edit';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getAboutPage, getSiteSettings } from '../lib/content';
 
@@ -26,8 +27,8 @@ const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleT
   <main id="main" data-shell="1">
     <section class="section section--light about-hero" data-lift data-tile="light">
       <div class="shell">
-        <div class="eyebrow about-hero__eyebrow" data-reveal="0">{about.eyebrow}</div>
-        <h1 class="about-hero__heading"><span data-rise="0">{about.heading}</span></h1>
+        <div class="eyebrow about-hero__eyebrow" data-reveal="0" data-edit={edit('page.about.eyebrow')}>{about.eyebrow}</div>
+        <h1 class="about-hero__heading"><span data-rise="0" data-edit={edit('page.about.heading')}>{about.heading}</span></h1>
       </div>
     </section>
 
@@ -38,6 +39,7 @@ const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleT
             {
               settings.portrait && (
                 <img
+                  data-edit={edit('image.settings.portrait')}
                   src={settings.portrait.url}
                   alt={portraitAlt}
                   loading="eager"
@@ -50,12 +52,12 @@ const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleT
 
           <div class="about-body__stats">
             {
-              about.stats.map((stat) => (
+              about.stats.map((stat, i) => (
                 <div>
-                  <div class="stat__value" data-num={stat.animate ? '1' : undefined}>
+                  <div class="stat__value" data-num={stat.animate ? '1' : undefined} data-edit={edit(`list.about.stats.${i}.value`)}>
                     {stat.value}
                   </div>
-                  <div class="stat__label">{stat.label}</div>
+                  <div class="stat__label" data-edit={edit(`list.about.stats.${i}.label`)}>{stat.label}</div>
                 </div>
               ))
             }
@@ -63,9 +65,9 @@ const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleT
         </div>
 
         <div class="about-body__copy" data-reveal="1">
-          <p class="about-body__lead">{about.lead}</p>
-          <p class="about-body__primary">{about.bodyPrimary}</p>
-          <p class="about-body__secondary">{about.bodySecondary}</p>
+          <p class="about-body__lead" data-edit={edit('page.about.lead')}>{about.lead}</p>
+          <p class="about-body__primary" data-edit={edit('page.about.bodyPrimary')}>{about.bodyPrimary}</p>
+          <p class="about-body__secondary" data-edit={edit('page.about.bodySecondary')}>{about.bodySecondary}</p>
 
           {/*
             Two headings nobody sees.
@@ -86,13 +88,13 @@ const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleT
           <h2 class="sr-only">Experience</h2>
           <ul class="experience" role="list">
             {
-              about.experience.map((entry) => (
+              about.experience.map((entry, i) => (
                 <li class="experience__row">
                   <div>
-                    <div class="experience__role">{entry.role}</div>
-                    <div class="experience__org">{entry.organisation}</div>
+                    <div class="experience__role" data-edit={edit(`list.about.experience.${i}.role`)}>{entry.role}</div>
+                    <div class="experience__org" data-edit={edit(`list.about.experience.${i}.organisation`)}>{entry.organisation}</div>
                   </div>
-                  <div class="experience__period">{entry.period}</div>
+                  <div class="experience__period" data-edit={edit(`list.about.experience.${i}.period`)}>{entry.period}</div>
                 </li>
               ))
             }
@@ -100,7 +102,7 @@ const portraitAlt = [settings.portrait?.alt || settings.siteName, settings.roleT
 
           <h2 class="sr-only">Skills</h2>
           <ul class="skills" role="list">
-            {about.skills.map((skill) => <li class="skill">{skill}</li>)}
+            {about.skills.map((skill, i) => <li class="skill" data-edit={edit(`list.about.skills.${i}.label`)}>{skill}</li>)}
           </ul>
         </div>
       </div>

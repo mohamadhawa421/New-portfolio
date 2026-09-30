@@ -1,6 +1,7 @@
 ---
 import EnquiryForm from './EnquiryForm.astro';
 import type { ContactPage, Service, SiteSettings } from '../lib/types';
+import { edit } from '../lib/edit';
 
 interface Props {
   settings: SiteSettings;
@@ -23,6 +24,11 @@ const {
   formId = 'mh',
 } = Astro.props;
 
+// Which draft fields the two texts come from: the home page's section carries
+// its own copy, the contact page carries the page's.
+const headingKey = variant === 'home' ? 'page.home.contactHeading' : 'page.contact.heading';
+const bodyKey = variant === 'home' ? 'page.home.contactBody' : 'page.contact.body';
+
 const isContactPage = variant === 'contact';
 const waLabel = isContactPage
   ? `WhatsApp · ${settings.phoneLabel}`
@@ -42,13 +48,13 @@ const waLabel = isContactPage
 
     {
       isContactPage ? (
-        <h1 class="contact-block__heading contact-block__heading--page"><span data-rise="0">{heading}</span></h1>
+        <h1 class="contact-block__heading contact-block__heading--page"><span data-rise="0" data-edit={edit(headingKey)}>{heading}</span></h1>
       ) : (
-        <h2 class="contact-block__heading"><span data-rise="0">{heading}</span></h2>
+        <h2 class="contact-block__heading"><span data-rise="0" data-edit={edit(headingKey)}>{heading}</span></h2>
       )
     }
 
-    <p class="contact-block__body"><span data-rise="1">{body}</span></p>
+    <p class="contact-block__body"><span data-rise="1" data-edit={edit(bodyKey)}>{body}</span></p>
 
     <div class="contact-block__links">
       <a class="contact-block__link" href={settings.waHref} target="_blank" rel="noopener">
