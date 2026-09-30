@@ -26,6 +26,7 @@ const pickers = [
     key: 'service',
     name: 'service',
     label: contact.formServiceLabel,
+    editKey: 'page.contact.formServiceLabel',
     options: serviceOptions,
     fieldClass: 'enquiry__field--service',
   },
@@ -33,6 +34,7 @@ const pickers = [
     key: 'budget',
     name: 'budget',
     label: contact.formBudgetLabel,
+    editKey: 'page.contact.formBudgetLabel',
     options: budgetOptions,
     fieldClass: 'enquiry__field--budget',
   },
@@ -53,7 +55,7 @@ const config = {
 
 <form class="enquiry" data-enquiry data-config={JSON.stringify(config)} novalidate>
   <div class="enquiry__field">
-    <label for={`${id}-name`}>{contact.formNameLabel}</label>
+    <label for={`${id}-name`} data-edit={__STUDIO__ ? 'page.contact.formNameLabel' : undefined}>{contact.formNameLabel}</label>
     <input
       id={`${id}-name`}
       name="name"
@@ -67,7 +69,7 @@ const config = {
     {
       pickers.map((field) => (
         <div class:list={['enquiry__field', field.fieldClass]}>
-          <label id={`${id}-${field.key}-label`} for={`${id}-${field.key}`}>
+          <label id={`${id}-${field.key}-label`} for={`${id}-${field.key}`} data-edit={__STUDIO__ ? field.editKey : undefined}>
             {field.label}
           </label>
 
@@ -150,7 +152,7 @@ const config = {
   </div>
 
   <div class="enquiry__field">
-    <label for={`${id}-brief`}>{contact.formBriefLabel}</label>
+    <label for={`${id}-brief`} data-edit={__STUDIO__ ? 'page.contact.formBriefLabel' : undefined}>{contact.formBriefLabel}</label>
     <textarea
       id={`${id}-brief`}
       name="brief"
@@ -174,21 +176,21 @@ const config = {
   <div class="enquiry__actions">
     {
       showWhatsApp && (
-        <button type="button" class="enquiry__send enquiry__send--wa" data-send="whatsapp">
+        <button type="button" class="enquiry__send enquiry__send--wa" data-send="whatsapp" data-edit={__STUDIO__ ? 'page.contact.formWhatsappCta' : undefined}>
           {contact.formWhatsappCta}
         </button>
       )
     }
     {
       showEmail && (
-        <button type="button" class="enquiry__send enquiry__send--mail" data-send="email">
+        <button type="button" class="enquiry__send enquiry__send--mail" data-send="email" data-edit={__STUDIO__ ? 'page.contact.formEmailCta' : undefined}>
           {contact.formEmailCta}
         </button>
       )
     }
   </div>
 
-  <p class="enquiry__hint" data-hint>{contact.formHint}</p>
+  <p class="enquiry__hint" data-hint data-edit={__STUDIO__ ? 'page.contact.formHint' : undefined}>{contact.formHint}</p>
 </form>
 
 <script>

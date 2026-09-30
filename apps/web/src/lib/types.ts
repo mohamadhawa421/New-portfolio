@@ -77,6 +77,25 @@ export interface Project {
   num: string;
   /** Up to two initials, shown when there is no cover image. */
   initials: string;
+  /**
+   * Sections added in the Studio beyond the case study's own, in order. Empty
+   * for every project that came from Strapi, and absent from content.json
+   * until one exists, so the page renders exactly as before.
+   */
+  extra: ExtraBlock[];
+}
+
+export interface ExtraBlock {
+  id: string;
+  type: 'text' | 'image' | 'quote' | 'two-column';
+  heading: string;
+  body: string;
+  image: Media | null;
+  caption: string;
+  quote: string;
+  cite: string;
+  left: string;
+  right: string;
 }
 
 export interface Service {

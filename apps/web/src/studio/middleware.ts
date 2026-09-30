@@ -12,14 +12,47 @@
  * for editing, not for looking.
  */
 
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { defineMiddleware } from 'astro:middleware';
+import { fromRows } from '../../scripts/content-map.js';
+import { draftMediaUrl, loadDraft } from './draft';
 import { safeNext, serverClient, staffUser, studioEnv } from './supabase';
+
+/*
+ * The store lib/source.ts reads a draft from (see draftOverride there). It
+ * lives on globalThis so the site's own modules never import anything from
+ * the Studio; in the public build nothing installs it and it is undefined.
+ */
+const draftStore = new AsyncLocalStorage<unknown>();
+(globalThis as { __mhDraft?: AsyncLocalStorage<unknown> }).__mhDraft = draftStore;
+
+/**
+ * A page rendered from the draft: `?draft=1`, and only for staff. Anyone else
+ * asking for it gets the published page, exactly as if the parameter were
+ * not there — the draft is never shown to a visitor, whatever the URL says.
+ */
+async function renderDraft(context: Parameters<Parameters<typeof defineMiddleware>[0]>[0], next: () => Promise<Response>) {
+  const env = studioEnv();
+  if (!env) return next();
+  const client = serverClient(env, context.request, context.cookies);
+  const staff = await staffUser(client);
+  if (!staff) return next();
+  const draft = await loadDraft(client);
+  const content = fromRows(draft, { draft: true, urlFor: draftMediaUrl(env.url) });
+  const response = await draftStore.run(content, next);
+  response.headers.set('cache-control', 'no-store');
+  response.headers.set('x-robots-tag', 'noindex, nofollow');
+  return response;
+}
 
 const OPEN = new Set(['/studio/login', '/studio/api/login']);
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname, search } = context.url;
-  if (!pathname.startsWith('/studio') || context.isPrerendered) return next();
+  if (!pathname.startsWith('/studio')) {
+    return !context.isPrerendered && context.url.searchParams.get('draft') === '1' ? renderDraft(context, next) : next();
+  }
+  if (context.isPrerendered) return next();
 
   const env = studioEnv();
   let staff = null;

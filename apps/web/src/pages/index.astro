@@ -190,7 +190,7 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
       <div class="shell">
         <div class="work__header" data-reveal="0">
           <div class="eyebrow" data-edit={edit('page.home.workEyebrow')}>{home.workEyebrow}</div>
-          <h2 class="h2 work__heading">{projects.length} {home.workHeadingSuffix}</h2>
+          <h2 class="h2 work__heading">{projects.length} {__STUDIO__ ? <span data-edit="page.home.workHeadingSuffix">{home.workHeadingSuffix}</span> : home.workHeadingSuffix}</h2>
         </div>
 
         {/*
@@ -263,15 +263,23 @@ const tailWords = home.manifestoTail.split(/\s+/).filter(Boolean);
     <section class="section section--dark manifesto" data-lift data-tile="dark">
       <div class="shell">
         <h2 class="manifesto__heading">
+          {/* In the Studio the two halves are two editable phrases; on the
+              site they are words, each with its own reveal step. */}
+          {__STUDIO__ && (
+            <>
+              <span data-edit="page.home.manifestoLead">{home.manifestoLead}</span>{' '}
+              <span class="manifesto__tail" data-edit="page.home.manifestoTail">{home.manifestoTail}</span>
+            </>
+          )}
           {
-            leadWords.map((word, i) => (
+            !__STUDIO__ && leadWords.map((word, i) => (
               <>
                 <span data-reveal={String(i)}>{word}</span>{' '}
               </>
             ))
           }
           {
-            tailWords.map((word, i) => (
+            !__STUDIO__ && tailWords.map((word, i) => (
               <>
                 <span class="manifesto__tail" data-reveal={String(leadWords.length + i)}>
                   {word}

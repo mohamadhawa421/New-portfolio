@@ -8,7 +8,7 @@
  * getters stay async so pages keep awaiting them.
  */
 
-import { read, toMedia, toMediaList } from './source';
+import { draftOverride, read, toMedia, toMediaList } from './source';
 import * as fallback from './fallback';
 import type {
   AboutPage,
@@ -16,6 +16,7 @@ import type {
   Constraint,
   Decision,
   Experience,
+  ExtraBlock,
   HomePage,
   Metric,
   ProcessStep,
@@ -59,6 +60,9 @@ export const initialsOf = (name: string): string =>
 function cache<T>(loader: () => Promise<T>): () => Promise<T> {
   let pending: Promise<T> | null = null;
   return () => {
+    // A Studio draft render is per request; its content must never be
+    // memoised into the next request's page (see draftOverride in source.ts).
+    if (draftOverride()) return loader();
     if (!pending) pending = loader();
     return pending;
   };
@@ -125,6 +129,26 @@ const mapOptions = (raw: unknown): string[] =>
 /* Projects                                                            */
 /* ------------------------------------------------------------------ */
 
+const EXTRA_TYPES = new Set(['text', 'image', 'quote', 'two-column']);
+
+function mapExtra(raw: any): ExtraBlock[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((b) => b && EXTRA_TYPES.has(b.type))
+    .map((b) => ({
+      id: text(b.id),
+      type: b.type,
+      heading: text(b.heading),
+      body: text(b.body),
+      image: toMedia(b.image),
+      caption: text(b.caption),
+      quote: text(b.quote),
+      cite: text(b.cite),
+      left: text(b.left),
+      right: text(b.right),
+    }));
+}
+
 function mapProject(raw: any, index: number): Project {
   const title = text(raw?.title, 'Untitled project');
 
@@ -170,6 +194,7 @@ function mapProject(raw: any, index: number): Project {
     reflectionLead: text(raw?.reflectionLead),
     reflectionBody: text(raw?.reflectionBody),
     seo: mapSeo(raw?.seo),
+    extra: mapExtra(raw?.extra),
     num: pad(index + 1),
     initials: initialsOf(title),
   };

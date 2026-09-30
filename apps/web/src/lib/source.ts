@@ -26,6 +26,22 @@ export interface Snapshot {
 
 const content = snapshot as Snapshot;
 
+/*
+ * The Studio's draft, for the one request that is rendering it.
+ *
+ * The admin deployment renders pages on demand, and a staff request with
+ * `?draft=1` is rendered from the draft instead of this snapshot — so a new
+ * project or a deleted one shows on the canvas as the real page, not as a
+ * patch over the old one. The Studio middleware installs an AsyncLocalStorage
+ * on globalThis and runs the render inside it; nothing is imported from here,
+ * so the public build has no reference to it and never sees a draft. Outside
+ * such a request `getStore()` is undefined and this file behaves exactly as
+ * it always has.
+ */
+export function draftOverride(): Snapshot | undefined {
+  return (globalThis as { __mhDraft?: { getStore(): Snapshot | undefined } }).__mhDraft?.getStore();
+}
+
 export const generatedAt = content.generatedAt ?? null;
 
 /**
@@ -33,7 +49,7 @@ export const generatedAt = content.generatedAt ?? null;
  * case the caller falls back to `fallback.ts` so the site still builds.
  */
 export function read<T>(key: keyof Snapshot): T | null {
-  const value = content[key];
+  const value = (draftOverride() ?? content)[key];
   if (value == null) return null;
   if (Array.isArray(value) && value.length === 0) return null;
   return value as T;

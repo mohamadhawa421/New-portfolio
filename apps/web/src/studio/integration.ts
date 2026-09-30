@@ -26,6 +26,15 @@ export function studio(): AstroIntegration {
   return {
     name: 'portfolio-studio',
     hooks: {
+      /*
+       * Every page on demand, in this build only. The canvas shows a page
+       * rendered from the draft, and a project that exists only in the draft
+       * has no pre-built page to show. The public build does not load this
+       * integration, so its pages stay static files.
+       */
+      'astro:route:setup': ({ route }) => {
+        route.prerender = false;
+      },
       'astro:config:setup': ({ injectRoute, addMiddleware }) => {
         addMiddleware({ entrypoint: new URL('./middleware.ts', import.meta.url), order: 'pre' });
 

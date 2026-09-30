@@ -34,9 +34,9 @@ const categories = [
   <main id="main" data-shell="1">
     <section class="section section--light work-hero" data-lift data-tile="light">
       <div class="shell">
-        <div class="eyebrow work-hero__eyebrow" data-reveal="0">{work.eyebrow}</div>
-        <h1 class="work-hero__heading"><span data-rise="0">{work.heading}</span></h1>
-        <p class="lead work-hero__intro"><span data-rise="1">{work.intro}</span></p>
+        <div class="eyebrow work-hero__eyebrow" data-reveal="0" data-edit={__STUDIO__ ? 'page.work.eyebrow' : undefined}>{work.eyebrow}</div>
+        <h1 class="work-hero__heading"><span data-rise="0" data-edit={__STUDIO__ ? 'page.work.heading' : undefined}>{work.heading}</span></h1>
+        <p class="lead work-hero__intro"><span data-rise="1" data-edit={__STUDIO__ ? 'page.work.intro' : undefined}>{work.intro}</span></p>
       </div>
     </section>
 
@@ -65,7 +65,7 @@ const categories = [
             did anything. */}
         <span class="work-grid__count" aria-live="polite">
           <span data-count>{projects.length}</span>
-          {' '}{work.countLabel}
+          {' '}{__STUDIO__ ? <span data-edit="page.work.countLabel">{work.countLabel}</span> : work.countLabel}
         </span>
       </div>
 

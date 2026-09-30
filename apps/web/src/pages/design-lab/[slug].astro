@@ -36,7 +36,9 @@ interface Props {
   experiment: LabExperiment;
 }
 
-const { experiment } = Astro.props;
+// On-demand in the Studio's deployment, where getStaticPaths does not supply props.
+const experiment = Astro.props.experiment ?? getExperiments().find((e) => e.slug === Astro.params.slug);
+if (!experiment) return new Response(null, { status: 404 });
 const all = getExperiments();
 const position = all.findIndex((x) => x.slug === experiment.slug);
 const next = nextExperiment(experiment.slug);

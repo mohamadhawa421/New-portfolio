@@ -148,12 +148,57 @@ export function toRows(content, describe) {
 /* snapshot → content.json                                             */
 /* ------------------------------------------------------------------ */
 
-export function fromRows(snap, { generatedAt = null } = {}) {
+/**
+ * What an empty field renders as in a Studio draft render.
+ *
+ * The case study hides a row whose text is empty, which is right for the site
+ * and wrong for an editor: a new project would be a blank page with nothing
+ * to click. In a draft render every empty text is this marker instead, so the
+ * row appears, and the Studio shows it as a placeholder ("Write the brief…")
+ * that becomes the real text the moment something is typed into it. It never
+ * reaches the public build: `draft` is only set by the Studio middleware.
+ */
+export const EMPTY = '\u2060\u2063empty\u2063\u2060';
+
+/**
+ * What an empty list or gallery renders as in a draft render: one entry the
+ * owner can click. The case study leaves out a gallery with no pictures and a
+ * list with no entries — right for the site, but it leaves nothing to click
+ * for a new project. The picture is inline SVG, so it needs no file.
+ */
+const PLACEHOLDER_IMAGE = {
+  alternativeText: '',
+  width: 1440,
+  height: 900,
+  url:
+    'data:image/svg+xml,' +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900"><rect width="1440" height="900" fill="#ececef"/>' +
+        '<rect x="620" y="360" width="200" height="150" rx="18" fill="none" stroke="#a1a1a6" stroke-width="10"/>' +
+        '<path d="M640 490l50-50 45 45 30-30 45 45" fill="none" stroke="#a1a1a6" stroke-width="10" stroke-linejoin="round"/>' +
+        '<text x="720" y="580" text-anchor="middle" font-family="-apple-system,system-ui,sans-serif" font-size="34" fill="#86868b">Click to add an image</text></svg>'
+    ),
+};
+const PLACEHOLDER_ITEMS = {
+  problem: () => ({ title: EMPTY, body: '' }),
+  decisions: () => ({ eyebrow: EMPTY, title: EMPTY, body: EMPTY }),
+  metrics: () => ({ value: EMPTY, label: EMPTY, animate: false }),
+};
+
+/** Section types added in the Studio, rendered after the case study's own. */
+export const EXTRA_TYPES = ['text', 'image', 'quote', 'two-column'];
+
+/**
+ * @param {any} snap
+ * @param {{ generatedAt?: string | null, draft?: boolean, urlFor?: ((m: any) => string) | null }} [options]
+ */
+export function fromRows(snap, { generatedAt = null, draft = false, urlFor = null } = {}) {
   const mediaById = new Map((snap.media ?? []).map((m) => [m.id, m]));
   const media = (id) => {
     const m = id ? mediaById.get(id) : null;
-    return m ? { alternativeText: m.alt, width: m.width, height: m.height, url: mediaUrl(m.path) } : null;
+    return m ? { alternativeText: m.alt, width: m.width, height: m.height, url: urlFor ? urlFor(m) : mediaUrl(m.path) } : null;
   };
+  const t = (v) => (draft && (v == null || v === '') ? EMPTY : v);
   const seo = (s) => ({ metaTitle: s?.metaTitle ?? null, metaDescription: s?.metaDescription ?? null, shareImage: media(s?.shareImage) });
   const byOrder = (a, b) => a.sort_order - b.sort_order;
   // Position is the order. A list item that carries an `order` of its own
@@ -180,40 +225,71 @@ export function fromRows(snap, { generatedAt = null } = {}) {
   const about = pageOf('about');
   const contact = pageOf('contact');
 
+  const itemsOf = (block, type) =>
+    block?.items?.length ? block.items : draft && block ? [PLACEHOLDER_ITEMS[type]()] : block?.items ?? [];
+  const galleryOf = (block) => {
+    const images = (block?.images ?? []).map(media).filter(Boolean);
+    return images.length || !draft || !block ? images : [PLACEHOLDER_IMAGE];
+  };
   const blocksOf = (id) => (snap.blocks ?? []).filter((b) => b.project_id === id && b.visible).sort(byOrder);
 
+  // Only present when there are some, so a project without Studio sections
+  // maps to exactly the object it always did.
+  const extraOf = (id) => {
+    const extra = blocksOf(id)
+      .filter((b) => EXTRA_TYPES.includes(b.type))
+      .map((b) => ({
+        id: b.id,
+        type: b.type,
+        heading: t(b.content.heading ?? ''),
+        body: t(b.content.body ?? ''),
+        image: media(b.content.image),
+        caption: b.content.caption ?? '',
+        quote: t(b.content.quote ?? ''),
+        cite: t(b.content.cite ?? ''),
+        left: t(b.content.left ?? ''),
+        right: t(b.content.right ?? ''),
+      }));
+    return extra.length ? { extra } : {};
+  };
+
   const projects = (snap.projects ?? [])
-    .filter((p) => p.kind === 'case' && p.visible)
+    // A draft render keeps hidden projects, so the Studio can show them dimmed
+    // in place and they can be brought back where they are.
+    .filter((p) => p.kind === 'case' && (p.visible || draft))
     .sort(byOrder)
     .map((p, i) => {
       const b = Object.fromEntries(blocksOf(p.id).map((x) => [x.type, x.content]));
       return {
         title: p.title,
         slug: p.slug,
-        discipline: p.discipline,
-        summary: p.summary,
-        role: p.role,
+        discipline: t(p.discipline),
+        summary: t(p.summary),
+        role: t(p.role),
         order: i,
         featured: p.featured,
         chipBg: p.chip?.bg ?? null,
         chipInk: p.chip?.ink ?? null,
-        briefLead: b.brief?.lead ?? null,
-        briefBody: b.brief?.body ?? null,
-        problemLead: b.problem?.lead ?? null,
-        approachLead: b.approach?.lead ?? null,
-        approachBody: b.approach?.body ?? null,
+        // A hidden block is absent here, so its section disappears; a visible
+        // one with empty text shows a placeholder in a draft render.
+        briefLead: b.brief ? t(b.brief.lead) ?? null : null,
+        briefBody: b.brief ? t(b.brief.body) ?? null : null,
+        problemLead: b.problem ? t(b.problem.lead) ?? null : null,
+        approachLead: b.approach ? t(b.approach.lead) ?? null : null,
+        approachBody: b.approach ? t(b.approach.body) ?? null : null,
         approachCaption: b.approach?.caption ?? null,
         shippedHeading: b.gallery?.heading ?? null,
-        reflectionLead: b.reflection?.lead ?? null,
-        reflectionBody: b.reflection?.body ?? null,
+        reflectionLead: b.reflection ? t(b.reflection.lead) ?? null : null,
+        reflectionBody: b.reflection ? t(b.reflection.body) ?? null : null,
         categories: (snap.tags ?? []).filter((t) => t.project_id === p.id).sort(byOrder).map((t) => ({ label: t.label })),
         cover: media(p.cover_media_id),
         approachShot: media(b.approach?.image),
-        gallery: (b.gallery?.images ?? []).map(media).filter(Boolean),
-        constraints: b.problem?.items ?? [],
-        decisions: b.decisions?.items ?? [],
-        metrics: b.metrics?.items ?? [],
+        gallery: galleryOf(b.gallery),
+        constraints: itemsOf(b.problem, 'problem'),
+        decisions: itemsOf(b.decisions, 'decisions'),
+        metrics: itemsOf(b.metrics, 'metrics'),
         seo: seo(p.seo),
+        ...extraOf(p.id),
       };
     });
 

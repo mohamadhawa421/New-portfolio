@@ -32,7 +32,7 @@ const { settings } = Astro.props;
       <a href="/about">About</a>
     </div>
 
-    <span class="footer__location">{settings.location}</span>
+    <span class="footer__location" data-edit={__STUDIO__ ? 'settings.location' : undefined}>{settings.location}</span>
 
     {/*
       Only ever visible in super designer mode, which is set at runtime — so

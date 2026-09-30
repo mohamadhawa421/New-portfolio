@@ -22,7 +22,20 @@ interface Props {
   next: Project;
 }
 
-const { project, next } = Astro.props;
+/*
+ * Pre-built pages get their project from getStaticPaths. The Studio's
+ * deployment renders on demand instead (so a project that only exists in the
+ * draft still has a page), and there the props are absent and the slug is all
+ * there is. Same data, same page; this branch never runs in the public build.
+ */
+let { project, next } = Astro.props;
+if (!project) {
+  const projects = await getProjects();
+  const i = projects.findIndex((p) => p.slug === Astro.params.slug);
+  if (i < 0) return new Response(null, { status: 404 });
+  project = projects[i];
+  next = projects[(i + 1) % projects.length];
+}
 
 // Metrics are designed for short figures ("50%", "44+ Screens"). Some projects
 // list what shipped by name instead, and a phrase like "Podcasts & Editorial
@@ -132,7 +145,7 @@ const coverStyle = project.cover
                 decoding="async"
               />
             ) : (
-              <span class="case-cover__initials">{project.initials}</span>
+              <span class="case-cover__initials" data-edit={edit(`image.project.${project.slug}.cover`)}>{project.initials}</span>
             )
           }
         </div>
@@ -143,7 +156,7 @@ const coverStyle = project.cover
 
         {
           (project.briefLead || project.briefBody) && (
-            <div class="case-row" data-reveal="0">
+            <div class="case-row" data-reveal="0" data-edit={edit(`section.${project.slug}.brief`)}>
               <div class="eyebrow--small case-row__label">The brief</div>
               <div class="case-row__body">
                 {project.briefLead && <p class="case-lead" data-edit={edit(`block.${project.slug}.brief.lead`)}>{project.briefLead}</p>}
@@ -155,7 +168,7 @@ const coverStyle = project.cover
 
         {
           (project.problemLead || project.constraints.length > 0) && (
-            <div class="case-row" data-reveal="0">
+            <div class="case-row" data-reveal="0" data-edit={edit(`section.${project.slug}.problem`)}>
               <div class="eyebrow--small case-row__label">The problem</div>
               <div class="case-row__body">
                 {project.problemLead && <p class="case-lead" data-edit={edit(`block.${project.slug}.problem.lead`)}>{project.problemLead}</p>}
@@ -187,7 +200,7 @@ const coverStyle = project.cover
     {/* ---------------------------------------------------------------- */}
     {
       (project.approachLead || project.approachBody || project.decisions.length > 0) && (
-        <section class="section section--light case-approach" data-lift data-tile="light">
+        <section class="section section--light case-approach" data-lift data-tile="light" data-edit={edit(`section.${project.slug}.approach`)}>
           <div class="shell--narrow">
             <div class="case-row case-row--flush" data-reveal="0">
               <div class="eyebrow--small case-row__label">The approach</div>
@@ -207,7 +220,7 @@ const coverStyle = project.cover
             */}
 
             {project.decisions.length > 0 && (
-              <div class="decisions" data-reveal="0">
+              <div class="decisions" data-reveal="0" data-edit={edit(`section.${project.slug}.decisions`)}>
                 {project.decisions.map((decision, i) => (
                   <div>
                     <div class="eyebrow--small" data-edit={edit(`item.${project.slug}.decisions.${i}.eyebrow`)}>{decision.eyebrow}</div>
@@ -227,7 +240,7 @@ const coverStyle = project.cover
     {/* ---------------------------------------------------------------- */}
     {
       (project.gallery.length > 0 || project.metrics.length > 0) && (
-        <section class="section section--parchment case-shipped" data-lift data-tile="parchment">
+        <section class="section section--parchment case-shipped" data-lift data-tile="parchment" data-edit={edit(`section.${project.slug}.gallery`)}>
           <div class="shell--narrow">
             <div class="eyebrow--small" data-reveal="0">What shipped</div>
             <h2 class="case-shipped__heading" data-reveal="0" data-edit={edit(`block.${project.slug}.gallery.heading`)}>{project.shippedHeading}</h2>
@@ -251,7 +264,7 @@ const coverStyle = project.cover
             )}
 
             {project.metrics.length > 0 && (
-              <div class="metrics" data-reveal="0">
+              <div class="metrics" data-reveal="0" data-edit={edit(`section.${project.slug}.metrics`)}>
                 {project.metrics.map((metric, i) => (
                   <div>
                     <div
@@ -284,11 +297,77 @@ const coverStyle = project.cover
     <FigmaExplorer slug={project.slug} title={project.title} />
 
     {/* ---------------------------------------------------------------- */}
+    {/* Sections added in the Studio                                      */}
+    {/* ---------------------------------------------------------------- */}
+    {/*
+      Built entirely from the page's existing classes, so they read as part of
+      the case study rather than as something bolted onto it — and so adding
+      this changed no CSS on the public site. None of the Strapi projects has
+      any; for them this renders nothing at all.
+    */}
+    {
+      project.extra.map((block) => (
+        <section class="section section--light case-approach" data-lift data-tile="light" data-edit={edit(`xsection.${block.id}`)}>
+          <div class="shell--narrow">
+            {block.type === 'text' && (
+              <div class="case-row case-row--flush" data-reveal="0">
+                <div class="eyebrow--small case-row__label" data-edit={edit(`xblock.${block.id}.heading`)}>{block.heading}</div>
+                <div class="case-row__body">
+                  <p class="case-body" data-edit={edit(`xblock.${block.id}.body`)}>{block.body}</p>
+                </div>
+              </div>
+            )}
+            {block.type === 'quote' && (
+              <div class="case-row case-row--flush" data-reveal="0">
+                <div class="eyebrow--small case-row__label" data-edit={edit(`xblock.${block.id}.cite`)}>{block.cite}</div>
+                <div class="case-row__body">
+                  <blockquote class="case-lead" data-edit={edit(`xblock.${block.id}.quote`)}>{block.quote}</blockquote>
+                </div>
+              </div>
+            )}
+            {block.type === 'two-column' && (
+              <div class="decisions" data-reveal="0">
+                <div>
+                  <div class="decision__title" data-edit={edit(`xblock.${block.id}.heading`)}>{block.heading}</div>
+                  <p class="decision__body" data-edit={edit(`xblock.${block.id}.left`)}>{block.left}</p>
+                </div>
+                <div>
+                  <div class="decision__title" data-edit={edit(`xblock.${block.id}.cite`)}>{block.cite}</div>
+                  <p class="decision__body" data-edit={edit(`xblock.${block.id}.right`)}>{block.right}</p>
+                </div>
+              </div>
+            )}
+            {block.type === 'image' && (
+              <div class="gallery">
+                <div class="gallery__item" data-reveal="0" data-zoom>
+                  {block.image ? (
+                    <img
+                      data-edit={edit(`image.xblock.${block.id}`)}
+                      src={block.image.url}
+                      alt={block.image.alt}
+                      width={block.image.width}
+                      height={block.image.height}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <div class="case-cover__initials" data-edit={edit(`image.xblock.${block.id}`)}>Add an image</div>
+                  )}
+                </div>
+                {block.caption && <div class="case-caption" data-edit={edit(`xblock.${block.id}.caption`)}>{block.caption}</div>}
+              </div>
+            )}
+          </div>
+        </section>
+      ))
+    }
+
+    {/* ---------------------------------------------------------------- */}
     {/* Looking back                                                      */}
     {/* ---------------------------------------------------------------- */}
     {
       (project.reflectionLead || project.reflectionBody) && (
-        <section class="section section--light case-reflection" data-lift data-tile="light">
+        <section class="section section--light case-reflection" data-lift data-tile="light" data-edit={edit(`section.${project.slug}.reflection`)}>
           <div class="shell--narrow case-row case-row--flush">
             <div class="eyebrow--small case-row__label">Looking back</div>
             <div class="case-row__body">
