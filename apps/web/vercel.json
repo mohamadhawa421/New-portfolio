@@ -3,10 +3,19 @@
   "installCommand": "cd ../.. && npm install",
   "buildCommand": "cd ../.. && npm run build:studio",
   "framework": null,
+  "regions": [
+    "dub1"
+  ],
   "redirects": [
     {
       "source": "/",
-      "missing": [{ "type": "header", "key": "sec-fetch-dest", "value": "iframe" }],
+      "missing": [
+        {
+          "type": "header",
+          "key": "sec-fetch-dest",
+          "value": "iframe"
+        }
+      ],
       "destination": "/studio",
       "permanent": false
     }
