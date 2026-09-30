@@ -17,7 +17,7 @@
     "dev:cms": "npm run dev --workspace=apps/cms",
     "export": "npm run export --workspace=apps/cms",
     "refresh": "npm run export && npm run dev:web",
-    "build:site": "npm run export --workspace=apps/cms && npm run build --workspace=apps/web",
+    "build:site": "node scripts/prepare-content.js && npm run build --workspace=apps/web",
     "build": "npm run build:site",
     "build:web": "npm run build --workspace=apps/web",
     "build:cms": "npm run build --workspace=apps/cms",
@@ -30,7 +30,10 @@
     "edit": "npm run dev --workspace=apps/cms",
     "prune-media": "npm run prune-media --workspace=apps/cms",
     "dev:studio": "npm run dev:studio --workspace=apps/web",
-    "build:studio": "npm run export --workspace=apps/cms && npm run build:studio --workspace=apps/web",
-    "test:db": "npm run test:db --workspace=apps/web"
+    "build:studio": "node scripts/prepare-content.js && npm run build:studio --workspace=apps/web",
+    "test:db": "npm run test:db --workspace=apps/web",
+    "studio:migrate": "npm run studio:migrate --workspace=apps/web --",
+    "build:site:strapi": "npm run export --workspace=apps/cms && npm run build --workspace=apps/web",
+    "pull": "node apps/web/scripts/fetch-release.js"
   }
 }

@@ -23,43 +23,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import { stubSupabase, OWNER, APP_USER } from './stub.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS = process.env.MIGRATIONS_DIR || path.resolve(HERE, '..', 'migrations');
 
-const OWNER = '00000000-0000-4000-8000-000000000001';
-const APP_USER = '00000000-0000-4000-8000-000000000002';
 
 let db;
-
-async function stubSupabase(pg) {
-  await pg.exec(`
-    create role anon nologin;
-    create role authenticated nologin;
-    create role service_role nologin bypassrls;
-
-    create schema auth;
-    create table auth.users (id uuid primary key, email text);
-    create function auth.uid() returns uuid language sql stable as $$
-      select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
-    $$;
-    grant usage on schema auth to anon, authenticated;
-    grant execute on function auth.uid() to anon, authenticated;
-
-    create schema storage;
-    create table storage.buckets (
-      id text primary key, name text, public boolean,
-      file_size_limit bigint, allowed_mime_types text[]
-    );
-    create table storage.objects (
-      id uuid primary key default gen_random_uuid(),
-      bucket_id text references storage.buckets (id), name text
-    );
-    alter table storage.objects enable row level security;
-    grant usage on schema storage to anon, authenticated;
-    grant select, insert, update, delete on storage.objects to anon, authenticated;
-  `);
-}
 
 /** Run `fn` as a given caller, the way PostgREST does: role + JWT claim. */
 async function as(who, fn) {

@@ -118,6 +118,11 @@ test('the image ladder matches between the exporter and ProjectCard', () => {
     gate(card),
     'the exporter and ProjectCard disagree about when a variant exists'
   );
+
+  // The Supabase build path downloads — or generates — the same ladder.
+  const release = read('apps/web/scripts/fetch-release.js');
+  assert.deepEqual(widths(release), a, 'fetch-release.js disagrees about the variant widths');
+  assert.equal(gate(release), gate(exporter), 'fetch-release.js disagrees about when a variant exists');
 });
 
 /* ================================================================== */

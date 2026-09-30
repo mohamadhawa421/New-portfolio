@@ -203,7 +203,22 @@ its reasoning are in the conversation that started it; what is built so far:
 - The admin Vercel project builds from `apps/web` with `apps/web/vercel.json`.
   The root `vercel.json` is the public project's, unchanged.
 
-Strapi is still the source of truth until the migration is verified.
+**Content now comes from Supabase.** `npm run build:site` runs
+`scripts/prepare-content.js`, which asks `apps/web/scripts/fetch-release.js`
+for the current release (read as a visitor — drafts are unreachable from a
+build by construction) and writes the same `content.json` and `public/media`
+the Strapi exporter used to. If Supabase does not answer it falls back to the
+Strapi snapshot and says so loudly in the log. `CONTENT_SOURCE=strapi` forces
+the old path; `CONTENT_SOURCE=supabase` forbids the fallback.
+
+`apps/web/scripts/content-map.js` is the mapping both ways, and
+`supabase/tests/roundtrip.test.mjs` proves `fromRows(toRows(content))` is the
+content. The switch was verified by building both ways: every page, script and
+stylesheet identical, 295 files.
+
+**Editing in Strapi no longer reaches the site.** It is kept as the fallback
+and the rollback, not as the place to edit. `npm run pull` refreshes the local
+`content.json` from the current release.
 
 ## Dependencies, and the one command never to run
 

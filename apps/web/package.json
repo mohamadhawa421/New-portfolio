@@ -22,7 +22,8 @@
     "prebuild": "node scripts/make-art-variants.js",
     "dev:studio": "STUDIO=1 astro dev",
     "build:studio": "STUDIO=1 astro build",
-    "test:db": "node --test ../../supabase/tests/policies.test.mjs"
+    "test:db": "node --test ../../supabase/tests/*.test.mjs",
+    "studio:migrate": "node scripts/migrate-to-supabase.js"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
