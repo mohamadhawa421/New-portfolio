@@ -4,6 +4,9 @@
   "version": "1.0.0",
   "description": "Astro front end for the Mohamad Hawa portfolio.",
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "astro dev",
     "dev:lan": "astro dev --host",
