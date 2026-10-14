@@ -30,6 +30,27 @@ import { fileURLToPath } from 'node:url';
 const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TARGET = path.join(WEB, '.env.development.local');
 
+/**
+ * What the file already has, so this only asks for what it does not.
+ *
+ * Two of the three can be filled in without the owner present — the project
+ * URL is a public address and the email is an email — and neither is worth
+ * making somebody re-type. The key is the one value that has to be pasted by
+ * the person who can see it, so when the other two are already there this
+ * becomes a single question.
+ */
+function existing() {
+  const have = {};
+  if (!fs.existsSync(TARGET)) return have;
+  for (const line of fs.readFileSync(TARGET, 'utf8').split('\n')) {
+    const m = line.match(/^\s*([A-Z_]+)\s*=\s*(.*)$/);
+    if (m && m[2].trim()) have[m[1]] = m[2].trim();
+  }
+  return have;
+}
+
+const already = existing();
+
 const say = (line = '') => process.stdout.write(`${line}\n`);
 
 function ask(question) {
@@ -109,15 +130,25 @@ say('');
 say('  Or from Supabase: Project Settings → Data API.');
 say('');
 
-const url = await ask('  1. Project URL (https://….supabase.co) : ');
+let url = already.SUPABASE_URL;
+if (url) {
+  say(`  1. Project URL — already set: ${url}`);
+} else {
+  url = await ask('  1. Project URL (https://….supabase.co) : ');
+}
 if (!/^https:\/\/[a-z0-9-]+\.supabase\.(co|in)$/i.test(url)) {
   fail(`That does not look like a project URL: ${url || '(empty)'}`);
 }
 
 say('');
-say('  2. The anon / publishable key. It is long; paste it and press Enter.');
-say('     Nothing is echoed. NOT the service-role key — it is refused below.');
-const key = await askHidden('     Key: ');
+let key = already.SUPABASE_ANON_KEY;
+if (key) {
+  say(`  2. Key — already set, ${key.length} characters.`);
+} else {
+  say('  2. The anon / publishable key. It is long; paste it and press Enter.');
+  say('     Nothing is echoed. NOT the service-role key — it is refused below.');
+  key = await askHidden('     Key: ');
+}
 if (!key) fail('No key given.');
 
 const role = roleOf(key);
@@ -134,7 +165,12 @@ if (role === 'unknown') {
 }
 
 say('');
-const email = await ask('  3. The Studio account email : ');
+let email = already.STUDIO_EMAIL;
+if (email) {
+  say(`  3. Email — already set: ${email}`);
+} else {
+  email = await ask('  3. The Studio account email : ');
+}
 if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) fail(`That does not look like an email: ${email || '(empty)'}`);
 
 const body = [
