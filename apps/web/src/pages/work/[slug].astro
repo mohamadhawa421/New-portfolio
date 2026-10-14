@@ -122,14 +122,18 @@ const coverStyle = project.cover
           cross-fade and is purely a box changing size and place — which is
           the only thing a shared element should ever be doing.
 
-          It still does not open to fullscreen. It is the establishing shot,
-          and it is repeated nowhere else on the page now, so there is nothing
-          behind a zoom of it that is not already on screen. The gallery
-          opens, because those are the screens somebody came to read.
+          And it opens full screen, like every other picture here. The
+          argument for leaving this one shut was that the establishing shot is
+          already the largest thing on the page — but largest is not full size.
+          It is drawn 1081 wide out of a 1440 file, and these are screenshots
+          of interfaces, where the detail somebody came for is a label in a
+          table or a number in a tile. Being the one picture that did nothing
+          when clicked was a rule a visitor could only find by trying it.
         */}
         <div
           class="case-cover"
           data-morph
+          data-zoom
           data-slug={project.slug}
           style={coverStyle}
         >
@@ -715,7 +719,7 @@ const coverStyle = project.cover
    * different radii — and keeps it even again on a phone, where both radii
    * shrink and a fixed inset would leave the badge stranded in open space.
    */
-  .case-shot {
+  .case-cover {
     --zoom-inset: calc(10px + var(--r-2xl) * 0.28);
   }
 

@@ -117,7 +117,7 @@ export interface FigmaProject {
 /**
  * Every project, keyed by the slug its page is built at.
  *
- * Nine have their frame and are on. The rest are off until theirs exists,
+ * Ten have their frame and are on. The rest are off until theirs exists,
  * because with a master file configured an empty `frameUrl` resolves to the
  * master's first page rather than to nothing — see the note beside them.
  * Turning one on is a paste into `frameUrl` and a boolean, nothing else.
@@ -127,6 +127,12 @@ export interface FigmaProject {
  * that page until its URL exists.
  */
 export const figmaProjects: Record<string, FigmaProject> = {
+  'peal-solutions': {
+    projectName: 'Peal Solutions',
+    frameUrl:
+      'https://www.figma.com/design/fxIEjD7LMBBdeDC4CtlD8D/Portfolio-projects---iframe?node-id=117-1918&t=0VTFcwZ96hVL52ie-4',
+    enabled: true,
+  },
   'rm-luxury': {
     projectName: 'RM Luxury',
     frameUrl:
