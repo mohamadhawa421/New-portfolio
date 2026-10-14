@@ -302,14 +302,151 @@
   ],
   "projects": [
     {
+      "id": 126,
+      "title": "Peal Solutions",
+      "slug": "peal-solutions",
+      "discipline": "Web app design",
+      "summary": "mon avis patient — a review platform for healthcare practices, built for Peal Solutions. Patient feedback arrives from Google Business, is answered in place, and is read back as themes rather than as a score.",
+      "role": "UI / UX Design",
+      "order": 0,
+      "featured": true,
+      "chipBg": "#f1f4e8",
+      "chipInk": "#4f6016",
+      "briefLead": "mon avis patient gives a practice one place for everything its patients say in public: the reviews themselves, the replies, and what the feedback adds up to once there is enough of it to read.",
+      "briefBody": "Peal Solutions builds it for healthcare practices, where the same screens have to serve a practitioner at one address and a group running several under one name. Reviews come in from the Google Business profile the practice already has, so the product is an extension of something familiar rather than a second place to check.",
+      "problemLead": "A practice does not have a reviews problem, it has a reply backlog — and the average rating, the number every tool shows first, is the one number nobody can act on.",
+      "approachLead": "Make the backlog the subject. Everything on the reviews page is arranged around what still needs answering, and the score is reported beside that rather than above it.",
+      "approachBody": "The four figures across the top of the reviews page are deliberately not a scoreboard. Three of them describe the work — the reply rate, how it moved this week, and how many reviews are still unanswered — and the average sits among them rather than over them. The unanswered tile is the only one carrying a line of plain language underneath it, because it is the only one asking for something.\n\nReplying is a queue, so the list is built to be worked down rather than browsed. Every row carries its own state, Sans réponse or Répondu, which makes the remaining work legible without reading a single review. Opening one narrows the list instead of replacing it: the review, the reply already sent and the date it went out appear beside the queue, with the row you came from still marked in it. Twelve replies is one pass down the page rather than twelve round trips.\n\nThe filters above the list are the ones a backlog needs — state, rating, the ones flagged, and a date range — and the two currently narrowing the list are marked, so it is always possible to see why there are twelve results and not forty. Selection is bulk and the count says both halves out loud: 2 avis sélectionnés · 12 résultats. Selecting everything and selecting everything that matched a filter are different intentions, and an interface that blurs them is one you stop trusting with an export.\n\nThe analytics page answers the other question, which is not how many but about what. Free text is grouped into the themes a practice is actually judged on — accueil, locaux, temps d’attente, compétences médicales — each with its mention count and the split between positive, neutral and negative. “Temps d’attente, 6 mentions, 13% négatif” tells a practice manager what tomorrow’s meeting is about; no average rating has ever done that. Positive and negative reply rates are separated for the same reason, and the negative one is the only tile on the page in red.",
+      "approachCaption": "Semantic analysis: the themes a practice is judged on, each with its mention count and sentiment split.",
+      "shippedHeading": "The three places the work happens.",
+      "reflectionLead": "The number a review tool shows first tells you who it was built for. An average rating is a summary for somebody reporting upwards; a list of what is still unanswered is for the person doing the work.",
+      "reflectionBody": "Most of the design here went into resisting the dashboard instinct. It is easy to fill a reputation product with large figures that go up, and harder to make the screen say what to do next — the unanswered count given the same weight as the average, the reply opening beside the queue instead of on top of it, the negative reply rate separated out and left in red.\n\nThe semantic analysis is the part I would defend hardest. Patients write about a visit, not about a service: the words they reach for — the wait, the welcome, the room — are the practice’s real scorecard, and they arrive as paragraphs. Grouping them into themes with a sentiment split behind each one turns a page of French prose into four lines a practice manager can take into a meeting, which is a different product from one that tells them they are at 4.6.",
+      "categories": [
+        {
+          "id": 500,
+          "label": "Web app"
+        }
+      ],
+      "cover": {
+        "id": 501,
+        "name": "peal-solutions-cover",
+        "alternativeText": "The mon avis patient reviews page, with the reply backlog across the top",
+        "caption": "",
+        "focalPoint": null,
+        "width": 1440,
+        "height": 1024,
+        "url": "/media/peal_solutions_cover_e99005d63e.webp"
+      },
+      "approachShot": {
+        "id": 502,
+        "name": "peal-solutions-analytics",
+        "alternativeText": "The analytics page, with feedback grouped into themes and their sentiment split",
+        "caption": "",
+        "focalPoint": null,
+        "width": 1440,
+        "height": 1024,
+        "url": "/media/peal_solutions_analytics_4d4b5d3e41.webp"
+      },
+      "gallery": [
+        {
+          "id": 503,
+          "name": "peal-solutions-reply",
+          "alternativeText": "A review open beside the queue, with the reply already sent",
+          "caption": "",
+          "focalPoint": null,
+          "width": 1440,
+          "height": 1024,
+          "url": "/media/peal_solutions_reply_f6e9036c0d.webp"
+        },
+        {
+          "id": 504,
+          "name": "peal-solutions-logo",
+          "alternativeText": "The Peal Solutions wordmark",
+          "caption": "",
+          "focalPoint": null,
+          "width": 1440,
+          "height": 1024,
+          "url": "/media/peal_solutions_logo_5f44bd1889.webp"
+        }
+      ],
+      "constraints": [
+        {
+          "id": 505,
+          "title": "One practitioner at a single address and a group running several sites work in the same screens, so the organisation and the establishment both stay in view rather than being buried in settings.",
+          "body": ""
+        },
+        {
+          "id": 506,
+          "title": "Reviews arrive from the practice’s own Google Business profile, so the product has to read as an extension of something they already have and not as a second inbox.",
+          "body": ""
+        },
+        {
+          "id": 507,
+          "title": "The feedback is free text, in French, written by patients describing a visit — not ratings against a service the practice chose to be measured on.",
+          "body": ""
+        },
+        {
+          "id": 508,
+          "title": "The person working through it is a practice manager between appointments, so the next thing to do has to be visible without a report being run.",
+          "body": ""
+        }
+      ],
+      "decisions": [
+        {
+          "id": 509,
+          "eyebrow": "Outcome",
+          "title": "The Backlog Is a Metric",
+          "body": "Unanswered reviews get a tile of their own beside the average, so the number that asks for work is as visible as the number that flatters."
+        },
+        {
+          "id": 510,
+          "eyebrow": "Outcome",
+          "title": "Replies Without Losing Your Place",
+          "body": "A review opens beside the queue rather than replacing it, with its row still marked, so a morning of replying is one pass down the list."
+        },
+        {
+          "id": 511,
+          "eyebrow": "Outcome",
+          "title": "Themes, Not Paragraphs",
+          "body": "Free-text feedback is grouped into the categories a practice is judged on, each with a sentiment split behind it, so the analytics page names a problem instead of scoring one."
+        }
+      ],
+      "metrics": [
+        {
+          "id": 512,
+          "value": "Avis",
+          "label": "The reply queue, with every review’s state on its own row and the answer beside it.",
+          "animate": false
+        },
+        {
+          "id": 513,
+          "value": "Analytique",
+          "label": "Themes pulled out of free-text feedback, with mentions and sentiment behind each one.",
+          "animate": false
+        },
+        {
+          "id": 514,
+          "value": "Enquêtes",
+          "label": "Surveys, for the feedback that never reaches a public review.",
+          "animate": false
+        }
+      ],
+      "seo": {
+        "id": 515,
+        "metaTitle": "Peal Solutions — Mohamad Hawa",
+        "metaDescription": "mon avis patient — a review platform for healthcare practices: patient feedback from Google Business, answered in place and read back as themes.",
+        "shareImage": null
+      }
+    },
+    {
       "id": 94,
       "title": "Kanz",
       "slug": "kanz",
       "discipline": "Mobile app design",
       "summary": "Kanz is a mobile financial platform designed to make everyday money movement simpler, giving users easier access to their salary, transfers, withdrawals, and card payments in one place.",
       "role": "UI / UX Design",
-      "order": 0,
-      "featured": true,
+      "order": 1,
+      "featured": false,
       "chipBg": "#efeff1",
       "chipInk": "#86868b",
       "briefLead": "They needed a mobile experience that could bring essential financial services together while making everyday actions such as accessing salary, transferring money, withdrawing funds, and managing cards feel simple and accessible.",
@@ -440,7 +577,7 @@
       "discipline": "Web app redesign",
       "summary": "Rowad is a financial education and entrepreneurship platform designed to help entrepreneurs discover the knowledge, tools, and resources they need throughout their journey.",
       "role": "UI / UX Design",
-      "order": 1,
+      "order": 2,
       "featured": false,
       "chipBg": "#e9e9ec",
       "chipInk": "#86868b",
@@ -576,7 +713,7 @@
       "discipline": "Web app redesign",
       "summary": "A redesigned digital home for the Lebanese Prime Minister's Office, bringing government information, legislation, institutional content, and national history into a clearer and more accessible experience.",
       "role": "UI / UX Design",
-      "order": 2,
+      "order": 3,
       "featured": false,
       "chipBg": "#f2f2f4",
       "chipInk": "#86868b",
@@ -712,7 +849,7 @@
       "discipline": "Web app design",
       "summary": "Apamea is a multi-asset management platform designed to give investors a clearer view of their wealth by bringing different investment types into one structured workspace.",
       "role": "UI / UX Design",
-      "order": 3,
+      "order": 4,
       "featured": false,
       "chipBg": "#efeff1",
       "chipInk": "#86868b",
@@ -844,7 +981,7 @@
       "discipline": "Web app design",
       "summary": "MyLebPass is a digital membership that unlocks offers at restaurants, cafés, and lifestyle venues across Lebanon — one pass, scanned at the counter.",
       "role": "UI / UX Design",
-      "order": 4,
+      "order": 5,
       "featured": false,
       "chipBg": "#e9e9ec",
       "chipInk": "#86868b",
@@ -976,7 +1113,7 @@
       "discipline": "Mobile app redesign",
       "summary": "A self-initiated redesign of Tahweel, a MENA app for instant gaming top-ups, mobile recharges, gift cards, and eSIMs. Concept work — never handed over or implemented.",
       "role": "UI / UX Design",
-      "order": 5,
+      "order": 6,
       "featured": false,
       "chipBg": "#f2f2f4",
       "chipInk": "#86868b",
@@ -1108,7 +1245,7 @@
       "discipline": "Landing page redesign",
       "summary": "A self-initiated redesign for a private-chauffeur and concierge service, working out how a quote-only offer sells itself with no prices to show. Concept work — never commissioned or built.",
       "role": "UI / UX Design",
-      "order": 6,
+      "order": 7,
       "featured": false,
       "chipBg": "#f2f2f4",
       "chipInk": "#86868b",
@@ -1244,7 +1381,7 @@
       "discipline": "Mobile app design",
       "summary": "A membership app for the hearing-care professionals in Phonak's Club Expert+ programme, gathering the news, training, product documents, and priority support they were chasing across other channels.",
       "role": "UI / UX Design",
-      "order": 7,
+      "order": 8,
       "featured": false,
       "chipBg": "#101010",
       "chipInk": "#8ac53f",
@@ -1376,7 +1513,7 @@
       "discipline": "Web app design",
       "summary": "A project-management web app for architects — phases, documents, suppliers, object catalogues and finances — designed inside a visual direction owned by the client, and an exercise in advocating for UX changes within it.",
       "role": "UI / UX Design",
-      "order": 8,
+      "order": 9,
       "featured": false,
       "chipBg": "#0d1b52",
       "chipInk": "#ffffff",
@@ -1513,7 +1650,7 @@
       "discipline": "Web app design",
       "summary": "An admin system for a private school in the US: one place to follow enrolments, search student and parent records, schedule interviews, and send the messages that go with them.",
       "role": "UI / UX Design",
-      "order": 9,
+      "order": 10,
       "featured": false,
       "chipBg": "#efeff1",
       "chipInk": "#86868b",
@@ -1645,7 +1782,7 @@
       "discipline": "Mobile app design",
       "summary": "Kabbara Office is a digital solution built to help Deputy Karim Kabbara manage and respond to public service requests efficiently.",
       "role": "UI / UX Design",
-      "order": 10,
+      "order": 11,
       "featured": false,
       "chipBg": "#e9e9ec",
       "chipInk": "#86868b",
@@ -1756,7 +1893,7 @@
       "discipline": "Landing page design",
       "summary": "CodingCLebanon is an educational platform that empowers individuals to learn programming through personalized one-on-one online mentorship.",
       "role": "UI / UX Design",
-      "order": 11,
+      "order": 12,
       "featured": false,
       "chipBg": "#f2f2f4",
       "chipInk": "#86868b",
@@ -1867,7 +2004,7 @@
       "discipline": "Web app design",
       "summary": "WFK Law Firm is a professional legal firm that needed an internal tool to streamline employee task tracking, scheduling, and performance monitoring.",
       "role": "UI / UX Design",
-      "order": 12,
+      "order": 13,
       "featured": false,
       "chipBg": "#efeff1",
       "chipInk": "#86868b",
@@ -2009,7 +2146,7 @@
       "discipline": "Mobile app design",
       "summary": "Shipment Share is a smart delivery platform that connects people who need to send packages with travelers already heading to the same destination.",
       "role": "UI / UX Design",
-      "order": 13,
+      "order": 14,
       "featured": false,
       "chipBg": "#e9e9ec",
       "chipInk": "#86868b",
@@ -2120,7 +2257,7 @@
       "discipline": "Web app design",
       "summary": "Shareb is a promotional lottery app designed to boost brand engagement through interactive weekly draws.",
       "role": "UI / UX Design",
-      "order": 14,
+      "order": 15,
       "featured": false,
       "chipBg": "#f2f2f4",
       "chipInk": "#86868b",
