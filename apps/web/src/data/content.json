@@ -317,7 +317,7 @@
       "problemLead": "A practice does not have a reviews problem, it has a reply backlog — and the average rating, the number every tool shows first, is the one number nobody can act on.",
       "approachLead": "Make the backlog the subject. Everything on the reviews page is arranged around what still needs answering, and the score is reported beside that rather than above it.",
       "approachBody": "The four figures across the top of the reviews page are deliberately not a scoreboard. Three of them describe the work — the reply rate, how it moved this week, and how many reviews are still unanswered — and the average sits among them rather than over them. The unanswered tile is the only one carrying a line of plain language underneath it, because it is the only one asking for something.\n\nReplying is a queue, so the list is built to be worked down rather than browsed. Every row carries its own state, Sans réponse or Répondu, which makes the remaining work legible without reading a single review. Opening one narrows the list instead of replacing it: the review, the reply already sent and the date it went out appear beside the queue, with the row you came from still marked in it. Twelve replies is one pass down the page rather than twelve round trips.\n\nThe filters above the list are the ones a backlog needs — state, rating, the ones flagged, and a date range — and the two currently narrowing the list are marked, so it is always possible to see why there are twelve results and not forty. Selection is bulk and the count says both halves out loud: 2 avis sélectionnés · 12 résultats. Selecting everything and selecting everything that matched a filter are different intentions, and an interface that blurs them is one you stop trusting with an export.\n\nThe analytics page answers the other question, which is not how many but about what. Free text is grouped into the themes a practice is actually judged on — accueil, locaux, temps d’attente, compétences médicales — each with its mention count and the split between positive, neutral and negative. “Temps d’attente, 6 mentions, 13% négatif” tells a practice manager what tomorrow’s meeting is about; no average rating has ever done that. Positive and negative reply rates are separated for the same reason, and the negative one is the only tile on the page in red.",
-      "approachCaption": "Semantic analysis: the themes a practice is judged on, each with its mention count and sentiment split.",
+      "approachCaption": "The reply queue: every review carries its own state, and the number still unanswered is counted at the top.",
       "shippedHeading": "The three places the work happens.",
       "reflectionLead": "The number a review tool shows first tells you who it was built for. An average rating is a summary for somebody reporting upwards; a list of what is still unanswered is for the person doing the work.",
       "reflectionBody": "Most of the design here went into resisting the dashboard instinct. It is easy to fill a reputation product with large figures that go up, and harder to make the screen say what to do next — the unanswered count given the same weight as the average, the reply opening beside the queue instead of on top of it, the negative reply rate separated out and left in red.\n\nThe semantic analysis is the part I would defend hardest. Patients write about a visit, not about a service: the words they reach for — the wait, the welcome, the room — are the practice’s real scorecard, and they arrive as paragraphs. Grouping them into themes with a sentiment split behind each one turns a page of French prose into four lines a practice manager can take into a meeting, which is a different product from one that tells them they are at 4.6.",
@@ -329,27 +329,37 @@
       ],
       "cover": {
         "id": 501,
-        "name": "peal-solutions-cover",
-        "alternativeText": "The mon avis patient reviews page, with the reply backlog across the top",
+        "name": "peal-solutions-logo",
+        "alternativeText": "The Peal Solutions wordmark",
         "caption": "",
         "focalPoint": null,
         "width": 1440,
         "height": 1024,
-        "url": "/media/peal_solutions_cover_e99005d63e.webp"
+        "url": "/media/peal_solutions_logo_5f44bd1889.webp"
       },
       "approachShot": {
         "id": 502,
-        "name": "peal-solutions-analytics",
-        "alternativeText": "The analytics page, with feedback grouped into themes and their sentiment split",
+        "name": "peal-solutions-reviews",
+        "alternativeText": "The reviews page, with the reply backlog counted across the top",
         "caption": "",
         "focalPoint": null,
         "width": 1440,
         "height": 1024,
-        "url": "/media/peal_solutions_analytics_4d4b5d3e41.webp"
+        "url": "/media/peal_solutions_reviews_e99005d63e.webp"
       },
       "gallery": [
         {
           "id": 503,
+          "name": "peal-solutions-analytics",
+          "alternativeText": "The analytics page, with feedback grouped into themes and their sentiment split",
+          "caption": "",
+          "focalPoint": null,
+          "width": 1440,
+          "height": 1024,
+          "url": "/media/peal_solutions_analytics_4d4b5d3e41.webp"
+        },
+        {
+          "id": 504,
           "name": "peal-solutions-reply",
           "alternativeText": "A review open beside the queue, with the reply already sent",
           "caption": "",
@@ -357,16 +367,6 @@
           "width": 1440,
           "height": 1024,
           "url": "/media/peal_solutions_reply_f6e9036c0d.webp"
-        },
-        {
-          "id": 504,
-          "name": "peal-solutions-logo",
-          "alternativeText": "The Peal Solutions wordmark",
-          "caption": "",
-          "focalPoint": null,
-          "width": 1440,
-          "height": 1024,
-          "url": "/media/peal_solutions_logo_5f44bd1889.webp"
         }
       ],
       "constraints": [
