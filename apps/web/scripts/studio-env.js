@@ -151,6 +151,32 @@ if (key) {
 }
 if (!key) fail('No key given.');
 
+/*
+ * Is it a key at all, before asking which kind of key it is.
+ *
+ * This check exists because of what actually happened: the terminal already
+ * had an error message in it from a failed run, and that message is what got
+ * pasted. It sailed through — `roleOf` could not classify it, and "could not
+ * classify" was treated as "a format I have not seen yet" rather than as "this
+ * is a sentence". The first sign of trouble was Supabase refusing the key
+ * several minutes and one password prompt later, which is a long way from the
+ * mistake.
+ *
+ * A key has no spaces in it and is not short. Neither test can reject a real
+ * key, including a format that does not exist yet, and together they reject
+ * every piece of prose anybody is likely to paste by accident.
+ */
+if (/\s/.test(key)) {
+  fail(
+    'That has spaces in it, so it is not a key — it looks like a line of text ' +
+      'copied from somewhere else in the terminal. The key is one unbroken run ' +
+      'of characters.'
+  );
+}
+if (key.length < 40) {
+  fail(`That is only ${key.length} characters. A Supabase key is far longer.`);
+}
+
 const role = roleOf(key);
 if (role === 'service_role') {
   fail(
