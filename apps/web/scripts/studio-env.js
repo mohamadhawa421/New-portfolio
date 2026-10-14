@@ -1,0 +1,161 @@
+/**
+ * Writes `apps/web/.env.development.local`, by asking rather than by editing.
+ *
+ *   npm run studio:env
+ *
+ * The Studio and the migration both need the same three values, and on a new
+ * machine there is nothing to read them from — `.env.*.local` is gitignored,
+ * deliberately, so it is the one file a fresh clone never has. Making one by
+ * hand is a small job with two traps in it that cost an afternoon each:
+ *
+ *   1. A text editor on Windows saves CRLF. The loaders in this repo split on
+ *      "\n" and keep everything after the "=", so every value silently ends in
+ *      a carriage return and every request fails somewhere unrelated.
+ *   2. Quoting. `SUPABASE_URL="https://x.supabase.co"` is read with the quotes
+ *      still attached, which fails the same way.
+ *
+ * So the file is written here instead: LF, unquoted, one value per line.
+ *
+ * Nothing is stored that is not already public. The URL and the anon key both
+ * ship inside the Studio's own browser bundle — that is what "publishable"
+ * means. The password is not asked for here at all; `migrate-to-supabase.js`
+ * asks for it at the moment it signs in, and it goes straight to Supabase.
+ */
+
+import fs from 'node:fs';
+import path from 'node:path';
+import readline from 'node:readline';
+import { fileURLToPath } from 'node:url';
+
+const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const TARGET = path.join(WEB, '.env.development.local');
+
+const say = (line = '') => process.stdout.write(`${line}\n`);
+
+function ask(question) {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+}
+
+/** The same hidden prompt the migration uses, so a key is never left on screen. */
+function askHidden(question) {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      terminal: true,
+    });
+    let asked = false;
+    rl._writeToOutput = (s) => {
+      if (!asked && s.startsWith(question)) {
+        asked = true;
+        rl.output.write(question);
+      }
+    };
+    rl.question(question, (answer) => {
+      rl.close();
+      process.stdout.write('\n');
+      resolve(answer.trim());
+    });
+  });
+}
+
+const fail = (why) => {
+  say(`\n  ${why}\n`);
+  process.exit(1);
+};
+
+/**
+ * Refuses the service-role key.
+ *
+ * This is the one mistake in this file that would actually matter, and it is
+ * an easy one: the two keys sit next to each other on the same dashboard page
+ * and look alike. The anon key is public and bound by every RLS policy; the
+ * service-role key bypasses all of them, and the whole schema is written on
+ * the assumption that nothing outside the server ever holds it.
+ *
+ * A Supabase JWT carries its own role in the payload, so this can be checked
+ * rather than trusted — no network call and no secret needed, just base64 of
+ * the middle segment. The newer `sb_secret_…` keys announce themselves in the
+ * prefix.
+ */
+function roleOf(key) {
+  if (key.startsWith('sb_secret_')) return 'service_role';
+  if (key.startsWith('sb_publishable_')) return 'anon';
+
+  const parts = key.split('.');
+  if (parts.length !== 3) return 'unknown';
+  try {
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+    return typeof payload.role === 'string' ? payload.role : 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+say('');
+say('  Portfolio Studio — the three values this machine is missing.');
+say('');
+say('  All three are already set on the admin Vercel project, which is the');
+say('  quickest place to copy them from:');
+say('');
+say('    vercel.com → the admin project → Settings → Environment Variables');
+say('');
+say('  Or from Supabase: Project Settings → Data API.');
+say('');
+
+const url = await ask('  1. Project URL (https://….supabase.co) : ');
+if (!/^https:\/\/[a-z0-9-]+\.supabase\.(co|in)$/i.test(url)) {
+  fail(`That does not look like a project URL: ${url || '(empty)'}`);
+}
+
+say('');
+say('  2. The anon / publishable key. It is long; paste it and press Enter.');
+say('     Nothing is echoed. NOT the service-role key — it is refused below.');
+const key = await askHidden('     Key: ');
+if (!key) fail('No key given.');
+
+const role = roleOf(key);
+if (role === 'service_role') {
+  fail(
+    'That is the service-role key. It bypasses every policy in this database ' +
+      'and must never leave the server. Copy the anon / publishable one instead.'
+  );
+}
+if (role === 'unknown') {
+  say('');
+  say('     Note: that key is not in a shape this could check. If the migration');
+  say('     fails to sign in, a wrong key here is the first thing to suspect.');
+}
+
+say('');
+const email = await ask('  3. The Studio account email : ');
+if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) fail(`That does not look like an email: ${email || '(empty)'}`);
+
+const body = [
+  '# Portfolio Studio — this machine only. Gitignored by .env.*.local.',
+  '# Written by `npm run studio:env`. Values are unquoted and the file is LF,',
+  '# because the loaders keep everything after the "=" exactly as it appears.',
+  '',
+  `SUPABASE_URL=${url}`,
+  `SUPABASE_ANON_KEY=${key}`,
+  `STUDIO_EMAIL=${email}`,
+  '',
+].join('\n');
+
+fs.writeFileSync(TARGET, body, { encoding: 'utf8' });
+
+say('');
+say(`  Written: ${path.relative(path.resolve(WEB, '..', '..'), TARGET)}`);
+say(`  URL   ${url}`);
+say(`  Key   ${key.length} characters, role "${role}"`);
+say(`  Email ${email}`);
+say('');
+say('  Next:  npm run studio:migrate -- --replace');
+say('         It will ask for the Studio password, hidden, and sign in with it.');
+say('');
