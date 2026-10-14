@@ -24,6 +24,7 @@
     "build:studio": "STUDIO=1 astro build",
     "test:db": "node --test ../../supabase/tests/*.test.mjs",
     "studio:migrate": "node scripts/migrate-to-supabase.js",
+    "studio:migrate:replace": "node scripts/migrate-to-supabase.js --replace",
     "studio:env": "node scripts/studio-env.js"
   },
   "dependencies": {
