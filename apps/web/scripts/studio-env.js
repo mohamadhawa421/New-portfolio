@@ -199,6 +199,42 @@ if (email) {
 }
 if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) fail(`That does not look like an email: ${email || '(empty)'}`);
 
+/*
+ * Ask the project whether it recognises the key, before writing it down.
+ *
+ * Every check above is about the shape of the string. This is the only one
+ * that asks the thing that will actually judge it, and it costs one anonymous
+ * request — no password, no sign-in, nothing written anywhere.
+ *
+ * It is here because of where the failure landed without it: the key was only
+ * tested by `migrate-to-supabase.js`, which asks for a password first, so a
+ * bad key came back as "Sign-in refused: Invalid API key" — a message that
+ * reads like the password was wrong when the password had not been looked at.
+ * Better to find out at the moment the key is given, while the right one is
+ * still on screen.
+ */
+say('');
+say('  Checking the key against the project…');
+let probe;
+try {
+  probe = await fetch(`${url}/rest/v1/`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+    signal: AbortSignal.timeout(20000),
+  });
+} catch (error) {
+  say(`  Could not reach ${url} (${error.message}).`);
+  say('  Writing the file anyway; the migration will be the judge.');
+}
+
+if (probe && (probe.status === 401 || probe.status === 403)) {
+  fail(
+    `The project refused that key (${probe.status}). It is the wrong key, or ` +
+      'part of one. Copy the "default" row under **Publishable keys** — not ' +
+      'Secret keys, and not anything else in the terminal.'
+  );
+}
+if (probe) say(`  The project accepts it (${probe.status}).`);
+
 const body = [
   '# Portfolio Studio — this machine only. Gitignored by .env.*.local.',
   '# Written by `npm run studio:env`. Values are unquoted and the file is LF,',
