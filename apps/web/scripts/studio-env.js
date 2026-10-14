@@ -217,8 +217,23 @@ say('');
 say('  Checking the key against the project…');
 let probe;
 try {
-  probe = await fetch(`${url}/rest/v1/`, {
-    headers: { apikey: key, Authorization: `Bearer ${key}` },
+  /*
+   * Auth's own settings endpoint, and only the `apikey` header.
+   *
+   * Auth because that is the subsystem the migration signs in through, so a
+   * key that passes here passes the thing it is about to be used for —
+   * `/rest/v1/` would also have answered, but through PostgREST, whose reply
+   * depends on which schemas are exposed and what the anon role has been
+   * granted. Two reasons to fail is one too many for a check whose whole job
+   * is to be unambiguous.
+   *
+   * And `apikey` alone: sending `Authorization: Bearer <key>` as well is what
+   * the client library does, but Authorization is where a *user's* JWT goes,
+   * and the newer `sb_publishable_…` keys are not JWTs. An anonymous request
+   * needs the one header, so the one header is what is sent.
+   */
+  probe = await fetch(`${url}/auth/v1/settings`, {
+    headers: { apikey: key },
     signal: AbortSignal.timeout(20000),
   });
 } catch (error) {
@@ -228,9 +243,14 @@ try {
 
 if (probe && (probe.status === 401 || probe.status === 403)) {
   fail(
-    `The project refused that key (${probe.status}). It is the wrong key, or ` +
-      'part of one. Copy the "default" row under **Publishable keys** — not ' +
-      'Secret keys, and not anything else in the terminal.'
+    `The project refused that key (${probe.status}).\n\n` +
+      '  This project has two sets of keys live at once, and either should\n' +
+      '  work — so the likeliest cause is that something other than a key was\n' +
+      '  copied. The surest one to take is the legacy anon key, which is shown\n' +
+      '  in full with its own Copy button:\n\n' +
+      `  ${url.replace('https://', 'https://supabase.com/dashboard/project/').replace('.supabase.co', '')}\n` +
+      '  Settings → API Keys → "Legacy anon, service_role API keys" tab\n' +
+      '  → the row marked `anon` `public`. Not `service_role`.'
   );
 }
 if (probe) say(`  The project accepts it (${probe.status}).`);
