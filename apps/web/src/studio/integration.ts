@@ -39,7 +39,8 @@ export function studio(): AstroIntegration {
         addMiddleware({ entrypoint: new URL('./middleware.ts', import.meta.url), order: 'pre' });
 
         injectRoute({ pattern: '/studio', entrypoint: new URL('./pages/index.astro', import.meta.url) });
-        injectRoute({ pattern: '/studio/login', entrypoint: new URL('./pages/login.astro', import.meta.url) });
+        injectRoute({ pattern: '/studio/quote', entrypoint: new URL('./pages/quote.astro', import.meta.url) });
+        injectRoute({ pattern: '/studio/login',entrypoint: new URL('./pages/login.astro', import.meta.url) });
         injectRoute({ pattern: '/studio/api/login', entrypoint: new URL('./api/login.ts', import.meta.url) });
         injectRoute({ pattern: '/studio/api/logout', entrypoint: new URL('./api/logout.ts', import.meta.url) });
         injectRoute({ pattern: '/studio/api/draft', entrypoint: new URL('./api/draft.ts', import.meta.url) });
